@@ -1,4 +1,4 @@
-package goChan
+package dedego
 
 import (
 	"sync"
@@ -23,9 +23,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 Author: Erik Kassubek <erik-kassubek@t-online.de>
-Package: goChan
-Project: Bachelor Thesis at the Albert-Ludwigs-University Freiburg,
-	Institute of Computer Science: Dynamic Analysis of message passing go programs
+package: dedego (Deadlock Detector in Go)
 */
 
 /*
