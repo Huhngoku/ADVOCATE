@@ -1,4 +1,4 @@
-package main
+package instrumenter
 
 /*
 Copyright (c) 2023, Erik Kassubek
@@ -37,6 +37,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"fyne.io/fyne/v2/widget"
+	"fyne.io/fyne/v2/container"
 )
 
 /*
@@ -45,9 +47,13 @@ Function to perform instrumentation of all list of files
 @return string: name of exec
 @return error: error or nil
 */
-func instrument_files(file_paths []string) (string, error) {
+func instrument_files(file_paths []string, output *widget.TextGrid,
+	outputScroll *container.Scroll, 
+	progress *widget.ProgressBar) (string, error) {
 	execName = ""
-	for _, file := range file_paths {
+	for i, file := range file_paths {
+		output.SetText(output.Text() + fmt.Sprintf("Instrumenting file %s.\n", file))
+		outputScroll.ScrollToBottom()
 		en, err := instrument_file(file)
 		if en != "" {
 			execName = en
@@ -56,7 +62,11 @@ func instrument_files(file_paths []string) (string, error) {
 			fmt.Fprintf(os.Stderr, "Failed to instrument file %s.\n", file)
 			return execName, err
 		}
+		prog := float64(i + 1) / float64(len(file_paths))
+		progress.SetValue(prog)
 	}
+	output.SetText(output.Text() + "Instrumentation complete.\n")
+	outputScroll.ScrollToBottom()
 	return execName, nil
 }
 
@@ -98,7 +108,7 @@ func instrument_file(file_path string) (string, error) {
 	err = instrument_go_file(file_path)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not instrument %s\n", in+file_path)
+		fmt.Fprintf(os.Stderr, "Could not instrument %s\n", file_path)
 	}
 
 	return "", nil
@@ -118,8 +128,6 @@ func instrument_go_file(file_path string) error {
 		fmt.Fprintf(os.Stderr, "Could not parse file %s\n", file_path)
 		return err
 	}
-
-	fmt.Printf("Instrument file: %s\n", file_path)
 
 	instrument_chan(f, astSet)
 	instrument_mutex(f)

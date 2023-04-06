@@ -1,4 +1,4 @@
-package main
+package instrumenter
 
 /*
 Copyright (c) 2023, Erik Kassubek

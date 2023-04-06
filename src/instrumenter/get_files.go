@@ -1,4 +1,4 @@
-package main
+package instrumenter
 
 /*
 Copyright (c) 2023, Erik Kassubek
@@ -44,7 +44,7 @@ The function also copies the folder structure into the output folder.
 @return []string: list of file names
 @return error: Error or nil
 */
-func getAllFiles() ([]string, error) {
+func getAllFiles(path string) ([]string, error) {
 	// remove old output folder
 	err := os.RemoveAll(out)
 	if err != nil {
@@ -55,7 +55,7 @@ func getAllFiles() ([]string, error) {
 	var file_names []string = make([]string, 0)
 
 	// get all file names
-	err = filepath.Walk(in,
+	err = filepath.Walk(path,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not walk through file path %s.", path)
@@ -74,11 +74,11 @@ func getAllFiles() ([]string, error) {
 		return make([]string, 0), err
 	}
 
-	// get folder structure in in and copy it to out
+	// get folder structure in path and copy it to out
 	folders := make([]string, 0)
-	in_split := strings.Split(in, path_separator)
+	in_split := strings.Split(path, string(os.PathSeparator))
 	folders = append(folders, out+in_split[len(in_split)-2])
-	err = filepath.WalkDir(in,
+	err = filepath.WalkDir(path,
 		func(path string, info fs.DirEntry, err error) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not walk through dir path %s.\n", path)

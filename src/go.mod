@@ -1,8 +1,12 @@
-module dedego
+module deadlockDetectorGo
 
-go 1.20
+go 1.19
 
-require fyne.io/fyne/v2 v2.3.3
+require (
+	fyne.io/fyne/v2 v2.3.3
+	github.com/petermattis/goid v0.0.0-20230317030725-371a4b8eda08
+	golang.org/x/tools v0.1.12
+)
 
 require (
 	fyne.io/systray v1.10.1-0.20230312215936-7f71b037e260 // indirect
