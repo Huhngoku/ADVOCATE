@@ -1,8 +1,6 @@
 package main
 
 import (
-	"time"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
@@ -11,58 +9,65 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+type status struct {
+	output      string
+	folder_path string
+}
+
 func main() {
-	a := app.New()
-	w := a.NewWindow("Deadlock Go Detector")
+	app := app.New()
+	window := app.NewWindow("Deadlock Go Detector")
+	status := status{}
 
-	path := widget.NewLabel("Path:")
-	// create folder picker to select the folder
-	openBut := widget.NewButton("Open", func() {
-		fileDialog := dialog.NewFolderOpen(
-			func(r fyne.ListableURI, _ error) {
-				path.SetText("Path: " + r.Path())
-			}, w)
-		fileDialog.Show()
-	})
-
-	// create progress bars
+	// create elements
+	pathLab := widget.NewLabel("Path:")
+	openBut := widget.NewButton("Open", nil)
+	startBut := widget.NewButton("Start", nil)
+	cancelBut := widget.NewButton("Cancel", nil)
+	output := widget.NewLabel(status.output)
 	progressInst := widget.NewProgressBar()
 	progressDet := widget.NewProgressBar()
 	progress := widget.NewForm(
 		widget.NewFormItem("Instrumentation", progressInst),
-		widget.NewFormItem("Detection", progressDet))
-	progress.Hidden = true
+		widget.NewFormItem("Detection", progressDet),
+	)
 
-	// create a cancel button
-	cancelBut := widget.NewButton("Cancel", func() {
-		progress.Hidden = true
-	})
-	cancelBut.Hidden = true
+	// set button functions
 
-	// create a start button
-	startBut := widget.NewButton("Start", func() {
+	openBut.OnTapped = func() {
+		// BUG: cancel creates segmentation violation
+		fileDialog := dialog.NewFolderOpen(
+			func(r fyne.ListableURI, _ error) {
+				status.folder_path = r.Path()
+				pathLab.SetText("Path: " + status.folder_path)
+			}, window)
+		fileDialog.Show()
+	}
+
+	startBut.OnTapped = func() {
+		if status.folder_path == "" {
+			output.SetText("No folder selected!")
+			return
+		} else {
+			status.folder_path = ""
+		}
 		progress.Hidden = false
 		cancelBut.Hidden = false
-		// create a file dialog
-		go func() {
-			for i := 0.0; i <= 1.0; i += 0.01 {
-				time.Sleep(time.Millisecond * 250)
-				progressInst.SetValue(i)
-				progressDet.SetValue(i)
-			}
-		}()
+	}
 
-	})
+	cancelBut.OnTapped = func() {
+		progress.Hidden = true
+	}
 
-	// create a vertical layout
-	leftGrid := container.NewVBox(path, openBut, startBut, cancelBut, progress)
+	// set initial state
+	progress.Hidden = true
+	cancelBut.Hidden = true
 
-	// create a text widget with black background
-	output := widget.NewLabel("")
-
-	// create a grid layout with 2 columns
+	// create layout
+	leftGrid := container.NewVBox(pathLab, openBut, startBut, cancelBut, progress)
 	grid := container.New(layout.NewGridLayout(2), leftGrid, output)
 
-	w.SetContent(grid)
-	w.ShowAndRun()
+	// show window
+	window.SetContent(grid)
+	window.ShowAndRun()
 }
