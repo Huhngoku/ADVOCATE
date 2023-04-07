@@ -29,25 +29,25 @@ main function and handling of command line arguments
 */
 
 import (
+	"deadlockDetectorGo/gui"
 	"os"
-	"fyne.io/fyne/v2/widget"
-	"fyne.io/fyne/v2/container"
 )
 
 const MAX_TOTAL_WAITING_TIME_SEC = "20"
 const SELECT_WAITING_TIME string = "2 * time.Second"
 
-var out string = os.TempDir() + string(os.PathSeparator) + "dedego" + string(os.PathSeparator)
+var out string = os.TempDir() + string(os.PathSeparator) + "dedego" +
+	string(os.PathSeparator)
 var execName string
 
-func Run(path string, output *widget.TextGrid, outputScroll *container.Scroll, progress *widget.ProgressBar) {
-	file_name, err := getAllFiles(path)
+func Run(path string, gui *gui.GuiElements, status *gui.Status) {
+	fileName, err := getAllFiles(path)
 	if err != nil {
 		panic(err)
 	}
 
 	// instrument all files in file_names
-	execName, err = instrument_files(file_name, output, outputScroll, progress)
+	execName, err = instrument_files(fileName, gui, status)
 	if err != nil {
 		panic(err)
 	}
@@ -97,4 +97,3 @@ func Run(path string, output *widget.TextGrid, outputScroll *container.Scroll, p
 
 	// f.Write([]byte(data))
 }
-

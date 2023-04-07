@@ -20,7 +20,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Author: Erik Kassubek <erik-kassubek@t-online.de>
 Package: GoChan-Instrumenter
 Project: Bachelor Thesis at the Albert-Ludwigs-University Freiburg,
-	Institute of Computer Science: Dynamic Analysis of message passing go programs
+	Institute of Computer Science: Dynamic Analysis of message passing go
+	programs
 */
 
 /*
@@ -30,6 +31,7 @@ instrument files to work with the
 */
 
 import (
+	"deadlockDetectorGo/gui"
 	"fmt"
 	"go/parser"
 	"go/printer"
@@ -37,23 +39,31 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"fyne.io/fyne/v2/widget"
-	"fyne.io/fyne/v2/container"
 )
 
 /*
 Function to perform instrumentation of all list of files
 @param file_paths []string: list of file names to instrument
+@param gui *gui.GuiElements: gui elements to display output
+@param status *gui.Status: status of the program
 @return string: name of exec
 @return error: error or nil
 */
-func instrument_files(file_paths []string, output *widget.TextGrid,
-	outputScroll *container.Scroll, 
-	progress *widget.ProgressBar) (string, error) {
+func instrument_files(file_paths []string, gui *gui.GuiElements,
+	status *gui.Status) (string, error) {
 	execName = ""
+	totalPathLen := len(strings.Split(status.FolderPath, string(os.PathSeparator)))
 	for i, file := range file_paths {
-		output.SetText(output.Text() + fmt.Sprintf("Instrumenting file %s.\n", file))
-		outputScroll.ScrollToBottom()
+		// display the relative path
+		pathSplit := strings.Split(file, string(os.PathSeparator))
+		pathLen := len(pathSplit) - totalPathLen + 1
+		relPath := strings.Join(pathSplit[len(pathSplit)-pathLen:],
+			string(os.PathSeparator))
+		gui.Output.SetText(gui.Output.Text() +
+			fmt.Sprintf("Instrumenting file %s.\n", relPath))
+		gui.OutputScroll.ScrollToBottom()
+
+		// instrument the file
 		en, err := instrument_file(file)
 		if en != "" {
 			execName = en
@@ -62,11 +72,13 @@ func instrument_files(file_paths []string, output *widget.TextGrid,
 			fmt.Fprintf(os.Stderr, "Failed to instrument file %s.\n", file)
 			return execName, err
 		}
-		prog := float64(i + 1) / float64(len(file_paths))
-		progress.SetValue(prog)
+		prog := float64(i+1) / float64(len(file_paths))
+		gui.ProgressInst.SetValue(prog)
 	}
-	output.SetText(output.Text() + "Instrumentation complete.\n")
-	outputScroll.ScrollToBottom()
+
+	// set output
+	gui.Output.SetText(gui.Output.Text() + "Instrumentation complete.\n")
+	gui.OutputScroll.ScrollToBottom()
 	return execName, nil
 }
 
@@ -80,7 +92,8 @@ func instrument_file(file_path string) (string, error) {
 	// create output file
 	output_file, err := os.Create(out + file_path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create output file %s.\n", out+file_path)
+		fmt.Fprintf(os.Stderr, "Failed to create output file %s.\n",
+			out+file_path)
 		return "", err
 	}
 	defer output_file.Close()
@@ -90,7 +103,8 @@ func instrument_file(file_path string) (string, error) {
 		execName := ""
 		content, err := ioutil.ReadFile(file_path)
 		if file_path[len(file_path)-4:] == ".mod" {
-			execName = strings.Split(strings.Split(string(content), "\n")[0], " ")[1]
+			execName = strings.Split(strings.Split(string(content), "\n")[0],
+				" ")[1]
 		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to read file %s.\n", file_path)
@@ -98,7 +112,8 @@ func instrument_file(file_path string) (string, error) {
 		}
 		_, err = output_file.Write(content)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to write to output file %s.\n", out+file_path)
+			fmt.Fprintf(os.Stderr, "Failed to write to output file %s.\n",
+				out+file_path)
 			return "", err
 		}
 		return execName, nil

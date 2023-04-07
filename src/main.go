@@ -1,6 +1,7 @@
 package main
 
 import (
+	"deadlockDetectorGo/gui"
 	"deadlockDetectorGo/instrumenter"
 
 	"fyne.io/fyne/v2"
@@ -11,73 +12,68 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type status struct {
-	output        string
-	folder_path   string
-	was_cancelled bool
-}
-
 func main() {
 	app := app.New()
 	window := app.NewWindow("Deadlock Go Detector")
-	status := status{}
-	
-	
+	status := gui.Status{}
+	elements := gui.GuiElements{}
+
 	// create elements
-	pathLab := widget.NewLabel("Path:")
-	output := widget.NewTextGrid()
-	outputScroll := container.NewScroll(output)
+	elements.PathLab = widget.NewLabel("Path:")
+	elements.Output = widget.NewTextGrid()
+	elements.OutputScroll = container.NewScroll(elements.Output)
 
 	// create a scroll container for the output
 
-	
-	openBut := widget.NewButton("Open", nil)
-	startBut := widget.NewButton("Start", nil)
-	cancelBut := widget.NewButton("Cancel", nil)
-	
-	progressInst := widget.NewProgressBar()
-	progressDet := widget.NewProgressBar()
-	progress := widget.NewForm(
-		widget.NewFormItem("Instrumentation", progressInst),
-		widget.NewFormItem("Detection", progressDet),
+	elements.OpenBut = widget.NewButton("Open", nil)
+	elements.StartBut = widget.NewButton("Start", nil)
+	elements.CancelBut = widget.NewButton("Cancel", nil)
+
+	elements.ProgressInst = widget.NewProgressBar()
+	elements.ProgressDet = widget.NewProgressBar()
+	elements.Progress = widget.NewForm(
+		widget.NewFormItem("Instrumentation", elements.ProgressInst),
+		widget.NewFormItem("Detection", elements.ProgressDet),
 	)
-	
+
 	// set button functions
-	
-	openBut.OnTapped = func() {
+
+	elements.OpenBut.OnTapped = func() {
 		// BUG: cancel creates segmentation violation
 		fileDialog := dialog.NewFolderOpen(
 			func(r fyne.ListableURI, _ error) {
-				status.folder_path = r.Path()
-				pathLab.SetText("Path: " + status.folder_path)
-				}, window)
-				fileDialog.Show()
-			}
-			
-			startBut.OnTapped = func() {
-				if status.folder_path == "" {
-					output.SetText("No folder selected!")
-					return
-				} else {
-					progress.Hidden = false
-					cancelBut.Hidden = false
-					go func() {
-						instrumenter.Run(status.folder_path, output, outputScroll, progressInst)
-					}()
-				}
+				status.FolderPath = r.Path()
+				elements.PathLab.SetText("Path: " + status.FolderPath)
+			}, window)
+		fileDialog.Show()
 	}
 
-	cancelBut.OnTapped = func() {
-		progress.Hidden = true
+	elements.StartBut.OnTapped = func() {
+		if status.FolderPath == "" {
+			elements.Output.SetText("No folder selected!")
+			return
+		} else {
+			elements.Progress.Hidden = false
+			elements.CancelBut.Hidden = false
+			go func() {
+				instrumenter.Run(status.FolderPath, &elements, &status)
+			}()
+		}
+	}
+
+	elements.CancelBut.OnTapped = func() {
+		elements.Progress.Hidden = true
 	}
 
 	// set initial state
-	progress.Hidden = true
-	cancelBut.Hidden = true
+	elements.Progress.Hidden = true
+	elements.CancelBut.Hidden = true
 
 	// create layout
-	leftGrid := container.NewVBox(pathLab, openBut, startBut, cancelBut, progress)
-	grid := container.New(layout.NewGridLayout(2), leftGrid, outputScroll)
+	leftGrid := container.NewVBox(elements.PathLab, elements.OpenBut,
+		elements.StartBut, elements.CancelBut, elements.Progress)
+	grid := container.New(layout.NewGridLayout(2), leftGrid,
+		elements.OutputScroll)
 
 	// show window
 	window.SetContent(grid)
