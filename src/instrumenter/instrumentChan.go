@@ -25,7 +25,7 @@ Project: Bachelor Thesis at the Albert-Ludwigs-University Freiburg,
 
 /*
 instrumentChan.go
-Instrument channels to work with the "github.com/ErikKassubek/GoChan/goChan" library
+Instrument channels to work with the "github.com/ErikKassubek/DeadlockDetectorGo/src/dedego" library
 */
 
 import (
@@ -149,7 +149,7 @@ func add_goChan_import(n *ast.File) {
 	import_spec := &ast.ImportSpec{
 		Path: &ast.BasicLit{
 			Kind:  token.STRING,
-			Value: "\"github.com/ErikKassubek/GoChan/goChan\"",
+			Value: "\"github.com/ErikKassubek/DeadlockDetectorGo/src/dedego\"",
 		},
 	}
 

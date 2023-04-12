@@ -27,7 +27,7 @@ Project: Bachelor Thesis at the Albert-Ludwigs-University Freiburg,
 /*
 instrumenter.go
 instrument files to work with the
-"github.com/ErikKassubek/GoChan/goChan" libraries
+"github.com/ErikKassubek/DeadlockDetectorGo/src/dedego" libraries
 */
 
 import (
@@ -49,84 +49,67 @@ Function to perform instrumentation of all list of files
 @return string: name of exec
 @return error: error or nil
 */
-func instrument_files(file_paths []string, gui *gui.GuiElements,
-	status *gui.Status) (string, error) {
-	execName = ""
-	totalPathLen := len(strings.Split(status.FolderPath, string(os.PathSeparator)))
+func instrument_files(file_paths []string, elements *gui.GuiElements,
+	status *gui.Status) error {
 	for i, file := range file_paths {
-		// display the relative path
-		pathSplit := strings.Split(file, string(os.PathSeparator))
-		pathLen := len(pathSplit) - totalPathLen + 1
-		relPath := strings.Join(pathSplit[len(pathSplit)-pathLen:],
-			string(os.PathSeparator))
-		gui.Output.SetText(gui.Output.Text() +
-			fmt.Sprintf("Instrumenting file %s.\n", relPath))
-		gui.OutputScroll.ScrollToBottom()
+		elements.Output.SetText(elements.Output.Text() +
+			fmt.Sprintf("Instrumenting file %s.\n", file))
+		elements.OutputScroll.ScrollToBottom()
 
 		// instrument the file
-		en, err := instrument_file(file)
-		if en != "" {
-			execName = en
-		}
+		err := instrument_file(file, status)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to instrument file %s.\n", file)
-			return execName, err
+			e := "Could not intrument file" + file + ".\n" + err.Error()
+			elements.AddToOutput(e)
+			return err
 		}
 		prog := float64(i+1) / float64(len(file_paths))
-		gui.ProgressInst.SetValue(prog)
+		elements.ProgressInst.SetValue(prog)
 	}
 
-	// set output
-	gui.Output.SetText(gui.Output.Text() + "Instrumentation complete.\n")
-	gui.OutputScroll.ScrollToBottom()
-	return execName, nil
+	return nil
 }
 
 /*
 Function to instrument a given file.
 @param file_path string: path to the file
-@return string: name of exec
 @return error: error or nil
 */
-func instrument_file(file_path string) (string, error) {
+func instrument_file(file_path string, status *gui.Status) error {
 	// create output file
-	output_file, err := os.Create(out + file_path)
+	output_file, err := os.Create(out + get_relative_path(file_path, status))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create output file %s.\n",
-			out+file_path)
-		return "", err
+			file_path)
+		return err
 	}
 	defer output_file.Close()
 
 	// copy mod and sum files
 	if file_path[len(file_path)-3:] != ".go" {
-		execName := ""
 		content, err := ioutil.ReadFile(file_path)
-		if file_path[len(file_path)-4:] == ".mod" {
-			execName = strings.Split(strings.Split(string(content), "\n")[0],
-				" ")[1]
-		}
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to read file %s.\n", file_path)
-			return "", err
+			return err
 		}
 		_, err = output_file.Write(content)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to write to output file %s.\n",
-				out+file_path)
-			return "", err
+				file_path)
+			return err
 		}
-		return execName, nil
+		return nil
 	}
 
 	// instrument go files
-	err = instrument_go_file(file_path)
+	err = instrument_go_file(file_path, status)
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not instrument %s\n", file_path)
+		return err
 	}
 
-	return "", nil
+	return nil
 }
 
 /*
@@ -134,13 +117,12 @@ Function to instrument a go file.
 @param file_path string: path to the file
 @return error: error or nil
 */
-func instrument_go_file(file_path string) error {
+func instrument_go_file(file_path string, status *gui.Status) error {
 	// get the ASP of the file
 	astSet := token.NewFileSet()
 
 	f, err := parser.ParseFile(astSet, file_path, nil, 0)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not parse file %s\n", file_path)
 		return err
 	}
 
@@ -148,9 +130,10 @@ func instrument_go_file(file_path string) error {
 	instrument_mutex(f)
 
 	// print changed ast to output file
-	output_file, err := os.OpenFile(out+file_path, os.O_WRONLY, os.ModePerm)
+	output_path := out + get_relative_path(file_path, status)
+	output_file, err := os.OpenFile(output_path, os.O_WRONLY, os.ModePerm)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Could not open output file %s\n", out+file_path)
+		fmt.Fprintf(os.Stderr, "Could not open output file %s\n", output_path)
 		return err
 	}
 	defer output_file.Close()
@@ -160,4 +143,11 @@ func instrument_go_file(file_path string) error {
 	}
 
 	return nil
+}
+
+func get_relative_path(file string, status *gui.Status) string {
+	totalPathLen := len(strings.Split(status.FolderPath, string(os.PathSeparator)))
+	pathSplit := strings.Split(file, string(os.PathSeparator))
+	return string(os.PathSeparator) + strings.Join(pathSplit[totalPathLen-1:],
+		string(os.PathSeparator))
 }

@@ -29,6 +29,7 @@ Get all files from the input path
 */
 
 import (
+	"deadlockDetectorGo/gui"
 	"fmt"
 	"io/fs"
 	"os"
@@ -41,10 +42,12 @@ import (
 /*
 Function to get all files in the in folder and add there names to file_names.
 The function also copies the folder structure into the output folder.
+@param path string: path to the input folder
+@param status *gui.Status: Status object
 @return []string: list of file names
 @return error: Error or nil
 */
-func getAllFiles(path string) ([]string, error) {
+func getAllFiles(path string, status *gui.Status) ([]string, error) {
 	// remove old output folder
 	err := os.RemoveAll(out)
 	if err != nil {
@@ -86,7 +89,7 @@ func getAllFiles(path string) ([]string, error) {
 			}
 
 			if info.IsDir() && path[:1] != "." {
-				folders = append(folders, out+path)
+				folders = append(folders, out+get_relative_path(path, status))
 			}
 			return nil
 		})

@@ -3,6 +3,8 @@ package main
 import (
 	"deadlockDetectorGo/gui"
 	"deadlockDetectorGo/instrumenter"
+	"os"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -24,15 +26,16 @@ func main() {
 	elements.OutputScroll = container.NewScroll(elements.Output)
 
 	// create a scroll container for the output
-
 	elements.OpenBut = widget.NewButton("Open", nil)
 	elements.StartBut = widget.NewButton("Start", nil)
-	elements.CancelBut = widget.NewButton("Cancel", nil)
 
+	// create progress bars
 	elements.ProgressInst = widget.NewProgressBar()
+	elements.ProgressBuild = widget.NewProgressBar()
 	elements.ProgressDet = widget.NewProgressBar()
 	elements.Progress = widget.NewForm(
 		widget.NewFormItem("Instrumentation", elements.ProgressInst),
+		widget.NewFormItem("Build", elements.ProgressBuild),
 		widget.NewFormItem("Detection", elements.ProgressDet),
 	)
 
@@ -43,6 +46,8 @@ func main() {
 		fileDialog := dialog.NewFolderOpen(
 			func(r fyne.ListableURI, _ error) {
 				status.FolderPath = r.Path()
+				splitPath := strings.Split(status.FolderPath, string(os.PathSeparator))
+				status.Name = splitPath[len(splitPath)-1]
 				elements.PathLab.SetText("Path: " + status.FolderPath)
 			}, window)
 		fileDialog.Show()
@@ -54,24 +59,24 @@ func main() {
 			return
 		} else {
 			elements.Progress.Hidden = false
-			elements.CancelBut.Hidden = false
+			elements.ClearOutput()
 			go func() {
-				instrumenter.Run(status.FolderPath, &elements, &status)
+				err := instrumenter.Run(status.FolderPath, &elements, &status)
+				if err != nil {
+					elements.AddToOutput("Analysis Failed")
+				} else {
+					elements.AddToOutput("Analysis Complete")
+				}
 			}()
 		}
 	}
 
-	elements.CancelBut.OnTapped = func() {
-		elements.Progress.Hidden = true
-	}
-
 	// set initial state
 	elements.Progress.Hidden = true
-	elements.CancelBut.Hidden = true
 
 	// create layout
 	leftGrid := container.NewVBox(elements.PathLab, elements.OpenBut,
-		elements.StartBut, elements.CancelBut, elements.Progress)
+		elements.StartBut, elements.Progress)
 	grid := container.New(layout.NewGridLayout(2), leftGrid,
 		elements.OutputScroll)
 

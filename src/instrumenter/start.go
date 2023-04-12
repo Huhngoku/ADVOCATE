@@ -31,25 +31,56 @@ main function and handling of command line arguments
 import (
 	"deadlockDetectorGo/gui"
 	"os"
+	"os/exec"
 )
 
 const MAX_TOTAL_WAITING_TIME_SEC = "20"
 const SELECT_WAITING_TIME string = "2 * time.Second"
 
-var out string = os.TempDir() + string(os.PathSeparator) + "dedego" +
-	string(os.PathSeparator)
-var execName string
+var out string = os.TempDir() + string(os.PathSeparator) + "dedego"
 
-func Run(path string, gui *gui.GuiElements, status *gui.Status) {
-	fileName, err := getAllFiles(path)
+func Run(path string, elements *gui.GuiElements, status *gui.Status) error {
+	elements.AddToOutput("Starting Instrumentation.\n")
+
+	fileName, err := getAllFiles(path, status)
 	if err != nil {
-		panic(err)
+		elements.AddToOutput("Failed to get all files.\n")
+		return err
 	}
 
 	// instrument all files in file_names
-	execName, err = instrument_files(fileName, gui, status)
+	err = instrument_files(fileName, elements, status)
 	if err != nil {
-		panic(err)
+		elements.AddToOutput("Instrumentation Failed: " + err.Error())
+		return err
+	} else {
+		elements.AddToOutput("Instrumentation Complete.\n")
+	}
+
+	// build the instrumented program
+	// cmd := exec.Command("go", "build", "-o", status.Name)
+
+	// install analyzer
+	elements.AddToOutput("Installing Analyzer.\n")
+	elements.ProgressBuild.SetValue(0.1)
+	cmd := exec.Command("go", "get",
+		"github.com/ErikKassubek/DeadlockDetectorGo/src/dedego")
+	cmd.Dir = out + string(os.PathSeparator) + status.Name
+	_, err = cmd.Output()
+	elements.ProgressBuild.SetValue(0.25)
+	if err != nil {
+		elements.AddToOutput("Failed to install Analyzer: " + err.Error())
+		return err
+	}
+
+	// TODO: build program
+	elements.ProgressBuild.SetValue(1)
+
+	if err != nil {
+		elements.AddToOutput("Build Failed: " + err.Error())
+		return err
+	} else {
+		elements.AddToOutput("Build Complete.\n")
 	}
 
 	// // create the new main file
@@ -96,4 +127,6 @@ func Run(path string, gui *gui.GuiElements, status *gui.Status) {
 	// defer f.Close()
 
 	// f.Write([]byte(data))
+
+	return nil
 }
