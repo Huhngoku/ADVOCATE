@@ -40,11 +40,11 @@ const SELECT_WAITING_TIME string = "2 * time.Second"
 var out string = os.TempDir() + string(os.PathSeparator) + "dedego"
 
 func Run(path string, elements *gui.GuiElements, status *gui.Status) error {
-	elements.AddToOutput("Starting Instrumentation.\n")
+	elements.AddToOutput("Starting Instrumentation\n")
 
 	fileName, err := getAllFiles(path, status)
 	if err != nil {
-		elements.AddToOutput("Failed to get all files.\n")
+		elements.AddToOutput("Failed to get all files\n")
 		return err
 	}
 
@@ -54,20 +54,21 @@ func Run(path string, elements *gui.GuiElements, status *gui.Status) error {
 		elements.AddToOutput("Instrumentation Failed: " + err.Error())
 		return err
 	} else {
-		elements.AddToOutput("Instrumentation Complete.\n")
+		elements.AddToOutput("Instrumentation Complete\n")
 	}
 
 	// build the instrumented program
 	// cmd := exec.Command("go", "build", "-o", status.Name)
 
 	// install analyzer
-	elements.AddToOutput("Installing Analyzer.\n")
+	elements.AddToOutput("Installing Analyzer\n")
 	elements.ProgressBuild.SetValue(0.1)
 	cmd := exec.Command("go", "get",
-		"github.com/ErikKassubek/DeadlockDetectorGo/src/dedego")
+		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego")
 	cmd.Dir = out + string(os.PathSeparator) + status.Name
-	_, err = cmd.Output()
+	out, err := cmd.Output()
 	elements.ProgressBuild.SetValue(0.25)
+	elements.AddToOutput(string(out) + "\n")
 	if err != nil {
 		elements.AddToOutput("Failed to install Analyzer: " + err.Error())
 		return err

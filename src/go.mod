@@ -1,4 +1,4 @@
-module deadlockDetectorGo
+module github.com/ErikKassubek/deadlockDetectorGo/src
 
 go 1.19
 

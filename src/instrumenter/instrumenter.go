@@ -27,7 +27,7 @@ Project: Bachelor Thesis at the Albert-Ludwigs-University Freiburg,
 /*
 instrumenter.go
 instrument files to work with the
-"github.com/ErikKassubek/DeadlockDetectorGo/src/dedego" libraries
+"github.com/ErikKassubek/deadlockDetectorGo/src/dedego" libraries
 */
 
 import (
