@@ -18,7 +18,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 Author: Erik Kassubek <erik-kassubek@t-online.de>
-package: dedego (Deadlock Detector in Go)
+Package: dedego-analyzer (Deadlock Detector in Go)
+Project: Dynamic Analysis to detect potential deadlocks in
 */
 
 /*

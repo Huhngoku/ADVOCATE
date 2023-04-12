@@ -18,14 +18,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 Author: Erik Kassubek <erik-kassubek@t-online.de>
-Package: GoChan-Instrumenter
-Project: Bachelor Thesis at the Albert-Ludwigs-University Freiburg,
-	Institute of Computer Science: Dynamic Analysis of message passing go programs
+Package: dedego-instrumenter
+Project: Dynamic Analysis to detect potential deadlocks in concurrent Go programs
 */
 
 /*
-main.go
-main function and handling of command line arguments
+start.go
+run the instrumentation and build/run the instrumented program
 */
 
 import (
