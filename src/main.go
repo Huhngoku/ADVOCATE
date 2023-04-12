@@ -44,9 +44,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-const MAX_TOTAL_WAITING_TIME_SEC = "20"
-const SELECT_WAITING_TIME string = "2 * time.Second"
-
 func Run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.AddToOutput("Starting Instrumentation\n")
 
@@ -63,28 +60,51 @@ func Run(elements *gui.GuiElements, status *gui.Status) error {
 	// cmd := exec.Command("go", "build", "-o", status.Name)
 
 	// install analyzer
-	elements.AddToOutput("Installing Analyzer\n")
+	elements.AddToOutput("Installing Analyzer")
 	elements.ProgressBuild.SetValue(0.1)
 	cmd := exec.Command("go", "get",
 		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego")
 	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
 	out, err := cmd.Output()
-	elements.ProgressBuild.SetValue(0.25)
-	elements.AddToOutput(string(out) + "\n")
+	if len(out) > 0 {
+		elements.AddToOutput(string(out) + "")
+	}
 	if err != nil {
 		elements.AddToOutput("Failed to install Analyzer: " + err.Error())
 		return err
 	}
+	elements.AddToOutput("Analyzer installed\n")
+	elements.ProgressBuild.SetValue(0.2)
+
+	// cleanup files
+	elements.AddToOutput("Cleaning up files")
+	cmd = exec.Command("goimports", "-w", ".")
+	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+	out, err = cmd.Output()
+	if len(out) > 0 {
+		elements.AddToOutput(string(out))
+	}
+	if err != nil {
+		elements.AddToOutput("Failed to cleanup files: " + err.Error())
+		return err
+	}
+	elements.ProgressBuild.SetValue(0.3)
+	elements.AddToOutput("Files cleaned up\n")
 
 	// TODO: build program
-	elements.ProgressBuild.SetValue(1)
-
-	if err != nil {
-		elements.AddToOutput("Build Failed: " + err.Error())
-		return err
-	} else {
-		elements.AddToOutput("Build Complete.\n")
+	elements.AddToOutput("Building program")
+	cmd = exec.Command("go", "build")
+	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+	out, err = cmd.Output()
+	if len(out) > 0 {
+		elements.AddToOutput(string(out))
 	}
+	if err != nil {
+		elements.AddToOutput("Failed to build program: " + err.Error())
+		return err
+	}
+	elements.ProgressBuild.SetValue(1)
+	elements.AddToOutput("Program built\n")
 
 	// // create the new main file
 

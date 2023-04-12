@@ -43,7 +43,7 @@ func instrument_mutex(f *ast.File) error {
 			instrument_function_declarations_mut(n_type, c)
 		case *ast.DeclStmt:
 			instrument_mutex_decl(n_type, c)
-		case *ast.GenDecl: // add import of goChan lib if other libs get imported
+		case *ast.GenDecl: // add import of dedego lib if other libs get imported
 			instrument_gen_decl_mut(n_type, c)
 		case *ast.AssignStmt:
 			switch n_type.Rhs[0].(type) {
@@ -76,7 +76,7 @@ func instrument_mutex_decl(d *ast.DeclStmt, c *astutil.Cursor) {
 	}
 
 	mutexType := ""
-	goChanTypePointer := false
+	dedegoTypePointer := false
 	name := ""
 	var x_val *ast.SelectorExpr
 
@@ -90,7 +90,7 @@ func instrument_mutex_decl(d *ast.DeclStmt, c *astutil.Cursor) {
 	case *ast.StarExpr:
 		switch n.Type.(*ast.StarExpr).X.(type) {
 		case *ast.SelectorExpr:
-			goChanTypePointer = true
+			dedegoTypePointer = true
 			x_val = n.Type.(*ast.StarExpr).X.(*ast.SelectorExpr)
 		default:
 			return
@@ -116,9 +116,9 @@ func instrument_mutex_decl(d *ast.DeclStmt, c *astutil.Cursor) {
 		return
 	}
 	name = n.Names[0].Name
-	varTyp := "goChan." + mutexType + "()"
-	if goChanTypePointer {
-		varTyp = "goChan." + mutexType + "(); " + name + ":= &" + name + "_"
+	varTyp := "dedego." + mutexType + "()"
+	if dedegoTypePointer {
+		varTyp = "dedego." + mutexType + "(); " + name + ":= &" + name + "_"
 		name += "_"
 	}
 
@@ -149,9 +149,9 @@ func instrument_gen_decl_mut(n *ast.GenDecl, c *astutil.Cursor) {
 			genString := ""
 			name := get_name(s_type.Type)
 			if name == "sync.Mutex" {
-				genString = "= goChan.NewMutex()"
+				genString = "= dedego.NewMutex()"
 			} else if name == "sync.RWMutex" {
-				genString = "= goChan.NewRWMutex()"
+				genString = "= dedego.NewRWMutex()"
 			} else {
 				continue
 			}
@@ -170,7 +170,7 @@ func instrument_gen_decl_mut(n *ast.GenDecl, c *astutil.Cursor) {
 						continue
 					}
 
-					n.Specs[j].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List[i].Type.(*ast.SelectorExpr).X.(*ast.Ident).Name = "goChan"
+					n.Specs[j].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List[i].Type.(*ast.SelectorExpr).X.(*ast.Ident).Name = "dedego"
 					n.Specs[j].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List[i].Type.(*ast.SelectorExpr).Sel.Name = name_str
 				}
 			case *ast.InterfaceType:
@@ -201,17 +201,17 @@ func instrument_function_declaration_return_values_mut(n *ast.FuncType) {
 		switch res.Type.(type) {
 		case *ast.SelectorExpr:
 			if name := get_name(res.Type); name == "sync.Mutex" {
-				mut_name = "goChan.Mutex"
+				mut_name = "dedego.Mutex"
 			} else if name == "sync.RWMutex" {
-				mut_name = "goChan.RWMutex"
+				mut_name = "dedego.RWMutex"
 			} else {
 				continue
 			}
 		case *ast.StarExpr:
 			if name := get_name(res.Type.(*ast.StarExpr).X); name == "sync.Mutex" {
-				mut_name = "*goChan.Mutex"
+				mut_name = "*dedego.Mutex"
 			} else if name == "sync.RWMutex" {
-				mut_name = "*goChan.RWMutex"
+				mut_name = "*dedego.RWMutex"
 			} else {
 				continue
 			}
@@ -243,17 +243,17 @@ func instrument_function_declaration_parameter_mut(n *ast.FuncType) {
 		switch res.Type.(type) {
 		case *ast.SelectorExpr:
 			if name := get_name(res.Type); name == "sync.Mutex" {
-				mut_name = "goChan.Mutex"
+				mut_name = "dedego.Mutex"
 			} else if name == "sync.RWMutex" {
-				mut_name = "goChan.RWMutex"
+				mut_name = "dedego.RWMutex"
 			} else {
 				continue
 			}
 		case *ast.StarExpr:
 			if name := get_name(res.Type.(*ast.StarExpr).X); name == "sync.Mutex" {
-				mut_name = "*goChan.Mutex"
+				mut_name = "*dedego.Mutex"
 			} else if name == "sync.RWMutex" {
-				mut_name = "*goChan.RWMutex"
+				mut_name = "*dedego.RWMutex"
 			} else {
 				continue
 			}
@@ -284,9 +284,9 @@ func instrument_assign_struct_mut(n *ast.AssignStmt, c *astutil.Cursor) {
 		case *ast.CompositeLit:
 			var name string
 			if get_name(t_type.Type) == "sync.Mutex" {
-				name = "*goChan.NewMutex()"
+				name = "*dedego.NewMutex()"
 			} else if get_name(t_type.Type) == "sync.RWMutex" {
-				name = "*goChan.NewRWMutex()"
+				name = "*dedego.NewRWMutex()"
 			} else {
 				continue
 			}
@@ -301,9 +301,9 @@ func instrument_assign_struct_mut(n *ast.AssignStmt, c *astutil.Cursor) {
 	var name_str string
 	if n.Rhs[0].(*ast.CompositeLit).Elts == nil {
 		if name := get_name(n.Rhs[0].(*ast.CompositeLit).Type); name == "sync.Mutex" {
-			name_str = "goChan.NewMutex()"
+			name_str = "dedego.NewMutex()"
 		} else if name == "sync.RWMutex" {
-			name_str = "goChan.NewRWMutex()"
+			name_str = "dedego.NewRWMutex()"
 		} else {
 			return
 		}

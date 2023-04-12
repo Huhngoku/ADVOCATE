@@ -65,13 +65,13 @@ var select_ops = make([]select_op, 0)
 
 /*
 Function to instrument a given ast.File with channels. Channels and operation
-of this channels are replaced by there goChan equivalent.
+of this channels are replaced by there dedego equivalent.
 @param f *ast.File: ast file to instrument
 @return error: error or nil
 */
 func instrument_chan(f *ast.File, astSet *token.FileSet) error {
-	// add the import of the goChan library
-	add_goChan_import(f)
+	// add the import of the dedego library
+	add_dedego_import(f)
 
 	var main_func *ast.FuncDecl
 
@@ -82,7 +82,7 @@ func instrument_chan(f *ast.File, astSet *token.FileSet) error {
 		switch n := n.(type) {
 		case *ast.FuncDecl:
 			if n.Name.Obj != nil && n.Name.Obj.Name == "main" {
-				add_goChan_fetch_order(f)
+				add_dedego_fetch_order(f)
 				add_run_analyzer(n)
 				add_init_call(n)
 				main_func = n
@@ -141,10 +141,10 @@ func instrument_chan(f *ast.File, astSet *token.FileSet) error {
 }
 
 /*
-Function to add the import of the goChan library
+Function to add the import of the dedego library
 @param n *ast.File: ast file to instrument
 */
-func add_goChan_import(n *ast.File) {
+func add_dedego_import(n *ast.File) {
 	import_spec := &ast.ImportSpec{
 		Path: &ast.BasicLit{
 			Kind:  token.STRING,
@@ -183,17 +183,17 @@ func add_goChan_import(n *ast.File) {
 }
 
 /*
-Add var goChanFetchOrder = make(map[int]int) as global variable
+Add var dedegoFetchOrder = make(map[int]int) as global variable
 @param n *ast.File: ast file
 */
-func add_goChan_fetch_order(n *ast.File) {
+func add_dedego_fetch_order(n *ast.File) {
 	n.Decls = append(n.Decls, &ast.GenDecl{
 		Tok: token.VAR,
 		Specs: []ast.Spec{
 			&ast.ValueSpec{
 				Names: []*ast.Ident{
 					{
-						Name: "goChanFetchOrder = make(map[int]int)",
+						Name: "dedegoFetchOrder = make(map[int]int)",
 					},
 				},
 			},
@@ -202,8 +202,8 @@ func add_goChan_fetch_order(n *ast.File) {
 }
 
 /*
-Function to add call of goChan.Init(), defer time.Sleep(time.Millisecond)
-and defer goChan.RunAnalyzer() to the main function. The time.Sleep call is used
+Function to add call of dedego.Init(), defer time.Sleep(time.Millisecond)
+and defer dedego.RunAnalyzer() to the main function. The time.Sleep call is used
 to give the go routines a chance to finish there execution.
 @param n *ast.FuncDecl: node of the main function declaration of the ast
 */
@@ -217,7 +217,7 @@ func add_init_call(n *ast.FuncDecl) {
 		&ast.ExprStmt{
 			X: &ast.CallExpr{
 				Fun: &ast.Ident{
-					Name: "goChan.Init",
+					Name: "dedego.Init",
 				},
 				Args: []ast.Expr{
 					&ast.Ident{
@@ -269,7 +269,7 @@ func add_order_in_main(n *ast.FuncDecl) {
 					"id, err1 := strconv.Atoi(ord_split[0]);" +
 					"c, err2 := strconv.Atoi(ord_split[1]);" +
 					"if (err1 == nil && err2 == nil) {" +
-					"goChanFetchOrder[id] = c}}",
+					"dedegoFetchOrder[id] = c}}",
 			},
 		},
 	}, body...)
@@ -286,7 +286,7 @@ func add_run_analyzer(n *ast.FuncDecl) {
 		&ast.ExprStmt{
 			X: &ast.CallExpr{
 				Fun: &ast.Ident{
-					Name: "defer goChan.RunAnalyzer",
+					Name: "defer dedego.RunAnalyzer",
 				},
 			},
 		},
@@ -321,7 +321,7 @@ func instrument_gen_decl(n *ast.GenDecl, c *astutil.Cursor, astSet *token.FileSe
 				type_val := get_name(t_type.Value)
 				if !strings.Contains(type_val, "time.") {
 					n.Specs[i].(*ast.ValueSpec).Type = &ast.Ident{
-						Name: "= goChan.NewChan[" + type_val + "](0)",
+						Name: "= dedego.NewChan[" + type_val + "](0)",
 					}
 				}
 			}
@@ -333,14 +333,14 @@ func instrument_gen_decl(n *ast.GenDecl, c *astutil.Cursor, astSet *token.FileSe
 					case *ast.ChanType:
 						type_val := get_name(t_type.Value)
 						n.Specs[i].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List[j].Type = &ast.Ident{
-							Name: "goChan.Chan[" + type_val + "]",
+							Name: "dedego.Chan[" + type_val + "]",
 						}
 					case *ast.ArrayType:
 						switch elt := t_type.Elt.(type) {
 						case *ast.ChanType:
 							type_string := get_name(elt.Value)
 							n.Specs[i].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List[j].Type.(*ast.ArrayType).Elt = &ast.Ident{
-								Name: "goChan.Chan[" + type_string + "]",
+								Name: "dedego.Chan[" + type_string + "]",
 							}
 						}
 					}
@@ -422,7 +422,7 @@ func instrument_function_declaration_return_values(n *ast.FuncType) []chanRetNil
 
 		translated_string := ""
 		name := get_name(res.Type.(*ast.ChanType).Value)
-		translated_string = "goChan.Chan[" + name + "]"
+		translated_string = "dedego.Chan[" + name + "]"
 		r = append(r, chanRetNil{i, translated_string})
 
 		// set the translated value
@@ -458,11 +458,11 @@ func instrument_function_declaration_parameter(n *ast.FuncType) {
 		translated_string := ""
 		switch v := res.Type.(*ast.ChanType).Value.(type) {
 		case *ast.Ident: // chan <type>
-			translated_string = "goChan.Chan[" + v.Name + "]"
+			translated_string = "dedego.Chan[" + v.Name + "]"
 		case *ast.StructType:
-			translated_string = "goChan.Chan[struct{}]"
+			translated_string = "dedego.Chan[struct{}]"
 		case *ast.ArrayType:
-			translated_string = "goChan.Chan[[]" + get_name(v.Elt) + "]"
+			translated_string = "dedego.Chan[[]" + get_name(v.Elt) + "]"
 		}
 
 		// set the translated value
@@ -544,7 +544,7 @@ func instrument_assign_struct(n *ast.AssignStmt) {
 			size = get_name(t_type.Args[1])
 		}
 
-		n.Rhs[0].(*ast.CompositeLit).Elts[i].(*ast.KeyValueExpr).Value.(*ast.CallExpr).Fun = &ast.Ident{Name: "goChan.NewChan[" + name + "]"}
+		n.Rhs[0].(*ast.CompositeLit).Elts[i].(*ast.KeyValueExpr).Value.(*ast.CallExpr).Fun = &ast.Ident{Name: "dedego.NewChan[" + name + "]"}
 		n.Rhs[0].(*ast.CompositeLit).Elts[i].(*ast.KeyValueExpr).Value.(*ast.CallExpr).Args = []ast.Expr{&ast.Ident{Name: size}}
 	}
 }
@@ -602,7 +602,7 @@ func instrument_range_stm(n *ast.RangeStmt) {
 					case *ast.SelectorExpr:
 						switch x2 := x1.X.(type) {
 						case *ast.Ident:
-							if x2.Name == "goChan" {
+							if x2.Name == "dedego" {
 								n.Key.(*ast.Ident).Name = varName + "_"
 								n.X = &ast.Ident{Name: chanName + ".GetChan()"}
 								n.Body.List = append([]ast.Stmt{
@@ -618,7 +618,7 @@ func instrument_range_stm(n *ast.RangeStmt) {
 						}
 					}
 				case *ast.Ident:
-					if strings.HasPrefix(f.Name, "goChan.NewChan") {
+					if strings.HasPrefix(f.Name, "dedego.NewChan") {
 						n.Key.(*ast.Ident).Name = varName + "_"
 						n.X = &ast.Ident{Name: chanName + ".GetChan()"}
 						n.Body.List = append([]ast.Stmt{
@@ -653,7 +653,7 @@ func instrument_nil_assign(n *ast.AssignStmt, astSet *token.FileSet) {
 	ast.Fprint(buf, astSet, n, nil)
 	name := ""
 	for _, line := range strings.Split(buf.String(), "\n") {
-		if strings.Contains(line, "goChan.Chan") {
+		if strings.Contains(line, "dedego.Chan") {
 			name_split := strings.Split(line, "\"")
 			if len(name_split) > 1 {
 				name = name_split[1]
@@ -695,8 +695,8 @@ func instrument_call_expressions(callExp *ast.CallExpr) {
 				}
 			}
 
-			// set function name to goChan.NewChan[<chanType>]
-			callExp.Fun.(*ast.Ident).Name = "goChan.NewChan[" + chanType + "]"
+			// set function name to dedego.NewChan[<chanType>]
+			callExp.Fun.(*ast.Ident).Name = "dedego.NewChan[" + chanType + "]"
 
 			// remove second argument if size was given in make
 			if len(callExp.Args) >= 1 {
@@ -936,7 +936,7 @@ func is_time_element(n *ast.UnaryExpr) bool {
 	return false
 }
 
-// change close statements to goChan.Close
+// change close statements to dedego.Close
 func instrument_close_statement(n *ast.ExprStmt, c *astutil.Cursor) {
 	x_part := n.X.(*ast.CallExpr)
 
@@ -972,7 +972,7 @@ func instrument_close_statement(n *ast.ExprStmt, c *astutil.Cursor) {
 
 // instrument the creation of new go routines
 func instrument_go_statements(n *ast.GoStmt, c *astutil.Cursor) {
-	var_name := "GoChanRoutineIndex"
+	var_name := "dedegoRoutineIndex"
 
 	var func_body *ast.BlockStmt
 	switch t := n.Call.Fun.(type) {
@@ -1059,7 +1059,7 @@ func instrument_go_statements(n *ast.GoStmt, c *astutil.Cursor) {
 							Rhs: []ast.Expr{
 								&ast.CallExpr{
 									Fun: &ast.Ident{
-										Name: "goChan.SpawnPre",
+										Name: "dedego.SpawnPre",
 									},
 								},
 							},
@@ -1075,7 +1075,7 @@ func instrument_go_statements(n *ast.GoStmt, c *astutil.Cursor) {
 											&ast.ExprStmt{
 												X: &ast.CallExpr{
 													Fun: &ast.Ident{
-														Name: "goChan.SpawnPost",
+														Name: "dedego.SpawnPost",
 													},
 													Args: []ast.Expr{
 														&ast.Ident{
@@ -1120,14 +1120,14 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor) {
 			continue
 		}
 
-		// check for default, add goChan.PostDefault if found
+		// check for default, add dedego.PostDefault if found
 		if c.(*ast.CommClause).Comm == nil {
 			d = true
 			c.(*ast.CommClause).Body = append([]ast.Stmt{
 				&ast.ExprStmt{
 					X: &ast.CallExpr{
 						Fun: &ast.Ident{
-							Name: "goChan.PostDefault",
+							Name: "dedego.PostDefault",
 						},
 					},
 				}}, c.(*ast.CommClause).Body...)
@@ -1270,7 +1270,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor) {
 			&ast.ExprStmt{
 				X: &ast.CallExpr{
 					Fun: &ast.Ident{
-						Name: "goChan.PreSelect",
+						Name: "dedego.PreSelect",
 					},
 					Args: []ast.Expr{
 						&ast.Ident{
@@ -1289,7 +1289,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor) {
 			},
 			Tok: token.DEFINE,
 			Rhs: []ast.Expr{
-				&ast.Ident{Name: "goChan.BuildMessage(" + c.message + ")"},
+				&ast.Ident{Name: "dedego.BuildMessage(" + c.message + ")"},
 			},
 		})
 	}
@@ -1321,7 +1321,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor) {
 	}
 
 	switch_statement := &ast.SwitchStmt{
-		Tag:  &ast.Ident{Name: "goChanFetchOrder[" + fmt.Sprint(select_id) + "]"},
+		Tag:  &ast.Ident{Name: "dedegoFetchOrder[" + fmt.Sprint(select_id) + "]"},
 		Body: &ast.BlockStmt{},
 	}
 
@@ -1419,7 +1419,7 @@ func instrument_if(n *ast.IfStmt, astSet *token.FileSet) {
 	ast.Fprint(buf, astSet, n.Cond.(*ast.BinaryExpr).X, nil)
 	name := ""
 	for _, line := range strings.Split(buf.String(), "\n") {
-		if strings.Contains(line, "goChan.Chan") {
+		if strings.Contains(line, "dedego.Chan") {
 			name_split := strings.Split(line, "\"")
 			if len(name_split) > 1 {
 				name = name_split[1]
@@ -1489,7 +1489,7 @@ func get_name(n ast.Expr) string {
 	case *ast.BasicLit:
 		return n_type.Value
 	case *ast.ChanType:
-		return "goChan.Chan[" + get_name(n_type.Value) + "]"
+		return "dedego.Chan[" + get_name(n_type.Value) + "]"
 	case *ast.StructType:
 		var struct_elem string
 		for i, elem := range n_type.Fields.List {
