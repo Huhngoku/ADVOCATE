@@ -1,4 +1,5 @@
-# GoChan: Dynamic Analysis of Message Passing Go Programms
+Under Implementation. Does not work!
+<!-- GoChan: Dynamic Analysis of Message Passing Go Programms
 
 ## What
 GoChan implements a dynamic detector for concurrency-bugs in Go.
@@ -138,3 +139,4 @@ binary must be directly runnable.
 channels as parameter or return values can lead to errors during the compilation.
 - [GoImports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) must be installed
 - Only tested under Linux
+-->
