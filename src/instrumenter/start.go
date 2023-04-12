@@ -29,9 +29,10 @@ main function and handling of command line arguments
 */
 
 import (
-	"deadlockDetectorGo/gui"
 	"os"
 	"os/exec"
+
+	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
 )
 
 const MAX_TOTAL_WAITING_TIME_SEC = "20"

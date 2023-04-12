@@ -31,7 +31,6 @@ instrument files to work with the
 */
 
 import (
-	"deadlockDetectorGo/gui"
 	"fmt"
 	"go/parser"
 	"go/printer"
@@ -39,6 +38,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
 )
 
 /*

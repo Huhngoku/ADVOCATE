@@ -29,12 +29,13 @@ Get all files from the input path
 */
 
 import (
-	"deadlockDetectorGo/gui"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
 )
 
 // get all files in in and write them into file_names

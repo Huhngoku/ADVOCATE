@@ -1,8 +1,9 @@
 package main
 
 import (
-	"deadlockDetectorGo/gui"
-	"deadlockDetectorGo/instrumenter"
+	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
+	"github.com/ErikKassubek/deadlockDetectorGo/src/instrumenter"
+
 	"os"
 	"strings"
 
