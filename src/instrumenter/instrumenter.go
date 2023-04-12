@@ -48,8 +48,14 @@ Function to perform instrumentation of all list of files
 @return string: name of exec
 @return error: error or nil
 */
-func instrument_files(file_paths []string, elements *gui.GuiElements,
+func InstrumentFiles(elements *gui.GuiElements,
 	status *gui.Status) error {
+	file_paths, err := getAllFiles(status)
+	if err != nil {
+		elements.AddToOutput("Failed to get all files\n")
+		return err
+	}
+
 	for i, file := range file_paths {
 		elements.Output.SetText(elements.Output.Text() +
 			fmt.Sprintf("Instrumenting file %s.\n", file))
@@ -76,7 +82,7 @@ Function to instrument a given file.
 */
 func instrument_file(file_path string, status *gui.Status) error {
 	// create output file
-	output_file, err := os.Create(out + get_relative_path(file_path, status))
+	output_file, err := os.Create(status.Output + get_relative_path(file_path, status))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create output file %s.\n",
 			file_path)
@@ -129,7 +135,7 @@ func instrument_go_file(file_path string, status *gui.Status) error {
 	instrument_mutex(f)
 
 	// print changed ast to output file
-	output_path := out + get_relative_path(file_path, status)
+	output_path := status.Output + get_relative_path(file_path, status)
 	output_file, err := os.OpenFile(output_path, os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Could not open output file %s\n", output_path)

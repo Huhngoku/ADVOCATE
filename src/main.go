@@ -28,6 +28,8 @@ main file to run the program
 */
 
 import (
+	"os/exec"
+
 	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
 	"github.com/ErikKassubek/deadlockDetectorGo/src/instrumenter"
 
@@ -42,10 +44,101 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+const MAX_TOTAL_WAITING_TIME_SEC = "20"
+const SELECT_WAITING_TIME string = "2 * time.Second"
+
+func Run(elements *gui.GuiElements, status *gui.Status) error {
+	elements.AddToOutput("Starting Instrumentation\n")
+
+	// instrument all files in file_names
+	err := instrumenter.InstrumentFiles(elements, status)
+	if err != nil {
+		elements.AddToOutput("Instrumentation Failed: " + err.Error())
+		return err
+	} else {
+		elements.AddToOutput("Instrumentation Complete\n")
+	}
+
+	// build the instrumented program
+	// cmd := exec.Command("go", "build", "-o", status.Name)
+
+	// install analyzer
+	elements.AddToOutput("Installing Analyzer\n")
+	elements.ProgressBuild.SetValue(0.1)
+	cmd := exec.Command("go", "get",
+		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego")
+	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+	out, err := cmd.Output()
+	elements.ProgressBuild.SetValue(0.25)
+	elements.AddToOutput(string(out) + "\n")
+	if err != nil {
+		elements.AddToOutput("Failed to install Analyzer: " + err.Error())
+		return err
+	}
+
+	// TODO: build program
+	elements.ProgressBuild.SetValue(1)
+
+	if err != nil {
+		elements.AddToOutput("Build Failed: " + err.Error())
+		return err
+	} else {
+		elements.AddToOutput("Build Complete.\n")
+	}
+
+	// // create the new main file
+
+	// // read template
+	// dat, err := os.ReadFile("./instrumenter/main_template.txt")
+	// if err != nil {
+	// 	dat, err = os.ReadFile("./main_template.txt")
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// }
+	// data := string(dat)
+
+	// path := ""
+
+	// for _, f := range file_name {
+	// 	file_path_split := strings.Split(f, path_separator)
+	// 	if file_path_split[len(file_path_split)-1] == "main.go" {
+	// 		path = f
+	// 	}
+	// }
+
+	// if path == "" {
+	// 	panic("Could not find main file!")
+	// }
+
+	// path = strings.Replace(path, "main.go", execName, -1)
+
+	// // replace placeholder
+	// data = strings.Replace(data, "$$COMMAND$$", "./"+path, -1)
+
+	// save_size := ""
+	// for _, sw := range select_ops {
+	// 	save_size += "switch_size[" + fmt.Sprint(sw.id) + "] = " + fmt.Sprint(sw.size) + "\n"
+	// }
+
+	// data = strings.Replace(data, "$$SWITCH_SIZE$$", save_size, -1)
+
+	// f, err := os.Create(out + "main.go")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer f.Close()
+
+	// f.Write([]byte(data))
+
+	return nil
+}
+
 func main() {
 	app := app.New()
 	window := app.NewWindow("Deadlock Go Detector")
 	status := gui.Status{}
+	status.Output = os.TempDir() + string(os.PathSeparator) + "dedego"
 	elements := gui.GuiElements{}
 
 	// create elements
@@ -89,7 +182,7 @@ func main() {
 			elements.Progress.Hidden = false
 			elements.ClearOutput()
 			go func() {
-				err := instrumenter.Run(status.FolderPath, &elements, &status)
+				err := Run(&elements, &status)
 				if err != nil {
 					elements.AddToOutput("Analysis Failed")
 				} else {

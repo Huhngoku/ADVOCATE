@@ -47,18 +47,18 @@ The function also copies the folder structure into the output folder.
 @return []string: list of file names
 @return error: Error or nil
 */
-func getAllFiles(path string, status *gui.Status) ([]string, error) {
+func getAllFiles(status *gui.Status) ([]string, error) {
 	// remove old output folder
-	err := os.RemoveAll(out)
+	err := os.RemoveAll(status.Output)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to remove old output folder %s.\n", out)
+		fmt.Fprintf(os.Stderr, "Failed to remove old output folder %s.\n", status.Output)
 		return make([]string, 0), err
 	}
 
 	var file_names []string = make([]string, 0)
 
 	// get all file names
-	err = filepath.Walk(path,
+	err = filepath.Walk(status.FolderPath,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not walk through file path %s.", path)
@@ -79,9 +79,9 @@ func getAllFiles(path string, status *gui.Status) ([]string, error) {
 
 	// get folder structure in path and copy it to out
 	folders := make([]string, 0)
-	in_split := strings.Split(path, string(os.PathSeparator))
-	folders = append(folders, out+in_split[len(in_split)-2])
-	err = filepath.WalkDir(path,
+	in_split := strings.Split(status.FolderPath, string(os.PathSeparator))
+	folders = append(folders, status.Output+in_split[len(in_split)-2])
+	err = filepath.WalkDir(status.FolderPath,
 		func(path string, info fs.DirEntry, err error) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not walk through dir path %s.\n", path)
@@ -89,7 +89,7 @@ func getAllFiles(path string, status *gui.Status) ([]string, error) {
 			}
 
 			if info.IsDir() && path[:1] != "." {
-				folders = append(folders, out+get_relative_path(path, status))
+				folders = append(folders, status.Output+get_relative_path(path, status))
 			}
 			return nil
 		})
