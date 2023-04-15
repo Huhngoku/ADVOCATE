@@ -28,7 +28,13 @@ main file to run the program
 */
 
 import (
+	"fmt"
+	"math/rand"
 	"os/exec"
+	"reflect"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
 	"github.com/ErikKassubek/deadlockDetectorGo/src/instrumenter"
@@ -44,11 +50,28 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func Run(elements *gui.GuiElements, status *gui.Status) error {
-	elements.AddToOutput("Starting Instrumentation\n")
+/*
+Function to run the program
+@param elements *gui.GuiElements: gui elements to display output
+@param status *gui.Status: status of the program
+@return error: error or nil
+*/
+func run(elements *gui.GuiElements, status *gui.Status) error {
+	elements.AddToOutput("Starting Instrumentation")
+
+	// check numeric elements
+	r, _ := regexp.Compile("^[1-9][0-9]*$")
+	r1 := r.MatchString(elements.SettingsMaxRuns.Text)
+	r2 := r.MatchString(elements.SettingsMaxFailed.Text)
+	if !r1 || !r2 {
+		elements.AddToOutput("Max Runs and Max Failed must be numeric")
+		return fmt.Errorf("max Runs and Max Failed must be numeric")
+	}
+	status.SettingsMaxRuns, _ = strconv.Atoi(elements.SettingsMaxRuns.Text)
+	status.SettingsMaxFailed, _ = strconv.Atoi(elements.SettingsMaxFailed.Text)
 
 	// instrument all files in file_names
-	err := instrumenter.InstrumentFiles(elements, status)
+	select_map, err := instrumenter.InstrumentFiles(elements, status)
 	if err != nil {
 		elements.AddToOutput("Instrumentation Failed: " + err.Error())
 		return err
@@ -106,50 +129,171 @@ func Run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.ProgressBuild.SetValue(1)
 	elements.AddToOutput("Program built\n")
 
-	// // create the new main file
+	// analyse the program
+	res := analyse(select_map, status, elements)
 
-	// // read template
-	// dat, err := os.ReadFile("./instrumenter/main_template.txt")
-	// if err != nil {
-	// 	dat, err = os.ReadFile("./main_template.txt")
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// }
-	// data := string(dat)
+	return res
+}
 
-	// path := ""
+/*
+Get a string from a switch order
+@param soe map[int]int: order
+@return string: string representing the switch order
+*/
+func toString(soe map[int]int) string {
+	res := ""
+	i := 0
+	for key, c := range soe {
+		res += fmt.Sprint(key) + "," + fmt.Sprint(c)
+		if i != len(soe)-1 {
+			res += ";"
+		}
+		i++
+	}
+	return res
+}
 
-	// for _, f := range file_name {
-	// 	file_path_split := strings.Split(f, path_separator)
-	// 	if file_path_split[len(file_path_split)-1] == "main.go" {
-	// 		path = f
-	// 	}
-	// }
+/*
+Check if an order was not inserted into the queue before
+@param order map[int]int: map representing an order
+@return bool: true, if the order was not in the queue before, false otherwise
+*/
+func wasNotInQueue(order map[int]int, queue *[]map[int]int) bool {
+	for _, i := range *queue {
+		if reflect.DeepEqual(i, order) {
+			return false
+		}
+	}
+	return true
+}
 
-	// if path == "" {
-	// 	panic("Could not find main file!")
-	// }
+/*
+Check if elem is in list
+@param list *[]string: list to check
+@param elem string: element to check
+@return bool: true if elem is in list, false otherwise
+*/
+func isInList(list []string, elem string) bool {
+	for _, e := range list {
+		if e == elem {
+			return true
+		}
+	}
+	return false
+}
 
-	// path = strings.Replace(path, "main.go", execName, -1)
+/*
+Run the analysis on the instrumented program
+@param switch_size map[int]int: map of switch sizes
+@param status *gui.Status: status of the program
+@param elements *gui.GuiElements: gui elements to display output
+@return error: error or nil
+*/
+func analyse(switch_size map[int]int, status *gui.Status,
+	elements *gui.GuiElements) error {
+	// initialize
+	rand.Seed(time.Now().UTC().UnixNano())
+	var queue = make([]map[int]int, 0)       // orders to test
+	var messages = make(map[string][]string) // collect messages
+	failed := false
 
-	// // replace placeholder
-	// data = strings.Replace(data, "$$COMMAND$$", "./"+path, -1)
+	elements.AddToOutput("Starting Analysis")
+	elements.ProgressAna.SetValue(0.02)
 
-	// save_size := ""
-	// for _, sw := range select_ops {
-	// 	save_size += "switch_size[" + fmt.Sprint(sw.id) + "] = " + fmt.Sprint(sw.size) + "\n"
-	// }
+	elements.AddToOutput("Determine switch execution order")
+	elements.ProgressAna.SetValue(0.05)
 
-	// data = strings.Replace(data, "$$SWITCH_SIZE$$", save_size, -1)
+	no_failed := status.SettingsMaxFailed
+	max_runs := status.SettingsMaxRuns
+	for no_failed > 0 && max_runs > 0 {
+		order_add := make(map[int]int)
+		for key, size := range switch_size {
+			if size <= 0 {
+				size = 1
+			}
+			order_add[key] = rand.Intn(size)
+		}
+		if wasNotInQueue(order_add, &queue) {
+			queue = append(queue, order_add)
+		} else {
+			no_failed -= 1
+		}
+		max_runs -= 1
+	}
 
-	// f, err := os.Create(out + "main.go")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer f.Close()
+	elements.AddToOutput("Starting Program Execution")
+	elements.ProgressAna.SetValue(0.1)
 
-	// f.Write([]byte(data))
+	for i := 0; i < len(queue); i++ {
+		order := queue[i]
+		orderString := toString(order)
+
+		var cmd *exec.Cmd
+
+		os.Chdir(os.TempDir() + string(os.PathSeparator) + "dedego" +
+			string(os.PathSeparator) + status.Name)
+		command := "./" + status.Name + " " + orderString
+
+		cmd = exec.Command(command)
+		out, err := cmd.CombinedOutput()
+		println(string(out))
+		if err != nil {
+			if fmt.Sprint(err) == "exit status 42" {
+				elements.AddToOutput("Runtime exceeded limit")
+			} else {
+				failed = true
+				elements.AddToOutput(err.Error())
+			}
+		}
+
+		output := string(out)
+
+		start := false
+		if !strings.HasPrefix(output, "##@@##") {
+			start = true
+		}
+
+		for i, message := range strings.Split(output, "##@@##") {
+			if len(strings.TrimSpace(message)) == 0 {
+				continue
+			}
+			if strings.Contains(message, "panic: send on closed channel") {
+				m_split := strings.Split(message, "\n")
+				message = "Send on closed channel:\n    " + m_split[len(m_split)-2]
+			}
+			if start && i == 0 {
+				continue
+			}
+			if _, ok := messages[message]; !ok {
+				messages[message] = make([]string, 0)
+			}
+
+			if !isInList(messages[message], orderString) {
+				messages[message] = append(messages[message], orderString)
+			}
+		}
+		elements.ProgressAna.SetValue(0.1 + (0.9 *
+			float64(i) / float64(len(queue))))
+	}
+
+	l := len(messages)
+	if l == 0 && !failed {
+		elements.AddToOutput("No Problems Found")
+	} else if l > 0 {
+		elements.AddToOutput("Found Problems:\n")
+		for message, orders := range messages {
+			if len(orders) != 0 && len(message) != 0 && strings.TrimSpace(orders[0]) != "" {
+				elements.AddToOutput("Found while examine the following orders: ")
+				for _, order := range orders {
+					elements.AddToOutput("  " + order)
+				}
+				elements.AddToOutput("\n")
+			}
+			elements.AddToOutput(message)
+			elements.AddToOutput("\n")
+		}
+		elements.AddToOutput("Note: The positions show the positions in the instrumented code!")
+	}
 
 	return nil
 }
@@ -170,14 +314,24 @@ func main() {
 	elements.OpenBut = widget.NewButton("Open", nil)
 	elements.StartBut = widget.NewButton("Start", nil)
 
+	// create settings
+	elements.SettingsMaxRuns = widget.NewEntry()
+	elements.SettingsMaxFailed = widget.NewEntry()
+	elements.Settings = widget.NewForm(
+		widget.NewFormItem("Number of runs (max)", elements.SettingsMaxRuns),
+		widget.NewFormItem("Number of fails (max)", elements.SettingsMaxFailed),
+	)
+	elements.SettingsMaxRuns.SetText("20")
+	elements.SettingsMaxFailed.SetText("5")
+
 	// create progress bars
 	elements.ProgressInst = widget.NewProgressBar()
 	elements.ProgressBuild = widget.NewProgressBar()
-	elements.ProgressDet = widget.NewProgressBar()
+	elements.ProgressAna = widget.NewProgressBar()
 	elements.Progress = widget.NewForm(
 		widget.NewFormItem("Instrumentation", elements.ProgressInst),
 		widget.NewFormItem("Build", elements.ProgressBuild),
-		widget.NewFormItem("Detection", elements.ProgressDet),
+		widget.NewFormItem("Analysis", elements.ProgressAna),
 	)
 
 	// set button functions
@@ -199,14 +353,17 @@ func main() {
 			elements.Output.SetText("No folder selected!")
 			return
 		} else {
+			elements.ProgressBuild.SetValue(0)
+			elements.ProgressAna.SetValue(0)
+			elements.ProgressAna.SetValue(0)
 			elements.Progress.Hidden = false
 			elements.ClearOutput()
 			go func() {
-				err := Run(&elements, &status)
+				err := run(&elements, &status)
 				if err != nil {
-					elements.AddToOutput("Analysis Failed")
+					elements.AddToOutput("Analysis failed")
 				} else {
-					elements.AddToOutput("Analysis Complete")
+					elements.AddToOutput("Analysis complete")
 				}
 			}()
 		}
@@ -216,9 +373,9 @@ func main() {
 	elements.Progress.Hidden = true
 
 	// create layout
-	leftGrid := container.NewVBox(elements.PathLab, elements.OpenBut,
-		elements.StartBut, elements.Progress)
-	grid := container.New(layout.NewGridLayout(2), leftGrid,
+	gridUp := container.NewVBox(elements.PathLab, elements.OpenBut,
+		elements.StartBut, elements.Settings, elements.Progress)
+	grid := container.New(layout.NewGridLayout(1), gridUp,
 		elements.OutputScroll)
 
 	// show window

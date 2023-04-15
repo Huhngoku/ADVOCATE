@@ -48,15 +48,15 @@ Function to perform instrumentation of all list of files
 @param file_paths []string: list of file names to instrument
 @param gui *gui.GuiElements: gui elements to display output
 @param status *gui.Status: status of the program
-@return string: name of exec
+@return map[int]int: map of select id to size
 @return error: error or nil
 */
 func InstrumentFiles(elements *gui.GuiElements,
-	status *gui.Status) error {
+	status *gui.Status) (map[int]int, error) {
 	file_paths, err := getAllFiles(status)
 	if err != nil {
 		elements.AddToOutput("Failed to get all files\n")
-		return err
+		return nil, err
 	}
 
 	for i, file := range file_paths {
@@ -69,13 +69,19 @@ func InstrumentFiles(elements *gui.GuiElements,
 		if err != nil {
 			e := "Could not intrument file" + file + ".\n" + err.Error()
 			elements.AddToOutput(e)
-			return err
+			return nil, err
 		}
 		prog := float64(i+1) / float64(len(file_paths))
 		elements.ProgressInst.SetValue(prog)
 	}
 
-	return nil
+	// create turn select_ops into map
+	select_map := make(map[int]int)
+	for _, op := range select_ops {
+		select_map[op.id] = op.size
+	}
+
+	return select_map, nil
 }
 
 /*

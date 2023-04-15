@@ -33,15 +33,18 @@ Drop in replacements for (rw)mutex and (Try)(R)lock and (Try)(R-)Unlock
 */
 
 type GuiElements struct {
-	PathLab       *widget.Label
-	Output        *widget.TextGrid
-	OutputScroll  *container.Scroll
-	OpenBut       *widget.Button
-	StartBut      *widget.Button
-	ProgressInst  *widget.ProgressBar
-	ProgressBuild *widget.ProgressBar
-	ProgressDet   *widget.ProgressBar
-	Progress      *widget.Form
+	PathLab           *widget.Label
+	Output            *widget.TextGrid
+	OutputScroll      *container.Scroll
+	OpenBut           *widget.Button
+	StartBut          *widget.Button
+	ProgressInst      *widget.ProgressBar
+	ProgressBuild     *widget.ProgressBar
+	ProgressAna       *widget.ProgressBar
+	Progress          *widget.Form
+	Settings          *widget.Form
+	SettingsMaxRuns   *widget.Entry
+	SettingsMaxFailed *widget.Entry
 }
 
 type Status struct {
@@ -49,6 +52,8 @@ type Status struct {
 	FolderPath              string
 	Name                    string
 	InstrumentationComplete bool
+	SettingsMaxRuns         int
+	SettingsMaxFailed       int
 }
 
 func (gui *GuiElements) AddToOutput(output string) {
