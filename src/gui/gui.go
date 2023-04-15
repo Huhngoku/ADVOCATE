@@ -44,7 +44,6 @@ type GuiElements struct {
 	Progress             *widget.Form
 	Settings             *widget.Form
 	SettingsMaxRuns      *widget.Entry
-	SettingsMaxFailed    *widget.Entry
 	SettingMaxTime       *widget.Entry
 	SettingMaxSelectTime *widget.Entry
 }

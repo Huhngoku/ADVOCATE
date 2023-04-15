@@ -72,6 +72,9 @@ func Init(maxTime int) {
 	routineIndexLock.Unlock()
 
 	go func() {
+		if maxTime == 0 {
+			return // no timeout
+		}
 		t := time.NewTimer(time.Duration(maxTime) * time.Second)
 		<-t.C
 		fmt.Printf("##@@##\nThe programm was terminated by the tracer, because the program "+

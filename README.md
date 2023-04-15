@@ -1,43 +1,115 @@
-Under Implementation. Does not work!
-<!-- GoChan: Dynamic Analysis of Message Passing Go Programms
+# Deadlock Detector Go: Dynamic Analysis of Message Passing Go Programs
 
 ## What
-GoChan implements a dynamic detector for concurrency-bugs in Go.
+Program to run a dynamic analysis of concurrent Go programs to detect 
+possible deadlock situations.
 
-The detector consists of an instrumenter and the detector-library.
-The instrumenter transforms given code into code, which includes the GoChan 
-detector. It will also create a new main file to run the instrumented code.
+### Mutexes
+For mutexes cyclic deadlocks as well as deadlocks by double locking can be detected.
 
-Written elaboration at: https://github.com/ErikKassubek/Bachelorarbeit
+Cyclic Deadlocks are the result of cyclicly blocking routines.
+The following program shows an example:
+```go
+func main() {
+	x := sync.Mutex{}
+	y := sync.Mutex{}
 
-## How to use
-To use the detector you need to clone or download this repository.
-To instrument a program in \<input folder>, run 
-```
-make IN="<input folder>"
-```
-This will create a folder ./output. In this folder, there will be a folder 
-containing the instrumented project. It will also contain a new main.go and 
-a compiled main file.
-The program can now by started by executing this main executable.
-This will run the program and analyzer and at the end produce an output.
+	go func() {
+		x.Lock()  // 1
+		y.Lock()  // 2
+		y.Unlock()
+		x.Unlock()
+	}()
 
-## Example
-Assume we have a folder "project" containing:
+	y.Lock()  // 3
+	x.Lock()  // 4
+	x.Unlock()
+	y.Lock()
+}
 ```
-./instrumenter (dir)
-./Makefile
-./program (dir)
-```
-where "intrumenter" is the folder containing the [instrumenter](https://github.com/ErikKassubek/GoChan/tree/main/instrumenter) and "Makefile" the [Makefile](https://github.com/ErikKassubek/GoChan/blob/main/Makefile).
-The folder "program" is the folder containing the program witch is supposed to be analyzed. In this example it only contains the go.mod file 
-```golang
-module showProg
+If (1) and (3) run simultaneously and before (2) or (4) run, 
+both routines block on (2) and (4) causing a cyclic deadlock.
 
-go 1.19
+Double locking arise if a mutex is locked multiple times by the same routine without unlocking. The following program shows an example:
+```go
+func main() {
+	x := sync.Mutex{}
+
+	x.Lock() 
+	x.Lock()
+}
 ```
-and one program file main.go
-```golang
+In this case the routine blocks it self, which leads to a deadlock.
+
+The program is able to differentiate between mutexes and rw-mutexes. The following example therefore does not lead to any problem because RLock operations do not block each other:
+```go
+func main() {
+	x := sync.RWMutex{}
+	y := sync.RWMutex{}
+
+	go func() {
+		x.RLock()  // 1
+		y.Lock()  // 2
+		y.Unlock()
+		x.Unlock()
+	}()
+
+	y.Lock()  // 3
+	x.RLock()  // 4
+	x.Unlock()
+	y.Lock()
+}
+```
+The program is able to detect problems like these.
+
+### Channels
+Channels can also lead to blocking situations. Let's use the 
+following program as an example:
+```go
+func main() {
+	x := make(chan int)
+
+	go func() {
+		x <- 1  // 1
+		<-x     // 2
+	}()
+
+	go func() {
+		x <- 1  // 3
+	}()
+
+	<-x         // 4
+	time.Sleep(time.Second)
+}
+```
+If (1) communicates with (4) and (3) with (2) everything is fine. But if (3) communicates with (4) (1) has no valid communication partner and will therefore block the routine forever. The program is able to detect situations like these. 
+It can to a certain extend also detect blocking problems 
+with buffered channels. 
+
+To detect problems caused or hidden by select statements, the program is analyzed multiple times with different preferred select cases in the different runs. 
+
+## How to
+Download the ```/src``` folder and run ```go build``` in it to build the program. 
+
+This will create an executable.
+
+By running the executable it will open the following window:
+![Main Window](./screenshots/Window1.png)
+With open, you can select the folder containing the program which is supposed to be analyzed. Please be aware, that clicking the ```Cancel``` button in the folder selection window can cause the program to crash.
+
+The 4 input field allow you to set certain setting. All values must be non-negative integers.
+- Max number of runs: maximum number of runs to analyze. For each run another 
+combination is selected for the preferred case in select statements. Has only an effect 
+if the number of combinations is bigger than the selected value. This can reduce the runtime 
+but will also reduce the chance of finding blocking situations.
+- Max wait time per run: number of seconds per run after which the program will assume, that the program is run into an actual deadlock. In this case the program will be canceled and then analyzed. Set 0 to disable (can cause the program to block forever, not advised).
+- Max wait time per select: number of seconds a select statement will wait for its preferred case before it chooses a random valid case. Set 0 to disable.
+
+Clicking the start button will start the analysis. After the analysis the window 
+will lock similar to the following image:
+![Main Window](./screenshots/Window2.png)
+The image shows the analysis (not all of the output is visible) of the following program:
+```go
 package main
 
 import (
@@ -76,67 +148,11 @@ func main() {
 	c <- 1
 }
 ```
-In the "project" folder we can now run 
-```shell
-$ make IN="./show/"
-```
-This will create an ./output folder in "project" containing 
-```
-program (dir)
-main.go
-main
-```
-The folder "main" contains the instrumented and compiled project. 
-Depending on the project structure, "./output" can also contain other, empty
-folders. They can be ignored. The make will then run the program.
-From this we get the following output
-```
-Determine switch execution order
-Start Program Analysis
-Analyse Program:   0%   1,0
-Analyse Program:  50%   1,1
-Analyse Program: 100%
 
-Finish Analysis
-
-Found Problems:
-
-Found while examine the following orders:   1,0  1,1
-Potential Cyclic Mutex Locking:
-Lock: /home/.../output/show/main.go:109
-  Hs:
-    /home/.../output/show/main.go:108
-Lock: /home/.../output/show/main.go:100
-  Hs:
-    /home/.../output/show/main.go:99
-
-
-Found while examine the following orders:   1,0
-Possible Send to Closed Channel:
-    Close: /home/.../output/show/main.go:48
-    Send: /home/.../output/show/main.go:112
-
-Found while examine the following orders:   1,1
-No communication partner for receive at /home/.../output/show/main.go:103 
-	when running the following communication:
-    /home/.../output/show/main.go:112 -> /home/.../output/show/main.go:65
-    /home/.../output/show/main.go:39 -> /home/.../output/show/main.go:41
-
-No communication partner for receive at /home/.../output/show/main.go:65 
-	when running the following communication:
-    /home/.../output/show/main.go:112 -> /home/.../output/show/main.go:103
-    /home/.../output/show/main.go:39 -> /home/.../output/show/main.go:41
-	
-Note: The positions show the positions in the instrumented code!
-```
-In this example the paths are shortened for readability.
-
-## Note
+## Note 
 - The program must contain a go.mod file.
-- The Programm must be compilable with ```go build```. The created 
-binary must be directly runnable.
-- Please be aware, that using external library functions which have Mutexe or 
-channels as parameter or return values can lead to errors during the compilation.
-- [GoImports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) must be installed
-- Only tested under Linux
--->
+- The program must be compilable with go build. The created binary must be directly runnable.
+- Please be aware, that using external library functions which have Mutexes or channels as parameter or return values can lead to errors during the compilation.
+- GoImports must be installed
+- Only tested with Linux 
+

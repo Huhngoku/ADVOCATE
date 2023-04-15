@@ -61,13 +61,13 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.AddToOutput("Starting Instrumentation")
 
 	// check numeric elements
-	r, _ := regexp.Compile("^[1-9][0-9]*$")
-	r1 := r.MatchString(elements.SettingsMaxRuns.Text)
-	r2 := r.MatchString(elements.SettingsMaxFailed.Text)
+	r, _ := regexp.Compile("^[0-9][0-9]*$")
+	r0, _ := regexp.Compile("^[1-9][0-9]*$")
+	r1 := r0.MatchString(elements.SettingsMaxRuns.Text)
 	r3 := r.MatchString(elements.SettingMaxTime.Text)
 	r4 := r.MatchString(elements.SettingMaxSelectTime.Text)
-	if !r1 || !r2 {
-		elements.AddToOutput("Max Runs and Max Failed must be numeric")
+	if !r1 {
+		elements.AddToOutput("Max Runs must be numeric and greater or equal to 1")
 		return fmt.Errorf("max Runs and Max Failed must be numeric")
 	}
 	if !r3 || !r4 {
@@ -75,10 +75,13 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 		return fmt.Errorf("max times must be numeric")
 	}
 	status.SettingsMaxRuns, _ = strconv.Atoi(elements.SettingsMaxRuns.Text)
-	status.SettingsMaxFailed, _ = strconv.Atoi(elements.SettingsMaxFailed.Text)
+	status.SettingsMaxFailed = status.SettingsMaxRuns / 2
 	status.SettingMaxTime, _ = strconv.Atoi(elements.SettingMaxTime.Text)
 	status.SettingMaxSelectTime, _ = strconv.Atoi(
 		elements.SettingMaxSelectTime.Text)
+	if status.SettingMaxSelectTime <= 0 {
+		status.SettingMaxSelectTime = 2147483647
+	}
 
 	// instrument files
 	select_map, err := instrumenter.InstrumentFiles(elements, status)
@@ -310,6 +313,7 @@ func analyse(switch_size map[int]int, status *gui.Status,
 	if failed {
 		return errors.New("analysis failed")
 	}
+	elements.ProgressAna.SetValue(1)
 	return nil
 }
 
@@ -318,7 +322,7 @@ Main function
 */
 func main() {
 	app := app.New()
-	window := app.NewWindow("Deadlock Go Detector")
+	window := app.NewWindow("Deadlock Detector Go")
 	status := gui.Status{}
 	status.Output = os.TempDir() + string(os.PathSeparator) + "dedego"
 	elements := gui.GuiElements{}
@@ -334,19 +338,16 @@ func main() {
 
 	// create settings
 	elements.SettingsMaxRuns = widget.NewEntry()
-	elements.SettingsMaxFailed = widget.NewEntry()
 	elements.SettingMaxTime = widget.NewEntry()
 	elements.SettingMaxSelectTime = widget.NewEntry()
 	elements.Settings = widget.NewForm(
+		widget.NewFormItem("Max number of runs", elements.SettingsMaxRuns),
 		widget.NewFormItem("Max wait time per run (s)",
 			elements.SettingMaxTime),
 		widget.NewFormItem("Max wait time per select (s)",
 			elements.SettingMaxSelectTime),
-		widget.NewFormItem("Number of runs (max)", elements.SettingsMaxRuns),
-		widget.NewFormItem("Number of fails (max)", elements.SettingsMaxFailed),
 	)
 	elements.SettingsMaxRuns.SetText("20")
-	elements.SettingsMaxFailed.SetText("5")
 	elements.SettingMaxTime.SetText("20")
 	elements.SettingMaxSelectTime.SetText("2")
 
@@ -402,7 +403,7 @@ func main() {
 
 	// create layout
 	gridUp := container.NewVBox(elements.PathLab, elements.OpenBut,
-		elements.StartBut, elements.Settings, elements.Progress)
+		elements.Settings, elements.StartBut, elements.Progress)
 	grid := container.New(layout.NewGridLayout(1), gridUp,
 		elements.OutputScroll)
 
