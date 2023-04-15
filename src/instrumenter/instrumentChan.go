@@ -33,6 +33,7 @@ import (
 	"go/ast"
 	"go/token"
 	"math/rand"
+	"strconv"
 	"strings"
 
 	"golang.org/x/tools/go/ast/astutil"
@@ -69,7 +70,8 @@ of this channels are replaced by there dedego equivalent.
 @param f *ast.File: ast file to instrument
 @return error: error or nil
 */
-func instrument_chan(f *ast.File, astSet *token.FileSet) error {
+func instrument_chan(f *ast.File, astSet *token.FileSet, maxTime int,
+	maxSelectTime int) error {
 	// add the import of the dedego library
 	add_dedego_import(f)
 
@@ -84,7 +86,7 @@ func instrument_chan(f *ast.File, astSet *token.FileSet) error {
 			if n.Name.Obj != nil && n.Name.Obj.Name == "main" {
 				add_dedego_fetch_order(f)
 				add_run_analyzer(n)
-				add_init_call(n)
+				add_init_call(n, maxTime)
 				main_func = n
 			} else {
 				instrument_function_declarations(n, c)
@@ -122,7 +124,7 @@ func instrument_chan(f *ast.File, astSet *token.FileSet) error {
 		case *ast.GoStmt: // handle the creation of new go routines
 			instrument_go_statements(n, c)
 		case *ast.SelectStmt: // handel select statements
-			instrument_select_statements(n, c)
+			instrument_select_statements(n, c, maxSelectTime)
 		case *ast.RangeStmt: // range
 			instrument_range_stm(n)
 		case *ast.ReturnStmt: // return <- c
@@ -207,7 +209,7 @@ and defer dedego.RunAnalyzer() to the main function. The time.Sleep call is used
 to give the go routines a chance to finish there execution.
 @param n *ast.FuncDecl: node of the main function declaration of the ast
 */
-func add_init_call(n *ast.FuncDecl) {
+func add_init_call(n *ast.FuncDecl, maxTime int) {
 	body := n.Body.List
 	if body == nil {
 		return
@@ -221,7 +223,7 @@ func add_init_call(n *ast.FuncDecl) {
 				},
 				Args: []ast.Expr{
 					&ast.Ident{
-						Name: MAX_TOTAL_WAITING_TIME_SEC,
+						Name: strconv.Itoa(maxTime),
 					},
 				},
 			},
@@ -1100,7 +1102,8 @@ func instrument_go_statements(n *ast.GoStmt, c *astutil.Cursor) {
 }
 
 // instrument select statements
-func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor) {
+func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
+	selectTime int) {
 	// collect cases and replace <-i with i.GetChan()
 	selectIdCounter++
 	select_id := selectIdCounter
@@ -1339,7 +1342,10 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor) {
 										Fun: &ast.Ident{
 											Name: "<- time.After",
 										},
-										Args: []ast.Expr{&ast.Ident{Name: SELECT_WAITING_TIME}},
+										Args: []ast.Expr{
+											&ast.Ident{
+												Name: strconv.Itoa(selectTime) +
+													" * time.Second"}},
 									},
 								},
 								Body: []ast.Stmt{original_select},

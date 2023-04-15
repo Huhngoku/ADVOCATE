@@ -40,9 +40,6 @@ import (
 	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
 )
 
-const MAX_TOTAL_WAITING_TIME_SEC = "20"
-const SELECT_WAITING_TIME string = "2 * time.Second"
-
 /*
 Function to perform instrumentation of all list of files
 @param file_paths []string: list of file names to instrument
@@ -140,7 +137,8 @@ func instrument_go_file(file_path string, status *gui.Status) error {
 		return err
 	}
 
-	instrument_chan(f, astSet)
+	instrument_chan(f, astSet, status.SettingMaxTime,
+		status.SettingMaxSelectTime)
 	instrument_mutex(f)
 
 	// print changed ast to output file

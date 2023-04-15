@@ -28,6 +28,7 @@ main file to run the program
 */
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"os/exec"
@@ -63,14 +64,23 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	r, _ := regexp.Compile("^[1-9][0-9]*$")
 	r1 := r.MatchString(elements.SettingsMaxRuns.Text)
 	r2 := r.MatchString(elements.SettingsMaxFailed.Text)
+	r3 := r.MatchString(elements.SettingMaxTime.Text)
+	r4 := r.MatchString(elements.SettingMaxSelectTime.Text)
 	if !r1 || !r2 {
 		elements.AddToOutput("Max Runs and Max Failed must be numeric")
 		return fmt.Errorf("max Runs and Max Failed must be numeric")
 	}
+	if !r3 || !r4 {
+		elements.AddToOutput("Times must be numeric (int)")
+		return fmt.Errorf("max times must be numeric")
+	}
 	status.SettingsMaxRuns, _ = strconv.Atoi(elements.SettingsMaxRuns.Text)
 	status.SettingsMaxFailed, _ = strconv.Atoi(elements.SettingsMaxFailed.Text)
+	status.SettingMaxTime, _ = strconv.Atoi(elements.SettingMaxTime.Text)
+	status.SettingMaxSelectTime, _ = strconv.Atoi(
+		elements.SettingMaxSelectTime.Text)
 
-	// instrument all files in file_names
+	// instrument files
 	select_map, err := instrumenter.InstrumentFiles(elements, status)
 	if err != nil {
 		elements.AddToOutput("Instrumentation Failed: " + err.Error())
@@ -78,9 +88,6 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	} else {
 		elements.AddToOutput("Instrumentation Complete\n")
 	}
-
-	// build the instrumented program
-	// cmd := exec.Command("go", "build", "-o", status.Name)
 
 	// install analyzer
 	elements.AddToOutput("Installing Analyzer")
@@ -114,9 +121,8 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.ProgressBuild.SetValue(0.3)
 	elements.AddToOutput("Files cleaned up\n")
 
-	// TODO: build program
 	elements.AddToOutput("Building program")
-	cmd = exec.Command("go", "build")
+	cmd = exec.Command("go", "build", "-o", status.Name)
 	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
 	out, err = cmd.Output()
 	if len(out) > 0 {
@@ -221,7 +227,7 @@ func analyse(switch_size map[int]int, status *gui.Status,
 		max_runs -= 1
 	}
 
-	elements.AddToOutput("Starting Program Execution")
+	elements.AddToOutput("Starting Program Execution\n")
 	elements.ProgressAna.SetValue(0.1)
 
 	for i := 0; i < len(queue); i++ {
@@ -232,11 +238,14 @@ func analyse(switch_size map[int]int, status *gui.Status,
 
 		os.Chdir(os.TempDir() + string(os.PathSeparator) + "dedego" +
 			string(os.PathSeparator) + status.Name)
-		command := "./" + status.Name + " " + orderString
+		command := "./" + status.Name
 
-		cmd = exec.Command(command)
+		if orderString == "" {
+			cmd = exec.Command(command)
+		} else {
+			cmd = exec.Command(command, orderString)
+		}
 		out, err := cmd.CombinedOutput()
-		println(string(out))
 		if err != nil {
 			if fmt.Sprint(err) == "exit status 42" {
 				elements.AddToOutput("Runtime exceeded limit")
@@ -259,7 +268,8 @@ func analyse(switch_size map[int]int, status *gui.Status,
 			}
 			if strings.Contains(message, "panic: send on closed channel") {
 				m_split := strings.Split(message, "\n")
-				message = "Send on closed channel:\n    " + m_split[len(m_split)-2]
+				message = "Send on closed channel:\n    " +
+					m_split[len(m_split)-2]
 			}
 			if start && i == 0 {
 				continue
@@ -273,17 +283,19 @@ func analyse(switch_size map[int]int, status *gui.Status,
 			}
 		}
 		elements.ProgressAna.SetValue(0.1 + (0.9 *
-			float64(i) / float64(len(queue))))
+			float64(i+1) / float64(len(queue))))
 	}
 
 	l := len(messages)
 	if l == 0 && !failed {
-		elements.AddToOutput("No Problems Found")
+		elements.AddToOutput("No Problems Found\n")
 	} else if l > 0 {
 		elements.AddToOutput("Found Problems:\n")
 		for message, orders := range messages {
-			if len(orders) != 0 && len(message) != 0 && strings.TrimSpace(orders[0]) != "" {
-				elements.AddToOutput("Found while examine the following orders: ")
+			if len(orders) != 0 && len(message) != 0 &&
+				strings.TrimSpace(orders[0]) != "" {
+				elements.AddToOutput(
+					"Found while examine the following orders: ")
 				for _, order := range orders {
 					elements.AddToOutput("  " + order)
 				}
@@ -292,12 +304,18 @@ func analyse(switch_size map[int]int, status *gui.Status,
 			elements.AddToOutput(message)
 			elements.AddToOutput("\n")
 		}
-		elements.AddToOutput("Note: The positions show the positions in the instrumented code!")
+		elements.AddToOutput(
+			"Note: The positions show the positions in the instrumented code!")
 	}
-
+	if failed {
+		return errors.New("analysis failed")
+	}
 	return nil
 }
 
+/*
+Main function
+*/
 func main() {
 	app := app.New()
 	window := app.NewWindow("Deadlock Go Detector")
@@ -317,12 +335,20 @@ func main() {
 	// create settings
 	elements.SettingsMaxRuns = widget.NewEntry()
 	elements.SettingsMaxFailed = widget.NewEntry()
+	elements.SettingMaxTime = widget.NewEntry()
+	elements.SettingMaxSelectTime = widget.NewEntry()
 	elements.Settings = widget.NewForm(
+		widget.NewFormItem("Max wait time per run (s)",
+			elements.SettingMaxTime),
+		widget.NewFormItem("Max wait time per select (s)",
+			elements.SettingMaxSelectTime),
 		widget.NewFormItem("Number of runs (max)", elements.SettingsMaxRuns),
 		widget.NewFormItem("Number of fails (max)", elements.SettingsMaxFailed),
 	)
 	elements.SettingsMaxRuns.SetText("20")
 	elements.SettingsMaxFailed.SetText("5")
+	elements.SettingMaxTime.SetText("20")
+	elements.SettingMaxSelectTime.SetText("2")
 
 	// create progress bars
 	elements.ProgressInst = widget.NewProgressBar()
@@ -341,7 +367,8 @@ func main() {
 		fileDialog := dialog.NewFolderOpen(
 			func(r fyne.ListableURI, _ error) {
 				status.FolderPath = r.Path()
-				splitPath := strings.Split(status.FolderPath, string(os.PathSeparator))
+				splitPath := strings.Split(status.FolderPath,
+					string(os.PathSeparator))
 				status.Name = splitPath[len(splitPath)-1]
 				elements.PathLab.SetText("Path: " + status.FolderPath)
 			}, window)
@@ -360,6 +387,7 @@ func main() {
 			elements.ClearOutput()
 			go func() {
 				err := run(&elements, &status)
+				elements.AddToOutput("")
 				if err != nil {
 					elements.AddToOutput("Analysis failed")
 				} else {
