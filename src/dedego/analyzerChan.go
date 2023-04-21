@@ -687,9 +687,9 @@ func update_receive(vectorClock [][]int, routineRec int, routineSend int, vector
 
 	c[routineRec][routineRec]++
 
-	if c[routineRec][routineRec] <= vectorClockSender[routineRec] {
-		c[routineRec][routineRec] = vectorClockSender[routineRec] + 1
-	}
+	// if c[routineRec][routineRec] <= vectorClockSender[routineRec] {
+	// 	c[routineRec][routineRec] = vectorClockSender[routineRec] + 1
+	// }
 
 	for l := 0; l < len(c[routineRec]); l++ {
 		if c[routineRec][l] < vectorClockSender[l] {
