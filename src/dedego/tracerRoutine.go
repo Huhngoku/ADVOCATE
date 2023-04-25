@@ -33,11 +33,19 @@ tracerRoutine.go
 Drop in replacements to create and start a new go routine
 */
 
+func StartRoutine(f func(args ...interface{}), args ...interface{}) {
+	id := spawnPre()
+	go func() {
+		spawnPost(id)
+		f(args...)
+	}()
+}
+
 /*
 Function to call before the creation of a new routine in the old routine
 @return id of the new routine
 */
-func SpawnPre() uint32 {
+func spawnPre() uint32 {
 	nr := atomic.AddUint32(&numberRoutines, 1)
 	index := getIndex()
 
@@ -56,7 +64,7 @@ func SpawnPre() uint32 {
 Function to call after the creation of a new routine in the new routine
 @param numRut uint32: id of the new routine
 */
-func SpawnPost(numRut uint32) {
+func spawnPost(numRut uint32) {
 	id := goid.Get()
 
 	timestamp := atomic.AddUint32(&counter, 1)

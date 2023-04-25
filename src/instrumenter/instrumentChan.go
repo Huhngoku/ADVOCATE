@@ -32,7 +32,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -40,6 +39,7 @@ import (
 )
 
 var selectIdCounter int = 0
+var selectCaseCounter int = 0
 
 /*
 Type for the select_ops list
@@ -1151,7 +1151,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
 				if f.Sel.Name == "Receive" {
 					name = get_name(f.X)
 					cases = append(cases, name)
-					assign_name = "sel_" + randStr(8)
+					assign_name = get_select_case_name()
 					cases_receive = append(cases_receive, "true")
 					rec = "true"
 
@@ -1166,7 +1166,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
 					name = get_name(f.X)
 					cases = append(cases, name)
 
-					assign_name = "sel_" + randStr(8)
+					assign_name = get_select_case_name()
 					cases_receive = append(cases_receive, "false")
 					rec = "false"
 
@@ -1185,7 +1185,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
 			}
 
 		case *ast.AssignStmt: // receive with assign
-			assign_name = "sel_" + randStr(10)
+			assign_name = get_select_case_name()
 			assigned_name := get_name(c_type.Lhs[0])
 
 			get_info_string := "GetInfo()"
@@ -1529,22 +1529,8 @@ func get_selector_expression_name(n *ast.SelectorExpr) string {
 	return get_name(n.X) + "." + n.Sel.Name
 }
 
-// get random string of length n
-func randStr(n int) string {
-	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
-}
-
-func unravel_selector_expr(n *ast.SelectorExpr) *ast.Ident {
-	switch x_type := n.X.(type) {
-	case *ast.SelectorExpr:
-		return unravel_selector_expr(x_type)
-	case *ast.Ident:
-		return x_type
-	}
-	return nil
+// get select case name
+func get_select_case_name() string {
+	selectCaseCounter++
+	return "selectCaseDedego_" + strconv.Itoa(selectCaseCounter)
 }
