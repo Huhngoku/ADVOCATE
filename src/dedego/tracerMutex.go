@@ -152,7 +152,7 @@ func NewRWMutex() RWMutex {
 /*
 Get the underlying rw-mutex
 */
-func (m *RWMutex) GetRWMutex() *sync.RWMutex {
+func (m *RWMutex) GetMutex() *sync.RWMutex {
 	return m.mu
 }
 
