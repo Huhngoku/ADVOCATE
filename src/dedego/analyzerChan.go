@@ -424,7 +424,9 @@ Function to find runs which lead to problems
 @param vcTrace []vct: VCT
 @returns string: string with found problems
 */
-func findImpossibleCommunication(rs map[infoTime][]infoTime, listOfStart []infoTime, path map[infoTime]infoTime, send bool, vcTrace []vcn) string {
+func findImpossibleCommunication(rs map[infoTime][]infoTime,
+	listOfStart []infoTime, path map[infoTime]infoTime, send bool,
+	vcTrace []vcn) string {
 	if len(listOfStart) == 0 {
 		return ""
 	}

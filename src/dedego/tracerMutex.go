@@ -52,6 +52,13 @@ func NewMutex() Mutex {
 }
 
 /*
+Return the underlying mutex
+*/
+func (m *Mutex) GetMutex() *sync.Mutex {
+	return m.mu
+}
+
+/*
 Function to lock a Mutex.
 @receiver *Mutex
 */
@@ -140,6 +147,13 @@ Function to create and initialize a new RWMutex
 func NewRWMutex() RWMutex {
 	m := RWMutex{mu: &sync.RWMutex{}, creation: getPosition(1), id: atomic.AddUint32(&numberOfMutex, 1)}
 	return m
+}
+
+/*
+Get the underlying rw-mutex
+*/
+func (m *RWMutex) GetRWMutex() *sync.RWMutex {
+	return m.mu
 }
 
 /*

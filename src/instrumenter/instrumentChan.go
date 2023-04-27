@@ -974,7 +974,7 @@ func instrument_close_statement(n *ast.ExprStmt, c *astutil.Cursor) {
 
 // instrument the creation of new go routines
 func instrument_go_statements(n *ast.GoStmt, c *astutil.Cursor) {
-	var_name := "dedegoRoutineIndex"
+	var_name := "DedegoRoutineIndex"
 
 	var func_body *ast.BlockStmt
 	switch t := n.Call.Fun.(type) {
