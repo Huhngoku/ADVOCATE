@@ -30,6 +30,7 @@ instrument files to work with the
 
 import (
 	"fmt"
+	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
@@ -38,6 +39,7 @@ import (
 	"strings"
 
 	"github.com/ErikKassubek/deadlockDetectorGo/src/gui"
+	"golang.org/x/tools/go/ast/astutil"
 )
 
 /*
@@ -137,9 +139,12 @@ func instrument_go_file(file_path string, status *gui.Status) error {
 		return err
 	}
 
+	imports := get_imports(f)
+	fmt.Println(imports)
+
 	instrument_chan(f, astSet, status.SettingMaxTime,
 		status.SettingMaxSelectTime)
-	instrument_mutex(f)
+	instrument_mutex(f, astSet, imports)
 
 	// print changed ast to output file
 	output_path := status.Output + get_relative_path(file_path, status)
@@ -155,6 +160,26 @@ func instrument_go_file(file_path string, status *gui.Status) error {
 	}
 
 	return nil
+}
+
+func get_imports(f *ast.File) []string {
+	res := []string{}
+	astutil.Apply(f, nil, func(c *astutil.Cursor) bool {
+		n := c.Node()
+		switch d := n.(type) {
+		case *ast.ImportSpec:
+			if d.Name != nil {
+				res = append(res, d.Name.Name)
+			} else {
+				path := strings.Split(d.Path.Value, "/")
+				name := strings.ReplaceAll(path[len(path)-1], "\"", "")
+				res = append(res, name)
+			}
+		}
+
+		return true
+	})
+	return res
 }
 
 func get_relative_path(file string, status *gui.Status) string {

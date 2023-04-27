@@ -27,6 +27,7 @@ Instrument mutex in files
 */
 
 import (
+	"fmt"
 	"go/ast"
 	"go/token"
 
@@ -34,12 +35,14 @@ import (
 )
 
 // instrument a given ast file f
-func instrument_mutex(f *ast.File) error {
+func instrument_mutex(f *ast.File, astSet *token.FileSet, libs []string) error {
 	astutil.Apply(f, nil, func(c *astutil.Cursor) bool {
+
 		n := c.Node()
 
 		switch n_type := n.(type) {
 		case *ast.FuncDecl:
+			ast.Print(astSet, n_type)
 			instrument_function_declarations_mut(n_type, c)
 		case *ast.DeclStmt:
 			instrument_mutex_decl(n_type, c)
@@ -49,6 +52,13 @@ func instrument_mutex(f *ast.File) error {
 			switch n_type.Rhs[0].(type) {
 			case *ast.CompositeLit:
 				instrument_assign_struct_mut(n_type, c)
+			}
+		case *ast.ExprStmt: // library function calls
+			if n_type.X != nil {
+				switch d := n_type.X.(type) {
+				case *ast.CallExpr:
+					instrument_call_expr_mut(d, c, libs)
+				}
 			}
 		}
 
@@ -310,6 +320,38 @@ func instrument_assign_struct_mut(n *ast.AssignStmt, c *astutil.Cursor) {
 
 		n.Rhs[0] = &ast.Ident{
 			Name: name_str,
+		}
+	}
+}
+
+// func instrument library expressions
+func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string) {
+	if d.Fun == nil {
+		return
+	}
+
+	switch d.Fun.(type) {
+	case *ast.SelectorExpr:
+	default:
+		return
+	}
+
+	name := get_name(d.Fun.(*ast.SelectorExpr).X)
+
+	args := d.Args
+	if len(args) == 0 { // no arguments
+		return
+	}
+
+	// check if function is a library function
+	for _, n := range libs {
+		if name != n {
+			continue
+		}
+
+		// function is a library function
+		for _, a := range args {
+			fmt.Println(get_name(a.(type)))
 		}
 	}
 }
