@@ -72,6 +72,9 @@ Check for double locking
 func checkForDoubleLocking() (bool, []string) {
 	r := false
 	res := make([]string, 0)
+	if len(traces) == 0 {
+		return r, res
+	}
 	for _, trace := range traces {
 		switch a := trace[len(trace)-1].(type) {
 		case *TraceLock:
