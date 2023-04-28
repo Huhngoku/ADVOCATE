@@ -27,9 +27,9 @@ Instrument mutex in files
 */
 
 import (
-	"fmt"
 	"go/ast"
 	"go/token"
+	"strings"
 
 	"golang.org/x/tools/go/ast/astutil"
 )
@@ -42,22 +42,23 @@ func instrument_mutex(f *ast.File, astSet *token.FileSet, libs []string) error {
 
 		switch n_type := n.(type) {
 		case *ast.FuncDecl:
-			ast.Print(astSet, n_type)
 			instrument_function_declarations_mut(n_type, c)
 		case *ast.DeclStmt:
 			instrument_mutex_decl(n_type, c)
 		case *ast.GenDecl: // add import of dedego lib if other libs get imported
 			instrument_gen_decl_mut(n_type, c)
 		case *ast.AssignStmt:
-			switch n_type.Rhs[0].(type) {
+			switch d := n_type.Rhs[0].(type) {
 			case *ast.CompositeLit:
 				instrument_assign_struct_mut(n_type, c)
+			case *ast.CallExpr:
+				instrument_call_expr_mut(d, c, libs, astSet)
 			}
 		case *ast.ExprStmt: // library function calls
 			if n_type.X != nil {
 				switch d := n_type.X.(type) {
 				case *ast.CallExpr:
-					instrument_call_expr_mut(d, c, libs)
+					instrument_call_expr_mut(d, c, libs, astSet)
 				}
 			}
 		}
@@ -325,7 +326,8 @@ func instrument_assign_struct_mut(n *ast.AssignStmt, c *astutil.Cursor) {
 }
 
 // func instrument library expressions
-func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string) {
+func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string,
+	astSet *token.FileSet) {
 	if d.Fun == nil {
 		return
 	}
@@ -350,8 +352,61 @@ func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string)
 		}
 
 		// function is a library function
-		for _, a := range args {
-			fmt.Println(get_name(a.(type)))
+		for i, a := range args {
+			change := false
+			op := ""
+
+			switch a_type := a.(type) {
+			case *ast.Ident:
+				decl := a_type.Obj.Decl
+				switch decl_type := decl.(type) {
+				case *ast.AssignStmt:
+					t := get_name(decl_type.Rhs[0])
+					if t == "dedego.NewMutex()" || t == "dedego.NewRWMutex()" {
+						change = true
+					}
+				case *ast.ValueSpec:
+					t := get_name(decl_type.Type)
+					if t == "= dedego.NewMutex()" || t == "= dedego.NewRWMutex()" {
+						change = true
+					}
+				}
+
+			case *ast.UnaryExpr:
+				decl := a_type.X.(*ast.Ident).Obj.Decl
+				op = a_type.Op.String()
+				switch decl_type := decl.(type) {
+				case *ast.AssignStmt:
+					t := get_name(decl_type.Rhs[0])
+					if t == "dedego.NewMutex()" || t == "dedego.NewRWMutex()" {
+						change = true
+					}
+				case *ast.ValueSpec:
+					t := get_name(decl_type.Type)
+					if t == "= dedego.NewMutex()" || t == "= dedego.NewRWMutex()" {
+						change = true
+					}
+				}
+
+			default:
+				panic("not implemented") // TODO: remove
+			}
+
+			if !change {
+				continue
+			}
+
+			arg_name := strings.ReplaceAll(get_name(a), op, "")
+			// // change the argument
+			if op == "" {
+				args[i] = &ast.Ident{
+					Name: "*(" + arg_name + ".GetMutex())",
+				}
+			} else if op == "&" {
+				args[i] = &ast.Ident{
+					Name: arg_name + ".GetMutex()",
+				}
+			}
 		}
 	}
 }
