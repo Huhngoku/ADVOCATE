@@ -140,10 +140,9 @@ func instrument_go_file(file_path string, status *gui.Status) error {
 	}
 
 	imports := get_imports(f)
-	fmt.Println(imports)
 
 	instrument_chan(f, astSet, status.SettingMaxTime,
-		status.SettingMaxSelectTime)
+		status.SettingMaxSelectTime, imports)
 	instrument_mutex(f, astSet, imports)
 
 	// print changed ast to output file

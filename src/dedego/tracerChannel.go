@@ -48,7 +48,7 @@ type Message[T any] struct {
 Funktion to create a message.
 This function is mainly used, when sending a message in a select statement
 @param info T: info to send
-@return Message[T]: message object wich can be send
+@return Message[T]: message object witch can be send
 */
 func BuildMessage[T any](info T) Message[T] {
 	index := getIndex()

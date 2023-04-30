@@ -340,8 +340,7 @@ func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string,
 
 	name := get_name(d.Fun.(*ast.SelectorExpr).X)
 
-	args := d.Args
-	if len(args) == 0 { // no arguments
+	if d.Args == nil { // no arguments
 		return
 	}
 
@@ -352,12 +351,15 @@ func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string,
 		}
 
 		// function is a library function
-		for i, a := range args {
+		for i, a := range d.Args {
 			change := false
 			op := ""
 
 			switch a_type := a.(type) {
 			case *ast.Ident:
+				if a_type.Obj == nil {
+					continue
+				}
 				decl := a_type.Obj.Decl
 				switch decl_type := decl.(type) {
 				case *ast.AssignStmt:
@@ -387,9 +389,7 @@ func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string,
 						change = true
 					}
 				}
-
 			default:
-				panic("not implemented") // TODO: remove
 			}
 
 			if !change {
@@ -399,11 +399,11 @@ func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string,
 			arg_name := strings.ReplaceAll(get_name(a), op, "")
 			// // change the argument
 			if op == "" {
-				args[i] = &ast.Ident{
+				d.Args[i] = &ast.Ident{
 					Name: "*(" + arg_name + ".GetMutex())",
 				}
 			} else if op == "&" {
-				args[i] = &ast.Ident{
+				d.Args[i] = &ast.Ident{
 					Name: arg_name + ".GetMutex()",
 				}
 			}

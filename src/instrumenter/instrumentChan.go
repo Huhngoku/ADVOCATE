@@ -31,6 +31,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/printer"
 	"go/token"
 	"strconv"
 	"strings"
@@ -68,10 +69,15 @@ var select_ops = make([]select_op, 0)
 Function to instrument a given ast.File with channels. Channels and operation
 of this channels are replaced by there dedego equivalent.
 @param f *ast.File: ast file to instrument
+@param astSet *token.FileSet: token file set
+@param maxTime int: maximum time to wait for the program
+@param maxSelectTime int: maximum time to wait for a select operation
+@param imports []string: list of imported libraries
 @return error: error or nil
 */
 func instrument_chan(f *ast.File, astSet *token.FileSet, maxTime int,
-	maxSelectTime int) error {
+	maxSelectTime int, imports []string) error {
+	// ast.Print(astSet, f)
 	// add the import of the dedego library
 	add_dedego_import(f)
 
@@ -114,7 +120,7 @@ func instrument_chan(f *ast.File, astSet *token.FileSet, maxTime int,
 				instrument_nil_assign(n, astSet)
 			}
 		case *ast.CallExpr: // call expression
-			instrument_call_expressions(n)
+			instrument_call_expressions(n, c, astSet, imports)
 		case *ast.SendStmt: // handle send messages
 			instrument_send_statement(n, c)
 		case *ast.ExprStmt: // handle receive and close
@@ -669,15 +675,32 @@ func instrument_nil_assign(n *ast.AssignStmt, astSet *token.FileSet) {
 
 }
 
-// instrument if n is a call expression
-func instrument_call_expressions(callExp *ast.CallExpr) {
+/*
+instrument the call expression. This contains instrumentation of make and
+library function calls
+@params callExp: the call expression to instrument
+@params c: the cursor
+@params astSet: the ast file set
+@params imports: list of imported libraries
+*/
+func instrument_call_expressions(callExp *ast.CallExpr, c *astutil.Cursor,
+	astSet *token.FileSet, imports []string) {
 
-	// don't change call expression of non-make function
 	switch callExp.Fun.(type) {
-	case *ast.IndexExpr, *ast.SelectorExpr:
-		return
+	case *ast.Ident:
+		instrument_make(callExp)
+	case *ast.SelectorExpr:
+		instrument_library_function_call(callExp, c, astSet, imports)
 	}
 
+}
+
+/*
+instrument the make of a channel
+@params callExp: the call expression to instrument
+*/
+func instrument_make(callExp *ast.CallExpr) {
+	// don't change call expression of non-make function
 	if get_name(callExp.Fun) == "make" {
 		switch callExp.Args[0].(type) {
 		// make creates a channel
@@ -709,6 +732,92 @@ func instrument_call_expressions(callExp *ast.CallExpr) {
 			callExp.Args[0] = &ast.BasicLit{Kind: token.INT, Value: "int(" + chanSize + ")"}
 		}
 	}
+}
+
+/*
+instrument a function call of a library function
+@params n: the call expression to instrument
+@params c: the cursor
+@params astSet: the ast file set
+@params imports: list of imported libraries
+*/
+func instrument_library_function_call(n *ast.CallExpr, c *astutil.Cursor,
+	astSet *token.FileSet, imports []string) {
+	// check if function call has selector
+	switch n.Fun.(type) {
+	case *ast.SelectorExpr:
+	default:
+		return
+	}
+
+	sel := n.Fun.(*ast.SelectorExpr)
+	// check if selector is in imports
+	name := get_name(sel.X)
+	// check if selector is in imports
+	for _, imp := range imports {
+		if name != imp {
+			continue
+		}
+		if n.Args == nil {
+			return
+		}
+
+		// check find args with type chan
+		var channels []string
+		var types []string
+		var sizes []string
+
+		for i, arg := range n.Args {
+			switch arg.(type) {
+			case *ast.Ident:
+				decl := arg.(*ast.Ident).Obj.Decl
+				switch decl_type := decl.(type) {
+				case *ast.AssignStmt:
+					decl_name := get_name(decl_type.Rhs[0])
+					if decl_name[:14] == "dedego.NewChan" {
+						chanName := get_name(decl_type.Lhs[0])
+						chanType := strings.Split(decl_name[15:], "]")[0]
+						decl_val := decl_type.Rhs[0].(*ast.CallExpr).Args[0].(*ast.BasicLit).Value
+						chanSize := decl_val[4 : len(decl_val)-1]
+						channels = append(channels, chanName)
+						types = append(types, chanType)
+						sizes = append(sizes, chanSize)
+						n.Args[i] = &ast.Ident{Name: chanName + "_dedego"}
+					}
+				case *ast.UnaryExpr:
+					panic("TODO: Implement unary expression") // TODO: Implement unary expression
+				default:
+				}
+			}
+
+			// get string representation of function
+			buf := new(bytes.Buffer)
+			printer.Fprint(buf, astSet, n)
+
+			replacement_string := "{\n"
+
+			for i, channel := range channels {
+				replacement_string += channel + "_dedego := make(chan " +
+					types[i] + ", " + sizes[i] + ")\n"
+				replacement_string += "go func() {\n"
+				replacement_string += "select {\n"
+				replacement_string += "case " + "dedego_case := <- " + channel +
+					"_dedego:\n" + channel + ".Send(dedego_case)\n"
+				replacement_string += "case dedego_case := <-" + channel +
+					".GetChan():\n" + channel + "_dedego <- dedego_case.GetInfo()\n"
+				replacement_string += "}\n}()\n"
+			}
+
+			replacement_string += buf.String() + "\n"
+
+			replacement_string += "}"
+
+			c.Replace(&ast.Ident{
+				Name: replacement_string,
+			})
+		}
+	}
+
 }
 
 // instrument a send statement
@@ -833,7 +942,7 @@ func instrument_expression_statement(n *ast.ExprStmt, c *astutil.Cursor) {
 		instrument_receive_statement(n, c)
 	case *ast.CallExpr:
 		instrument_close_statement(n, c)
-	case *ast.TypeAssertExpr:
+	case *ast.TypeAssertExpr, *ast.Ident:
 	default:
 		errString := fmt.Sprintf("Unknown type %T in instrument_expression_statement", x_part)
 		panic(errString)
