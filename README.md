@@ -152,7 +152,6 @@ func main() {
 ## Note 
 - The program must contain a go.mod file.
 - The program must be compilable with go build. The created binary must be directly runnable.
-- Please be aware, that using external library functions which have Mutexes or channels as parameter or return values can lead to errors during the compilation.
 - GoImports must be installed
 - Only tested with Linux 
 
