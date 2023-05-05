@@ -804,7 +804,8 @@ func instrument_library_function_call(n *ast.CallExpr, c *astutil.Cursor,
 				replacement_string += "case " + "dedego_case := <- " + channel +
 					"_dedego:\n" + channel + ".Send(dedego_case)\n"
 				replacement_string += "case dedego_case := <-" + channel +
-					".GetChan():\n" + channel + "_dedego <- dedego_case.GetInfo()\n"
+					".GetChan():\n" + channel + ".Post(true, dedego_case)\n" +
+					channel + "_dedego <- dedego_case.GetInfo()\n"
 				replacement_string += "}\n}()\n"
 			}
 
