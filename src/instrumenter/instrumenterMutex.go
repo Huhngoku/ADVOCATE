@@ -375,6 +375,11 @@ func instrument_call_expr_mut(d *ast.CallExpr, c *astutil.Cursor, libs []string,
 				}
 
 			case *ast.UnaryExpr:
+				switch a_type.X.(type) {
+				case *ast.Ident:
+				default:
+					continue
+				}
 				decl := a_type.X.(*ast.Ident).Obj.Decl
 				op = a_type.Op.String()
 				switch decl_type := decl.(type) {

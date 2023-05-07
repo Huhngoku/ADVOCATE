@@ -125,7 +125,7 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.AddToOutput("Files cleaned up\n")
 
 	elements.AddToOutput("Building program")
-	cmd = exec.Command("go", "build", "-o", status.Name)
+	cmd = exec.Command("go", "build", "-o", "dedego_instrumented")
 	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
 	out, err = cmd.Output()
 	if len(out) > 0 {
@@ -241,7 +241,7 @@ func analyse(switch_size map[int]int, status *gui.Status,
 
 		os.Chdir(os.TempDir() + string(os.PathSeparator) + "dedego" +
 			string(os.PathSeparator) + status.Name)
-		command := "./" + status.Name
+		command := "./" + "dedego_instrumented"
 
 		if orderString == "" {
 			cmd = exec.Command(command)

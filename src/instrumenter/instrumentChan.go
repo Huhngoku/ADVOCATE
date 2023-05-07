@@ -321,6 +321,7 @@ Function to instrument the declarations of channels, structs and interfaces.
 @param c *astutil.Cursor: cursor that traverses the ast
 */
 func instrument_gen_decl(n *ast.GenDecl, c *astutil.Cursor, astSet *token.FileSet) {
+	// ast.Print(astSet, n)
 	for i, s := range n.Specs {
 		switch s_type := s.(type) {
 		case *ast.ValueSpec:
@@ -644,8 +645,6 @@ func instrument_range_stm(n *ast.RangeStmt) {
 			}
 		}
 	}
-
-	// ast.Print(astSet, n.X.(*ast.Ident).Obj.Decl.(*ast.AssignStmt).Rhs[0].(*ast.CallExpr).Fun.(*ast.IndexExpr).X.(*ast.SelectorExpr).X.(*ast.Ident).Name)
 }
 
 func instrument_nil_assign(n *ast.AssignStmt, astSet *token.FileSet) {
@@ -654,11 +653,10 @@ func instrument_nil_assign(n *ast.AssignStmt, astSet *token.FileSet) {
 	default:
 		return
 	}
-	if n.Rhs[0].(*ast.Ident).Name != "nil" {
+	if get_name(n.Rhs[0]) != "nil" {
 		return
 	}
 	buf := new(bytes.Buffer)
-	ast.Fprint(buf, astSet, n, nil)
 	name := ""
 	for _, line := range strings.Split(buf.String(), "\n") {
 		if strings.Contains(line, "dedego.Chan") {
@@ -768,13 +766,16 @@ func instrument_library_function_call(n *ast.CallExpr, c *astutil.Cursor,
 		var sizes []string
 
 		for i, arg := range n.Args {
-			switch arg.(type) {
+			switch arg_type := arg.(type) {
 			case *ast.Ident:
-				decl := arg.(*ast.Ident).Obj.Decl
+				if arg_type.Obj == nil || arg_type.Obj.Decl == nil {
+					continue
+				}
+				decl := arg_type.Obj.Decl
 				switch decl_type := decl.(type) {
 				case *ast.AssignStmt:
 					decl_name := get_name(decl_type.Rhs[0])
-					if decl_name[:14] == "dedego.NewChan" {
+					if len(decl_name) >= 14 && decl_name[:14] == "dedego.NewChan" {
 						chanName := get_name(decl_type.Lhs[0])
 						chanType := strings.Split(decl_name[15:], "]")[0]
 						decl_val := decl_type.Rhs[0].(*ast.CallExpr).Args[0].(*ast.BasicLit).Value
@@ -787,38 +788,43 @@ func instrument_library_function_call(n *ast.CallExpr, c *astutil.Cursor,
 				case *ast.UnaryExpr:
 					panic("TODO: Implement unary expression") // TODO: Implement unary expression
 				default:
+					continue
 				}
 			}
-
-			// get string representation of function
-			buf := new(bytes.Buffer)
-			printer.Fprint(buf, astSet, n)
-
-			replacement_string := "{\n"
-
-			for i, channel := range channels {
-				replacement_string += channel + "_dedego := make(chan " +
-					types[i] + ", " + sizes[i] + ")\n"
-				replacement_string += "go func() {\n"
-				replacement_string += "select {\n"
-				replacement_string += "case " + "dedego_case := <- " + channel +
-					"_dedego:\n" + channel + ".Send(dedego_case)\n"
-				replacement_string += "case dedego_case := <-" + channel +
-					".GetChan():\n" + channel + ".Post(true, dedego_case)\n" +
-					channel + "_dedego <- dedego_case.GetInfo()\n"
-				replacement_string += "}\n}()\n"
-			}
-
-			replacement_string += buf.String() + "\n"
-
-			replacement_string += "}"
-
-			c.Replace(&ast.Ident{
-				Name: replacement_string,
-			})
 		}
-	}
 
+		if len(channels) == 0 {
+			continue
+		}
+
+		// get string representation of function
+		buf := new(bytes.Buffer)
+		printer.Fprint(buf, astSet, n)
+
+		replacement_string := "{\n"
+
+		for i, channel := range channels {
+			replacement_string += channel + "_dedego := make(chan " +
+				types[i] + ", " + sizes[i] + ")\n"
+			replacement_string += "go func() {\n"
+			replacement_string += "select {\n"
+			replacement_string += "case " + "dedego_case := <- " + channel +
+				"_dedego:\n" + channel + ".Send(dedego_case)\n"
+			replacement_string += "case dedego_case := <-" + channel +
+				".GetChan():\n" + channel + ".Post(true, dedego_case)\n" +
+				channel + "_dedego <- dedego_case.GetInfo()\n"
+			replacement_string += "}\n}()\n"
+		}
+
+		replacement_string += buf.String() + "\n"
+
+		replacement_string += "}"
+
+		c.Replace(&ast.Ident{
+			Name: replacement_string,
+		})
+
+	}
 }
 
 // instrument a send statement
@@ -1013,6 +1019,9 @@ func instrument_receive_statement(n *ast.ExprStmt, c *astutil.Cursor) {
 func is_time_element(n *ast.UnaryExpr) bool {
 	switch x_part_x := n.X.(type) {
 	case *ast.Ident:
+		if x_part_x.Obj == nil || x_part_x.Obj.Decl == nil {
+			return false
+		}
 		switch decl := x_part_x.Obj.Decl.(type) {
 		case *ast.ValueSpec:
 			switch v := decl.Type.(type) {
@@ -1527,7 +1536,8 @@ func instrument_if(n *ast.IfStmt, astSet *token.FileSet) {
 		return
 	}
 
-	if n.Cond.(*ast.BinaryExpr).Y.(*ast.Ident).Name != "nil" {
+	if n.Cond.(*ast.BinaryExpr).Y.(*ast.Ident).Name == "nil" { // BUG: change to channel.GetChan() if comparrison with channel
+		ast.Print(astSet, n)
 		return
 	}
 
