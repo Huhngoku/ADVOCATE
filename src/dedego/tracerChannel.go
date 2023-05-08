@@ -111,7 +111,7 @@ Getter for the chan field of a Chan object.
 @receiver *Chan[T]
 @return chan Message[T]: chan field of channel
 */
-func (ch Chan[T]) GetChan() chan Message[T] {
+func (ch *Chan[T]) GetChan() chan Message[T] {
 	return ch.c
 }
 
@@ -120,8 +120,22 @@ Getter fir the id field of a Chan object
 @receiver *Chan[T]
 @return uint32: id of the Chan
 */
-func (ch Chan[T]) GetId() uint32 {
+func (ch *Chan[T]) GetId() uint32 {
 	return ch.id
+}
+
+/*
+Set the channel to nil
+*/
+func (ch *Chan[T]) SetNil() {
+	ch.c = nil
+}
+
+/*
+Get if a channel is nil
+*/
+func (ch *Chan[T]) IsNil() bool {
+	return ch.c == nil
 }
 
 /*
