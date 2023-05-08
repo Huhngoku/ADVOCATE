@@ -96,7 +96,7 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.AddToOutput("Installing Analyzer")
 	elements.ProgressBuild.SetValue(0.1)
 	cmd := exec.Command("go", "get",
-		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego")
+		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego@d44a3cc")
 	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
 	out, err := cmd.Output()
 	if len(out) > 0 {

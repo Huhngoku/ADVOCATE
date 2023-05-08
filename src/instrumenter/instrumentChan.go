@@ -562,11 +562,6 @@ func instrument_assign_struct(n *ast.AssignStmt) {
 func instrument_range_stm(n *ast.RangeStmt) {
 
 	// switch n.Rhs[0].Body.List
-	switch n.Key.(type) {
-	case *ast.Ident:
-	default:
-		return
-	}
 
 	get_info_string := "_.GetInfo()"
 
@@ -1536,8 +1531,26 @@ func instrument_if(n *ast.IfStmt, astSet *token.FileSet) {
 		return
 	}
 
-	if n.Cond.(*ast.BinaryExpr).Y.(*ast.Ident).Name == "nil" { // BUG: change to channel.GetChan() if comparrison with channel
-		ast.Print(astSet, n)
+	if n.Cond.(*ast.BinaryExpr).Y.(*ast.Ident).Name == "nil" {
+		// ast.Print(astSet, n.Cond.(*ast.BinaryExpr).X)
+		switch x_type := n.Cond.(*ast.BinaryExpr).X.(type) {
+		case *ast.Ident:
+			switch decl_type := x_type.Obj.Decl.(type) {
+			case *ast.ValueSpec:
+				if get_name(decl_type.Type) == "error" {
+					return
+				}
+			case *ast.Field:
+				if get_name(decl_type.Type) == "error" {
+					return
+				}
+			}
+		}
+		name := get_name(n.Cond.(*ast.BinaryExpr).X)
+		if name == "err" {
+			return
+		}
+		n.Cond.(*ast.BinaryExpr).X = &ast.Ident{Name: name + ".GetChan()"}
 		return
 	}
 

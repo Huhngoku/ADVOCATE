@@ -235,7 +235,7 @@ func (ch Chan[T]) ReceiveOk() (T, bool) {
 /*
 Function as drop-in replacement for closing a channel.
 */
-func (ch Chan[T]) Close() {
+func (ch *Chan[T]) Close() {
 	index := getIndex()
 	timestamp := atomic.AddUint32(&counter, 1)
 	position := getPosition(1)
@@ -248,4 +248,11 @@ func (ch Chan[T]) Close() {
 	traces[index] = append(traces[index], &TraceClose{position: position, timestamp: timestamp,
 		chanId: ch.id, chanCreation: ch.creation})
 	tracesLock.Unlock()
+}
+
+/*
+Return if channel is closed
+*/
+func (ch Chan[T]) IsClosed() bool {
+	return !ch.open
 }
