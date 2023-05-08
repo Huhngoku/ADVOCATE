@@ -58,7 +58,11 @@ Function to run the program
 @return error: error or nil
 */
 func run(elements *gui.GuiElements, status *gui.Status) error {
-	elements.AddToOutput("Starting Instrumentation")
+	if status.Instrument {
+		elements.AddToOutput("Starting Instrumentation")
+	} else {
+		elements.AddToOutput("Analyse files")
+	}
 
 	// check numeric elements
 	r, _ := regexp.Compile("^[0-9][0-9]*$")
@@ -86,18 +90,34 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	// instrument files
 	select_map, err := instrumenter.InstrumentFiles(elements, status)
 	if err != nil {
-		elements.AddToOutput("Instrumentation Failed: " + err.Error())
+		if status.Instrument {
+			elements.AddToOutput("Instrumentation Failed: " + err.Error())
+		} else {
+			elements.AddToOutput("Analysis Failed: " + err.Error())
+		}
 		return err
 	} else {
-		elements.AddToOutput("Instrumentation Complete\n")
+		if status.Instrument {
+			elements.AddToOutput("Instrumentation Complete\n")
+		} else {
+			elements.AddToOutput("Analysis Complete\n")
+		}
+	}
+
+	if !status.Instrument {
+		status.Output = status.FolderPath
 	}
 
 	// install analyzer
 	elements.AddToOutput("Installing Analyzer")
 	elements.ProgressBuild.SetValue(0.1)
 	cmd := exec.Command("go", "get",
-		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego@d44a3cc")
-	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+		"github.com/ErikKassubek/deadlockDetectorGo/src/dedego")
+	if status.Instrument {
+		cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+	} else {
+		cmd.Dir = status.Output
+	}
 	out, err := cmd.Output()
 	if len(out) > 0 {
 		elements.AddToOutput(string(out) + "")
@@ -110,23 +130,29 @@ func run(elements *gui.GuiElements, status *gui.Status) error {
 	elements.ProgressBuild.SetValue(0.2)
 
 	// cleanup files
-	elements.AddToOutput("Cleaning up files")
-	cmd = exec.Command("goimports", "-w", ".")
-	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
-	out, err = cmd.Output()
-	if len(out) > 0 {
-		elements.AddToOutput(string(out))
+	if status.Instrument {
+		elements.AddToOutput("Cleaning up files")
+		cmd = exec.Command("goimports", "-w", ".")
+		cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+		out, err = cmd.Output()
+		if len(out) > 0 {
+			elements.AddToOutput(string(out))
+		}
+		if err != nil {
+			elements.AddToOutput("Failed to cleanup files: " + err.Error())
+			return err
+		}
+		elements.ProgressBuild.SetValue(0.3)
+		elements.AddToOutput("Files cleaned up\n")
 	}
-	if err != nil {
-		elements.AddToOutput("Failed to cleanup files: " + err.Error())
-		return err
-	}
-	elements.ProgressBuild.SetValue(0.3)
-	elements.AddToOutput("Files cleaned up\n")
 
 	elements.AddToOutput("Building program")
 	cmd = exec.Command("go", "build", "-o", "dedego_instrumented")
-	cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+	if status.Instrument {
+		cmd.Dir = status.Output + string(os.PathSeparator) + status.Name
+	} else {
+		cmd.Dir = status.Output
+	}
 	out, err = cmd.Output()
 	if len(out) > 0 {
 		elements.AddToOutput(string(out))
@@ -239,9 +265,15 @@ func analyse(switch_size map[int]int, status *gui.Status,
 
 		var cmd *exec.Cmd
 
-		os.Chdir(os.TempDir() + string(os.PathSeparator) + "dedego" +
-			string(os.PathSeparator) + status.Name)
+		if status.Instrument {
+			os.Chdir(os.TempDir() + string(os.PathSeparator) + "dedego" +
+				string(os.PathSeparator) + status.Name)
+		} else {
+			os.Chdir(status.Output)
+		}
 		command := "./" + "dedego_instrumented"
+
+		print(command, orderString)
 
 		if orderString == "" {
 			cmd = exec.Command(command)
@@ -340,6 +372,19 @@ func main() {
 	elements.SettingsMaxRuns = widget.NewEntry()
 	elements.SettingMaxTime = widget.NewEntry()
 	elements.SettingMaxSelectTime = widget.NewEntry()
+	elements.InfoText = widget.NewLabel("Those settings are only used if the input code is not instrumented!")
+	buttonText := "Input code is instrumented"
+	if status.Instrument {
+		buttonText = "Input code is not instrumented"
+	}
+	elements.InstrumentButton = widget.NewButton(buttonText, func() {
+		status.Instrument = !status.Instrument
+		if status.Instrument {
+			elements.InstrumentButton.SetText("Input code is instrumented")
+		} else {
+			elements.InstrumentButton.SetText("Input code is not instrumented")
+		}
+	})
 	elements.Settings = widget.NewForm(
 		widget.NewFormItem("Max number of runs", elements.SettingsMaxRuns),
 		widget.NewFormItem("Max wait time per run (s)",
@@ -403,7 +448,9 @@ func main() {
 
 	// create layout
 	gridUp := container.NewVBox(elements.PathLab, elements.OpenBut,
-		elements.Settings, elements.StartBut, elements.Progress)
+		elements.InstrumentButton,
+		elements.Settings, elements.InfoText,
+		elements.StartBut, elements.Progress)
 	grid := container.New(layout.NewGridLayout(1), gridUp,
 		elements.OutputScroll)
 

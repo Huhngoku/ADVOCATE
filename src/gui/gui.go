@@ -46,6 +46,8 @@ type GuiElements struct {
 	SettingsMaxRuns      *widget.Entry
 	SettingMaxTime       *widget.Entry
 	SettingMaxSelectTime *widget.Entry
+	InstrumentButton     *widget.Button
+	InfoText             *widget.Label
 }
 
 type Status struct {
@@ -57,6 +59,7 @@ type Status struct {
 	SettingsMaxFailed       int
 	SettingMaxTime          int
 	SettingMaxSelectTime    int
+	Instrument              bool
 }
 
 func (gui *GuiElements) AddToOutput(output string) {

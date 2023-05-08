@@ -49,16 +49,18 @@ The function also copies the folder structure into the output folder.
 */
 func getAllFiles(status *gui.Status) ([]string, error) {
 	// remove old output folder
-	err := os.RemoveAll(status.Output)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to remove old output folder %s.\n", status.Output)
-		return make([]string, 0), err
+	if status.Instrument {
+		err := os.RemoveAll(status.Output)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to remove old output folder %s.\n", status.Output)
+			return make([]string, 0), err
+		}
 	}
 
 	var file_names []string = make([]string, 0)
 
 	// get all file names
-	err = filepath.Walk(status.FolderPath,
+	err := filepath.Walk(status.FolderPath,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Could not walk through file path %s.", path)

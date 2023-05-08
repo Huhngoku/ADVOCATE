@@ -59,8 +59,13 @@ func InstrumentFiles(elements *gui.GuiElements,
 	}
 
 	for i, file := range file_paths {
-		elements.Output.SetText(elements.Output.Text() +
-			fmt.Sprintf("Instrumenting file %s.\n", file))
+		if status.Instrument {
+			elements.Output.SetText(elements.Output.Text() +
+				fmt.Sprintf("Instrumenting file %s.\n", file))
+		} else {
+			elements.Output.SetText(elements.Output.Text() +
+				fmt.Sprintf("Analysing file %s.\n", file))
+		}
 		elements.OutputScroll.ScrollToBottom()
 
 		// instrument the file
