@@ -1,5 +1,8 @@
 # Deadlock Detector Go: Dynamic Analysis of Message Passing Go Programs
 
+<font color="red">Warning: The code, particularly the instrumenter, contains multiple bug which means, that the analyzer can only run with manual corrections.</font>
+
+
 ## What
 Program to run a dynamic analysis of concurrent Go programs to detect 
 possible deadlock situations.
