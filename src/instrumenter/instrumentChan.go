@@ -130,7 +130,7 @@ func instrument_chan(f *ast.File, astSet *token.FileSet, maxTime int,
 		case *ast.GoStmt: // handle the creation of new go routines
 			instrument_go_statements(n, c)
 		case *ast.SelectStmt: // handel select statements
-			instrument_select_statements(n, c, maxSelectTime)
+			instrument_select_statements(n, c, maxSelectTime, astSet)
 		case *ast.RangeStmt: // range
 			instrument_range_stm(n)
 		case *ast.ReturnStmt: // return <- c
@@ -1217,7 +1217,7 @@ func instrument_go_statements(n *ast.GoStmt, c *astutil.Cursor) {
 
 // instrument select statements
 func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
-	selectTime int) {
+	selectTime int, astSet *token.FileSet) {
 	// collect cases and replace <-i with i.GetChan()
 	selectIdCounter++
 	select_id := selectIdCounter
@@ -1413,13 +1413,6 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
 
 	block.List = append(block.List, n)
 
-	// collect select options
-	size := len(cases)
-	if d {
-		size++
-	}
-	select_ops = append(select_ops, select_op{id: select_id, size: size})
-
 	// transform to select with switch
 	var original_select *ast.SelectStmt
 	var original_select_index int
@@ -1489,6 +1482,14 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
 	}
 
 	cur.Replace(block)
+
+	// collect select options
+	size := len(cases)
+	if d {
+		size++
+	}
+	ast.Print(astSet, block)
+	select_ops = append(select_ops, select_op{id: select_id, size: size})
 }
 
 /*

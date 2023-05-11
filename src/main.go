@@ -280,6 +280,7 @@ func analyse(switch_size map[int]int, status *gui.Status,
 		} else {
 			cmd = exec.Command(command, orderString)
 		}
+		fmt.Println(command + " " + orderString)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			if fmt.Sprint(err) == "exit status 42" {
@@ -355,7 +356,7 @@ Main function
 func main() {
 	app := app.New()
 	window := app.NewWindow("Deadlock Detector Go")
-	status := gui.Status{}
+	status := gui.Status{Instrument: true}
 	status.Output = os.TempDir() + string(os.PathSeparator) + "dedego"
 	elements := gui.GuiElements{}
 
