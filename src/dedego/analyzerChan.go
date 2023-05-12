@@ -136,7 +136,6 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 	}
 
 	for i, elem := range traceTotal {
-
 		switch e := elem.elem.(type) {
 		case *TraceSignal:
 			vectorClocks[i+1] = update_send(vectorClocks[i], int(elem.routine))
@@ -146,8 +145,13 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 				switch t := traceTotal[j].elem.(type) {
 				case *TraceSignal:
 					if t.routine == e.routine {
-						vectorClocks[i+1] = update_receive(vectorClocks[i], int(e.routine), int(traceTotal[j].routine),
-							vectorClocks[int(t.GetTimestamp())][traceTotal[j].routine], true)
+						if len(vectorClocks[int(t.GetTimestamp())]) > int(traceTotal[j].routine) {
+							vectorClocks[i+1] = update_receive(vectorClocks[i], int(e.routine), int(traceTotal[j].routine),
+								vectorClocks[int(t.GetTimestamp())][traceTotal[j].routine], true)
+						} else {
+							vectorClocks[i+1] = update_receive(vectorClocks[i], int(e.routine), int(traceTotal[j].routine),
+								make([]int, len(traces)), true)
+						}
 						b = true
 					}
 				}
@@ -161,8 +165,13 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 			} else {
 				for j := i - 1; j >= 0; j-- {
 					if e.senderTimestamp == traceTotal[j].elem.GetTimestamp() {
-						vectorClocks[i+1] = update_receive(vectorClocks[i], int(elem.routine), int(traceTotal[j].routine),
-							vectorClocks[int(e.senderTimestamp)][traceTotal[j].routine], false)
+						if len(vectorClocks[int(e.senderTimestamp)]) > int(traceTotal[j].routine) {
+							vectorClocks[i+1] = update_receive(vectorClocks[i], int(elem.routine), int(traceTotal[j].routine),
+								vectorClocks[int(e.senderTimestamp)][traceTotal[j].routine], false)
+						} else {
+							vectorClocks[i+1] = update_receive(vectorClocks[i], int(elem.routine), int(traceTotal[j].routine),
+								make([]int, len(traces)), false)
+						}
 						break
 					}
 
