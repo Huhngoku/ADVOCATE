@@ -258,10 +258,12 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 					}
 				}
 			case *TraceClose:
-				vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
-					creation: pre.chanCreation, routine: i, position: pre.position, pre: vectorClocks[int(pre.GetTimestamp())][i],
-					post:   vectorClocks[int(pre.GetTimestamp())][i],
-					mutexe: mut})
+				if len(vectorClocks[int(pre.GetTimestamp())]) > i {
+					vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
+						creation: pre.chanCreation, routine: i, position: pre.position, pre: vectorClocks[int(pre.GetTimestamp())][i],
+						post:   vectorClocks[int(pre.GetTimestamp())][i],
+						mutexe: mut})
+				}
 			case *TraceLock:
 				mut = append(mut, mutexElem{pre.lockId, pre.read})
 			case *TraceUnlock:
