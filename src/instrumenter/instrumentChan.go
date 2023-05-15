@@ -1488,7 +1488,7 @@ func instrument_select_statements(n *ast.SelectStmt, cur *astutil.Cursor,
 	if d {
 		size++
 	}
-	ast.Print(astSet, block)
+	// ast.Print(astSet, block)
 	select_ops = append(select_ops, select_op{id: select_id, size: size})
 }
 
