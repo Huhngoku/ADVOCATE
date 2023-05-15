@@ -1,4 +1,4 @@
-# Deadlock Detector Go: Dynamic Analysis of Message Passing Go Programs
+# Dynamic Analysis of Message Passing Go Programs
 
 Warning: The code, particularly the instrumenter, contains multiple bug which means, that the analyzer can only run with manual corrections.
 
