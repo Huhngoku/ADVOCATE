@@ -229,7 +229,9 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 					for k := j + 1; k < len(trace); k++ {
 						switch post := trace[k].(type) {
 						case *TracePost:
-							if post.chanId == channel.id {
+							if post.chanId == channel.id &&
+								len(vectorClocks[int(pre.GetTimestamp())]) > i &&
+								len(vectorClocks[int(post.GetTimestamp())]) > i {
 								vcTrace = append(vcTrace, vcn{id: channel.id, preTime: pre.timestamp,
 									creation: post.chanCreation, routine: i, position: pre.position, send: !channel.receive,
 									pre: vectorClocks[int(pre.GetTimestamp())][i], post: vectorClocks[int(post.GetTimestamp())][i],
