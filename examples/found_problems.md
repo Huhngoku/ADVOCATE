@@ -1,5 +1,5 @@
-# go-dsp (https://github.com/mjibson/go-dsp/tree/master): 
-No communication partner for send at /.../radix.go:130 (corresponds to line 138 in original radix.go)
+# go-dsp (https://github.com/mjibson/go-dsp): 
+No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/go-dsp_inst/radix.go:130
 
 
 # pg-zip (https://github.com/klauspost/pgzip)
@@ -8,8 +8,6 @@ No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/e
 No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/pgzip_inst/gunzip.go:94
 
 No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/pgzip_inst/gunzip.go:556
-
-No communication partner for receive at /home/erikkassubek/go/pkg/mod/github.com/!erik!kassubek/deadlock!detector!go/src@v0.0.0-20230512152322-c40f0574f529/dedego/tracerChannel.go:231
 
 No communication partner for receive at /home/erikkassubek/Uni/deadlockDetectorGo/examples/pgzip_inst/gunzip.go:375 when running the following communication:
     /home/erikkassubek/Uni/deadlockDetectorGo/examples/pgzip_inst/gunzip.go:94 -> /home/erikkassubek/Uni/deadlockDetectorGo/examples/pgzip_inst/gunzip.go:375
@@ -38,3 +36,24 @@ No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/e
     /home/erikkassubek/Uni/deadlockDetectorGo/examples/htcat_inst/defrag.go:326 -> /home/erikkassubek/Uni/deadlockDetectorGo/examples/htcat_inst/defrag.go:81
 
 No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/htcat_inst/defrag.go:282
+
+# sorty (https://github.com/jfcg/sorty)
+
+No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/sorty_inst/sortyI8.go:150
+
+No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/sorty_inst/sortyI8.go:150 when running the following communication:
+    /home/erikkassubek/Uni/deadlockDetectorGo/examples/sorty_inst/sortyI8.go:241 -> /home/erikkassubek/Uni/deadlockDetectorGo/examples/sorty_inst/sortyI8.go:171
+
+No communication partner for receive at /home/erikkassubek/Uni/deadlockDetectorGo/examples/sorty_inst/sortyI8.go:171
+
+# gocrawl (https://github.com/PuerkitoBio/gocrawl)
+No communication partner for send at /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/worker.go:603
+
+No communication partner for receive at /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/crawler.go:247
+
+No communication partner for receive at /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/worker.go:95 when running the following communication:
+    /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/popchannel.go:22 -> /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/worker.go:57
+
+No communication partner for receive at /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/worker.go:95
+
+No communication partner for receive at /home/erikkassubek/Uni/deadlockDetectorGo/examples/gocrawl_inst/worker.go:637
