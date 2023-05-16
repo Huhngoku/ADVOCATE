@@ -116,6 +116,13 @@ func (ch *Chan[T]) GetChan() chan Message[T] {
 }
 
 /*
+Set the underlying channel to another channel
+*/
+func (ch *Chan[T]) SetChan(c chan Message[T]) {
+	ch.c = c
+}
+
+/*
 Getter fir the id field of a Chan object
 @receiver *Chan[T]
 @return uint32: id of the Chan
