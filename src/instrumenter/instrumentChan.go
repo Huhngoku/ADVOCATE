@@ -802,13 +802,15 @@ func instrument_library_function_call(n *ast.CallExpr, c *astutil.Cursor,
 			replacement_string += channel + "_dedego := make(chan " +
 				types[i] + ", " + sizes[i] + ")\n"
 			replacement_string += "go func() {\n"
+			replacement_string += "for {\n"
 			replacement_string += "select {\n"
 			replacement_string += "case " + "dedego_case := <- " + channel +
 				"_dedego:\n" + channel + ".Send(dedego_case)\n"
 			replacement_string += "case dedego_case := <-" + channel +
 				".GetChan():\n" + channel + ".Post(true, dedego_case)\n" +
 				channel + "_dedego <- dedego_case.GetInfo()\n"
-			replacement_string += "}\n}()\n"
+			replacement_string += "}\n"
+			replacement_string += "if " + channel + ".IsClosed(){\nbreak\n}}}()\n"
 		}
 
 		replacement_string += buf.String() + "\n"
