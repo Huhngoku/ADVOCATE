@@ -1,6 +1,0 @@
-github.com/ErikKassubek/deadlockDetectorGo/src v0.0.0-20230517073319-05f4dbcbf12e h1:mXr9OtGqFEzhLcrDcH8zjcnIzaJefdsYgpA8tDC93+M=
-github.com/ErikKassubek/deadlockDetectorGo/src v0.0.0-20230517073319-05f4dbcbf12e/go.mod h1:bq7WS3hSFdy1IJCqTgJ1N2AF9eI+TnzFVdlnt7ZNE0A=
-github.com/klauspost/compress v1.16.5 h1:IFV2oUNUzZaz+XyusxpLzpzS8Pt5rh0Z16For/djlyI=
-github.com/klauspost/compress v1.16.5/go.mod h1:ntbaceVETuRiXiv4DpjP66DpAtAGkEQskQzEyD//IeE=
-github.com/petermattis/goid v0.0.0-20230511192846-912c8d40bed9 h1:yYn7qjHxVObP9C8b4mVYFvluiUQK9AbuC3pMoTAvmaw=
-github.com/petermattis/goid v0.0.0-20230511192846-912c8d40bed9/go.mod h1:pxMtw7cyUw6B2bRH0ZBANSPg+AoSud1I1iyJHI69jH4=
