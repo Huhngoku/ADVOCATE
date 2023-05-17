@@ -196,12 +196,18 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 				for k := j + 1; k < len(trace); k++ {
 					switch post := trace[k].(type) {
 					case *TracePost:
-						if post.chanId == pre.chanId &&
-							len(vectorClocks[int(pre.GetTimestamp())]) > i &&
-							len(vectorClocks[int(post.GetTimestamp())]) > i {
+						if post.chanId == pre.chanId {
+							preVc := make([]int, len(traces))
+							postVc := make([]int, len(traces))
+							if len(vectorClocks[int(pre.GetTimestamp())]) > i {
+								preVc = vectorClocks[int(pre.GetTimestamp())][i]
+							}
+							if len(vectorClocks[int(post.GetTimestamp())]) > i {
+								postVc = vectorClocks[int(post.GetTimestamp())][i]
+							}
 							vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
 								creation: pre.chanCreation, routine: i, position: pre.position, send: pre.send,
-								pre: vectorClocks[int(pre.GetTimestamp())][i], post: vectorClocks[int(post.GetTimestamp())][i],
+								pre: preVc, post: postVc,
 								mutexe: mut})
 							b = true
 						}
@@ -215,11 +221,13 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 					for i := 0; i < len(traces); i++ {
 						post_default_clock[i] = math.MaxInt
 					}
+					preVc := make([]int, len(traces))
 					if len(vectorClocks[int(pre.GetTimestamp())]) > i {
-						vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
-							creation: pre.chanCreation, routine: i, position: pre.position, send: pre.send,
-							pre: vectorClocks[int(pre.GetTimestamp())][i], post: post_default_clock})
+						preVc = vectorClocks[int(pre.GetTimestamp())][i]
 					}
+					vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
+						creation: pre.chanCreation, routine: i, position: pre.position, send: pre.send,
+						pre: preVc, post: post_default_clock})
 
 				}
 			case *TracePreSelect: // pre of select:
@@ -229,12 +237,18 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 					for k := j + 1; k < len(trace); k++ {
 						switch post := trace[k].(type) {
 						case *TracePost:
-							if post.chanId == channel.id &&
-								len(vectorClocks[int(pre.GetTimestamp())]) > i &&
-								len(vectorClocks[int(post.GetTimestamp())]) > i {
+							if post.chanId == channel.id {
+								preVc := make([]int, len(traces))
+								postVc := make([]int, len(traces))
+								if len(vectorClocks[int(pre.GetTimestamp())]) > i {
+									preVc = vectorClocks[int(pre.GetTimestamp())][i]
+								}
+								if len(vectorClocks[int(post.GetTimestamp())]) > i {
+									postVc = vectorClocks[int(post.GetTimestamp())][i]
+								}
 								vcTrace = append(vcTrace, vcn{id: channel.id, preTime: pre.timestamp,
 									creation: post.chanCreation, routine: i, position: pre.position, send: !channel.receive,
-									pre: vectorClocks[int(pre.GetTimestamp())][i], post: vectorClocks[int(post.GetTimestamp())][i],
+									pre: preVc, post: postVc,
 									mutexe: mut})
 								b1 = true
 								b2 = true
@@ -254,20 +268,25 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 						for i := 0; i < len(traces); i++ {
 							post_default_clock[i] = math.MaxInt
 						}
+						preVc := make([]int, len(traces))
 						if len(vectorClocks[int(pre.GetTimestamp())]) > i {
-							vcTrace = append(vcTrace, vcn{id: channel.id, preTime: pre.timestamp,
-								creation: channel.chanCreation, routine: i, position: pre.position, send: !channel.receive,
-								pre: vectorClocks[int(pre.GetTimestamp())][i], post: post_default_clock})
+							preVc = vectorClocks[int(pre.GetTimestamp())][i]
 						}
+						vcTrace = append(vcTrace, vcn{id: channel.id, preTime: pre.timestamp,
+							creation: channel.chanCreation, routine: i, position: pre.position, send: !channel.receive,
+							pre: preVc, post: post_default_clock})
 					}
 				}
 			case *TraceClose:
+				preVc := make([]int, len(traces))
 				if len(vectorClocks[int(pre.GetTimestamp())]) > i {
-					vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
-						creation: pre.chanCreation, routine: i, position: pre.position, pre: vectorClocks[int(pre.GetTimestamp())][i],
-						post:   vectorClocks[int(pre.GetTimestamp())][i],
-						mutexe: mut})
+					preVc = vectorClocks[int(pre.GetTimestamp())][i]
 				}
+				vcTrace = append(vcTrace, vcn{id: pre.chanId, preTime: pre.timestamp,
+					creation: pre.chanCreation, routine: i, position: pre.position, pre: preVc,
+					post:   preVc,
+					mutexe: mut})
+
 			case *TraceLock:
 				mut = append(mut, mutexElem{pre.lockId, pre.read})
 			case *TraceUnlock:
