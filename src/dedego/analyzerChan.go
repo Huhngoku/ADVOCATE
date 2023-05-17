@@ -199,6 +199,9 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 						if post.chanId == pre.chanId {
 							preVc := make([]int, len(traces))
 							postVc := make([]int, len(traces))
+							for i := 0; i < len(postVc); i++ {
+								postVc[i] = math.MaxInt
+							}
 							if len(vectorClocks[int(pre.GetTimestamp())]) > i {
 								preVc = vectorClocks[int(pre.GetTimestamp())][i]
 							}
@@ -240,6 +243,9 @@ func buildVectorClockChan() ([]vcn, map[infoTime]int, map[infoTime]int) {
 							if post.chanId == channel.id {
 								preVc := make([]int, len(traces))
 								postVc := make([]int, len(traces))
+								for i := 0; i < len(postVc); i++ {
+									postVc[i] = math.MaxInt
+								}
 								if len(vectorClocks[int(pre.GetTimestamp())]) > i {
 									preVc = vectorClocks[int(pre.GetTimestamp())][i]
 								}
