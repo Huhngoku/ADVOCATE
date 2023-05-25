@@ -29,7 +29,7 @@ type dedegoTraceElement interface {
 type dedegoRoutineTrace []dedegoTraceElement
 
 // TODO: make routine local
-var dedegoTrace map[uint64]*dedegoRoutineTrace = make(map[uint64]*dedegoRoutineTrace)
+var dedegoTrace map[uint64]dedegoRoutineTrace = make(map[uint64]dedegoRoutineTrace)
 var dedegoTraceLock *mutex = new(mutex)
 
 var tracePrintLock *mutex = new(mutex)
@@ -61,7 +61,7 @@ func addToTrace(elem dedegoTraceElement) {
 	lock(dedegoTraceLock)
 	defer unlock(dedegoTraceLock)
 	routineId := GetRoutineId()
-	*dedegoTrace[routineId] = append(*dedegoTrace[routineId], elem)
+	dedegoTrace[routineId] = append(dedegoTrace[routineId], elem)
 }
 
 func PrintTrace() {
