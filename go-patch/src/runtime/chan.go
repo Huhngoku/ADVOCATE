@@ -378,7 +378,7 @@ func closechan(c *hchan) {
 	// add close to trace
 
 	// TODO: is there a better way to get the channel id?
-	DedegoClose(uint32(uintptr(unsafe.Pointer(c))))
+	// DedegoClose(uint32(uintptr(unsafe.Pointer(c))))
 
 	// DEDEGO-ADD-END
 

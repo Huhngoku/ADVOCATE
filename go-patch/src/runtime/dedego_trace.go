@@ -25,23 +25,14 @@ type dedegoTraceElement interface {
 	toString() string
 }
 
-// struct to save the trace og one routine
-type dedegoRoutineTrace []dedegoTraceElement
-
-// TODO: make routine local
-var dedegoTrace map[uint64]dedegoRoutineTrace = make(map[uint64]dedegoRoutineTrace)
-var dedegoTraceLock *mutex = new(mutex)
-
-var tracePrintLock *mutex = new(mutex)
-
 /*
  * Return a string representation of the trace
  * Return:
  * 	string representation of the trace
  */
-func (t *dedegoRoutineTrace) ToString() string {
+func traceToString() string {
 	res := "["
-	for i, elem := range *t {
+	for i, elem := range CurrentGoInfo().Trace {
 		if i != 0 {
 			res += ", "
 		}
@@ -58,18 +49,15 @@ func (t *dedegoRoutineTrace) ToString() string {
  *  elem: element to add to the trace
  */
 func addToTrace(elem dedegoTraceElement) {
-	lock(dedegoTraceLock)
-	defer unlock(dedegoTraceLock)
-	routineId := GetRoutineId()
-	dedegoTrace[routineId] = append(dedegoTrace[routineId], elem)
+	CurrentGoInfo().AddToTrace(elem)
 }
 
+/*
+ * Print the trace of the current routines
+ */
 func PrintTrace() {
-	lock(tracePrintLock)
-	defer unlock(tracePrintLock)
-	for routineId, trace := range dedegoTrace {
-		println("Routine", routineId, ":", trace.ToString())
-	}
+	routineId := getg().goid
+	println("Routine", routineId, ":", traceToString())
 }
 
 // ============================= Mutex =============================
