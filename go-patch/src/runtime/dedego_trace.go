@@ -5,12 +5,19 @@ package runtime
 type operation int // enum for operation
 
 const (
-	opLock operation = iota
-	opTryLock
-	opUnlock
-	opSend
-	opRecv
-	opClode
+	opMutLock operation = iota
+	opMutRLock
+	opMutTryLock
+	opMutRTryLock
+	opMutUnlock
+	opMutRUnlock
+
+	opWgAdd
+	opWgWait
+
+	opChanSend
+	opChanRecv
+	opChanClose
 )
 
 type prePost int // enum for pre/post
@@ -32,7 +39,7 @@ type dedegoTraceElement interface {
  */
 func traceToString() string {
 	res := "["
-	for i, elem := range CurrentGoInfo().Trace {
+	for i, elem := range currentGoRoutine().Trace {
 		if i != 0 {
 			res += ", "
 		}
@@ -44,19 +51,21 @@ func traceToString() string {
 }
 
 /*
- * Add a mutex operation to the trace
+ * Add an operation to the trace
  * Args:
  *  elem: element to add to the trace
+ * Return:
+ * 	index of the element in the trace
  */
-func addToTrace(elem dedegoTraceElement) {
-	CurrentGoInfo().AddToTrace(elem)
+func insertIntoTrace(elem dedegoTraceElement) int {
+	return currentGoRoutine().addToTrace(elem)
 }
 
 /*
  * Print the trace of the current routines
  */
 func PrintTrace() {
-	routineId := getg().goid
+	routineId := GetRoutineId()
 	println("Routine", routineId, ":", traceToString())
 }
 
@@ -64,9 +73,12 @@ func PrintTrace() {
 
 // type to save in the trace for mutexe
 type dedegoTraceMutexElement struct {
-	id        uint32    // id of the mutex
-	operation operation // operation
-	suc       bool      // success of the operation, only for tryLock
+	id           uint32    // id of the mutex
+	counterStart int32     // counter of the operation
+	counterEnd   int32     // counter of the operation
+	op           operation // operation
+	rw           bool      // true if it is a rwmutex
+	suc          bool      // success of the operation, only for tryLock
 }
 
 func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
@@ -77,21 +89,35 @@ func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
  * 	string representation of the element
  */
 func (elem dedegoTraceMutexElement) toString() string {
-	res := "M{" + uint64ToString(uint64(elem.id))
+	res := "M{" + uint32ToString(elem.id) + ", " + int32ToString(elem.counterStart) + ", "
+	res += int32ToString(elem.counterEnd) + ", "
 
-	switch elem.operation {
-	case opLock:
-		res += ", L"
-	case opTryLock:
-		res += ", T"
-	case opUnlock:
-		res += ", U"
+	if elem.rw {
+		res += "RW, "
+	} else {
+		res += "-, "
 	}
-	if elem.operation == opTryLock {
+
+	switch elem.op {
+	case opMutLock:
+		res += "L, "
+	case opMutRLock:
+		res += "LR, "
+	case opMutTryLock:
+		res += "T, "
+	case opMutRTryLock:
+		res += "TR, "
+	case opMutUnlock:
+		res += "U, "
+	case opMutRUnlock:
+		res += "UR, "
+	}
+
+	if elem.op == opMutTryLock || elem.op == opMutRTryLock {
 		if elem.suc {
-			res += ", true"
+			res += "succ, "
 		} else {
-			res += ", false"
+			res += "fail, "
 		}
 	}
 	res += "}"
@@ -102,40 +128,129 @@ func (elem dedegoTraceMutexElement) toString() string {
  * Add a mutex lock to the trace
  * Args:
  * 	id: id of the mutex
+ *  rw: true if it is a rwmutex
+ *  r: true if it is a rlock operation
+ * Return:
+ * 	index of the operation in the trace
  */
-func DedegoLock(id uint32) {
-	elem := dedegoTraceMutexElement{id, opLock, true}
-	addToTrace(elem)
+func DedegoLock(id uint32, rw bool, r bool) int {
+	c := updateCounter()
+	op := opMutLock
+	if r {
+		op = opMutRLock
+	}
+	elem := dedegoTraceMutexElement{id: id, counterStart: c, op: op, rw: rw, suc: true}
+	return insertIntoTrace(elem)
 }
 
 /*
  * Add a mutex trylock to the trace
  * Args:
  * 	id: id of the mutex
- * 	suc: success of the trylock
+ * 	rw: true if it is a rwmutex
+ * 	r: true if it is a rlock operation
+ * Return:
+ * 	index of the operation in the trace
  */
-func DedegoTryLock(id uint32, suc bool) {
-	elem := dedegoTraceMutexElement{id, opTryLock, suc}
-	addToTrace(elem)
+func DedegoTryLock(id uint32, rw bool, r bool) int {
+	c := updateCounter()
+	op := opMutTryLock
+	if r {
+		op = opMutRTryLock
+	}
+	elem := dedegoTraceMutexElement{id: id, counterStart: c, op: op, rw: rw}
+	return insertIntoTrace(elem)
 }
 
 /*
  * Add a mutex unlock to the trace
  * Args:
  * 	id: id of the mutex
+ * 	rw: true if it is a runlock
+ * 	r: true if it is a rlock operation
+ * Return:
+ * 	index of the operation in the trace
  */
-func DedegoUnlock(id uint32) {
-	elem := dedegoTraceMutexElement{id, opUnlock, true}
-	addToTrace(elem)
+func DedegoUnlock(id uint32, rw bool, r bool) int {
+	c := updateCounter()
+	op := opMutUnlock
+	if r {
+		op = opMutRUnlock
+	}
+	elem := dedegoTraceMutexElement{id: id, counterStart: c, counterEnd: c, op: op, rw: rw, suc: true}
+	return insertIntoTrace(elem)
+}
+
+// ============================= WaitGroup ===========================
+
+type dedegoTraceWaitGroupElement struct {
+	id           uint32    // id of the waitgroup
+	counterStart int32     // counter of the operation
+	counterEnd   int32     // counter of the operation
+	op           operation // operation
+	delta        int       // delta of the waitgroup
+	val          int32     // value of the waitgroup after the operation
+}
+
+func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
+
+/*
+ * Get a string representation of the element
+ * Return:
+ * 	string representation of the element
+ */
+func (elem dedegoTraceWaitGroupElement) toString() string {
+	res := "W{" + uint32ToString(elem.id) + ", " + int32ToString(elem.counterStart) + ", "
+	res += int32ToString(elem.counterEnd) + ", "
+
+	switch elem.op {
+	case opWgAdd:
+		res += "A, "
+	case opWgWait:
+		res += "W, "
+	}
+	res += int32ToString(elem.val) + "}"
+	return res
+}
+
+/*
+ * Add a waitgroup add or done to the trace
+ * Args:
+ * 	id: id of the waitgroup
+ *  delta: delta of the waitgroup
+ * 	val: value of the waitgroup after the operation
+ * Return:
+ * 	index of the operation in the trace
+ */
+func DedegoAdd(id uint32, delta int, val int32) int {
+	c := updateCounter()
+	elem := dedegoTraceWaitGroupElement{id: id, counterStart: c, op: opWgWait, delta: delta, val: val}
+	return insertIntoTrace(elem)
+
+}
+
+/*
+ * Add a waitgroup wait to the trace
+ * Args:
+ * 	id: id of the waitgroup
+ * Return:
+ * 	index of the operation in the trace
+ */
+func DedegoWait(id uint32) int {
+	c := updateCounter()
+	elem := dedegoTraceWaitGroupElement{id: id, counterStart: c, counterEnd: c, op: opWgWait}
+	return insertIntoTrace(elem)
 }
 
 // ============================= Channel =============================
+// TODO: add channels into chan code
 
 type dedegoTraceChannelElement struct {
-	id        uint32    // id of the channel
-	prePost   prePost   // pre/post
-	operation operation // operation
-	partnerId uint32    // id of the channel with wich the communication took place
+	id           uint32    // id of the channel
+	counterStart int32     // counter of the start of the operation
+	counterEnd   int32     // counter of the end of the operation
+	op           operation // operation
+	partnerId    uint32    // id of the channel with wich the communication took place
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -146,25 +261,18 @@ func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
  * 	string representation of the element
  */
 func (elem dedegoTraceChannelElement) toString() string {
-	res := "C{" + uint64ToString(uint64(elem.id))
+	res := "C{" + uint32ToString(elem.id) + ", " + int32ToString(elem.counterStart) + ", "
+	res += int32ToString(elem.counterEnd) + ", "
 
-	switch elem.operation {
-	case opSend:
+	switch elem.op {
+	case opChanSend:
 		res += ", S"
-	case opRecv:
+	case opChanRecv:
 		res += ", R"
-	case opClode:
+	case opChanClose:
 		res += ", C"
 	}
-
-	switch elem.prePost {
-	case pre:
-		res += ", pre"
-	case post:
-		res += ", post"
-	}
-
-	res += ", " + uint64ToString(uint64(elem.partnerId)) + "}"
+	res += ", " + uint32ToString(elem.partnerId) + "}"
 	return res
 }
 
@@ -172,16 +280,13 @@ func (elem dedegoTraceChannelElement) toString() string {
  * Add a channel send to the trace
  * Args:
  * 	id: id of the channel
- * 	isPre: true if pre event, post otherwise
+ * Return:
+ * 	index of the operation in the trace
  */
-// TODO: add into channel implementation
-func DedegoSend(id uint32, isPre bool) {
-	p := pre
-	if !isPre {
-		p = post
-	}
-	elem := dedegoTraceChannelElement{id, p, opSend, 0}
-	addToTrace(elem)
+func DedegoSend(id uint32) int {
+	c := updateCounter()
+	elem := dedegoTraceChannelElement{id: id, op: opChanSend, counterStart: c}
+	return insertIntoTrace(elem)
 }
 
 /*
@@ -190,26 +295,65 @@ func DedegoSend(id uint32, isPre bool) {
  * 	id: id of the channel
  * 	isPre: true if pre event, post otherwise
  * 	partnerId: id of the channel with wich the communication took place
+ * Return:
+ * 	index of the operation in the trace
  */
-// TODO: add into channel implementation
-func DedegoRecv(id uint32, isPre bool, partnerId uint32) {
-	p := pre
-	if !isPre {
-		p = post
-	}
-	elem := dedegoTraceChannelElement{id, p, opRecv, partnerId}
-	addToTrace(elem)
+func DedegoRecv(id uint32) int {
+	c := updateCounter()
+	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, counterStart: c}
+	return insertIntoTrace(elem)
 }
 
 /*
  * Add a channel close to the trace
  * Args:
  * 	id: id of the channel
+ * Return:
+ * 	index of the operation in the trace
  */
-// TODO: is there a better way to get the channel id?
-func DedegoClose(id uint32) {
-	elem := dedegoTraceChannelElement{id, none, opClode, 0}
-	addToTrace(elem)
+func DedegoClose(id uint32) int {
+	c := updateCounter()
+	elem := dedegoTraceChannelElement{id: id, op: opChanClose, counterStart: c}
+	return insertIntoTrace(elem)
+}
+
+// ============================= Finish ================================
+/*
+ * Add the end counter to an operation of the trace. For try use DedegoFinishTry.
+ * Args:
+ * 	index: index of the operation in the trace
+ */
+func DedegoFinish(index int) {
+	c := updateCounter()
+	switch elem := currentGoRoutine().Trace[index].(type) {
+	case dedegoTraceMutexElement:
+		elem.counterEnd = int32(c)
+		currentGoRoutine().Trace[index] = elem
+	case dedegoTraceWaitGroupElement:
+		elem.counterEnd = int32(c)
+		currentGoRoutine().Trace[index] = elem
+	case dedegoTraceChannelElement:
+		elem.counterEnd = int32(c)
+		currentGoRoutine().Trace[index] = elem
+	}
+}
+
+/*
+ * Add the end counter to an try operation of the trace
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	suc: true if the try was successful, false otherwise
+ */
+func DedegoFinishTry(index int, suc bool) {
+	c := updateCounter()
+	switch elem := currentGoRoutine().Trace[index].(type) {
+	case dedegoTraceMutexElement:
+		elem.counterEnd = int32(c)
+		elem.suc = suc
+		currentGoRoutine().Trace[index] = elem
+	default:
+		panic("DedegoFinishTry called on non mutex")
+	}
 }
 
 // DEDUGO-FILE-END

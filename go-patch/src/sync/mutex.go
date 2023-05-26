@@ -23,11 +23,6 @@ import (
 func throw(string)
 func fatal(string)
 
-// DEDEGO-ADD-START
-var currentId = uint32(0)
-
-// DEDEGO-ADD-END
-
 // A Mutex is a mutual exclusion lock.
 // The zero value for a Mutex is an unlocked mutex.
 //
@@ -93,10 +88,11 @@ func (m *Mutex) Lock() {
 	// DEDEGO-ADD-START
 	// set id if not set before
 	if m.id == 0 {
-		m.id = atomic.AddUint32(&currentId, 1)
+		m.id = runtime.GetNewId()
 	}
 
-	runtime.DedegoLock(m.id)
+	dedegoIndex := runtime.DedegoLock(m.id, false, false)
+	defer runtime.DedegoFinish(dedegoIndex)
 	// DEDEGO-ADD-END
 
 	// Fast path: grab unlocked mutex.
@@ -116,11 +112,15 @@ func (m *Mutex) Lock() {
 // and use of TryLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
+	// DEDEGO-ADD-START
+	if m.id == 0 {
+		m.id = runtime.GetNewId()
+	}
+	dedegoIndex := runtime.DedegoTryLock(m.id, false, false)
+	// DEDEGO-ADD-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
-		// DEDEGO-ADD-START
-		runtime.DedegoTryLock(m.id, false)
-		// DEDEGO-ADD-END
+		runtime.DedegoFinishTry(dedegoIndex, false)
 		return false
 	}
 
@@ -129,7 +129,7 @@ func (m *Mutex) TryLock() bool {
 	// goroutine wakes up.
 	if !atomic.CompareAndSwapInt32(&m.state, old, old|mutexLocked) {
 		// DEDEGO-ADD-START
-		runtime.DedegoTryLock(m.id, false)
+		runtime.DedegoFinishTry(dedegoIndex, false)
 		// DEDEGO-ADD-END
 		return false
 	}
@@ -138,7 +138,7 @@ func (m *Mutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(m))
 	}
 	// DEDEGO-ADD-START
-	runtime.DedegoTryLock(m.id, true)
+	runtime.DedegoFinishTry(dedegoIndex, true)
 	// DEDEGO-ADD-END
 	return true
 }
@@ -239,9 +239,6 @@ func (m *Mutex) lockSlow() {
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
-	// DEDEGO-ADD-START
-	runtime.DedegoUnlock(m.id)
-	// DEDEGO-ADD-END
 	if race.Enabled {
 		_ = m.state
 		race.Release(unsafe.Pointer(m))
@@ -254,6 +251,9 @@ func (m *Mutex) Unlock() {
 		// To hide unlockSlow during tracing we skip one extra frame when tracing GoUnblock.
 		m.unlockSlow(new)
 	}
+	// DEDEGO-ADD-START
+	runtime.DedegoUnlock(m.id, false, false)
+	// DEDEGO-ADD-END
 }
 
 func (m *Mutex) unlockSlow(new int32) {

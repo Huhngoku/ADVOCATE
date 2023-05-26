@@ -512,7 +512,7 @@ type g struct {
 	gcAssistBytes int64
 
 	// DEDEGO-ADD-START
-	goInfo *GoInfo
+	goInfo *DedegoRoutine
 	// DEDEGO-ADD-END
 }
 

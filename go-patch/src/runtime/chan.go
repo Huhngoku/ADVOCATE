@@ -373,15 +373,6 @@ func closechan(c *hchan) {
 
 	c.closed = 1
 
-	// DEDEGO-ADD-START
-
-	// add close to trace
-
-	// TODO: is there a better way to get the channel id?
-	// DedegoClose(uint32(uintptr(unsafe.Pointer(c))))
-
-	// DEDEGO-ADD-END
-
 	var glist gList
 
 	// release all readers

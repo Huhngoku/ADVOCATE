@@ -4525,7 +4525,7 @@ func newproc1(fn *funcval, callergp *g, callerpc uintptr) *g {
 	newg.goid = pp.goidcache
 
 	// DEDEGO-ADD-START
-	newg.goInfo = NewGoInfo(newg)
+	newg.goInfo = newDedegoRoutine(newg)
 
 	pp.goidcache++
 	if raceenabled {

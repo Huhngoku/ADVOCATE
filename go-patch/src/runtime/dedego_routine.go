@@ -2,21 +2,29 @@
 
 package runtime
 
-type GoInfo struct {
-	G     *g
-	Trace []dedegoTraceElement
+import "sync/atomic"
+
+type DedegoRoutine struct {
+	G       *g
+	Trace   []dedegoTraceElement
+	counter int32
 }
 
-func NewGoInfo(g *g) *GoInfo {
-	return &GoInfo{G: g, Trace: make([]dedegoTraceElement, 0)}
+func newDedegoRoutine(g *g) *DedegoRoutine {
+	return &DedegoRoutine{G: g, Trace: make([]dedegoTraceElement, 0), counter: 0}
 }
 
-func (gi *GoInfo) AddToTrace(elem dedegoTraceElement) {
+func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
 	gi.Trace = append(gi.Trace, elem)
+	return len(gi.Trace) - 1
 }
 
-func CurrentGoInfo() *GoInfo {
+func currentGoRoutine() *DedegoRoutine {
 	return getg().goInfo
+}
+
+func updateCounter() int32 {
+	return atomic.AddInt32(&currentGoRoutine().counter, 1)
 }
 
 /*
@@ -25,7 +33,7 @@ func CurrentGoInfo() *GoInfo {
  * 	id of the current routine
  */
 func GetRoutineId() uint64 {
-	return CurrentGoInfo().G.goid
+	return currentGoRoutine().G.goid
 }
 
 // DEDEGO-FILE-END
