@@ -41,6 +41,25 @@ func int32ToString(n int32) string {
 	}
 }
 
+/*
+ * Get a string representation of an int
+ * Args:
+ * 	n: int to convert
+ * Return:
+ * 	string representation of the int
+ */
+func intToString(n int) string {
+	if n < 0 {
+		return "-" + intToString(-n)
+	}
+	if n < 10 {
+		return string(rune(n + '0'))
+	} else {
+		return intToString(n/10) + string(rune(n%10+'0'))
+
+	}
+}
+
 var dedegoCurrentId = uint32(0)
 
 /*

@@ -156,3 +156,69 @@ func TestDedegoMutex(t *testing.T) {
 // 		}
 // 	}
 // }
+
+/*
+Test for the recording of wait group operations in the trace
+*/
+func TestDedegoWaitGroup(t *testing.T) {
+	var wg1 sync.WaitGroup
+	var wg2 sync.WaitGroup
+
+	traces := make([]string, 4)
+
+	wg1.Add(3)
+	wg2.Add(3)
+	for i := 0; i < 3; i++ {
+		go func(i int) {
+			time.Sleep(500 * time.Millisecond)
+			wg1.Done()
+			wg2.Done()
+			traces[i+1] = runtime.TraceToString()
+		}(i)
+	}
+
+	wg1.Wait()
+	wg2.Wait()
+
+	traces[0] = runtime.TraceToString()
+
+	// check that form is correct
+	tracesTotal := strings.Join(traces, "|")
+	exp := regexp.MustCompile("(?i)W,[0-9]+,1,0,W,3,3;W,[0-9]+,2,0,W,3,3;W,[0-9]+,3,4,W,0,0;W,[0-9]+,5,6,W,0,0\\|W,[0-9]+,1,0,W,-1,0;W,[0-9]+,2,0,W,-1,0\\|W,[0-9]+,1,0,W,-1,2;W,[0-9]+,2,0,W,-1,2\\|W,[0-9]+,1,0,W,-1,1;W,[0-9]+,2,0,W,-1,1")
+	if !exp.MatchString(tracesTotal) {
+		t.Errorf("Trace in TestDedegoWaitGroup is not correct: %s", tracesTotal)
+	}
+
+	// check that ids are correct
+	tracesTotal = strings.Join(traces, ";")
+	traces = strings.Split(tracesTotal, ";")
+	elems := make([]string, 0)
+	for _, elem := range traces {
+		elems = append(elems, strings.Split(elem, ",")[1])
+	}
+	equal := map[int][]int{
+		0: []int{2, 4, 6, 8},
+		1: []int{3, 5, 7, 9},
+	}
+
+	different := map[int][]int{
+		0: []int{1},
+	}
+
+	for i, ids := range equal {
+		for _, id := range ids {
+			if elems[i] != elems[id] {
+				t.Errorf("WaitGroup ids should be equal: (%s, %s) != (%s, %s)", strconv.Itoa(i), elems[i], strconv.Itoa(id), elems[id])
+			}
+		}
+	}
+
+	for i, ids := range different {
+		for _, id := range ids {
+			if elems[i] == elems[id] {
+				t.Errorf("WaitGroup ids should not be equal: (%s, %s) == (%s, %s)", strconv.Itoa(i), elems[i], strconv.Itoa(id), elems[id])
+			}
+		}
+	}
+
+}

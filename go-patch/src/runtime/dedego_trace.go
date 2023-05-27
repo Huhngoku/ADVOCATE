@@ -198,7 +198,7 @@ func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
  * 	string representation of the element
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
-	res := "W" + uint32ToString(elem.id) + "," + int32ToString(elem.counterStart) + ","
+	res := "W," + uint32ToString(elem.id) + "," + int32ToString(elem.counterStart) + ","
 	res += int32ToString(elem.counterEnd) + ","
 
 	switch elem.op {
@@ -207,7 +207,7 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
 	case opWgWait:
 		res += "W,"
 	}
-	res += int32ToString(elem.val)
+	res += intToString(elem.delta) + "," + int32ToString(elem.val)
 	return res
 }
 
