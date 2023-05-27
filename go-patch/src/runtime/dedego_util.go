@@ -2,7 +2,9 @@
 
 package runtime
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 /*
  * Get a string representation of an uint32

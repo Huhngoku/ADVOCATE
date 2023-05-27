@@ -37,15 +37,14 @@ type dedegoTraceElement interface {
  * Return:
  * 	string representation of the trace
  */
-func traceToString() string {
-	res := "["
+func TraceToString() string {
+	res := ""
 	for i, elem := range currentGoRoutine().Trace {
 		if i != 0 {
-			res += ", "
+			res += ";"
 		}
 		res += elem.toString()
 	}
-	res += "]"
 
 	return res
 }
@@ -66,7 +65,7 @@ func insertIntoTrace(elem dedegoTraceElement) int {
  */
 func PrintTrace() {
 	routineId := GetRoutineId()
-	println("Routine", routineId, ":", traceToString())
+	println("Routine", routineId, ":", TraceToString())
 }
 
 // ============================= Mutex =============================
@@ -89,38 +88,37 @@ func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
  * 	string representation of the element
  */
 func (elem dedegoTraceMutexElement) toString() string {
-	res := "M{" + uint32ToString(elem.id) + ", " + int32ToString(elem.counterStart) + ", "
-	res += int32ToString(elem.counterEnd) + ", "
+	res := "M," + uint32ToString(elem.id) + "," + int32ToString(elem.counterStart) + ","
+	res += int32ToString(elem.counterEnd) + ","
 
 	if elem.rw {
-		res += "RW, "
+		res += "RW,"
 	} else {
-		res += "-, "
+		res += "-,"
 	}
 
 	switch elem.op {
 	case opMutLock:
-		res += "L, "
+		res += "L"
 	case opMutRLock:
-		res += "LR, "
+		res += "LR"
 	case opMutTryLock:
-		res += "T, "
+		res += "T"
 	case opMutRTryLock:
-		res += "TR, "
+		res += "TR"
 	case opMutUnlock:
-		res += "U, "
+		res += "U"
 	case opMutRUnlock:
-		res += "UR, "
+		res += "UR"
 	}
 
 	if elem.op == opMutTryLock || elem.op == opMutRTryLock {
 		if elem.suc {
-			res += "succ, "
+			res += ",succ"
 		} else {
-			res += "fail, "
+			res += ",fail"
 		}
 	}
-	res += "}"
 	return res
 }
 
@@ -200,16 +198,16 @@ func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
  * 	string representation of the element
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
-	res := "W{" + uint32ToString(elem.id) + ", " + int32ToString(elem.counterStart) + ", "
-	res += int32ToString(elem.counterEnd) + ", "
+	res := "W" + uint32ToString(elem.id) + "," + int32ToString(elem.counterStart) + ","
+	res += int32ToString(elem.counterEnd) + ","
 
 	switch elem.op {
 	case opWgAdd:
-		res += "A, "
+		res += "A,"
 	case opWgWait:
-		res += "W, "
+		res += "W,"
 	}
-	res += int32ToString(elem.val) + "}"
+	res += int32ToString(elem.val)
 	return res
 }
 
@@ -261,18 +259,18 @@ func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
  * 	string representation of the element
  */
 func (elem dedegoTraceChannelElement) toString() string {
-	res := "C{" + uint32ToString(elem.id) + ", " + int32ToString(elem.counterStart) + ", "
-	res += int32ToString(elem.counterEnd) + ", "
+	res := "C" + uint32ToString(elem.id) + "," + int32ToString(elem.counterStart) + ","
+	res += int32ToString(elem.counterEnd) + ","
 
 	switch elem.op {
 	case opChanSend:
-		res += ", S"
+		res += ",S"
 	case opChanRecv:
-		res += ", R"
+		res += ",R"
 	case opChanClose:
-		res += ", C"
+		res += ",C"
 	}
-	res += ", " + uint32ToString(elem.partnerId) + "}"
+	res += "," + uint32ToString(elem.partnerId)
 	return res
 }
 
@@ -325,6 +323,11 @@ func DedegoClose(id uint32) int {
  */
 func DedegoFinish(index int) {
 	c := updateCounter()
+	// only needed to fix tests
+	if currentGoRoutine() == nil {
+		return
+	}
+
 	switch elem := currentGoRoutine().Trace[index].(type) {
 	case dedegoTraceMutexElement:
 		elem.counterEnd = int32(c)

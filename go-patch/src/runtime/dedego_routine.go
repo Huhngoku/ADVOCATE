@@ -15,6 +15,13 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
 }
 
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
+	// never needed in actual code, without it the compiler tests fail
+	if gi == nil {
+		return -1
+	}
+	if gi.Trace == nil {
+		gi.Trace = make([]dedegoTraceElement, 0)
+	}
 	gi.Trace = append(gi.Trace, elem)
 	return len(gi.Trace) - 1
 }
@@ -24,6 +31,9 @@ func currentGoRoutine() *DedegoRoutine {
 }
 
 func updateCounter() int32 {
+	if currentGoRoutine() == nil {
+		return 0
+	}
 	return atomic.AddInt32(&currentGoRoutine().counter, 1)
 }
 
