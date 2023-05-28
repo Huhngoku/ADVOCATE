@@ -8,7 +8,9 @@ Added files:
 
 Changed files:
 - src/cmd/cgo/internal/test/cgo_test.go
+- src/cmd/cgo/internal/test/testx.go
 - src/cmd/dist/test.go
+- src/cmd/go/stript_test.go
 - src/context/x_test.go
 - src/crypto/internal/nistec/nistec_test.go
 - src/crypto/tls/tls_test.go
