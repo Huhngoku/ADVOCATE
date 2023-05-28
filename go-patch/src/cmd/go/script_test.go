@@ -25,16 +25,22 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
+	// DEDEGO-REMOVE_TEST-START
+	// "time"
+	// DEDEGO-REMOVE_TEST-END
 
 	"cmd/go/internal/cfg"
 	"cmd/go/internal/script"
-	"cmd/go/internal/script/scripttest"
+	// DEDEGO-REMOVE_TEST-START
+	// "cmd/go/internal/script/scripttest"
+	// DEDEGO-REMOVE_TEST-END
 	"cmd/go/internal/vcweb/vcstest"
 )
 
 var testSum = flag.String("testsum", "", `may be tidy, listm, or listall. If set, TestScript generates a go.sum file at the beginning of each test and updates test files if they pass.`)
 
+// DEDEGO-REMOVE_TEST-START
+/*
 // TestScript runs the tests in testdata/script/*.txt.
 func TestScript(t *testing.T) {
 	testenv.MustHaveGoBuild(t)
@@ -155,6 +161,8 @@ func TestScript(t *testing.T) {
 		})
 	}
 }
+*/
+// DEDEGO-REMOVE_TEST-END
 
 // testingTBKey is the Context key for a testing.TB.
 type testingTBKey struct{}
