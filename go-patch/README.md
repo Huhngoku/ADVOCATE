@@ -20,6 +20,7 @@ Changed files:
 - src/runtime/proc.go
 - src/runtime/runtime2.go
 - src/runtime/sizeof_test.go
+- src/runtime/chan.go
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go

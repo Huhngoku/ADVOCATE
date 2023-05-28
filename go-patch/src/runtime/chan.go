@@ -49,6 +49,10 @@ type hchan struct {
 	// (in particular, do not ready a G), as this can deadlock
 	// with stack shrinking.
 	lock mutex
+
+	// DEDEGO-ADD-START
+	id uint32
+	// DEDEGO-ADD-END
 }
 
 type waitq struct {
@@ -110,6 +114,10 @@ func makechan(t *chantype, size int) *hchan {
 	c.elemsize = uint16(elem.Size_)
 	c.elemtype = elem
 	c.dataqsiz = uint(size)
+
+	// DEDEGO-ADD-START
+	c.id = GetNewId()
+
 	lockInit(&c.lock, lockRankHchan)
 
 	if debugChan {
@@ -343,6 +351,7 @@ func sendDirect(t *_type, sg *sudog, src unsafe.Pointer) {
 	// No need for cgo write barrier checks because dst is always
 	// Go memory.
 	memmove(dst, src, t.Size_)
+	print("sendDirect ", dst, " ", src, "\n")
 }
 
 func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
@@ -352,6 +361,7 @@ func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
 	src := sg.elem
 	typeBitsBulkBarrier(t, uintptr(dst), uintptr(src), t.Size_)
 	memmove(dst, src, t.Size_)
+	print("recvDirect ", dst, " ", src, "\n")
 }
 
 func closechan(c *hchan) {
@@ -372,6 +382,10 @@ func closechan(c *hchan) {
 	}
 
 	c.closed = 1
+
+	// DEDEGO-ADD-START
+	DedegoClose(c.id)
+	// DEDEGO-ADD-END
 
 	var glist gList
 

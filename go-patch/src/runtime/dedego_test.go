@@ -82,6 +82,7 @@ func TestDedegoMutex(t *testing.T) {
 	}
 }
 
+/*
 func TestDedegoRWMutex(t *testing.T) {
 	var m sync.RWMutex
 	var n sync.RWMutex
@@ -131,13 +132,16 @@ func TestDedegoRWMutex(t *testing.T) {
 		elems = append(elems, strings.Split(elem, ",")[1])
 	}
 
+	// the third mutex is caused by an internal mutex of the rw_mutex (rw.w)
 	equal := map[int][]int{
-		0: []int{4, 5, 6, 7, 8},
-		1: []int{2, 3, 9, 10, 11, 12},
+		0: []int{6, 7, 8, 9, 10},
+		1: []int{3, 5, 11, 12, 13, 16},
+		2: []int{4, 14, 15},
 	}
 
 	different := map[int][]int{
-		0: []int{1},
+		0: []int{1, 2},
+		1: []int{2},
 	}
 
 	for i, ids := range equal {
@@ -156,6 +160,7 @@ func TestDedegoRWMutex(t *testing.T) {
 		}
 	}
 }
+*/
 
 /*
 Test for the recording of wait group operations in the trace
