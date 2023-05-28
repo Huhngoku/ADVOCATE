@@ -2,16 +2,13 @@
 
 package runtime
 
-import "sync/atomic"
-
 type DedegoRoutine struct {
-	G       *g
-	Trace   []dedegoTraceElement
-	counter int32
+	G     *g
+	Trace []dedegoTraceElement
 }
 
 func newDedegoRoutine(g *g) *DedegoRoutine {
-	return &DedegoRoutine{G: g, Trace: make([]dedegoTraceElement, 0), counter: 0}
+	return &DedegoRoutine{G: g, Trace: make([]dedegoTraceElement, 0)}
 }
 
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
@@ -28,13 +25,6 @@ func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
 
 func currentGoRoutine() *DedegoRoutine {
 	return getg().goInfo
-}
-
-func updateCounter() int32 {
-	if currentGoRoutine() == nil {
-		return 0
-	}
-	return atomic.AddInt32(&currentGoRoutine().counter, 1)
 }
 
 /*

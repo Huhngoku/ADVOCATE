@@ -51,7 +51,8 @@ type hchan struct {
 	lock mutex
 
 	// DEDEGO-ADD-START
-	id uint32
+	id             uint32
+	dedegoChanProg bool // only look at channels where dedegoChanProg is true, others are internal
 	// DEDEGO-ADD-END
 }
 
@@ -117,6 +118,12 @@ func makechan(t *chantype, size int) *hchan {
 
 	// DEDEGO-ADD-START
 	c.id = GetNewId()
+	_, file, line, _ := Caller(1)
+	if file == "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
+		print("makechan: ", c.id, " ", file, " ", line, "\n")
+		c.dedegoChanProg = true
+	}
+	// DEDEGO-ADD-END
 
 	lockInit(&c.lock, lockRankHchan)
 
@@ -300,6 +307,12 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 // sg must already be dequeued from c.
 // ep must be non-nil and point to the heap or the caller's stack.
 func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
+	// DEDEGO-ADD-START
+	if dedegoHandle(c) {
+		dedegoIndex := DedegoSend(c.id)
+		defer DedegoFinish(dedegoIndex)
+	}
+	// DEDEGO-ADD-END
 	if raceenabled {
 		if c.dataqsiz == 0 {
 			racesync(c, sg)
@@ -351,7 +364,6 @@ func sendDirect(t *_type, sg *sudog, src unsafe.Pointer) {
 	// No need for cgo write barrier checks because dst is always
 	// Go memory.
 	memmove(dst, src, t.Size_)
-	print("sendDirect ", dst, " ", src, "\n")
 }
 
 func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
@@ -361,7 +373,6 @@ func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
 	src := sg.elem
 	typeBitsBulkBarrier(t, uintptr(dst), uintptr(src), t.Size_)
 	memmove(dst, src, t.Size_)
-	print("recvDirect ", dst, " ", src, "\n")
 }
 
 func closechan(c *hchan) {
@@ -384,7 +395,9 @@ func closechan(c *hchan) {
 	c.closed = 1
 
 	// DEDEGO-ADD-START
-	DedegoClose(c.id)
+	if dedegoHandle(c) {
+		DedegoClose(c.id)
+	}
 	// DEDEGO-ADD-END
 
 	var glist gList
@@ -469,6 +482,13 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 // Otherwise, fills in *ep with an element and returns (true, true).
 // A non-nil ep must point to the heap or the caller's stack.
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
+	// DEDEGO-ADD-START
+	if dedegoHandle(c) {
+		dedegoIndex := DedegoRecv(c.id)
+		defer DedegoFinish(dedegoIndex)
+	}
+	// DEDEGO-ADD-END
+
 	// raceenabled: don't need to check ep, as it is always on the stack
 	// or is new memory allocated by reflect.
 
@@ -863,3 +883,13 @@ func racenotify(c *hchan, idx uint, sg *sudog) {
 		}
 	}
 }
+
+// DEDEGO-ADD-START
+/*
+ * Get whether the channel should be handled by dedego.
+ */
+func dedegoHandle(c *hchan) bool {
+	return c != nil && c.dedegoChanProg
+}
+
+// DEDEGO-ADD-END

@@ -39,10 +39,9 @@ func TestDedegoMutex(t *testing.T) {
 	traceTotal := trace1 + "|" + trace2
 
 	// check that form is correct
-	exp := regexp.MustCompile("(?i)M,[0-9]+,1,2,-,L;M,[0-9]+,3,3,-,U;" +
-		"M,[0-9]+,4,5,-,T,succ;M,[0-9]+,6,6,-,U\\|M,[0-9]+,1,2,-,L;" +
-		"M,[0-9]+,3,4,-,T,fail;M,[0-9]+,5,5,-,U;M,[0-9]+,6,7,-,L;" +
-		"M,[0-9]+,8,8,-,U")
+	exp := regexp.MustCompile("(?i)M,[0-9]+,-,L,e;M,[0-9]+,-,U,e;M,[0-9]+,-,T,e,s;" +
+		"M,[0-9]+,-,U,e\\|M,[0-9]+,-,L,e;M,[0-9]+,-,T,e,f;M,[0-9]+,-,U,e;" +
+		"M,[0-9]+,-,L,e;M,[0-9]+,-,U,e")
 
 	if !exp.MatchString(traceTotal) {
 		t.Errorf("Trace in TestDedegoMutex is not correct: %s", traceTotal)
@@ -82,10 +81,9 @@ func TestDedegoMutex(t *testing.T) {
 	}
 }
 
-/*
 func TestDedegoRWMutex(t *testing.T) {
-	var m sync.RWMutex
-	var n sync.RWMutex
+	var m sync.RWMutex 24
+	var n sync.RWMutex 25
 
 	m.RLock()
 	n.Lock()
@@ -113,14 +111,14 @@ func TestDedegoRWMutex(t *testing.T) {
 
 	traceTotal := trace1 + "|" + trace2
 
-	exp := regexp.MustCompile("(?i)M,[0-9]+,1,2,RW,LR;M,[0-9]+,3,6,RW,L;" +
-		"M,[0-9]+,4,5,-,L;M,[0-9]+,7,8,RW,TR,fail;M,[0-9]+,9,9,-,U;" +
-		"M,[0-9]+,10,10,RW,U;M,[0-9]+,11,11,RW,UR\\|M,[0-9]+,1,2,RW,LR;" +
-		"M,[0-9]+,3,4,RW,TR,succ;M,[0-9]+,5,5,RW,UR;M,[0-9]+,6,6,RW,UR;" +
-		"M,[0-9]+,7,8,RW,LR;M,[0-9]+,9,9,RW,UR;M,[0-9]+,10,13,RW,T,succ;" +
-		"M,[0-9]+,11,12,-,T,succ;M,[0-9]+,14,14,-,U;M,[0-9]+,15,15,RW,U")
-
 	// check that form is correct
+
+	// additional lock from internal lock in Lock and TryLock
+	exp := regexp.MustCompile("(?i)M,[0-9]+,R,LR,e;M,[0-9]+,R,L,e;M,[0-9]+,-,L,e;" +
+		"M,[0-9]+,R,TR,e,f;M,[0-9]+,R,U,e;M,[0-9]+,-,U,e;M,[0-9]+,R,UR,e\\|" +
+		"M,[0-9]+,R,LR,e;M,[0-9]+,R,TR,e,s;M,[0-9]+,R,UR,e;M,[0-9]+,R,UR,e;" +
+		"M,[0-9]+,R,LR,e;M,[0-9]+,R,UR,e;M,[0-9]+,R,T,e,s;M,[0-9]+,-,T,e,s;" +
+		"M,[0-9]+,R,U,e;M,[0-9]+,-,U,e")
 	if !exp.MatchString(traceTotal) {
 		t.Errorf("Trace in TestDedegoRWMutex is not correct: %s", traceTotal)
 	}
@@ -134,14 +132,12 @@ func TestDedegoRWMutex(t *testing.T) {
 
 	// the third mutex is caused by an internal mutex of the rw_mutex (rw.w)
 	equal := map[int][]int{
-		0: []int{6, 7, 8, 9, 10},
-		1: []int{3, 5, 11, 12, 13, 16},
-		2: []int{4, 14, 15},
+		0: []int{6, 7, 8. 9, 10},
+		1: []int{3, 4, 11, 12, 13, 15},
 	}
 
 	different := map[int][]int{
-		0: []int{1, 2},
-		1: []int{2},
+		0: []int{1},
 	}
 
 	for i, ids := range equal {
@@ -160,11 +156,11 @@ func TestDedegoRWMutex(t *testing.T) {
 		}
 	}
 }
-*/
 
 /*
 Test for the recording of wait group operations in the trace
 */
+
 func TestDedegoWaitGroup(t *testing.T) {
 	var wg1 sync.WaitGroup
 	var wg2 sync.WaitGroup
@@ -189,7 +185,9 @@ func TestDedegoWaitGroup(t *testing.T) {
 
 	// check that form is correct
 	tracesTotal := strings.Join(traces, "|")
-	exp := regexp.MustCompile("(?i)W,[0-9]+,1,0,W,3,3;W,[0-9]+,2,0,W,3,3;W,[0-9]+,3,4,W,0,0;W,[0-9]+,5,6,W,0,0\\|W,[0-9]+,1,0,W,-1,0;W,[0-9]+,2,0,W,-1,0\\|W,[0-9]+,1,0,W,-1,2;W,[0-9]+,2,0,W,-1,2\\|W,[0-9]+,1,0,W,-1,1;W,[0-9]+,2,0,W,-1,1")
+	exp := regexp.MustCompile("(?i)W,[0-9]+,W,orph,3,3;W,[0-9]+,W,orph,3,3;W,[0-9]+,W,exec,0,0;" +
+		"W,[0-9]+,W,exec,0,0\\|W,[0-9]+,W,orph,-1,0;W,[0-9]+,W,orph,-1,0\\|W,[0-9]+,W,orph,-1,2;" +
+		"W,[0-9]+,W,orph,-1,2\\|W,[0-9]+,W,orph,-1,1;W,[0-9]+,W,orph,-1,1")
 	if !exp.MatchString(tracesTotal) {
 		t.Errorf("Trace in TestDedegoWaitGroup is not correct: %s", tracesTotal)
 	}

@@ -139,6 +139,10 @@ func (rw *RWMutex) TryRLock() bool {
 // It is a run-time error if rw is not locked for reading
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
+	// DEDEGO-ADD-START
+	dedegoIndex := runtime.DedegoUnlock(rw.id, true, true)
+	defer runtime.DedegoFinish(dedegoIndex)
+	// DEDEGO-ADD-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -152,9 +156,6 @@ func (rw *RWMutex) RUnlock() {
 	if race.Enabled {
 		race.Enable()
 	}
-	// DEDEGO-ADD-START
-	runtime.DedegoUnlock(rw.id, true, true)
-	// DEDEGO-ADD-END
 }
 
 func (rw *RWMutex) rUnlockSlow(r int32) {
@@ -257,6 +258,11 @@ func (rw *RWMutex) TryLock() bool {
 // goroutine. One goroutine may RLock (Lock) a RWMutex and then
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
+	// DEDEGO-ADD-START
+	dedegoIndex := runtime.DedegoUnlock(rw.id, true, false)
+	defer runtime.DedegoFinish(dedegoIndex)
+	// DEDEGO-ADD-END
+
 	if race.Enabled {
 		_ = rw.w.state
 		race.Release(unsafe.Pointer(&rw.readerSem))
@@ -279,9 +285,6 @@ func (rw *RWMutex) Unlock() {
 		race.Enable()
 	}
 
-	// DEDEGO-ADD-START
-	runtime.DedegoUnlock(rw.id, true, false)
-	// DEDEGO-ADD-END
 }
 
 // RLocker returns a Locker interface that implements

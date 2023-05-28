@@ -239,6 +239,11 @@ func (m *Mutex) lockSlow() {
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
+	// DEDEGO-ADD-START
+	dedegoIndex := runtime.DedegoUnlock(m.id, false, false)
+	defer runtime.DedegoFinish(dedegoIndex)
+	// DEDEGO-ADD-END
+
 	if race.Enabled {
 		_ = m.state
 		race.Release(unsafe.Pointer(m))
@@ -251,9 +256,6 @@ func (m *Mutex) Unlock() {
 		// To hide unlockSlow during tracing we skip one extra frame when tracing GoUnblock.
 		m.unlockSlow(new)
 	}
-	// DEDEGO-ADD-START
-	runtime.DedegoUnlock(m.id, false, false)
-	// DEDEGO-ADD-END
 }
 
 func (m *Mutex) unlockSlow(new int32) {
