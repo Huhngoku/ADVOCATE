@@ -65,7 +65,7 @@ func (wg *WaitGroup) Add(delta int) {
 
 	// DEDEGO-ADD-START
 	if wg.id == 0 {
-		wg.id = runtime.GetNewId()
+		wg.id = runtime.GetDedegoId()
 	}
 	runtime.DedegoAdd(wg.id, delta, v)
 	// DEDEGO-ADD-END

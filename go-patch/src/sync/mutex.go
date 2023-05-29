@@ -88,7 +88,7 @@ func (m *Mutex) Lock() {
 	// DEDEGO-ADD-START
 	// set id if not set before
 	if m.id == 0 {
-		m.id = runtime.GetNewId()
+		m.id = runtime.GetDedegoId()
 	}
 
 	dedegoIndex := runtime.DedegoLock(m.id, false, false)
@@ -114,7 +114,7 @@ func (m *Mutex) Lock() {
 func (m *Mutex) TryLock() bool {
 	// DEDEGO-ADD-START
 	if m.id == 0 {
-		m.id = runtime.GetNewId()
+		m.id = runtime.GetDedegoId()
 	}
 	dedegoIndex := runtime.DedegoTryLock(m.id, false, false)
 	// DEDEGO-ADD-END

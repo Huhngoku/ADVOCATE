@@ -256,10 +256,10 @@ func DedegoWait(id uint32) int {
 // ============================= Channel =============================
 
 type dedegoTraceChannelElement struct {
-	id        uint32    // id of the channel
-	exec      bool      // set true if the operation was successfully finished
-	op        operation // operation
-	partnerId uint32    // id of the channel with wich the communication took place
+	id   uint32    // id of the channel
+	exec bool      // set true if the operation was successfully finished
+	op   operation // operation
+	opId uint32    // id of the operation
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -286,12 +286,12 @@ func (elem dedegoTraceChannelElement) toString() string {
 	}
 
 	if elem.exec {
-		res += "e"
+		res += ",e"
 	} else {
-		res += "o"
+		res += ",o"
 	}
 
-	res += "," + uint32ToString(elem.partnerId)
+	res += "," + uint32ToString(elem.opId)
 	return res
 }
 
@@ -299,11 +299,12 @@ func (elem dedegoTraceChannelElement) toString() string {
  * Add a channel send to the trace
  * Args:
  * 	id: id of the channel
+ * 	opId: id of the operation
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSend(id uint32) int {
-	elem := dedegoTraceChannelElement{id: id, op: opChanSend}
+func DedegoSend(id uint32, opId uint32) int {
+	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId}
 	return insertIntoTrace(elem)
 }
 
@@ -311,13 +312,12 @@ func DedegoSend(id uint32) int {
  * Add a channel recv to the trace
  * Args:
  * 	id: id of the channel
- * 	isPre: true if pre event, post otherwise
- * 	partnerId: id of the channel with wich the communication took place
+ * 	opId: id of the operation
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoRecv(id uint32) int {
-	elem := dedegoTraceChannelElement{id: id, op: opChanRecv}
+func DedegoRecv(id uint32, opId uint32) int {
+	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId}
 	return insertIntoTrace(elem)
 }
 

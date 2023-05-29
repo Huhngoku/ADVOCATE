@@ -186,8 +186,8 @@ func TestDedegoWaitGroup(t *testing.T) {
 	// check that form is correct
 	tracesTotal := strings.Join(traces, "|")
 	exp := regexp.MustCompile("(?i)W,[0-9]+,W,o,3,3;W,[0-9]+,W,o,3,3;W,[0-9]+,W,e,0,0;" +
-		"W,[0-9]+,W,e,0,0\\|W,[0-9]+,W,o,-1,0;W,[0-9]+,W,o,-1,0\\|W,[0-9]+,W,o,-1,2;" +
-		"W,[0-9]+,W,o,-1,2\\|W,[0-9]+,W,o,-1,1;W,[0-9]+,W,o,-1,1")
+		"W,[0-9]+,W,e,0,0\\|W,[0-9]+,W,o,-1,2;W,[0-9]+,W,o,-1,2\\|W,[0-9]+,W,o,-1,1;" +
+		"W,[0-9]+,W,o,-1,1\\|W,[0-9]+,W,o,-1,0;W,[0-9]+,W,o,-1,0")
 	if !exp.MatchString(tracesTotal) {
 		t.Errorf("Trace in TestDedegoWaitGroup is not correct: %s", tracesTotal)
 	}

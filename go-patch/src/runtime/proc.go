@@ -4436,6 +4436,10 @@ func newproc(fn *funcval) {
 	systemstack(func() {
 		newg := newproc1(fn, gp, pc)
 
+		// DEDEGO-ADD-STAR
+		newg.goInfo = newDedegoRoutine(newg)
+		// DEDEGO-ADD-END
+
 		pp := getg().m.p.ptr()
 		runqput(pp, newg, true)
 
@@ -4523,9 +4527,6 @@ func newproc1(fn *funcval, callergp *g, callerpc uintptr) *g {
 		pp.goidcacheend = pp.goidcache + _GoidCacheBatch
 	}
 	newg.goid = pp.goidcache
-
-	// DEDEGO-ADD-START
-	newg.goInfo = newDedegoRoutine(newg)
 
 	pp.goidcache++
 	if raceenabled {

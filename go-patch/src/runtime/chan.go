@@ -21,6 +21,8 @@ import (
 	"internal/abi"
 	"runtime/internal/atomic"
 	"runtime/internal/math"
+	at "sync/atomic"
+
 	"unsafe"
 )
 
@@ -52,7 +54,9 @@ type hchan struct {
 
 	// DEDEGO-ADD-START
 	id             uint32
-	dedegoChanProg bool // only look at channels where dedegoChanProg is true, others are internal
+	dedegoChanProg bool   // only look at channels where dedegoChanProg is true, others are internal
+	numberSend     uint32 // number of completed send operations
+	numberRecv     uint32 // number of completed recv operations
 	// DEDEGO-ADD-END
 }
 
@@ -117,10 +121,9 @@ func makechan(t *chantype, size int) *hchan {
 	c.dataqsiz = uint(size)
 
 	// DEDEGO-ADD-START
-	c.id = GetNewId()
-	_, file, line, _ := Caller(1)
+	c.id = GetDedegoId()
+	_, file, _, _ := Caller(1)
 	if file == "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
-		print("makechan: ", c.id, " ", file, " ", line, "\n")
 		c.dedegoChanProg = true
 	}
 	// DEDEGO-ADD-END
@@ -173,6 +176,13 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
  * the operation; we'll see that it's now closed.
  */
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+	// DEDEGO-ADD-START
+	if dedegoHandle(c) {
+		at.AddUint32(&c.numberSend, 1)
+		dedegoIndex := DedegoSend(c.id, c.numberSend)
+		defer DedegoFinish(dedegoIndex)
+	}
+	// DEDEGO-ADD-END
 	if c == nil {
 		if !block {
 			return false
@@ -307,12 +317,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 // sg must already be dequeued from c.
 // ep must be non-nil and point to the heap or the caller's stack.
 func send(c *hchan, sg *sudog, ep unsafe.Pointer, unlockf func(), skip int) {
-	// DEDEGO-ADD-START
-	if dedegoHandle(c) {
-		dedegoIndex := DedegoSend(c.id)
-		defer DedegoFinish(dedegoIndex)
-	}
-	// DEDEGO-ADD-END
 	if raceenabled {
 		if c.dataqsiz == 0 {
 			racesync(c, sg)
@@ -484,7 +488,8 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
 	// DEDEGO-ADD-START
 	if dedegoHandle(c) {
-		dedegoIndex := DedegoRecv(c.id)
+		at.AddUint32(&c.numberRecv, 1)
+		dedegoIndex := DedegoRecv(c.id, c.numberRecv)
 		defer DedegoFinish(dedegoIndex)
 	}
 	// DEDEGO-ADD-END

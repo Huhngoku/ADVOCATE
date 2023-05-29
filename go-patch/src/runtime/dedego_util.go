@@ -67,7 +67,7 @@ var dedegoCurrentId = uint32(0)
  * Return:
  * 	new id
  */
-func GetNewId() uint32 {
+func GetDedegoId() uint32 {
 	return atomic.AddUint32(&dedegoCurrentId, 1)
 }
 
