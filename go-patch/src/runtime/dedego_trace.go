@@ -68,6 +68,34 @@ func PrintTrace() {
 	println("Routine", routineId, ":", TraceToString())
 }
 
+// ============================= Routine ===========================
+
+// type to save in the trace for routines
+type dedegoTraceSpawnElement struct {
+	id uint64 // id of the routine
+}
+
+func (elem dedegoTraceSpawnElement) isDedegoTraceElement() {}
+
+/*
+ * Get a string representation of the element
+ * Return:
+ * 	string representation of the element "S,'id'"
+ *    'id' (number): id of the routine
+ */
+func (elem dedegoTraceSpawnElement) toString() string {
+	return "S," + uint64ToString(elem.id)
+}
+
+/*
+ * Add a routine spawn to the trace
+ * Args:
+ * 	id: id of the routine
+ */
+func DedegoSpawn(id uint64) {
+	insertIntoTrace(dedegoTraceSpawnElement{id: id})
+}
+
 // ============================= Mutex =============================
 
 // type to save in the trace for mutexe

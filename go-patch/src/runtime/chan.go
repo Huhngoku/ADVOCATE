@@ -121,7 +121,7 @@ func makechan(t *chantype, size int) *hchan {
 	c.dataqsiz = uint(size)
 
 	// DEDEGO-ADD-START
-	c.id = GetDedegoId()
+	c.id = GetDedegoObjectId()
 	_, file, _, _ := Caller(1)
 	if file == "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
 		c.dedegoChanProg = true

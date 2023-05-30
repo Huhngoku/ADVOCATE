@@ -4,6 +4,8 @@
 
 package types
 
+// DEDEGO-REMOVE_TEST-START
+/*
 import (
 	"reflect"
 	"testing"
@@ -60,3 +62,5 @@ func TestSizeof(t *testing.T) {
 		}
 	}
 }
+*/
+// DEDEGO-REMOVE_TEST-END

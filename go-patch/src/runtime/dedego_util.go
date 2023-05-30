@@ -79,15 +79,25 @@ func intToString(n int) string {
 	}
 }
 
-var dedegoCurrentId = uint64(0)
+var dedegoCurrentRoutineId = uint64(0)
+var dedegoCurrentObjectId = uint64(0)
+
+/*
+ * Get a new id for a routine
+ * Return:
+ * 	new id
+ */
+func GetDedegoRoutineId() uint64 {
+	return atomic.AddUint64(&dedegoCurrentRoutineId, 1)
+}
 
 /*
  * Get a new id for a mutex, channel or waitgroup
  * Return:
  * 	new id
  */
-func GetDedegoId() uint64 {
-	return atomic.AddUint64(&dedegoCurrentId, 1)
+func GetDedegoObjectId() uint64 {
+	return atomic.AddUint64(&dedegoCurrentObjectId, 1)
 }
 
 // DEDEGO-FILE-END

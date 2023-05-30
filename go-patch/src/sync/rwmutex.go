@@ -53,7 +53,7 @@ const rwmutexMaxReaders = 1 << 30
 // - Unlock  -> Lock:  readerSem
 // - Unlock  -> RLock: readerSem
 // - RUnlock -> Lock:  writerSem
-//
+//GetDedegoObjectId
 // The methods below temporarily disable handling of race synchronization
 // events in order to provide the more precise model above to the race
 // detector.
@@ -71,7 +71,7 @@ func (rw *RWMutex) RLock() {
 	// DEDEGO-ADD-START
 	// set id if not set before
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoId()
+		rw.id = runtime.GetDedegoObjectId()
 	}
 
 	dedegoIndex := runtime.DedegoLock(rw.id, true, true)
@@ -101,7 +101,7 @@ func (rw *RWMutex) TryRLock() bool {
 	// DEDEGO-ADD-START
 	// set id if not set before
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoId()
+		rw.id = runtime.GetDedegoObjectId()
 	}
 	dedegoIndex := runtime.DedegoTryLock(rw.id, true, true)
 	// DEDEGO-ADD-END
@@ -177,7 +177,7 @@ func (rw *RWMutex) Lock() {
 	// DEDEGO-ADD-START
 	// set id if not set before
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoId()
+		rw.id = runtime.GetDedegoObjectId()
 	}
 
 	dedegoIndex := runtime.DedegoLock(rw.id, true, false)
@@ -212,7 +212,7 @@ func (rw *RWMutex) TryLock() bool {
 	// DEDEGO-ADD-START
 	// set id if not set before
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoId()
+		rw.id = runtime.GetDedegoObjectId()
 	}
 	dedegoIndex := runtime.DedegoTryLock(rw.id, true, false)
 	// DEDEGO-ADD-END

@@ -4438,6 +4438,7 @@ func newproc(fn *funcval) {
 
 		// DEDEGO-ADD-STAR
 		newg.goInfo = newDedegoRoutine(newg)
+		DedegoSpawn(newg.goInfo.id)
 		// DEDEGO-ADD-END
 
 		pp := getg().m.p.ptr()

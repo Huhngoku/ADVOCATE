@@ -9,7 +9,7 @@ type DedegoRoutine struct {
 }
 
 func newDedegoRoutine(g *g) *DedegoRoutine {
-	return &DedegoRoutine{id: GetDedegoId(), G: g, Trace: make([]dedegoTraceElement, 0)}
+	return &DedegoRoutine{id: GetDedegoRoutineId(), G: g, Trace: make([]dedegoTraceElement, 0)}
 }
 
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
