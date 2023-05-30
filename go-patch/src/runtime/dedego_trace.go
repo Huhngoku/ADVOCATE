@@ -72,7 +72,7 @@ func PrintTrace() {
 
 // type to save in the trace for mutexe
 type dedegoTraceMutexElement struct {
-	id   uint32    // id of the mutex
+	id   uint64    // id of the mutex
 	exec bool      // set true if the operation was successfully finished
 	op   operation // operation
 	rw   bool      // true if it is a rwmutex
@@ -92,7 +92,7 @@ func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
  *	  'suc' (s/f): s if the trylock was successful, f otherwise
  */
 func (elem dedegoTraceMutexElement) toString() string {
-	res := "M," + uint32ToString(elem.id) + ","
+	res := "M," + uint64ToString(elem.id) + ","
 
 	if elem.rw {
 		res += "R,"
@@ -140,7 +140,7 @@ func (elem dedegoTraceMutexElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoLock(id uint32, rw bool, r bool) int {
+func DedegoLock(id uint64, rw bool, r bool) int {
 	op := opMutLock
 	if r {
 		op = opMutRLock
@@ -158,7 +158,7 @@ func DedegoLock(id uint32, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoTryLock(id uint32, rw bool, r bool) int {
+func DedegoTryLock(id uint64, rw bool, r bool) int {
 	op := opMutTryLock
 	if r {
 		op = opMutRTryLock
@@ -176,7 +176,7 @@ func DedegoTryLock(id uint32, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoUnlock(id uint32, rw bool, r bool) int {
+func DedegoUnlock(id uint64, rw bool, r bool) int {
 	op := opMutUnlock
 	if r {
 		op = opMutRUnlock
@@ -188,7 +188,7 @@ func DedegoUnlock(id uint32, rw bool, r bool) int {
 // ============================= WaitGroup ===========================
 
 type dedegoTraceWaitGroupElement struct {
-	id    uint32    // id of the waitgroup
+	id    uint64    // id of the waitgroup
 	exec  bool      // set true if the operation was successfully finished
 	op    operation // operation
 	delta int       // delta of the waitgroup
@@ -208,7 +208,7 @@ func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
  *	  'val' (number): value of the waitgroup after the operation
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
-	res := "W," + uint32ToString(elem.id) + ","
+	res := "W," + uint64ToString(elem.id) + ","
 	switch elem.op {
 	case opWgAdd:
 		res += "A,"
@@ -235,7 +235,7 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoAdd(id uint32, delta int, val int32) int {
+func DedegoAdd(id uint64, delta int, val int32) int {
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, delta: delta, val: val}
 	return insertIntoTrace(elem)
 
@@ -248,7 +248,7 @@ func DedegoAdd(id uint32, delta int, val int32) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoWait(id uint32) int {
+func DedegoWait(id uint64) int {
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait}
 	return insertIntoTrace(elem)
 }
@@ -256,10 +256,10 @@ func DedegoWait(id uint32) int {
 // ============================= Channel =============================
 
 type dedegoTraceChannelElement struct {
-	id   uint32    // id of the channel
+	id   uint64    // id of the channel
 	exec bool      // set true if the operation was successfully finished
 	op   operation // operation
-	opId uint32    // id of the operation
+	opId uint64    // id of the operation
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -274,7 +274,7 @@ func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
  *	  'pId' (number): id of the channel with wich the communication took place
  */
 func (elem dedegoTraceChannelElement) toString() string {
-	res := "C," + uint32ToString(elem.id) + ","
+	res := "C," + uint64ToString(elem.id) + ","
 
 	switch elem.op {
 	case opChanSend:
@@ -291,7 +291,7 @@ func (elem dedegoTraceChannelElement) toString() string {
 		res += ",o"
 	}
 
-	res += "," + uint32ToString(elem.opId)
+	res += "," + uint64ToString(elem.opId)
 	return res
 }
 
@@ -303,7 +303,7 @@ func (elem dedegoTraceChannelElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSend(id uint32, opId uint32) int {
+func DedegoSend(id uint64, opId uint64) int {
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId}
 	return insertIntoTrace(elem)
 }
@@ -316,7 +316,7 @@ func DedegoSend(id uint32, opId uint32) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoRecv(id uint32, opId uint32) int {
+func DedegoRecv(id uint64, opId uint64) int {
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId}
 	return insertIntoTrace(elem)
 }
@@ -328,7 +328,7 @@ func DedegoRecv(id uint32, opId uint32) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoClose(id uint32) int {
+func DedegoClose(id uint64) int {
 	elem := dedegoTraceChannelElement{id: id, op: opChanClose}
 	return insertIntoTrace(elem)
 }

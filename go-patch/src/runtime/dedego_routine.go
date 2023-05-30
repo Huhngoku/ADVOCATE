@@ -3,12 +3,13 @@
 package runtime
 
 type DedegoRoutine struct {
+	id    uint64
 	G     *g
 	Trace []dedegoTraceElement
 }
 
 func newDedegoRoutine(g *g) *DedegoRoutine {
-	return &DedegoRoutine{G: g, Trace: make([]dedegoTraceElement, 0)}
+	return &DedegoRoutine{id: GetDedegoId(), G: g, Trace: make([]dedegoTraceElement, 0)}
 }
 
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
@@ -33,7 +34,7 @@ func currentGoRoutine() *DedegoRoutine {
  * 	id of the current routine
  */
 func GetRoutineId() uint64 {
-	return currentGoRoutine().G.goid
+	return currentGoRoutine().id
 }
 
 // DEDEGO-FILE-END

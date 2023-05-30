@@ -31,7 +31,7 @@ type WaitGroup struct {
 	sema  uint32
 
 	// DEDEGO-ADD-START
-	id uint32 // id for the waitgroup
+	id uint64 // id for the waitgroup
 	// DEDEGO-ADD-END
 }
 

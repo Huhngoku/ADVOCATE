@@ -53,10 +53,10 @@ type hchan struct {
 	lock mutex
 
 	// DEDEGO-ADD-START
-	id             uint32
+	id             uint64
 	dedegoChanProg bool   // only look at channels where dedegoChanProg is true, others are internal
-	numberSend     uint32 // number of completed send operations
-	numberRecv     uint32 // number of completed recv operations
+	numberSend     uint64 // number of completed send operations
+	numberRecv     uint64 // number of completed recv operations
 	// DEDEGO-ADD-END
 }
 
@@ -178,7 +178,7 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// DEDEGO-ADD-START
 	if dedegoHandle(c) {
-		at.AddUint32(&c.numberSend, 1)
+		at.AddUint64(&c.numberSend, 1)
 		dedegoIndex := DedegoSend(c.id, c.numberSend)
 		defer DedegoFinish(dedegoIndex)
 	}
@@ -488,7 +488,7 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
 	// DEDEGO-ADD-START
 	if dedegoHandle(c) {
-		at.AddUint32(&c.numberRecv, 1)
+		at.AddUint64(&c.numberRecv, 1)
 		dedegoIndex := DedegoRecv(c.id, c.numberRecv)
 		defer DedegoFinish(dedegoIndex)
 	}

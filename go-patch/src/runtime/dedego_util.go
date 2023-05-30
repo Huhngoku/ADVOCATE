@@ -13,11 +13,30 @@ import (
  * Return:
  * 	string representation of the int
  */
-func uint32ToString(n uint32) string {
+func uint64ToString(n uint64) string {
 	if n < 10 {
 		return string(rune(n + '0'))
 	} else {
-		return uint32ToString(n/10) + string(rune(n%10+'0'))
+		return uint64ToString(n/10) + string(rune(n%10+'0'))
+
+	}
+}
+
+/*
+ * Get a string representation of an int64
+ * Args:
+ * 	n: int to convert
+ * Return:
+ * 	string representation of the int
+ */
+func int64ToString(n int64) string {
+	if n < 0 {
+		return "-" + int64ToString(-n)
+	}
+	if n < 10 {
+		return string(rune(n + '0'))
+	} else {
+		return int64ToString(n/10) + string(rune(n%10+'0'))
 
 	}
 }
@@ -31,7 +50,7 @@ func uint32ToString(n uint32) string {
  */
 func int32ToString(n int32) string {
 	if n < 0 {
-		return "-" + uint32ToString(uint32(-n))
+		return "-" + int32ToString(-n)
 	}
 	if n < 10 {
 		return string(rune(n + '0'))
@@ -60,15 +79,15 @@ func intToString(n int) string {
 	}
 }
 
-var dedegoCurrentId = uint32(0)
+var dedegoCurrentId = uint64(0)
 
 /*
  * Get a new id for a mutex, channel or waitgroup
  * Return:
  * 	new id
  */
-func GetDedegoId() uint32 {
-	return atomic.AddUint32(&dedegoCurrentId, 1)
+func GetDedegoId() uint64 {
+	return atomic.AddUint64(&dedegoCurrentId, 1)
 }
 
 // DEDEGO-FILE-END

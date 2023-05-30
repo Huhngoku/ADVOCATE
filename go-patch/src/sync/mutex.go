@@ -38,7 +38,7 @@ type Mutex struct {
 	state int32
 	sema  uint32
 	// DEDEGO-ADD-START
-	id uint32
+	id uint64 // id for the mutex
 	// DEDEGO-ADD-END
 }
 

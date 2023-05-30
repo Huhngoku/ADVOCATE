@@ -43,7 +43,7 @@ type RWMutex struct {
 	readerCount atomic.Int32 // number of pending readers
 	readerWait  atomic.Int32 // number of departing readers
 	// DEDEGO-ADD-START
-	id uint32 // id for the mutex
+	id uint64 // id for the mutex
 	// DEDEGO-ADD-END
 }
 
