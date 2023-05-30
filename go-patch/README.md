@@ -1,5 +1,6 @@
 # Patch version of the Go Programming language for Dedego
 
+## Changed files
 Added files:
 - src/runtime/dedego_routine.go
 - src/runtime/dedego_test.go
@@ -28,3 +29,26 @@ Changed files:
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
+
+## Trace structure
+- One line per routine
+- Each line has the format n:T, where n is the id of the routine and T the trace
+- The trace consists of the trace elements separated by semicolon.
+- The trace elements can have the following structure:
+    - Mutex: M,'id','rw','op','exec','suc'
+        - 'id' (number): id of the mutex
+        - 'rw' (R/-): R if it is a rwmutex, otherwise -
+        - 'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
+        - 'exec' (e/o): e if the operation was successfully finished, o otherwise
+        - 'suc' (s/f): s if the trylock was successful, f otherwise
+    - WaitGroup: W,'id','op','exec','delta','val'
+        - 'id' (number): id of the mutex
+        - 'op' (A/W): A if it is an add or Done, W if it is a wait
+        - 'exec' (e/o): e if the operation was successfully finished, o otherwise
+        - 'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
+        - 'val' (number): value of the waitgroup after the operation
+    - Channel: C,'id','op','exec','pId'
+        - 'id' (number): id of the mutex
+        - 'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
+        - 'exec' (e/o): e if the operation was successfully finished, o otherwise
+        - 'pId' (number): id of the channel with wich the communication took place
