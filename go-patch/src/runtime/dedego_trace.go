@@ -37,7 +37,7 @@ type dedegoTraceElement interface {
  * Return:
  * 	string representation of the trace
  */
-func TraceToString() string {
+func CurrentTraceToString() string {
 	res := ""
 	for i, elem := range currentGoRoutine().Trace {
 		if i != 0 {
@@ -46,6 +46,24 @@ func TraceToString() string {
 		res += elem.toString()
 	}
 
+	return res
+}
+
+/*
+ * Return a string representation of the trace
+ * Args:
+ * 	trace: trace to convert to string
+ * Return:
+ * 	string representation of the trace
+ */
+func traceToString(trace *[]dedegoTraceElement) string {
+	res := ""
+	for i, elem := range *trace {
+		if i != 0 {
+			res += ";"
+		}
+		res += elem.toString()
+	}
 	return res
 }
 
@@ -65,7 +83,36 @@ func insertIntoTrace(elem dedegoTraceElement) int {
  */
 func PrintTrace() {
 	routineId := GetRoutineId()
-	println("Routine", routineId, ":", TraceToString())
+	println("Routine", routineId, ":", CurrentTraceToString())
+}
+
+/*
+ * Return the trace of all traces
+ * Args:
+ * 	all: if true, return the trace of all routines, else return only the non empty traces
+ * Return:
+ * 	string representation of the trace of all routines
+ */
+func AllTracesToString(all bool) string {
+	res := ""
+	lock(DedegoRoutinesLock)
+	for id, trace := range DedegoRoutines {
+		traceString := traceToString(trace)
+		if all || traceString != "" {
+			res += uint64ToString(id) + ":" + traceString + "\n"
+		}
+	}
+	unlock(DedegoRoutinesLock)
+	return res
+}
+
+/*
+ * Print the trace of all routines
+ * Args:
+ * 	all: if true, print the trace of all routines, else print only the non empty traces
+ */
+func PrintAllTraces(all bool) {
+	print(AllTracesToString(all))
 }
 
 // ============================= Routine ===========================

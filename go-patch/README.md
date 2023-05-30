@@ -11,10 +11,12 @@ Changed files:
 - src/cmd/cgo/internal/test/testx.go
 - src/cmd/dist/test.go
 - src/cmd/go/stript_test.go
+- src/cmd/compile/internal/types2/sizeof_test.go
 - src/context/x_test.go
 - src/crypto/internal/nistec/nistec_test.go
 - src/crypto/tls/tls_test.go
 - src/go/build/deps_test.go
+- src/go/types/sizeof_test.go
 - src/internal/intern/inter_test.go
 - src/log/slog/text_handler_test.go
 - src/net/netip/netip_test.go
