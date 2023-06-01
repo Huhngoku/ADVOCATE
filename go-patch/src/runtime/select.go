@@ -134,6 +134,19 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	lockorder := order1[ncases:][:ncases:ncases]
 	// NOTE: pollorder/lockorder's underlying array was not zero-initialized by compiler.
 
+	// DEDEGO-ADD-START
+	dedegoIndex := -1
+	_, file, _, _ := Caller(1)
+	if file == "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
+		dedegoIndex = DedegoSelect(&scases, nsends, block)
+	}
+
+	defer func(lockOrder []uint16) {
+		DedegoFinishSelect2(dedegoIndex, lockOrder)
+	}(lockorder)
+
+	// DEDEGO-ADD-END
+
 	// Even when raceenabled is true, there might be select
 	// statements in packages compiled without -race (e.g.,
 	// ensureSigM in runtime/signal_unix.go).
@@ -246,6 +259,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	var caseSuccess bool
 	var caseReleaseTime int64 = -1
 	var recvOK bool
+
 	for _, casei := range pollorder {
 		casi = int(casei)
 		cas = &scases[casi]
@@ -507,6 +521,11 @@ retc:
 	if caseReleaseTime > 0 {
 		blockevent(caseReleaseTime-t0, 1)
 	}
+
+	// DEDEGO-ADD-START
+	DedegoFinishSelect1(dedegoIndex, casi)
+	// DEDEGO-ADD-END
+
 	return casi, recvOK
 
 sclose:

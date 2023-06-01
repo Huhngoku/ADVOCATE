@@ -408,6 +408,78 @@ func DedegoClose(id uint64) int {
 	return insertIntoTrace(elem)
 }
 
+// ============================= Select ==============================
+
+type dedegoTraceSelectElement struct {
+	id     uint64   // id of the select
+	cases  []string // cases of the select
+	send   []bool   // true if the case is a send, false if it is a receive
+	nsend  int      // number of send cases
+	chosen int      // index of the chosen case
+	exec   bool     // set true if the operation was successfully finished
+	defa   bool     // set true if a default case exists
+}
+
+func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
+
+/*
+ * Get a string representation of the element
+ * Return:
+ * 	string representation of the element "S,'id','cases','chosen','exec'"
+ *    'id' (number): id of the mutex
+ *	  'cases' (string): cases of the select, id and r/s, separated by '.', d for default
+ *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
+ *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
+ */
+func (elem dedegoTraceSelectElement) toString() string {
+	res := "S," + uint64ToString(elem.id) + ","
+	for i, ca := range elem.cases {
+		if i != 0 {
+			res += "."
+		}
+		res += ca
+		if elem.send[i] {
+			res += "s"
+		} else {
+			res += "r"
+		}
+	}
+	if elem.defa {
+		if len(elem.cases) != 0 {
+			res += "."
+		}
+		res += "d"
+	}
+
+	res += "," + intToString(elem.chosen)
+	if elem.exec {
+		res += ",e"
+	} else {
+		res += ",o"
+	}
+	return res
+}
+
+/*
+ * Add a select to the trace
+ * Args:
+ * 	cases: cases of the select
+ * 	nsends: number of send cases
+ * 	block: true if the select is blocking (has no default), false otherwise
+ * Return:
+ * 	index of the operation in the trace
+ */
+func DedegoSelect(cases *[]scase, nsends int, block bool) int {
+	id := GetDedegoObjectId()
+	casesStr := make([]string, len(*cases))
+	for i, ca := range *cases {
+		casesStr[i] = uint64ToString(ca.c.id)
+	}
+
+	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nsends, defa: !block}
+	return insertIntoTrace(elem)
+}
+
 // ============================= Finish ================================
 /*
  * Add the end counter to an operation of the trace. For try use DedegoFinishTry.
@@ -450,6 +522,36 @@ func DedegoFinishTry(index int, suc bool) {
 	default:
 		panic("DedegoFinishTry called on non mutex")
 	}
+}
+
+/*
+ * Add the chosen case to the select
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	chosen: index of the chosen case
+ */
+func DedegoFinishSelect1(index int, chosen int) {
+	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+
+	elem.exec = true
+	elem.chosen = chosen
+	currentGoRoutine().Trace[index] = elem
+}
+
+/*
+ * Add the lock order to the select
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	lockOrder: lock order of the select
+ */
+func DedegoFinishSelect2(index int, lockOrder []uint16) {
+	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+	send := make([]bool, len(lockOrder))
+	for i, lo := range lockOrder {
+		send[i] = (lo < uint16(elem.nsend))
+	}
+	elem.send = send
+	currentGoRoutine().Trace[index] = elem
 }
 
 // DEDUGO-FILE-END

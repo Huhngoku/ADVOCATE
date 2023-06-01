@@ -66,9 +66,12 @@ func currentGoRoutine() *DedegoRoutine {
 /*
  * Get the id of the current routine
  * Return:
- * 	id of the current routine
+ * 	id of the current routine, 0 if current routine is nil
  */
 func GetRoutineId() uint64 {
+	if currentGoRoutine() == nil {
+		return 0
+	}
 	return currentGoRoutine().id
 }
 

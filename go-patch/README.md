@@ -26,6 +26,7 @@ Changed files:
 - src/runtime/runtime2.go
 - src/runtime/sizeof_test.go
 - src/runtime/chan.go
+- src/runtime/select.go
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
@@ -52,3 +53,8 @@ Changed files:
         - 'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
         - 'exec' (e/o): e if the operation was successfully finished, o otherwise
         - 'pId' (number): id of the channel with wich the communication took place
+    - Select: S,'id','cases','chosen','exec'
+        - 'id' (number): id of the mutex
+        - 'cases' (string): cases of the select, id and r/s, separated by '.', d for default
+        - 'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
+        - 'exec' (e/o): e if the operation was successfully finished, o otherwise
