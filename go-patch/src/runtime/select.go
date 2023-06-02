@@ -523,7 +523,12 @@ retc:
 	}
 
 	// DEDEGO-ADD-START
-	DedegoFinishSelect1(dedegoIndex, casi)
+	// println(scases[casi].c.id)
+	if casi != -1 {
+		DedegoFinishSelect1(dedegoIndex, casi, scases[casi].c)
+	} else {
+		DedegoFinishSelect1(dedegoIndex, -1, nil)
+	}
 	// DEDEGO-ADD-END
 
 	return casi, recvOK

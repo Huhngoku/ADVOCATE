@@ -127,11 +127,11 @@ func (elem dedegoTraceSpawnElement) isDedegoTraceElement() {}
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "S,'id'"
+ * 	string representation of the element "G,'id'"
  *    'id' (number): id of the routine
  */
 func (elem dedegoTraceSpawnElement) toString() string {
-	return "S," + uint64ToString(elem.id)
+	return "G," + uint64ToString(elem.id)
 }
 
 /*
@@ -139,8 +139,8 @@ func (elem dedegoTraceSpawnElement) toString() string {
  * Args:
  * 	id: id of the routine
  */
-func DedegoSpawn(id uint64) {
-	insertIntoTrace(dedegoTraceSpawnElement{id: id})
+func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
+	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId})
 }
 
 // ============================= Mutex =============================
@@ -411,13 +411,15 @@ func DedegoClose(id uint64) int {
 // ============================= Select ==============================
 
 type dedegoTraceSelectElement struct {
-	id     uint64   // id of the select
-	cases  []string // cases of the select
-	send   []bool   // true if the case is a send, false if it is a receive
-	nsend  int      // number of send cases
-	chosen int      // index of the chosen case
-	exec   bool     // set true if the operation was successfully finished
-	defa   bool     // set true if a default case exists
+	id         uint64   // id of the select
+	cases      []string // cases of the select
+	send       []bool   // true if the case is a send, false if it is a receive
+	nsend      int      // number of send cases
+	chosen     int      // index of the chosen case
+	chosenChan *hchan   // channel chosen
+	exec       bool     // set true if the operation was successfully finished
+	opId       uint64   // id of the operation
+	defa       bool     // set true if a default case exists
 }
 
 func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
@@ -425,11 +427,12 @@ func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "S,'id','cases','chosen','exec'"
+ * 	string representation of the element "S,'id','cases','exec','chosen','opId'"
  *    'id' (number): id of the mutex
  *	  'cases' (string): cases of the select, id and r/s, separated by '.', d for default
- *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
+ *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
+ *	  'opId' (number): id of the operation on the channel
  */
 func (elem dedegoTraceSelectElement) toString() string {
 	res := "S," + uint64ToString(elem.id) + ","
@@ -451,12 +454,13 @@ func (elem dedegoTraceSelectElement) toString() string {
 		res += "d"
 	}
 
-	res += "," + intToString(elem.chosen)
 	if elem.exec {
 		res += ",e"
 	} else {
 		res += ",o"
 	}
+
+	res += "," + intToString(elem.chosen) + "," + uint64ToString(elem.opId)
 	return res
 }
 
@@ -529,12 +533,18 @@ func DedegoFinishTry(index int, suc bool) {
  * Args:
  * 	index: index of the operation in the trace
  * 	chosen: index of the chosen case
+ * 	chosenChan: chosen channel
  */
-func DedegoFinishSelect1(index int, chosen int) {
+func DedegoFinishSelect1(index int, chosen int, chosenChan *hchan) {
+	if index == -1 {
+		return
+	}
 	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 
 	elem.exec = true
 	elem.chosen = chosen
+	elem.chosenChan = chosenChan
+
 	currentGoRoutine().Trace[index] = elem
 }
 
@@ -545,12 +555,26 @@ func DedegoFinishSelect1(index int, chosen int) {
  * 	lockOrder: lock order of the select
  */
 func DedegoFinishSelect2(index int, lockOrder []uint16) {
+	if index == -1 {
+		return
+	}
 	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 	send := make([]bool, len(lockOrder))
 	for i, lo := range lockOrder {
 		send[i] = (lo < uint16(elem.nsend))
 	}
 	elem.send = send
+
+	if elem.chosenChan != nil {
+		if send[elem.chosen] {
+			elem.chosenChan.numberSend++
+			elem.opId = elem.chosenChan.numberSend
+		} else {
+			elem.chosenChan.numberRecv++
+			elem.opId = elem.chosenChan.numberRecv
+		}
+	}
+
 	currentGoRoutine().Trace[index] = elem
 }
 

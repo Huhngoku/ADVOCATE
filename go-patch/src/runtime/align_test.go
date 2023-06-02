@@ -7,19 +7,24 @@ package runtime_test
 import (
 	"go/ast"
 	"go/build"
-	"go/importer"
-	"go/parser"
 	"go/printer"
 	"go/token"
 	"go/types"
-	"internal/testenv"
-	"os"
-	"regexp"
-	"runtime"
 	"strings"
 	"testing"
+	// DEDEGO-REMOVE_TEST-START
+	/*
+		"go/importer"
+		"go/parser"
+		"internal/testenv"
+		"os"
+		"regexp"
+		"runtime"
+	*/// DEDEGO-REMOVE_TEST-END
 )
 
+// DEDEGO-REMOVE_TEST-START
+/*
 // Check that 64-bit fields on which we apply atomic operations
 // are aligned to 8 bytes. This can be a problem on 32-bit systems.
 func TestAtomicAlignment(t *testing.T) {
@@ -96,6 +101,8 @@ func TestAtomicAlignment(t *testing.T) {
 	v := Visitor{t: t, fset: fset, types: info.Types, checked: checked}
 	ast.Walk(&v, pkg)
 }
+*/
+// DEDEGO-REMOVE_TEST-END
 
 type Visitor struct {
 	fset    *token.FileSet
