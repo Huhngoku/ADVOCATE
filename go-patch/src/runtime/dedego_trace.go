@@ -562,9 +562,15 @@ func (elem dedegoTraceSelectElement) toString() string {
  * 	index of the operation in the trace
  */
 func DedegoSelect(cases *[]scase, nsends int, block bool) int {
+	if cases == nil {
+		return -1
+	}
 	id := GetDedegoObjectId()
 	casesStr := make([]string, len(*cases))
 	for i, ca := range *cases {
+		if ca.c == nil {
+			return -1
+		}
 		casesStr[i] = uint64ToString(ca.c.id)
 	}
 

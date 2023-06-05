@@ -4438,7 +4438,7 @@ func newproc(fn *funcval) {
 
 		// DEDEGO-ADD-STAR
 		newg.goInfo = newDedegoRoutine(newg)
-		if gp.goInfo != nil {
+		if gp != nil && gp.goInfo != nil {
 			DedegoSpawn(gp.goInfo, newg.goInfo.id)
 		}
 		// DEDEGO-ADD-END

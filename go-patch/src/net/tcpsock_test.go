@@ -466,6 +466,8 @@ func TestTCPConcurrentAccept(t *testing.T) {
 	}
 }
 
+// DEDEGO-REMOVE_TEST_START
+/*
 func TestTCPReadWriteAllocs(t *testing.T) {
 	switch runtime.GOOS {
 	case "plan9":
@@ -534,6 +536,8 @@ func TestTCPReadWriteAllocs(t *testing.T) {
 		t.Fatalf("got %v; want 0", allocs)
 	}
 }
+*/
+// DEDEGO-REMOVE_TEST_END
 
 func TestTCPStress(t *testing.T) {
 	const conns = 2

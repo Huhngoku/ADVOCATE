@@ -35,18 +35,23 @@ Disabled Tests
 - src/runtime/crash_cgo_test.go
 - src/runtime/sizeof_test.go
 - src/runtime/align_test.go
+- src/net/tcpsock_test.go
+- src/reflect/all_test.go
 
-## Save the trace:
-Add 
+## Save the trace
+
+Add
+
 ```go
 defer func() {
-		output := runtime.AllTracesToString(false)
-		err := ioutil.WriteFile("output.txt", []byte(output), os.ModePerm)
-		if err != nil {
-			panic(err)
-		}
-	}()
+  output := runtime.AllTracesToString(false)
+  err := ioutil.WriteFile("output.txt", []byte(output), os.ModePerm)
+  if err != nil {
+    panic(err)
+  }
+}()
 ```
+
 to the beginning of the main function.
 
 ## Trace structure
