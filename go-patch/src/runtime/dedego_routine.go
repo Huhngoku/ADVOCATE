@@ -21,17 +21,20 @@ type DedegoRoutine struct {
 func newDedegoRoutine(g *g) *DedegoRoutine {
 	routine := &DedegoRoutine{id: GetDedegoRoutineId(), G: g, Trace: make([]dedegoTraceElement, 0)}
 
-	if DedegoRoutines == nil {
-		DedegoRoutines = make(map[uint64]*[]dedegoTraceElement)
-	}
-
 	if DedegoRoutinesLock == nil {
 		DedegoRoutinesLock = &mutex{}
 	}
 
 	lock(DedegoRoutinesLock)
-	DedegoRoutines[routine.id] = &routine.Trace
+
+	if DedegoRoutines == nil {
+		DedegoRoutines = make(map[uint64]*[]dedegoTraceElement)
+	}
+
+	DedegoRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
+
 	unlock(DedegoRoutinesLock)
+
 	return routine
 }
 
