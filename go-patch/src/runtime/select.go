@@ -136,10 +136,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 	// DEDEGO-ADD-START
 	dedegoIndex := -1
-	_, file, _, _ := Caller(1)
-	if file == "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
-		dedegoIndex = DedegoSelect(&scases, nsends, block)
-	}
+	dedegoIndex = DedegoSelect(&scases, nsends, block)
 
 	defer func(lockOrder []uint16) {
 		DedegoFinishSelect2(dedegoIndex, lockOrder)

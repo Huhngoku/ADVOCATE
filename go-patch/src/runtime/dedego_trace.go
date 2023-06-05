@@ -30,6 +30,7 @@ const (
 type dedegoTraceElement interface {
 	isDedegoTraceElement()
 	toString() string
+	getFile() string
 }
 
 /*
@@ -135,6 +136,15 @@ func (elem dedegoTraceSpawnElement) toString() string {
 }
 
 /*
+ * Get the file where the element was called
+ * Return:
+ * 	empty string
+ */
+func (elem dedegoTraceSpawnElement) getFile() string {
+	return ""
+}
+
+/*
  * Add a routine spawn to the trace
  * Args:
  * 	id: id of the routine
@@ -152,19 +162,32 @@ type dedegoTraceMutexElement struct {
 	op   operation // operation
 	rw   bool      // true if it is a rwmutex
 	suc  bool      // success of the operation, only for tryLock
+	file string    // file where the operation was called
+	line int       // line where the operation was called
 }
 
 func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
 
 /*
+ * Get the file where the element was called
+ * Return:
+ * 	file where the element was called
+ */
+func (elem dedegoTraceMutexElement) getFile() string {
+	return elem.file
+}
+
+/*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "M,'id','rw','op','exec','suc'"
+ * 	string representation of the element "M,'id','rw','op','exec','suc','file':'line'"
  *    'id' (number): id of the mutex
  *    'rw' (R/-): R if it is a rwmutex, otherwise -
  *	  'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
  *	  'suc' (s/f): s if the trylock was successful, f otherwise
+ *    'file' (string): file where the operation was called
+ *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceMutexElement) toString() string {
 	res := "M," + uint64ToString(elem.id) + ","
@@ -203,6 +226,7 @@ func (elem dedegoTraceMutexElement) toString() string {
 			res += ",f"
 		}
 	}
+	res += "," + elem.file + "," + intToString(elem.line)
 	return res
 }
 
@@ -220,7 +244,9 @@ func DedegoLock(id uint64, rw bool, r bool) int {
 	if r {
 		op = opMutRLock
 	}
-	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true}
+	_, file, line, _ := Caller(2)
+	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+		file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -238,7 +264,9 @@ func DedegoTryLock(id uint64, rw bool, r bool) int {
 	if r {
 		op = opMutRTryLock
 	}
-	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw}
+	_, file, line, _ := Caller(2)
+	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, file: file,
+		line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -256,7 +284,9 @@ func DedegoUnlock(id uint64, rw bool, r bool) int {
 	if r {
 		op = opMutRUnlock
 	}
-	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true}
+	_, file, line, _ := Caller(2)
+	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+		file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -268,19 +298,32 @@ type dedegoTraceWaitGroupElement struct {
 	op    operation // operation
 	delta int       // delta of the waitgroup
 	val   int32     // value of the waitgroup after the operation
+	file  string    // file where the operation was called
+	line  int       // line where the operation was called
 }
 
 func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
 
 /*
+ * Get the file where the element was called
+ * Return:
+ * 	file where the element was called
+ */
+func (elem dedegoTraceWaitGroupElement) getFile() string {
+	return elem.file
+}
+
+/*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "W,'id','op','exec','delta','val'"
+ * 	string representation of the element "W,'id','op','exec','delta','val','file':'line'"
  *    'id' (number): id of the mutex
  *	  'op' (A/W): A if it is an add or Done, W if it is a wait
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
  *	  'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
  *	  'val' (number): value of the waitgroup after the operation
+ *    'file' (string): file where the operation was called
+ *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
 	res := "W," + uint64ToString(elem.id) + ","
@@ -298,6 +341,7 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
 	}
 
 	res += intToString(elem.delta) + "," + int32ToString(elem.val)
+	res += "," + elem.file + "," + intToString(elem.line)
 	return res
 }
 
@@ -311,7 +355,15 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
  * 	index of the operation in the trace
  */
 func DedegoAdd(id uint64, delta int, val int32) int {
-	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, delta: delta, val: val}
+	var file string
+	var line int
+	if delta > 0 {
+		_, file, line, _ = Caller(2)
+	} else {
+		_, file, line, _ = Caller(3)
+	}
+	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
+		val: val, file: file, line: line}
 	return insertIntoTrace(elem)
 
 }
@@ -324,7 +376,9 @@ func DedegoAdd(id uint64, delta int, val int32) int {
  * 	index of the operation in the trace
  */
 func DedegoWait(id uint64) int {
-	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait}
+	_, file, line, _ := Caller(2)
+	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, file: file,
+		line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -335,18 +389,31 @@ type dedegoTraceChannelElement struct {
 	exec bool      // set true if the operation was successfully finished
 	op   operation // operation
 	opId uint64    // id of the operation
+	file string    // file where the operation was called
+	line int       // line where the operation was called
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
 
 /*
+ * Get the file where the element was called
+ * Return:
+ * 	file where the element was called
+ */
+func (elem dedegoTraceChannelElement) getFile() string {
+	return elem.file
+}
+
+/*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "C,'id','op','exec','pId'"
+ * 	string representation of the element "C,'id','op','exec','pId','file':'line'"
  *    'id' (number): id of the mutex
  *	  'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
  *	  'pId' (number): id of the channel with wich the communication took place
+ *    'file' (string): file where the operation was called
+ *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceChannelElement) toString() string {
 	res := "C," + uint64ToString(elem.id) + ","
@@ -367,6 +434,7 @@ func (elem dedegoTraceChannelElement) toString() string {
 	}
 
 	res += "," + uint64ToString(elem.opId)
+	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
 }
 
@@ -379,7 +447,9 @@ func (elem dedegoTraceChannelElement) toString() string {
  * 	index of the operation in the trace
  */
 func DedegoSend(id uint64, opId uint64) int {
-	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId}
+	_, file, line, _ := Caller(3)
+	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
+		file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -392,7 +462,9 @@ func DedegoSend(id uint64, opId uint64) int {
  * 	index of the operation in the trace
  */
 func DedegoRecv(id uint64, opId uint64) int {
-	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId}
+	_, file, line, _ := Caller(3)
+	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
+		file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -404,7 +476,9 @@ func DedegoRecv(id uint64, opId uint64) int {
  * 	index of the operation in the trace
  */
 func DedegoClose(id uint64) int {
-	elem := dedegoTraceChannelElement{id: id, op: opChanClose}
+	_, file, line, _ := Caller(2)
+	elem := dedegoTraceChannelElement{id: id, op: opChanClose, file: file,
+		line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -420,19 +494,32 @@ type dedegoTraceSelectElement struct {
 	exec       bool     // set true if the operation was successfully finished
 	opId       uint64   // id of the operation
 	defa       bool     // set true if a default case exists
+	file       string   // file where the operation was called
+	line       int      // line where the operation was called
 }
 
 func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
 
 /*
+ * Get the file where the element was called
+ * Return:
+ * 	file where the element was called
+ */
+func (elem dedegoTraceSelectElement) getFile() string {
+	return elem.file
+}
+
+/*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "S,'id','cases','exec','chosen','opId'"
+ * 	string representation of the element "S,'id','cases','exec','chosen','opId','file':'line'"
  *    'id' (number): id of the mutex
  *	  'cases' (string): cases of the select, id and r/s, separated by '.', d for default
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
  *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
  *	  'opId' (number): id of the operation on the channel
+ *    'file' (string): file where the operation was called
+ *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceSelectElement) toString() string {
 	res := "S," + uint64ToString(elem.id) + ","
@@ -461,6 +548,7 @@ func (elem dedegoTraceSelectElement) toString() string {
 	}
 
 	res += "," + intToString(elem.chosen) + "," + uint64ToString(elem.opId)
+	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
 }
 
@@ -480,7 +568,10 @@ func DedegoSelect(cases *[]scase, nsends int, block bool) int {
 		casesStr[i] = uint64ToString(ca.c.id)
 	}
 
-	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nsends, defa: !block}
+	_, file, line, _ := Caller(2)
+
+	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nsends,
+		defa: !block, file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -491,6 +582,11 @@ func DedegoSelect(cases *[]scase, nsends int, block bool) int {
  * 	index: index of the operation in the trace
  */
 func DedegoFinish(index int) {
+	// internal elements are not in the trace
+	if index == -1 {
+		return
+	}
+
 	// only needed to fix tests
 	if currentGoRoutine() == nil {
 		return
@@ -518,6 +614,11 @@ func DedegoFinish(index int) {
  * 	suc: true if the try was successful, false otherwise
  */
 func DedegoFinishTry(index int, suc bool) {
+	// internal elements are not in the trace
+	if index == -1 {
+		return
+	}
+
 	switch elem := currentGoRoutine().Trace[index].(type) {
 	case dedegoTraceMutexElement:
 		elem.exec = true
@@ -536,9 +637,11 @@ func DedegoFinishTry(index int, suc bool) {
  * 	chosenChan: chosen channel
  */
 func DedegoFinishSelect1(index int, chosen int, chosenChan *hchan) {
+	// internal elements are not in the trace
 	if index == -1 {
 		return
 	}
+
 	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 
 	elem.exec = true
@@ -555,9 +658,11 @@ func DedegoFinishSelect1(index int, chosen int, chosenChan *hchan) {
  * 	lockOrder: lock order of the select
  */
 func DedegoFinishSelect2(index int, lockOrder []uint16) {
+	// internal elements are not in the trace
 	if index == -1 {
 		return
 	}
+
 	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 	send := make([]bool, len(lockOrder))
 	for i, lo := range lockOrder {

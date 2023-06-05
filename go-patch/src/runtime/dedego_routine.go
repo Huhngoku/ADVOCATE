@@ -43,6 +43,11 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * 	the index of the element in the trace
  */
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
+	// TODO: find better way to distinguish between internal and external calls
+	if elem.getFile() != "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
+		return -1
+	}
+
 	// never needed in actual code, without it the compiler tests fail
 	if gi == nil {
 		return -1

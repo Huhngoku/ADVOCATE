@@ -36,6 +36,19 @@ Disabled Tests
 - src/runtime/sizeof_test.go
 - src/runtime/align_test.go
 
+## Save the trace:
+Add 
+```go
+defer func() {
+		output := runtime.AllTracesToString(false)
+		err := ioutil.WriteFile("output.txt", []byte(output), os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+	}()
+```
+to the beginning of the main function.
+
 ## Trace structure
 
 - One line per routine
@@ -44,26 +57,34 @@ Disabled Tests
 - The trace elements can have the following structure:
   - Spawn new routine: G, 'id'
     - 'id' (number): id of the new routine
-  - Mutex: M,'id','rw','op','exec','suc'
+  - Mutex: M,'id','rw','op','exec','suc','file':'line'
     - 'id' (number): id of the mutex
     - 'rw' (R/-): R if it is a rwmutex, otherwise -
     - 'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'suc' (s/f): s if the trylock was successful, f otherwise
-  - WaitGroup: W,'id','op','exec','delta','val'
+    -'file' (string): file where the operation was called
+    - 'line' (number): line where the operation was called
+  - WaitGroup: W,'id','op','exec','delta','val','file':'line'
     - 'id' (number): id of the mutex
     - 'op' (A/W): A if it is an add or Done, W if it is a wait
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
     - 'val' (number): value of the waitgroup after the operation
-  - Channel: C,'id','op','exec','pId'
+    - 'file' (string): file where the operation was called
+    - 'line' (number): line where the operation was called
+  - Channel: C,'id','op','exec','pId','file':'line'
     - 'id' (number): id of the mutex
     - 'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'pId' (number): id of the channel with wich the communication took place
-  - Select: S,'id','cases','exec','chosen','opId'
+    - 'file' (string): file where the operation was called
+    - 'line' (number): line where the operation was called
+  - Select: S,'id','cases','exec','chosen','opId','file':'line
     - 'id' (number): id of the mutex
     - 'cases' (string): cases of the select, id and r/s, separated by '.', d for default
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
     - 'opId' (number): id of the operation on the channel
+    -'file' (string): file where the operation was called
+    - 'line' (number): line where the operation was called
