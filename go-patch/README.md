@@ -43,6 +43,7 @@ Disabled Tests
 Add
 
 ```go
+runtime.DedegoInit("path/to/project/root")
 defer func() {
   output := runtime.AllTracesToString(false)
   err := ioutil.WriteFile("output.txt", []byte(output), os.ModePerm)

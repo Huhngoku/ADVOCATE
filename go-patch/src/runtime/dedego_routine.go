@@ -5,10 +5,21 @@ package runtime
 var DedegoRoutines map[uint64]*[]dedegoTraceElement
 var DedegoRoutinesLock *mutex
 
+var projectPath string
+
 type DedegoRoutine struct {
 	id    uint64
 	G     *g
 	Trace []dedegoTraceElement
+}
+
+/*
+ * set the project path
+ * Params:
+ * 	path: the path to the project
+ */
+func DedegoInit(path string) {
+	projectPath = path
 }
 
 /*
@@ -42,12 +53,13 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * Add an element to the trace of the current routine
  * Params:
  * 	elem: the element to add
+ * 	checkInternal: if true, only insert into trace if not internal
  * Return:
  * 	the index of the element in the trace
  */
-func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
-	// TODO: find better way to distinguish between internal and external calls
-	if elem.getFile() != "/home/erikkassubek/Uni/dedego/go-patch/bin/main.go" {
+func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement,
+	checkInternal bool) int {
+	if checkInternal && isInternal(elem.getFile()) {
 		return -1
 	}
 
@@ -81,6 +93,26 @@ func GetRoutineId() uint64 {
 		return 0
 	}
 	return currentGoRoutine().id
+}
+
+// TODO: implement
+/*
+ * Check if the file is internal, meening not from the running program
+ * Params:
+ * 	fileName: the name of the file
+ * Return:
+ * 	true if the file is internal, false otherwise
+ */
+func isInternal(fileName string) bool {
+	if projectPath == "" {
+		return true
+	}
+
+	if len(fileName) < len(projectPath) {
+		return true
+	}
+
+	return fileName[:len(projectPath)] != projectPath
 }
 
 // DEDEGO-FILE-END

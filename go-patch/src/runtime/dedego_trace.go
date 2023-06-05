@@ -76,7 +76,7 @@ func traceToString(trace *[]dedegoTraceElement) string {
  * 	index of the element in the trace
  */
 func insertIntoTrace(elem dedegoTraceElement) int {
-	return currentGoRoutine().addToTrace(elem)
+	return currentGoRoutine().addToTrace(elem, true)
 }
 
 /*
@@ -150,7 +150,7 @@ func (elem dedegoTraceSpawnElement) getFile() string {
  * 	id: id of the routine
  */
 func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
-	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId})
+	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId}, false)
 }
 
 // ============================= Mutex =============================
