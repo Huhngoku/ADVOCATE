@@ -18,7 +18,6 @@ func uint64ToString(n uint64) string {
 		return string(rune(n + '0'))
 	} else {
 		return uint64ToString(n/10) + string(rune(n%10+'0'))
-
 	}
 }
 

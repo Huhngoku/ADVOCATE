@@ -53,10 +53,9 @@ type hchan struct {
 	lock mutex
 
 	// DEDEGO-ADD-START
-	id             uint64
-	dedegoChanProg bool   // only look at channels where dedegoChanProg is true, others are internal
-	numberSend     uint64 // number of completed send operations
-	numberRecv     uint64 // number of completed recv operations
+	id         uint64
+	numberSend uint64 // number of completed send operations
+	numberRecv uint64 // number of completed recv operations
 	// DEDEGO-ADD-END
 }
 
@@ -122,7 +121,6 @@ func makechan(t *chantype, size int) *hchan {
 
 	// DEDEGO-ADD-START
 	c.id = GetDedegoObjectId()
-	c.dedegoChanProg = true
 	// DEDEGO-ADD-END
 
 	lockInit(&c.lock, lockRankHchan)
@@ -174,7 +172,7 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
  */
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// DEDEGO-ADD-START
-	if dedegoHandle(c) {
+	if c != nil {
 		at.AddUint64(&c.numberSend, 1)
 		dedegoIndex := DedegoSend(c.id, c.numberSend)
 		defer DedegoFinish(dedegoIndex)
@@ -396,9 +394,7 @@ func closechan(c *hchan) {
 	c.closed = 1
 
 	// DEDEGO-ADD-START
-	if dedegoHandle(c) {
-		DedegoClose(c.id)
-	}
+	DedegoClose(c.id)
 	// DEDEGO-ADD-END
 
 	var glist gList
@@ -484,7 +480,7 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 // A non-nil ep must point to the heap or the caller's stack.
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
 	// DEDEGO-ADD-START
-	if dedegoHandle(c) {
+	if c != nil {
 		at.AddUint64(&c.numberRecv, 1)
 		dedegoIndex := DedegoRecv(c.id, c.numberRecv)
 		defer DedegoFinish(dedegoIndex)
@@ -885,13 +881,3 @@ func racenotify(c *hchan, idx uint, sg *sudog) {
 		}
 	}
 }
-
-// DEDEGO-ADD-START
-/*
- * Get whether the channel should be handled by dedego.
- */
-func dedegoHandle(c *hchan) bool {
-	return c != nil && c.dedegoChanProg
-}
-
-// DEDEGO-ADD-END

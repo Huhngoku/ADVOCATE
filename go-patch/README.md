@@ -43,6 +43,12 @@ Disabled Tests
 Add
 
 ```go
+import (
+  "runtime",
+  "io/ioutil"
+  "os"
+)
+
 runtime.DedegoInit("path/to/project/root")
 defer func() {
   output := runtime.AllTracesToString(false)
@@ -53,7 +59,30 @@ defer func() {
 }()
 ```
 
-to the beginning of the main function.
+to the beginning of the main function. For programms with many recorded 
+operations this can lead to memory problems. In this case use
+
+```go
+runtime.DedegoInit("path/to/ptoject/root")
+defer func() {
+  var i uint64 = 0
+  file, err := os.OpenFile("dedego.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+  if err != nil {
+    panic(err)
+  }
+  defer file.Close()
+  for {
+    i++
+    trace, ok := runtime.TraceToStringById(i)
+    if !ok {
+      break
+    }
+    if _, err := file.WriteString(trace + "\n"); err != nil {
+      panic(err)
+    }
+  }
+}
+```
 
 ## Trace structure
 

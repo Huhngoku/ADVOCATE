@@ -88,6 +88,23 @@ func PrintTrace() {
 }
 
 /*
+ * Return the trace of the routine with id 'id'
+ * Args:
+ * 	id: id of the routine
+ * Return:
+ * 	string representation of the trace of the routine
+ * 	bool: true if the routine exists, false otherwise
+ */
+func TraceToStringById(id uint64) (string, bool) {
+	lock(DedegoRoutinesLock)
+	defer unlock(DedegoRoutinesLock)
+	if trace, ok := DedegoRoutines[id]; ok {
+		return uint64ToString(id) + ":" + traceToString(trace), true
+	}
+	return "", false
+}
+
+/*
  * Return the trace of all traces
  * Args:
  * 	all: if true, return the trace of all routines, else return only the non empty traces
@@ -97,13 +114,17 @@ func PrintTrace() {
 func AllTracesToString(all bool) string {
 	res := ""
 	lock(DedegoRoutinesLock)
-	for id, trace := range DedegoRoutines {
-		traceString := traceToString(trace)
-		if all || traceString != "" {
-			res += uint64ToString(id) + ":" + traceString + "\n"
+	defer unlock(DedegoRoutinesLock)
+
+	for i := 0; i < len(DedegoRoutines); i++ {
+		trace := DedegoRoutines[uint64(i)]
+		if trace == nil {
+			continue
+		}
+		if all || traceToString(trace) != "" {
+			res += intToString(i) + ":" + traceToString(trace) + "\n"
 		}
 	}
-	unlock(DedegoRoutinesLock)
 	return res
 }
 
@@ -569,9 +590,10 @@ func DedegoSelect(cases *[]scase, nsends int, block bool) int {
 	casesStr := make([]string, len(*cases))
 	for i, ca := range *cases {
 		if ca.c == nil {
-			return -1
+			casesStr[i] = "-"
+		} else {
+			casesStr[i] = uint64ToString(ca.c.id)
 		}
-		casesStr[i] = uint64ToString(ca.c.id)
 	}
 
 	_, file, line, _ := Caller(2)
@@ -687,6 +709,27 @@ func DedegoFinishSelect2(index int, lockOrder []uint16) {
 	}
 
 	currentGoRoutine().Trace[index] = elem
+}
+
+// ============================= Internal ================================
+
+/*
+ * Check if the file is internal, meening not from the running program
+ * Params:
+ * 	fileName: the name of the file
+ * Return:
+ * 	true if the file is internal, false otherwise
+ */
+func isInternal(fileName string) bool {
+	if projectPath == "" {
+		return true
+	}
+
+	if len(fileName) < len(projectPath) {
+		return true
+	}
+
+	return fileName[:len(projectPath)] != projectPath
 }
 
 // DEDUGO-FILE-END

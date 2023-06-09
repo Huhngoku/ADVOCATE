@@ -30,7 +30,8 @@ func DedegoInit(path string) {
  * 	the new dedego routine
  */
 func newDedegoRoutine(g *g) *DedegoRoutine {
-	routine := &DedegoRoutine{id: GetDedegoRoutineId(), G: g, Trace: make([]dedegoTraceElement, 0)}
+	routine := &DedegoRoutine{id: GetDedegoRoutineId(), G: g,
+		Trace: make([]dedegoTraceElement, 0)}
 
 	if DedegoRoutinesLock == nil {
 		DedegoRoutinesLock = &mutex{}
@@ -93,26 +94,6 @@ func GetRoutineId() uint64 {
 		return 0
 	}
 	return currentGoRoutine().id
-}
-
-// TODO: implement
-/*
- * Check if the file is internal, meening not from the running program
- * Params:
- * 	fileName: the name of the file
- * Return:
- * 	true if the file is internal, false otherwise
- */
-func isInternal(fileName string) bool {
-	if projectPath == "" {
-		return true
-	}
-
-	if len(fileName) < len(projectPath) {
-		return true
-	}
-
-	return fileName[:len(projectPath)] != projectPath
 }
 
 // DEDEGO-FILE-END
