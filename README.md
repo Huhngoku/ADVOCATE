@@ -1,6 +1,6 @@
 # Dynamic Analysis of Message Passing Go Programs
 
-Warning: The code, particularly the instrumenter, contains multiple bug which means, that the analyzer can only run with manual corrections.
+Warning: The program is currently being completely revised and is not usable at the moment.
 
 
 ## What
@@ -90,71 +90,4 @@ It can to a certain extend also detect blocking problems
 with buffered channels. 
 
 To detect problems caused or hidden by select statements, the program is analyzed multiple times with different preferred select cases in the different runs. 
-
-## How to
-Download the ```/src``` folder and run ```go build``` in it to build the program. 
-
-This will create an executable.
-
-By running the executable it will open the following window:
-![Main Window](./screenshots/Window1.png)
-With open, you can select the folder containing the program which is supposed to be analyzed. Please be aware, that clicking the ```Cancel``` button in the folder selection window can cause the program to crash.
-
-The 4 input field allow you to set certain setting. All values must be non-negative integers.
-- Max number of runs: maximum number of runs to analyze. For each run another 
-combination is selected for the preferred case in select statements. Has only an effect 
-if the number of combinations is bigger than the selected value. This can reduce the runtime 
-but will also reduce the chance of finding blocking situations.
-- Max wait time per run: number of seconds per run after which the program will assume, that the program is run into an actual deadlock. In this case the program will be canceled and then analyzed. Set 0 to disable (can cause the program to block forever, not advised).
-- Max wait time per select: number of seconds a select statement will wait for its preferred case before it chooses a random valid case. Set 0 to disable.
-
-Clicking the start button will start the analysis. After the analysis the window 
-will lock similar to the following image:
-![Main Window](./screenshots/Window2.png)
-The image shows the analysis (not all of the output is visible) of the following program:
-```go
-package main
-
-import (
-	"sync"
-)
-
-func main() {
-	var m sync.Mutex
-	var n sync.Mutex
-
-	c := make(chan int)
-	d := make(chan int, 1)
-
-	go func() {
-		d <- 1
-		select {
-		case <-d:
-			close(c)
-		default:
-			<-c
-		}
-	}()
-
-	go func() {
-		m.Lock()
-		n.Lock()
-		n.Unlock()
-		m.Unlock()
-		<-c
-	}()
-
-	n.Lock()
-	m.Lock()
-	m.Unlock()
-	n.Unlock()
-	c <- 1
-}
-```
-
-## Note 
-- The program must contain a go.mod file.
-- The program must be compilable with go build. The created binary must be directly runnable.
-- GoImports must be installed
-- Only tested with Linux 
 

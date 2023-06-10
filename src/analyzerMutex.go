@@ -1,4 +1,4 @@
-package dedego
+package main
 
 import (
 	"fmt"
@@ -85,13 +85,13 @@ func checkForDoubleLocking() (bool, []string) {
 			for i := len(trace) - 2; i >= 0; i-- {
 				switch b := trace[i].(type) {
 				case *TraceLock:
-					if a.lockId == b.lockId && (!a.read || !b.read) {
+					if a.id == b.id && (!a.read || !b.read) {
 						r = true
 						res = append(res, fmt.Sprintf("Found double locking:\n    %s -> %s", b.position, a.position))
 						found = true
 					}
 				case *TraceUnlock:
-					if a.lockId == b.lockId {
+					if a.id == b.id {
 						found = true
 					}
 				}
@@ -126,7 +126,7 @@ func buildGraph() (bool, []string) {
 				noDep++
 			case *TraceUnlock: // remove lock from currently hold locks
 				for i := len(currentHoldLocks) - 1; i >= 0; i-- {
-					if currentHoldLocks[i].(*TraceLock).lockId == e.lockId {
+					if currentHoldLocks[i].(*TraceLock).id == e.id {
 						currentHoldLocks = append(currentHoldLocks[:i], currentHoldLocks[i+1:]...)
 					}
 				}
@@ -273,7 +273,7 @@ func isChain(stack *depStack, dep *dependency, routineIndex int) bool {
 	// holding set of dep
 	found := false
 	for _, mutexInHs := range dep.holdingSet {
-		if mutexInHs.(*TraceLock).lockId == stack.top.depEntry.mu.(*TraceLock).lockId {
+		if mutexInHs.(*TraceLock).id == stack.top.depEntry.mu.(*TraceLock).id {
 			// if mutexInHs is read, the mutex at the top of the stack can not also be read
 			if !(mutexInHs.(*TraceLock).read && stack.top.depEntry.mu.(*TraceLock).read) {
 				found = true
@@ -297,7 +297,7 @@ func isChain(stack *depStack, dep *dependency, routineIndex int) bool {
 			for j := 0; j < len(c.depEntry.holdingSet); j++ {
 				lockInDepHs := dep.holdingSet[i]
 				lockInCHoldingSet := c.depEntry.holdingSet[j]
-				if lockInDepHs.(*TraceLock).lockId == lockInCHoldingSet.(*TraceLock).lockId {
+				if lockInDepHs.(*TraceLock).id == lockInCHoldingSet.(*TraceLock).id {
 					if !(lockInCHoldingSet.(*TraceLock).read && lockInDepHs.(*TraceLock).read) {
 						return false
 					}
@@ -336,7 +336,7 @@ func isCycleChain(dStack *depStack, dep *dependency, routineIndex int) bool {
 	// the stack
 	found := false
 	for _, mutexInHs := range dStack.stack.next.depEntry.holdingSet {
-		if mutexInHs.(*TraceLock).lockId == dep.mu.(*TraceLock).lockId {
+		if mutexInHs.(*TraceLock).id == dep.mu.(*TraceLock).id {
 			// if mutexInHs is read, the mutex at the top of the stack can not also be read
 			if !(mutexInHs.(*TraceLock).read && dep.mu.(*TraceLock).read) {
 				found = true

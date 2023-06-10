@@ -51,8 +51,9 @@ import (
 
 runtime.DedegoInit("path/to/project/root")
 defer func() {
-  output := runtime.AllTracesToString(false)
-  err := ioutil.WriteFile("output.txt", []byte(output), os.ModePerm)
+  file_name := "dedego.log"
+  output := runtime.AllTracesToString()
+  err := ioutil.WriteFile(file_name, []byte(output), os.ModePerm)
   if err != nil {
     panic(err)
   }
@@ -66,7 +67,8 @@ operations this can lead to memory problems. In this case use
 runtime.DedegoInit("path/to/ptoject/root")
 defer func() {
   var i uint64 = 0
-  file, err := os.OpenFile("dedego.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+  file_name := "dedego.log"
+  file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
   if err != nil {
     panic(err)
   }
@@ -98,7 +100,7 @@ defer func() {
     - 'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'suc' (s/f): s if the trylock was successful, f otherwise
-    -'file' (string): file where the operation was called
+    - 'file' (string): file where the operation was called
     - 'line' (number): line where the operation was called
   - WaitGroup: W,'id','op','exec','delta','val','file':'line'
     - 'id' (number): id of the mutex
@@ -108,11 +110,11 @@ defer func() {
     - 'val' (number): value of the waitgroup after the operation
     - 'file' (string): file where the operation was called
     - 'line' (number): line where the operation was called
-  - Channel: C,'id','op','exec','pId','file':'line'
+  - Channel: C,'id','op','exec','oId','file':'line'
     - 'id' (number): id of the mutex
     - 'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
-    - 'pId' (number): id of the channel with wich the communication took place
+    - 'oId' (number): id of the operation
     - 'file' (string): file where the operation was called
     - 'line' (number): line where the operation was called
   - Select: S,'id','cases','exec','chosen','opId','file':'line

@@ -1,4 +1,4 @@
-package dedego
+package main
 
 /*
 Copyright (c) 2023, Erik Kassubek

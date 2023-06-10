@@ -99,19 +99,17 @@ func TraceToStringById(id uint64) (string, bool) {
 	lock(DedegoRoutinesLock)
 	defer unlock(DedegoRoutinesLock)
 	if trace, ok := DedegoRoutines[id]; ok {
-		return uint64ToString(id) + ":" + traceToString(trace), true
+		return traceToString(trace), true
 	}
 	return "", false
 }
 
 /*
  * Return the trace of all traces
- * Args:
- * 	all: if true, return the trace of all routines, else return only the non empty traces
  * Return:
  * 	string representation of the trace of all routines
  */
-func AllTracesToString(all bool) string {
+func AllTracesToString() string {
 	res := ""
 	lock(DedegoRoutinesLock)
 	defer unlock(DedegoRoutinesLock)
@@ -121,20 +119,17 @@ func AllTracesToString(all bool) string {
 		if trace == nil {
 			continue
 		}
-		if all || traceToString(trace) != "" {
-			res += intToString(i) + ":" + traceToString(trace) + "\n"
-		}
+		res += traceToString(trace) + "\n"
+
 	}
 	return res
 }
 
 /*
- * Print the trace of all routines
- * Args:
- * 	all: if true, print the trace of all routines, else print only the non empty traces
+* Print the trace of all routines
  */
-func PrintAllTraces(all bool) {
-	print(AllTracesToString(all))
+func PrintAllTraces() {
+	print(AllTracesToString())
 }
 
 // ============================= Routine ===========================
@@ -247,7 +242,7 @@ func (elem dedegoTraceMutexElement) toString() string {
 			res += ",f"
 		}
 	}
-	res += "," + elem.file + "," + intToString(elem.line)
+	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
 }
 
@@ -362,7 +357,7 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
 	}
 
 	res += intToString(elem.delta) + "," + int32ToString(elem.val)
-	res += "," + elem.file + "," + intToString(elem.line)
+	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
 }
 

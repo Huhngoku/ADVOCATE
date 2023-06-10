@@ -1,4 +1,4 @@
-package dedego
+package main
 
 import (
 	"sync/atomic"
