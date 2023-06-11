@@ -235,12 +235,10 @@ func (elem dedegoTraceMutexElement) toString() string {
 		res += ",o"
 	}
 
-	if elem.op == opMutTryLock || elem.op == opMutRTryLock {
-		if elem.suc {
-			res += ",s"
-		} else {
-			res += ",f"
-		}
+	if elem.suc {
+		res += ",s"
+	} else {
+		res += ",f"
 	}
 	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
@@ -717,7 +715,7 @@ func DedegoFinishSelect2(index int, lockOrder []uint16) {
  */
 func isInternal(fileName string) bool {
 	if projectPath == "" {
-		return true
+		return false
 	}
 
 	if len(fileName) < len(projectPath) {

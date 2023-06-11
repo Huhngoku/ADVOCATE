@@ -25,7 +25,6 @@ Project: Dynamic Analysis to detect potential deadlocks in concurrent Go program
 */
 
 // TODO: remove this
-var traces [][]TraceElement
 var chanSize []int
 
 type PreObj struct {
@@ -50,8 +49,10 @@ func main() {
 		traceFileName = *traceFileNamePtr
 	}
 
-	traces = make([][]TraceElement, 0)
+	traces := make([][]TraceElement, 0)
 
 	createTrace(traceFileName, &traces)
-	printTrace(&traces)
+	RunAnalyzer(&traces)
+
+	// printTrace(&traces)
 }

@@ -100,28 +100,24 @@ defer func() {
     - 'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'suc' (s/f): s if the trylock was successful, f otherwise
-    - 'file' (string): file where the operation was called
-    - 'line' (number): line where the operation was called
+    - 'pos' (string): position where the operation was called (file:line)
   - WaitGroup: W,'id','op','exec','delta','val','file':'line'
     - 'id' (number): id of the mutex
     - 'op' (A/W): A if it is an add or Done, W if it is a wait
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
     - 'val' (number): value of the waitgroup after the operation
-    - 'file' (string): file where the operation was called
-    - 'line' (number): line where the operation was called
+    - 'pos' (string): position where the operation was called (file:line)
   - Channel: C,'id','op','exec','oId','file':'line'
     - 'id' (number): id of the mutex
     - 'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'oId' (number): id of the operation
-    - 'file' (string): file where the operation was called
-    - 'line' (number): line where the operation was called
+    - 'pos' (string): position where the operation was called (file:line)
   - Select: S,'id','cases','exec','chosen','opId','file':'line
     - 'id' (number): id of the mutex
     - 'cases' (string): cases of the select, id and r/s, separated by '.', d for default
     - 'exec' (e/o): e if the operation was successfully finished, o otherwise
     - 'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
     - 'opId' (number): id of the operation on the channel
-    -'file' (string): file where the operation was called
-    - 'line' (number): line where the operation was called
+    - 'pos' (string): position where the operation was called (file:line)

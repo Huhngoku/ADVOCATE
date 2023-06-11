@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 /*
 Copyright (c) 2023, Erik Kassubek
 All rights reserved.
@@ -27,36 +29,29 @@ analyzer.go
 Main functions to start the analyzer
 */
 
-// TODO: remove this
+/*
+Main function to run the analyzer. The running of the analyzer locks
+tracesLock for the total duration of its runtime, to prevent go-routines,
+that are still running when the main function terminated (and therefore would
+normally also be terminated) to alter the trace.
+*/
+func RunAnalyzer(traces *([][]TraceElement)) {
+	res := make([]string, 0) // result
 
-// var running bool = false
+	analyzeMutexDeadlock(traces, &res)
 
-// /*
-// Main function to run the analyzer. The running of the analyzer locks
-// tracesLock for the total duration of its runtime, to prevent go-routines,
-// that are still running when the main function terminated (and therefore would
-// normally also be terminated) to alter the trace.
-// */
-// func RunAnalyzer() {
-// 	if running {
-// 		return
-// 	}
-// 	running = true
+	// vcTrace, bc, b := buildVectorClockChan()
 
-// 	_, resString := analyzeMutexDeadlock()
+	// rs, s, r := findAlternativeCommunication(vcTrace, bc, b)
 
-// 	vcTrace, bc, b := buildVectorClockChan()
+	// rsComm := findPossibleInvalidCommunications(rs, vcTrace, s, r)
+	// resString = append(resString, rsComm)
 
-// 	rs, s, r := findAlternativeCommunication(vcTrace, bc, b)
+	// _, rsClose := checkForPossibleSendToClosed(vcTrace)
+	// resString = append(resString, rsClose...)
 
-// 	rsComm := findPossibleInvalidCommunications(rs, vcTrace, s, r)
-// 	resString = append(resString, rsComm)
-
-// 	_, rsClose := checkForPossibleSendToClosed(vcTrace)
-// 	resString = append(resString, rsClose...)
-
-// 	// print res Strings
-// 	for _, prob := range resString {
-// 		fmt.Println("##@@##" + prob + "##@@##")
-// 	}
-// }
+	// // print res Strings
+	for _, prob := range res {
+		fmt.Println(prob)
+	}
+}

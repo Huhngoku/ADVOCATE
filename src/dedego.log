@@ -1,30 +1,5 @@
-G,2;G,3;G,4;G,5;W,16,W,o,1,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/crawler.go:174;G,6;S,17,15s.15r,e,0,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/popchannel.go:20;S,18,15s.15r,e,1,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/popchannel.go:20;S,19,15s.15r,e,0,2,/home/erikkassubek/Uni/dedego/examples/gocrawl/popchannel.go:20;S,20,12r.14r.13r,e,2,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/crawler.go:299;S,148,15s.15r,e,0,3,/home/erikkassubek/Uni/dedego/examples/gocrawl/popchannel.go:20;S,149,12r.14r.13r,e,2,2,/home/erikkassubek/Uni/dedego/examples/gocrawl/crawler.go:299;C,12,C,o,0,/home/erikkassubek/Uni/dedego/examples/gocrawl/crawler.go:307;W,16,W,e,0,0,/home/erikkassubek/Uni/dedego/examples/gocrawl/crawler.go:280
+G,2;G,3;G,4;G,5;G,6;M,3,-,L,e,s,/home/erikkassubek/Uni/dedego/examples/impl/main.go:29;M,3,-,U,e,s,/home/erikkassubek/Uni/dedego/examples/impl/main.go:30
 
 
-
-
-S,22,15r.21r.12r,e,0,2,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:66;G,7;C,12,R,e,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:96;C,78,R,e,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:215;G,14;G,30;C,12,R,e,2,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:306;C,13,S,e,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:321;C,12,R,e,3,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:96;S,147,15r.146r.12r,e,0,3,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:66;C,143,R,e,1,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:215;G,31;C,12,R,e,4,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:306;C,13,S,e,2,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:321;C,12,R,e,5,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:96;S,163,15r.162r.12r,e,2,6,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:66;W,16,W,o,-1,0,/home/erikkassubek/Uni/dedego/examples/gocrawl/worker.go:52
-G,8;G,11;G,12;G,13
-G,9;G,10
-
-
-
-
-
-G,15;G,18;G,19;G,28
-G,16;G,17
-
-
-
-G,20;G,21;G,22;G,23;G,24;G,25;G,26;G,27
-
-
-
-
-
-
-
-
-G,29
 
 
