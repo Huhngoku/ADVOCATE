@@ -18,7 +18,7 @@ Changed files:
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
 
-Disabled Tests
+Disabled Tests (files contain disabled tests): 
 
 - src/cmd/cgo/internal/test/cgo_test.go
 - src/cmd/dist/test.go
@@ -35,6 +35,7 @@ Disabled Tests
 - src/runtime/crash_cgo_test.go
 - src/runtime/sizeof_test.go
 - src/runtime/align_test.go
+- src/runtime/metrics_test.go
 - src/net/tcpsock_test.go
 - src/reflect/all_test.go
 

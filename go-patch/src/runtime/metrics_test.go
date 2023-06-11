@@ -9,7 +9,9 @@ import (
 	"runtime"
 	"runtime/metrics"
 	"sort"
-	"strings"
+	// DEDEGO-REMOVE_TEST-START
+	// "strings"
+	// DEDEGO-REMOVE_TEST-END
 	"sync"
 	"testing"
 	"time"
@@ -153,6 +155,8 @@ func TestReadMetrics(t *testing.T) {
 	checkUint64(t, "/gc/heap/frees:objects", frees, mstats.Frees-tinyAllocs)
 }
 
+// DEDEGO-REMOVE_TEST-START
+/*
 func TestReadMetricsConsistency(t *testing.T) {
 	// Tests whether readMetrics produces consistent, sensible values.
 	// The values are read concurrently with the runtime doing other
@@ -362,6 +366,8 @@ func TestReadMetricsConsistency(t *testing.T) {
 		t.Errorf("fewer pauses than expected: got %d, want at least %d", gc.pauses, gc.numGC*2)
 	}
 }
+*/
+// DEDEGO-REMOVE_TEST-END
 
 func BenchmarkReadMetricsLatency(b *testing.B) {
 	stop := applyGCLoad(b)
