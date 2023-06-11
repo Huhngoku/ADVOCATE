@@ -96,6 +96,12 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringById(id uint64) (string, bool) {
+	// write warning if projectPath is empty
+	if id == 0 && projectPath == "" {
+		println("Warning: project path was not set. Only routine creation " +
+			"was recorded. Set project path with DedegoInit(path)")
+	}
+
 	lock(DedegoRoutinesLock)
 	defer unlock(DedegoRoutinesLock)
 	if trace, ok := DedegoRoutines[id]; ok {
@@ -110,6 +116,12 @@ func TraceToStringById(id uint64) (string, bool) {
  * 	string representation of the trace of all routines
  */
 func AllTracesToString() string {
+	// write warning if projectPath is empty
+	if projectPath == "" {
+		println("Warning: project path was not set. Only routine creation " +
+			"was recorded. Set project path with DedegoInit(path).")
+	}
+
 	res := ""
 	lock(DedegoRoutinesLock)
 	defer unlock(DedegoRoutinesLock)
@@ -715,7 +727,7 @@ func DedegoFinishSelect2(index int, lockOrder []uint16) {
  */
 func isInternal(fileName string) bool {
 	if projectPath == "" {
-		return false
+		return true
 	}
 
 	if len(fileName) < len(projectPath) {
