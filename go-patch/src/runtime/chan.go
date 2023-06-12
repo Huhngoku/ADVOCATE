@@ -171,13 +171,6 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
  * the operation; we'll see that it's now closed.
  */
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
-	// DEDEGO-ADD-START
-	if c != nil {
-		at.AddUint64(&c.numberSend, 1)
-		dedegoIndex := DedegoSend(c.id, c.numberSend)
-		defer DedegoFinish(dedegoIndex)
-	}
-	// DEDEGO-ADD-END
 	if c == nil {
 		if !block {
 			return false
@@ -221,6 +214,12 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	lock(&c.lock)
 
+	// DEDEGO-ADD-START
+	at.AddUint64(&c.numberSend, 1)
+	dedegoIndex := DedegoSend(c.id, c.numberSend)
+	defer DedegoFinishChan(dedegoIndex)
+	// DEDEGO-ADD-END
+
 	if c.closed != 0 {
 		unlock(&c.lock)
 		panic(plainError("send on closed channel"))
@@ -246,6 +245,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		}
 		c.qcount++
 		unlock(&c.lock)
+		// DEDEGO-NOTE-START
+		// here the post is created even if the unbuffered channel was not read
+		// DEDEGO-NOTE-END
+
 		return true
 	}
 
@@ -276,6 +279,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// changes and when we set gp.activeStackChans is not safe for
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
+	// DEDEGO-NOTE-START
+	// gopark blocks the routine and waits for a wakeup.
+	// DEDEGO-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanSend, traceBlockChanSend, 2)
 	// Ensure the value being sent is kept alive until the
 	// receiver copies it out. The sudog has a pointer to the
@@ -479,14 +485,6 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 // Otherwise, fills in *ep with an element and returns (true, true).
 // A non-nil ep must point to the heap or the caller's stack.
 func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
-	// DEDEGO-ADD-START
-	if c != nil {
-		at.AddUint64(&c.numberRecv, 1)
-		dedegoIndex := DedegoRecv(c.id, c.numberRecv)
-		defer DedegoFinish(dedegoIndex)
-	}
-	// DEDEGO-ADD-END
-
 	// raceenabled: don't need to check ep, as it is always on the stack
 	// or is new memory allocated by reflect.
 
@@ -541,6 +539,12 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	}
 
 	lock(&c.lock)
+
+	// DEDEGO-ADD-START
+	at.AddUint64(&c.numberRecv, 1)
+	dedegoIndex := DedegoRecv(c.id, c.numberRecv)
+	defer DedegoFinishChan(dedegoIndex)
+	// DEDEGO-ADD-END
 
 	if c.closed != 0 {
 		if c.qcount == 0 {
@@ -612,6 +616,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// changes and when we set gp.activeStackChans is not safe for
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
+
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceBlockChanRecv, 2)
 
 	// someone woke us up

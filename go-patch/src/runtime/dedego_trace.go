@@ -126,10 +126,11 @@ func AllTracesToString() string {
 	lock(DedegoRoutinesLock)
 	defer unlock(DedegoRoutinesLock)
 
-	for i := 0; i < len(DedegoRoutines); i++ {
+	for i := 1; i <= len(DedegoRoutines); i++ {
+		res += ""
 		trace := DedegoRoutines[uint64(i)]
 		if trace == nil {
-			continue
+			panic("Trace is nil")
 		}
 		res += traceToString(trace) + "\n"
 
@@ -148,7 +149,8 @@ func PrintAllTraces() {
 
 // type to save in the trace for routines
 type dedegoTraceSpawnElement struct {
-	id uint64 // id of the routine
+	id    uint64 // id of the routine
+	timer uint64 // global timer
 }
 
 func (elem dedegoTraceSpawnElement) isDedegoTraceElement() {}
@@ -160,7 +162,7 @@ func (elem dedegoTraceSpawnElement) isDedegoTraceElement() {}
  *    'id' (number): id of the routine
  */
 func (elem dedegoTraceSpawnElement) toString() string {
-	return "G," + uint64ToString(elem.id)
+	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id)
 }
 
 /*
@@ -178,20 +180,24 @@ func (elem dedegoTraceSpawnElement) getFile() string {
  * 	id: id of the routine
  */
 func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
-	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId}, false)
+	timer := GetDedegoCounter()
+	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId, timer: timer},
+		false)
 }
 
 // ============================= Mutex =============================
 
 // type to save in the trace for mutexe
 type dedegoTraceMutexElement struct {
-	id   uint64    // id of the mutex
-	exec bool      // set true if the operation was successfully finished
-	op   operation // operation
-	rw   bool      // true if it is a rwmutex
-	suc  bool      // success of the operation, only for tryLock
-	file string    // file where the operation was called
-	line int       // line where the operation was called
+	id        uint64    // id of the mutex
+	exec      bool      // set true if the operation was successfully finished
+	op        operation // operation
+	rw        bool      // true if it is a rwmutex
+	suc       bool      // success of the operation, only for tryLock
+	file      string    // file where the operation was called
+	line      int       // line where the operation was called
+	timerPre  uint64    // global timer at begin of operation
+	timerPost uint64    // global timer at end of operation
 }
 
 func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
@@ -208,7 +214,8 @@ func (elem dedegoTraceMutexElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "M,'id','rw','op','exec','suc','file':'line'"
+ * 	string representation of the element "M,'tre','tpost','id','rw','op','exec','suc','file':'line'"
+ *    't' (number): global timer
  *    'id' (number): id of the mutex
  *    'rw' (R/-): R if it is a rwmutex, otherwise -
  *	  'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
@@ -219,6 +226,7 @@ func (elem dedegoTraceMutexElement) getFile() string {
  */
 func (elem dedegoTraceMutexElement) toString() string {
 	res := "M," + uint64ToString(elem.id) + ","
+	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
 
 	if elem.rw {
 		res += "R,"
@@ -271,8 +279,9 @@ func DedegoLock(id uint64, rw bool, r bool) int {
 		op = opMutRLock
 	}
 	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
-		file: file, line: line}
+		file: file, line: line, timerPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -291,8 +300,9 @@ func DedegoTryLock(id uint64, rw bool, r bool) int {
 		op = opMutRTryLock
 	}
 	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, file: file,
-		line: line}
+		line: line, timerPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -311,21 +321,82 @@ func DedegoUnlock(id uint64, rw bool, r bool) int {
 		op = opMutRUnlock
 	}
 	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
-		file: file, line: line}
+		file: file, line: line, timerPre: timer, timerPost: timer}
 	return insertIntoTrace(elem)
+}
+
+/*
+ * Add the end counter to an operation of the trace. For try use DedegoFinishTry.
+ *   Also used for wait group
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	c: number of the send
+ */
+func DedegoFinish(index int) {
+	// internal elements are not in the trace
+	if index == -1 {
+		return
+	}
+
+	// only needed to fix tests
+	if currentGoRoutine() == nil {
+		return
+	}
+
+	timer := GetDedegoCounter()
+
+	switch elem := currentGoRoutine().Trace[index].(type) {
+	case dedegoTraceMutexElement:
+		elem.exec = true
+		elem.timerPost = timer
+		currentGoRoutine().Trace[index] = elem
+	case dedegoTraceWaitGroupElement:
+		elem.exec = true
+		elem.timerPost = timer
+		currentGoRoutine().Trace[index] = elem
+
+	default:
+		panic("DedegoFinish called on non mutex, waitgroup or channel")
+	}
+}
+
+/*
+ * Add the end counter to an try operation of the trace
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	suc: true if the try was successful, false otherwise
+ */
+func DedegoFinishTry(index int, suc bool) {
+	// internal elements are not in the trace
+	if index == -1 {
+		return
+	}
+
+	switch elem := currentGoRoutine().Trace[index].(type) {
+	case dedegoTraceMutexElement:
+		elem.exec = true
+		elem.suc = suc
+		elem.timerPost = GetDedegoCounter()
+		currentGoRoutine().Trace[index] = elem
+	default:
+		panic("DedegoFinishTry called on non mutex")
+	}
 }
 
 // ============================= WaitGroup ===========================
 
 type dedegoTraceWaitGroupElement struct {
-	id    uint64    // id of the waitgroup
-	exec  bool      // set true if the operation was successfully finished
-	op    operation // operation
-	delta int       // delta of the waitgroup
-	val   int32     // value of the waitgroup after the operation
-	file  string    // file where the operation was called
-	line  int       // line where the operation was called
+	id        uint64    // id of the waitgroup
+	exec      bool      // set true if the operation was successfully finished
+	op        operation // operation
+	delta     int       // delta of the waitgroup
+	val       int32     // value of the waitgroup after the operation
+	file      string    // file where the operation was called
+	line      int       // line where the operation was called
+	timerPre  uint64    // global timer
+	timerPost uint64    // global timer
 }
 
 func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
@@ -342,7 +413,9 @@ func (elem dedegoTraceWaitGroupElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "W,'id','op','exec','delta','val','file':'line'"
+ * 	string representation of the element "W,'tpre','tpost','id','op','exec','delta','val','file':'line'"
+ *    'tpre' (number): global before the operation
+ *    'tpost' (number): global after the operation
  *    'id' (number): id of the mutex
  *	  'op' (A/W): A if it is an add or Done, W if it is a wait
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
@@ -353,6 +426,7 @@ func (elem dedegoTraceWaitGroupElement) getFile() string {
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
 	res := "W," + uint64ToString(elem.id) + ","
+	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
 	switch elem.op {
 	case opWgAdd:
 		res += "A,"
@@ -388,8 +462,9 @@ func DedegoAdd(id uint64, delta int, val int32) int {
 	} else {
 		_, file, line, _ = Caller(3)
 	}
+	timer := GetDedegoCounter()
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
-		val: val, file: file, line: line}
+		val: val, file: file, line: line, timerPre: timer, timerPost: timer}
 	return insertIntoTrace(elem)
 
 }
@@ -403,20 +478,23 @@ func DedegoAdd(id uint64, delta int, val int32) int {
  */
 func DedegoWait(id uint64) int {
 	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, file: file,
-		line: line}
+		line: line, timerPre: timer}
 	return insertIntoTrace(elem)
 }
 
 // ============================= Channel =============================
 
 type dedegoTraceChannelElement struct {
-	id   uint64    // id of the channel
-	exec bool      // set true if the operation was successfully finished
-	op   operation // operation
-	opId uint64    // id of the operation
-	file string    // file where the operation was called
-	line int       // line where the operation was called
+	id        uint64    // id of the channel
+	exec      bool      // set true if the operation was successfully finished
+	op        operation // operation
+	opId      uint64    // id of the operation
+	file      string    // file where the operation was called
+	line      int       // line where the operation was called
+	timerPre  uint64    // global timer before the operation
+	timerPost uint64    // global timer after the operation
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -433,7 +511,9 @@ func (elem dedegoTraceChannelElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "C,'id','op','exec','pId','file':'line'"
+ * 	string representation of the element "C,'tpre','tpost','id','op','exec','pId','file':'line'"
+ *    'tpre' (number): global timer before the operation
+ *    'tpost' (number): global timer after the operation
  *    'id' (number): id of the mutex
  *	  'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
@@ -443,6 +523,7 @@ func (elem dedegoTraceChannelElement) getFile() string {
  */
 func (elem dedegoTraceChannelElement) toString() string {
 	res := "C," + uint64ToString(elem.id) + ","
+	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
 
 	switch elem.op {
 	case opChanSend:
@@ -474,8 +555,9 @@ func (elem dedegoTraceChannelElement) toString() string {
  */
 func DedegoSend(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
-		file: file, line: line}
+		file: file, line: line, timerPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -489,8 +571,9 @@ func DedegoSend(id uint64, opId uint64) int {
  */
 func DedegoRecv(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
-		file: file, line: line}
+		file: file, line: line, timerPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -503,9 +586,25 @@ func DedegoRecv(id uint64, opId uint64) int {
  */
 func DedegoClose(id uint64) int {
 	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanClose, file: file,
-		line: line}
+		line: line, timerPre: timer, timerPost: timer}
 	return insertIntoTrace(elem)
+}
+
+/*
+ * Set the operation as successfully finished
+ * Args:
+ * 	index: index of the operation in the trace
+ */
+func DedegoFinishChan(index int) {
+	if index == -1 {
+		return
+	}
+	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
+	elem.exec = true
+	elem.timerPost = GetDedegoCounter()
+	currentGoRoutine().Trace[index] = elem
 }
 
 // ============================= Select ==============================
@@ -522,6 +621,8 @@ type dedegoTraceSelectElement struct {
 	defa       bool     // set true if a default case exists
 	file       string   // file where the operation was called
 	line       int      // line where the operation was called
+	timerPre   uint64   // global timer before the operation
+	timerPost  uint64   // global timer after the operation
 }
 
 func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
@@ -538,7 +639,9 @@ func (elem dedegoTraceSelectElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "S,'id','cases','exec','chosen','opId','file':'line'"
+ * 	string representation of the element "S,'tpre','tpost','id','cases','exec','chosen','opId','file':'line'"
+ *    'tpre' (number): global timer before the operation
+ *    'tpost' (number): global timer after the operation
  *    'id' (number): id of the mutex
  *	  'cases' (string): cases of the select, id and r/s, separated by '.', d for default
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
@@ -549,6 +652,8 @@ func (elem dedegoTraceSelectElement) getFile() string {
  */
 func (elem dedegoTraceSelectElement) toString() string {
 	res := "S," + uint64ToString(elem.id) + ","
+	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+
 	for i, ca := range elem.cases {
 		if i != 0 {
 			res += "."
@@ -602,64 +707,10 @@ func DedegoSelect(cases *[]scase, nsends int, block bool) int {
 	}
 
 	_, file, line, _ := Caller(2)
-
+	timer := GetDedegoCounter()
 	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nsends,
-		defa: !block, file: file, line: line}
+		defa: !block, file: file, line: line, timerPre: timer}
 	return insertIntoTrace(elem)
-}
-
-// ============================= Finish ================================
-/*
- * Add the end counter to an operation of the trace. For try use DedegoFinishTry.
- * Args:
- * 	index: index of the operation in the trace
- */
-func DedegoFinish(index int) {
-	// internal elements are not in the trace
-	if index == -1 {
-		return
-	}
-
-	// only needed to fix tests
-	if currentGoRoutine() == nil {
-		return
-	}
-
-	switch elem := currentGoRoutine().Trace[index].(type) {
-	case dedegoTraceMutexElement:
-		elem.exec = true
-		currentGoRoutine().Trace[index] = elem
-	case dedegoTraceWaitGroupElement:
-		elem.exec = true
-		currentGoRoutine().Trace[index] = elem
-	case dedegoTraceChannelElement:
-		elem.exec = true
-		currentGoRoutine().Trace[index] = elem
-	default:
-		panic("DedegoFinish called on non mutex, waitgroup or channel")
-	}
-}
-
-/*
- * Add the end counter to an try operation of the trace
- * Args:
- * 	index: index of the operation in the trace
- * 	suc: true if the try was successful, false otherwise
- */
-func DedegoFinishTry(index int, suc bool) {
-	// internal elements are not in the trace
-	if index == -1 {
-		return
-	}
-
-	switch elem := currentGoRoutine().Trace[index].(type) {
-	case dedegoTraceMutexElement:
-		elem.exec = true
-		elem.suc = suc
-		currentGoRoutine().Trace[index] = elem
-	default:
-		panic("DedegoFinishTry called on non mutex")
-	}
 }
 
 /*
@@ -680,6 +731,7 @@ func DedegoFinishSelect1(index int, chosen int, chosenChan *hchan) {
 	elem.exec = true
 	elem.chosen = chosen
 	elem.chosenChan = chosenChan
+	elem.timerPost = GetDedegoCounter()
 
 	currentGoRoutine().Trace[index] = elem
 }

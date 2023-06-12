@@ -80,6 +80,7 @@ func intToString(n int) string {
 
 var dedegoCurrentRoutineId = uint64(0)
 var dedegoCurrentObjectId = uint64(0)
+var dedegoGlobalCounter = uint64(0)
 
 /*
  * Get a new id for a routine
@@ -97,6 +98,15 @@ func GetDedegoRoutineId() uint64 {
  */
 func GetDedegoObjectId() uint64 {
 	return atomic.AddUint64(&dedegoCurrentObjectId, 1)
+}
+
+/*
+ * Get a new counter
+ * Return:
+ * 	new counter value
+ */
+func GetDedegoCounter() uint64 {
+	return atomic.AddUint64(&dedegoGlobalCounter, 1)
 }
 
 // DEDEGO-FILE-END
