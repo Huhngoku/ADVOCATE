@@ -65,7 +65,7 @@ to the beginning of the main function. For programms with many recorded
 operations this can lead to memory problems. In this case use
 
 ```go
-runtime.DedegoInit("path/to/ptoject/root")
+runtime.DedegoInit("path/to/project/root")
 defer func() {
   var i uint64 = 0
   file_name := "dedego.log"
