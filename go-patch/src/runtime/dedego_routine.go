@@ -38,14 +38,13 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
 	}
 
 	lock(DedegoRoutinesLock)
+	defer unlock(DedegoRoutinesLock)
 
 	if DedegoRoutines == nil {
 		DedegoRoutines = make(map[uint64]*[]dedegoTraceElement)
 	}
 
 	DedegoRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
-
-	unlock(DedegoRoutinesLock)
 
 	return routine
 }
@@ -60,7 +59,7 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  */
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement,
 	checkInternal bool) int {
-	if checkInternal && isInternal(elem.getFile()) {
+	if checkInternal && doNotCollectForTrace(elem.getFile()) {
 		return -1
 	}
 

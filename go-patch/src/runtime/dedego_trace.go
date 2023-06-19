@@ -105,6 +105,34 @@ func TraceToStringById(id uint64) (string, bool) {
 }
 
 /*
+ * Get the trace of the routine with id 'id'.
+ * To minimized the needed ram the trace is sent to the channel 'c' in chunks
+ * of 1000 elements.
+ * Args:
+ * 	id: id of the routine
+ * 	c: channel to send the trace to
+ */
+func TraceToStringByIdChannel(id int, c chan<- string) {
+	// lock(DedegoRoutinesLock)
+	// defer unlock(DedegoRoutinesLock)
+	if trace, ok := DedegoRoutines[uint64(id)]; ok {
+		res := ""
+		for i, elem := range *trace {
+			if i != 0 {
+				res += ";"
+			}
+			res += elem.toString()
+
+			if i%1000 == 0 {
+				c <- res
+				res = ""
+			}
+		}
+		c <- res
+	}
+}
+
+/*
  * Return the trace of all traces
  * Return:
  * 	string representation of the trace of all routines
@@ -132,6 +160,27 @@ func AllTracesToString() string {
  */
 func PrintAllTraces() {
 	print(AllTracesToString())
+}
+
+/*
+ * Return the number of routines in the trace
+ * Return:
+ *	number of routines in the trace
+ */
+func GetNumberOfRoutines() int {
+	lock(DedegoRoutinesLock)
+	defer unlock(DedegoRoutinesLock)
+	return len(DedegoRoutines)
+}
+
+/* Disable the collection of the trace */
+func DisableTrace() {
+	dedegoDisabled = true
+}
+
+/* Enable the collection of the trace */
+func EnableTrace() {
+	dedegoDisabled = false
 }
 
 // ============================= Routine ===========================
@@ -761,12 +810,19 @@ func DedegoFinishSelect2(index int, lockOrder []uint16) {
 
 /*
  * Check if the file is internal, meening not from the running program
+ * or if the collection of the trace is disabled
  * Params:
  * 	fileName: the name of the file
  * Return:
  * 	true if the file is internal, false otherwise
  */
-func isInternal(fileName string) bool {
+var dedegoDisabled bool = false
+
+func doNotCollectForTrace(fileName string) bool {
+	if dedegoDisabled {
+		return true
+	}
+
 	if projectPath == "" {
 		return false
 	}

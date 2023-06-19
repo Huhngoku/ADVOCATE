@@ -61,31 +61,42 @@ defer func() {
 }()
 ```
 
-to the beginning of the main function. For programms with many recorded 
+to the beginning of the main function. 
+
+For programs with many recorded 
 operations this can lead to memory problems. In this case use
 
 ```go
 runtime.DedegoInit("path/to/project/root")
 defer func() {
-  var i uint64 = 0
-  file_name := "dedego.log"
-  file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-  if err != nil {
-    panic(err)
-  }
-  defer file.Close()
-  for {
-    i++
-    trace, ok := runtime.TraceToStringById(i)
-    if !ok {
-      break
-    }
-    if _, err := file.WriteString(trace + "\n"); err != nil {
+file_name := "dedego.log"
+file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+if err != nil {
+  panic(err)
+}
+runtime.DisableTrace()
+numRout := runtime.GetNumberOfRoutines()
+for i := 0; i < numRout; i++ {
+  c := make(chan string)
+  go func() {
+    runtime.TraceToStringByIdChannel(i, c)
+    close(c)
+  }()
+  for trace := range c {
+    if _, err := file.WriteString(trace); err != nil {
       panic(err)
     }
   }
+  if _, err := file.WriteString("\n"); err != nil {
+    panic(err)
+  }
+}
+file.Close()
 }()
+
 ```
+
+instead.
 
 ## Trace structure
 
