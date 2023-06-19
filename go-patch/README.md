@@ -100,13 +100,13 @@ instead.
 
 ## Structure of trace T in EBNF
 
-```ebnf
+```
 T := L\nT | ""                                                  (trace)
 L := "" | {E";"}E                                               (routine local trace)
 E := G | M | W | C | S                                          (trace element)
 G := "G,"tpre","id                                              (element for creation of new routine)
 M := "M,"tpre","tpost","id","rw","opM","exec","suc","pos        (element for operation on sync (rw)mutex)
-W := "W,"tpre","tpost","id","opW","exec","delta","val","pos      (element for operation on sync wait group)
+W := "W,"tpre","tpost","id","opW","exec","delta","val","pos     (element for operation on sync wait group)
 C := "C,"tpre","tpost","id","opC","exec","oId","pos             (element for operation on channel)
 S := "S,"tpre","tpost","id","cases","exec","chosen","oId","pos  (element for select)
 tpre := ℕ                                                       (timer when the operation is started)
