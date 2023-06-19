@@ -61,7 +61,7 @@ defer func() {
 }()
 ```
 
-to the beginning of the main function. 
+at the beginning of the main function. 
 
 For programs with many recorded 
 operations this can lead to memory problems. In this case use
@@ -98,47 +98,41 @@ file.Close()
 
 instead.
 
-## Trace structure
+## Structure of trace T in EBNF
 
-- One line per routine
-- Each line contains the trace of one routine. The line number is equal to the routine id
-- The trace consists of the trace elements separated by semicolon.
-- The trace elements can have the following structure:
-  - Spawn new routine: G,'t','id'
-    - 't' (number): global timer when the trace was created
-    - 'id' (number): id of the new routine
-  - Mutex: M,'tpre','tpost','id','rw','op','exec','suc','file':'line'
-    - 'tpre' (number): global timer when the operation starts
-    - 'tpost' (number): global timer when the operation ends
-    - 'id' (number): id of the mutex
-    - 'rw' (R/-): R if it is a rwmutex, otherwise -
-    - 'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
-    - 'exec' (e/o): e if the operation was successfully finished, o otherwise
-    - 'suc' (s/f): s if the trylock was successful, f otherwise
-    - 'pos' (string): position where the operation was called (file:line)
-  - WaitGroup: W,'tpre','tpost','id','op','exec','delta','val','file':'line'
-    - 'tpre' (number): global timer when the operation starts
-    - 'tpost' (number): global timer when the operation ends
-    - 'id' (number): id of the mutex
-    - 'op' (A/W): A if it is an add or Done, W if it is a wait
-    - 'exec' (e/o): e if the operation was successfully finished, o otherwise
-    - 'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
-    - 'val' (number): value of the waitgroup after the operation
-    - 'pos' (string): position where the operation was called (file:line)
-  - Channel: C,'tpre','tpost','id','op','exec','oId','file':'line'
-    - 'tpre' (number): global timer when the operation starts
-    - 'tpost' (number): global timer when the operation ends
-    - 'id' (number): id of the mutex
-    - 'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
-    - 'exec' (e/o): e if the operation was successfully finished, o otherwise
-    - 'oId' (number): id of the operation
-    - 'pos' (string): position where the operation was called (file:line)
-  - Select: S,'tpre','tpost','id','cases','exec','chosen','opId','file':'line
-    - 'tpre' (number): global timer when the operation starts
-    - 'tpost' (number): global timer when the operation ends
-    - 'id' (number): id of the mutex
-    - 'cases' (string): cases of the select, id and r/s, separated by '.', d for default
-    - 'exec' (e/o): e if the operation was successfully finished, o otherwise
-    - 'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
-    - 'opId' (number): id of the operation on the channel
-    - 'pos' (string): position where the operation was called (file:line)
+```ebnf
+T := L\nT | ""                                                  (trace)
+L := "" | {E";"}E                                               (routine local trace)
+E := G | M | W | C | S                                          (trace element)
+G := "G,"tpre","id                                              (element for creation of new routine)
+M := "M,"tpre","tpost","id","rw","opM","exec","suc","pos        (element for operation on sync (rw)mutex)
+W := "W,"tpre","tpost",id","opW","exec","delta","val","pos      (element for operation on sync wait group)
+C := "C,"tpre","tpost","id","opC","exec","oId","pos             (element for operation on channel)
+S := "S,"tpre","tpost","id","cases","exec","chosen","oId","pos  (element for select)
+tpre := ℕ                                                       (timer when the operation is started)
+tpost := ℕ                                                      (timer when the operation has finished)
+id := ℕ                                                         (unique id of the underling object)
+rw := "R" | "-"                                                 ("R" if the mutex is an RW mutex, "-" otherwise)
+opM := "L" | "LR" | "T" | "TR" | "U" | "UR"                     (operation on the mutex, L: lock, LR: rLock, T: tryLock, TR: tryRLock, U: unlock, UR: rUnlock)
+opW := "A" | "W"                                                (operation on the wait group, A: add (delta > 0) or done (delta < 0), W: wait)
+opC := "S" | "R" | "C"                                          (operation on the channel, S: send, R: receive, C: close)
+exec := "e" | "f"                                               (e: the operation was fully executed, o: the operation was not fully executed, e.g. a mutex was still waiting at a lock operation when the program was terminated or a channel never found an communication partner)
+suc := "s" | "f"                                                (the mutex lock was successful ("s") or it failed ("f", only possible for try(r)lock))
+pos := file":"line                                              (position in the code, where the operation was executed)
+file := 𝕊                                                       (file path of pos)
+line := ℕ                                                       (line number of pos)
+delta := ℕ                                                      (change of the internal counter of wait group, normally +1 for add, -1 for done)
+val := ℕ                                                        (internal counter of the wait group after the operation)
+oId := ℕ                                                        (identifier for an communication on the channel, the send and receive (or select) that have communicated share the same oId)
+cases := case | {case"."}case                                   (list of cases in select, seperated by .)
+case := cId""("r" | "s") | "d"                                  (case in select, consisting of channel id and "r" for receive or "s" for send. "d" shows an existing default case)  
+cId := ℕ                                                        (id of channel in select case)
+chosen := ℕ0 | "-1"                                             (index of the chosen case in cases, -1 for default case)    
+```
+
+Info: 
+- \n: newline
+- ℕ: natural number not including 0
+- ℕ0: natural number including 0
+- 𝕊: string containing 1 or more characters
+- The tracer contains a global timer for all routines that is incremented every time an timer element (tpre/tpost) is recorded.
