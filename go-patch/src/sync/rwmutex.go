@@ -159,7 +159,7 @@ func (rw *RWMutex) RUnlock() {
 	// DEDEGO-ADD-START
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
-	dedegoIndex := runtime.DedegoUnlock(rw.id, true, true)
+	dedegoIndex := runtime.DedegoUnlockPre(rw.id, true, true)
 	defer runtime.DedegoPost(dedegoIndex)
 	// DEDEGO-ADD-END
 
