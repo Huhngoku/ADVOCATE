@@ -135,11 +135,19 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// NOTE: pollorder/lockorder's underlying array was not zero-initialized by compiler.
 
 	// DEDEGO-ADD-START
-	dedegoIndex := -1
-	dedegoIndex = DedegoSelect(&scases, nsends, block)
+	// This block is called, if the code runs a select statement.
+	// DedegoSelectPre records the state of the select case, meaning which
+	// cases exists (channel / direction) and weather a default statement is present.
+	// DedegoSelectPost2 is called after the select statement was executed.
+	// It records the internal case order of the select statement, which
+	// is pseudo random and different from the order in the source code.
+	// The order is needed to determine which case was selected.
+	// The recording of the selected case is done with DedeGoSelectPost1 in
+	// the rect block further down.
+	dedegoIndex := DedegoSelectPre(&scases, nsends, block)
 
 	defer func(lockOrder []uint16) {
-		DedegoFinishSelect2(dedegoIndex, lockOrder)
+		DedegoSelectPost2(dedegoIndex, lockOrder)
 	}(lockorder)
 
 	// DEDEGO-ADD-END
@@ -520,11 +528,12 @@ retc:
 	}
 
 	// DEDEGO-ADD-START
-	// println(scases[casi].c.id)
+	// DedegoSelectPost1 records the selected case of the select (case != -1)
+	// or the fact that the default case was selected (case == -1)
 	if casi != -1 {
-		DedegoFinishSelect1(dedegoIndex, casi, scases[casi].c)
+		DedegoSelectPost1(dedegoIndex, casi, scases[casi].c)
 	} else {
-		DedegoFinishSelect1(dedegoIndex, -1, nil)
+		DedegoSelectPost1(dedegoIndex, -1, nil)
 	}
 	// DEDEGO-ADD-END
 

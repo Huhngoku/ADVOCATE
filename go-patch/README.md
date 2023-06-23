@@ -1,47 +1,17 @@
 # Patch version of the Go Programming language for Dedego
 
-## Changed files
-Added files:
+## How
+The go-patch folder contains a modified version of the go compiler and runtime.
+With this modified version it is possible to save a trace as described in
+'Trace Structure'. You can use the complete runtime/compiler from go-patch
+or take your own go environment and replace the files mentioned above.
 
-- src/runtime/dedego_routine.go
-- src/runtime/dedego_trace.go
-- src/runtime/dedego_util.go
+To build the new runtime, run the 'all.bash' or 'all.bat' file in the 'src'
+directory. This will create a 'bin' directory containing a 'go' executable.
+This executable can be used as your new go envirement e.g. with
+`./go run main.go` or `./go build`.
 
-Changed files:
-
-- src/cmd/cgo/internal/test/testx.go
-- src/runtime/proc.go
-- src/runtime/runtime2.go
-- src/runtime/chan.go
-- src/runtime/select.go
-- src/sync/mutex.go
-- src/sync/rwmutex.go
-- src/sync/waitgroup.go
-
-Disabled Tests (files contain disabled tests): 
-
-- src/cmd/cgo/internal/test/cgo_test.go
-- src/cmd/dist/test.go
-- src/cmd/go/stript_test.go
-- src/cmd/compile/internal/types2/sizeof_test.go
-- src/context/x_test.go
-- src/crypto/internal/nistec/nistec_test.go
-- src/crypto/tls/tls_test.go
-- src/go/build/deps_test.
-- src/go/types/sizeof_test.go
-- src/internal/intern/inter_test.go
-- src/log/slog/text_handler_test.go
-- src/net/netip/netip_test.go
-- src/runtime/crash_cgo_test.go
-- src/runtime/sizeof_test.go
-- src/runtime/align_test.go
-- src/runtime/metrics_test.go
-- src/net/tcpsock_test.go
-- src/reflect/all_test.go
-
-## Save the trace
-
-Add
+To create a trace, add
 
 ```go
 import (
@@ -61,7 +31,7 @@ defer func() {
 }()
 ```
 
-at the beginning of the main function. 
+to the beginning of the main function.
 
 For programs with many recorded 
 operations this can lead to memory problems. In this case use
@@ -69,37 +39,44 @@ operations this can lead to memory problems. In this case use
 ```go
 runtime.DedegoInit("path/to/project/root")
 defer func() {
-file_name := "dedego.log"
-file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-if err != nil {
-  panic(err)
-}
-runtime.DisableTrace()
-numRout := runtime.GetNumberOfRoutines()
-for i := 0; i < numRout; i++ {
-  c := make(chan string)
-  go func() {
-    runtime.TraceToStringByIdChannel(i, c)
-    close(c)
-  }()
-  for trace := range c {
-    if _, err := file.WriteString(trace); err != nil {
+  file_name := "dedego.log"
+  file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+  if err != nil {
+    panic(err)
+  }
+  runtime.DisableTrace()
+  numRout := runtime.GetNumberOfRoutines()
+  for i := 0; i < numRout; i++ {
+    c := make(chan string)
+    go func() {
+      runtime.TraceToStringByIdChannel(i, c)
+      close(c)
+    }()
+    for trace := range c {
+      if _, err := file.WriteString(trace); err != nil {
+        panic(err)
+      }
+    }
+    if _, err := file.WriteString("\n"); err != nil {
       panic(err)
     }
   }
-  if _, err := file.WriteString("\n"); err != nil {
-    panic(err)
-  }
-}
-file.Close()
+  file.Close()
 }()
 
 ```
 
 instead.
 
-## Structure of trace T in EBNF
+In both cases you have to replace "path/to/project/root" with the path
+to your project. This prevents internal operations from being recorded.
+If you want to record all operations (including internal), set
+"path/to/project/root" as "~all~". In this case, all operations that happened
+after DedegoInit was called will be recorded.
 
+## Trace structure
+
+The following is the structure of the trace T in BNF.
 ```
 T := L\nT | ""                                                  (trace)
 L := "" | {E";"}E                                               (routine local trace)
@@ -136,3 +113,42 @@ Info:
 - ℕ0: natural number including 0
 - 𝕊: string containing 1 or more characters
 - The tracer contains a global timer for all routines that is incremented every time an timer element (tpre/tpost) is recorded.
+
+## Changed files
+Added files:
+
+- src/runtime/dedego_routine.go
+- src/runtime/dedego_trace.go
+- src/runtime/dedego_util.go
+
+Changed files (marked with DEDEGO-ADD):
+
+- src/cmd/cgo/internal/test/testx.go
+- src/runtime/proc.go
+- src/runtime/runtime2.go
+- src/runtime/chan.go
+- src/runtime/select.go
+- src/sync/mutex.go
+- src/sync/rwmutex.go
+- src/sync/waitgroup.go
+
+Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST): 
+
+- src/cmd/cgo/internal/test/cgo_test.go
+- src/cmd/dist/test.go
+- src/cmd/go/stript_test.go
+- src/cmd/compile/internal/types2/sizeof_test.go
+- src/context/x_test.go
+- src/crypto/internal/nistec/nistec_test.go
+- src/crypto/tls/tls_test.go
+- src/go/build/deps_test.
+- src/go/types/sizeof_test.go
+- src/internal/intern/inter_test.go
+- src/log/slog/text_handler_test.go
+- src/net/netip/netip_test.go
+- src/runtime/crash_cgo_test.go
+- src/runtime/sizeof_test.go
+- src/runtime/align_test.go
+- src/runtime/metrics_test.go
+- src/net/tcpsock_test.go
+- src/reflect/all_test.go

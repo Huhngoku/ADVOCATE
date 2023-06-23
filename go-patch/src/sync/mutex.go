@@ -86,13 +86,21 @@ const (
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
 	// DEDEGO-ADD-START
-	// set id if not set before
+	// Mutexe don't need to be initialized in default go code. Because
+	// go does not have constructors, the only way to initialize a mutex
+	// is directly in the lock function. If the id of the channel is the default
+	// value, it is set to a new, unique object id.
 	if m.id == 0 {
 		m.id = runtime.GetDedegoObjectId()
 	}
 
-	dedegoIndex := runtime.DedegoLock(m.id, false, false)
-	defer runtime.DedegoFinish(dedegoIndex)
+	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+	// DedegoPost is called, if the mutex was locked successfully.
+	// In this case, the Lock event in the trace is updated to include
+	// this information. dedegoIndex is used for DedegoPost to find the
+	// pre event.
+	dedegoIndex := runtime.DedegoMutexLockPre(m.id, false, false)
+	defer runtime.DedegoPost(dedegoIndex)
 	// DEDEGO-ADD-END
 
 	// Fast path: grab unlocked mutex.
@@ -113,14 +121,21 @@ func (m *Mutex) Lock() {
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
 	// DEDEGO-ADD-START
+	// Mutexe don't need to be initialized in default go code. Because
+	// go does not have constructors, the only way to initialize a mutex
+	// is directly in the lock function. If the id of the channel is the default
+	// value, it is set to a new, unique object id
 	if m.id == 0 {
 		m.id = runtime.GetDedegoObjectId()
 	}
-	dedegoIndex := runtime.DedegoTryLock(m.id, false, false)
+
+	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+	// dedegoIndex is used for DedegoPostTry to find the pre event.
+	dedegoIndex := runtime.DedegoMutexLockTry(m.id, false, false)
 	// DEDEGO-ADD-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
-		runtime.DedegoFinishTry(dedegoIndex, false)
+		runtime.DedegoPostTry(dedegoIndex, false)
 		return false
 	}
 
@@ -129,7 +144,9 @@ func (m *Mutex) TryLock() bool {
 	// goroutine wakes up.
 	if !atomic.CompareAndSwapInt32(&m.state, old, old|mutexLocked) {
 		// DEDEGO-ADD-START
-		runtime.DedegoFinishTry(dedegoIndex, false)
+		// If the mutex was not locked successfully, DedegoPostTry is called
+		// to update the trace.
+		runtime.DedegoPostTry(dedegoIndex, false)
 		// DEDEGO-ADD-END
 		return false
 	}
@@ -138,7 +155,9 @@ func (m *Mutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(m))
 	}
 	// DEDEGO-ADD-START
-	runtime.DedegoFinishTry(dedegoIndex, true)
+	// If the mutex was locked successfully, DedegoPostTry is called
+	// to update the trace.
+	runtime.DedegoPostTry(dedegoIndex, true)
 	// DEDEGO-ADD-END
 	return true
 }
@@ -240,8 +259,17 @@ func (m *Mutex) lockSlow() {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
 	// DEDEGO-ADD-START
-	dedegoIndex := runtime.DedegoUnlock(m.id, false, false)
-	defer runtime.DedegoFinish(dedegoIndex)
+	// DedegoUnlockPre is used to record the unlocking of a mutex.
+	// DedegoPost records the successful unlocking of a mutex.
+	// For non rw mutexe, the unlock cannot fail. Therefore it is not
+	// strictly necessary to record the post for the unlocking of a mutex.
+	// For rw mutexes, the unlock can fail (e.g. unlock after rlock). Therefore
+	// in this case it is nessesary to record the post for the unlocking of an
+	// rw mutex.
+	// Here the post is seperatly recorded to easy the implementation for
+	// the rw mutexes.
+	dedegoIndex := runtime.DedegoUnlockPre(m.id, false, false)
+	defer runtime.DedegoPost(dedegoIndex)
 	// DEDEGO-ADD-END
 
 	if race.Enabled {

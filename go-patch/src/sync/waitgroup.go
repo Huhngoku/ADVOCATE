@@ -35,8 +35,6 @@ type WaitGroup struct {
 	// DEDEGO-ADD-END
 }
 
-// DEDEGO-ADD-START
-
 // Add adds delta, which may be negative, to the WaitGroup counter.
 // If the counter becomes zero, all goroutines blocked on Wait are released.
 // If the counter goes negative, Add panics.
@@ -64,10 +62,20 @@ func (wg *WaitGroup) Add(delta int) {
 	w := uint32(state)
 
 	// DEDEGO-ADD-START
+	// Waitgroups don't need to be initialized in default go code. Because
+	// go does not have constructors, the only way to initialize a wg
+	// is directly in it's functions. If the id of the wg is the default
+	// value, it is set to a new, unique object id
 	if wg.id == 0 {
 		wg.id = runtime.GetDedegoObjectId()
 	}
-	runtime.DedegoAdd(wg.id, delta, v)
+	// Record the add or done of a wait group in the routine's trace.
+	// If delta > 0, it is an add, if it's -1, it's a done.
+	// The add or done cannot fait without crashing the program. Add and done
+	// do not block the program. Therefore it is not possible, that it is
+	// called but not finished (except if it panics). Therefore it is not
+	// necessary to record a post event.
+	runtime.DedegoWaitGroupAdd(wg.id, delta, v)
 	// DEDEGO-ADD-END
 
 	if race.Enabled && delta > 0 && v == int32(delta) {
@@ -112,8 +120,20 @@ func (wg *WaitGroup) Wait() {
 		race.Disable()
 	}
 	// DEDEGO-ADD-START
-	dedegoIndex := runtime.DedegoWait(wg.id)
-	defer runtime.DedegoFinish(dedegoIndex)
+	// Waitgroups don't need to be initialized in default go code. Because
+	// go does not have constructors, the only way to initialize a wg
+	// is directly in it's functions. If the id of the wg is the default
+	// value, it is set to a new, unique object id
+	if wg.id == 0 {
+		wg.id = runtime.GetDedegoObjectId()
+	}
+
+	// Record the wait of a wait group in the routine's trace.
+	// The wait will run until the waitgroup counte is zero. Therefor it
+	// blocks the routine and it is nessesary to record the successful
+	// finish of the wait with a post.
+	dedegoIndex := runtime.DedegoWaitGroupWaitPre(wg.id)
+	defer runtime.DedegoPost(dedegoIndex)
 	// DEDEGO-ADD-END
 	for {
 		state := wg.state.Load()

@@ -311,7 +311,7 @@ func (elem dedegoTraceMutexElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoLock(id uint64, rw bool, r bool) int {
+func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
 	op := opMutLock
 	if r {
 		op = opMutRLock
@@ -332,7 +332,7 @@ func DedegoLock(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoTryLock(id uint64, rw bool, r bool) int {
+func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
 	op := opMutTryLock
 	if r {
 		op = opMutRTryLock
@@ -353,7 +353,7 @@ func DedegoTryLock(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoUnlock(id uint64, rw bool, r bool) int {
+func DedegoUnlockPre(id uint64, rw bool, r bool) int {
 	op := opMutUnlock
 	if r {
 		op = opMutRUnlock
@@ -366,13 +366,13 @@ func DedegoUnlock(id uint64, rw bool, r bool) int {
 }
 
 /*
- * Add the end counter to an operation of the trace. For try use DedegoFinishTry.
+ * Add the end counter to an operation of the trace. For try use DedegoPostTry.
  *   Also used for wait group
  * Args:
  * 	index: index of the operation in the trace
  * 	c: number of the send
  */
-func DedegoFinish(index int) {
+func DedegoPost(index int) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -396,7 +396,7 @@ func DedegoFinish(index int) {
 		currentGoRoutine().Trace[index] = elem
 
 	default:
-		panic("DedegoFinish called on non mutex, waitgroup or channel")
+		panic("DedegoPost called on non mutex, waitgroup or channel")
 	}
 }
 
@@ -406,7 +406,7 @@ func DedegoFinish(index int) {
  * 	index: index of the operation in the trace
  * 	suc: true if the try was successful, false otherwise
  */
-func DedegoFinishTry(index int, suc bool) {
+func DedegoPostTry(index int, suc bool) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -419,7 +419,7 @@ func DedegoFinishTry(index int, suc bool) {
 		elem.timerPost = GetDedegoCounter()
 		currentGoRoutine().Trace[index] = elem
 	default:
-		panic("DedegoFinishTry called on non mutex")
+		panic("DedegoPostTry called on non mutex")
 	}
 }
 
@@ -492,7 +492,7 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoAdd(id uint64, delta int, val int32) int {
+func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
 	var file string
 	var line int
 	if delta > 0 {
@@ -514,7 +514,7 @@ func DedegoAdd(id uint64, delta int, val int32) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoWait(id uint64) int {
+func DedegoWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, file: file,
@@ -591,7 +591,7 @@ func (elem dedegoTraceChannelElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSend(id uint64, opId uint64) int {
+func DedegoChanSendPre(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
@@ -607,7 +607,7 @@ func DedegoSend(id uint64, opId uint64) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoRecv(id uint64, opId uint64) int {
+func DedegoRecvPre(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
@@ -635,7 +635,7 @@ func DedegoClose(id uint64) int {
  * Args:
  * 	index: index of the operation in the trace
  */
-func DedegoFinishChan(index int) {
+func DedegoChanPost(index int) {
 	if index == -1 {
 		return
 	}
@@ -730,7 +730,7 @@ func (elem dedegoTraceSelectElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSelect(cases *[]scase, nsends int, block bool) int {
+func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
 	if cases == nil {
 		return -1
 	}
@@ -758,7 +758,7 @@ func DedegoSelect(cases *[]scase, nsends int, block bool) int {
  * 	chosen: index of the chosen case
  * 	chosenChan: chosen channel
  */
-func DedegoFinishSelect1(index int, chosen int, chosenChan *hchan) {
+func DedegoSelectPost1(index int, chosen int, chosenChan *hchan) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -780,7 +780,7 @@ func DedegoFinishSelect1(index int, chosen int, chosenChan *hchan) {
  * 	index: index of the operation in the trace
  * 	lockOrder: lock order of the select
  */
-func DedegoFinishSelect2(index int, lockOrder []uint16) {
+func DedegoSelectPost2(index int, lockOrder []uint16) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -819,14 +819,22 @@ func DedegoFinishSelect2(index int, lockOrder []uint16) {
 var dedegoDisabled bool = false
 
 func doNotCollectForTrace(fileName string) bool {
+	// do not collect if dedego is enabled (used when printing the trace)
 	if dedegoDisabled {
 		return true
 	}
 
+	// collect all operations execpt before DedegoInit is called
+	if projectPath == "~all~" {
+		return false
+	}
+
+	// do not collect operations before DedegoInit is called
 	if projectPath == "" {
 		return false
 	}
 
+	// do not collect internal operations
 	if len(fileName) < len(projectPath) {
 		return true
 	}

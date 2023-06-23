@@ -53,7 +53,7 @@ type hchan struct {
 	lock mutex
 
 	// DEDEGO-ADD-START
-	id         uint64
+	id         uint64 // id of the channel
 	numberSend uint64 // number of completed send operations
 	numberRecv uint64 // number of completed recv operations
 	// DEDEGO-ADD-END
@@ -120,6 +120,7 @@ func makechan(t *chantype, size int) *hchan {
 	c.dataqsiz = uint(size)
 
 	// DEDEGO-ADD-START
+	// get and save a new id for the channel
 	c.id = GetDedegoObjectId()
 	// DEDEGO-ADD-END
 
@@ -215,9 +216,20 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	lock(&c.lock)
 
 	// DEDEGO-ADD-START
+	// this block is called if a send is made on a channel
+	// it increases the number of sends on the channel, which is used to
+	// identify the communication partner in the dedego analysis
+	// After that a channel send event is created in the trace to show,
+	// that the channel tried to send.
+	// The current function 'chansend' only returns, if the send was successful,
+	// meaning the channel either directly communicated with a receive or wrote
+	// into the channel buffer. Therefor, the send event is modified to include
+	// the post information by DedeGoChanPost, if 'chansend' returns.
+	// dedegoIndex is used to connect the post event to the correct
+	// pre envent in the trace.
 	at.AddUint64(&c.numberSend, 1)
-	dedegoIndex := DedegoSend(c.id, c.numberSend)
-	defer DedegoFinishChan(dedegoIndex)
+	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend)
+	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-ADD-END
 
 	if c.closed != 0 {
@@ -245,9 +257,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		}
 		c.qcount++
 		unlock(&c.lock)
-		// DEDEGO-NOTE-START
-		// here the post is created even if the unbuffered channel was not read
-		// DEDEGO-NOTE-END
 
 		return true
 	}
@@ -280,7 +289,8 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
 	// DEDEGO-NOTE-START
-	// gopark blocks the routine and waits for a wakeup.
+	// gopark blocks the routine if no communication partner is available
+	// and the has no free buffe.
 	// DEDEGO-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanSend, traceBlockChanSend, 2)
 	// Ensure the value being sent is kept alive until the
@@ -400,6 +410,8 @@ func closechan(c *hchan) {
 	c.closed = 1
 
 	// DEDEGO-ADD-START
+	// DedegoClose is called when a channel is closed. It creates a close event
+	// in the trace.
 	DedegoClose(c.id)
 	// DEDEGO-ADD-END
 
@@ -541,9 +553,20 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	lock(&c.lock)
 
 	// DEDEGO-ADD-START
+	// this block is called if a receive is made on a channel.
+	// It increases the number of receives on the channel, which is used to
+	// identify the communication partner in the dedego analysis.
+	// After that a channel receive event is created in the trace to show,
+	// that the channel tried to receive.
+	// The current function 'chanrecv' only returns, if the receive was successful,
+	// meaning the channel either communicated with a send or read from the
+	// channel buffer. Therefor, the recive event is modified to include the
+	// post information by DedeGoChanPost, if 'chansend' returns.
+	// dedegoIndex is used to connect the post event to the correct
+	// pre envent in the trace.
 	at.AddUint64(&c.numberRecv, 1)
-	dedegoIndex := DedegoRecv(c.id, c.numberRecv)
-	defer DedegoFinishChan(dedegoIndex)
+	dedegoIndex := DedegoRecvPre(c.id, c.numberRecv)
+	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-ADD-END
 
 	if c.closed != 0 {
@@ -617,6 +640,10 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
 
+	// DEDEGO-NOTE-START
+	// gopark blocks the routine if no communication partner is available
+	// and the has no free buffe.
+	// DEDEGO-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceBlockChanRecv, 2)
 
 	// someone woke us up

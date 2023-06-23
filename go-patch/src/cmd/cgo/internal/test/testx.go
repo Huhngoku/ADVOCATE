@@ -151,7 +151,7 @@ func Add(x int) {
 func goDummy() {
 }
 
-// START-DEDEGO-REMOVE
+// DEDEGO-REMOVE_TEST-START
 /*
 func testCthread(t *testing.T) {
 	if (runtime.GOOS == "darwin" || runtime.GOOS == "ios") && runtime.GOARCH == "arm64" {
@@ -166,7 +166,7 @@ func testCthread(t *testing.T) {
 	}
 }
 */
-// END-DEDEGO-REMOVE
+// DEDEGO-REMOVE_TEST-END
 
 // Benchmark measuring overhead from C to Go in a C thread.
 // Create a new C thread and invoke Go function repeatedly in the new C thread.

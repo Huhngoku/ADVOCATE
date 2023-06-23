@@ -786,7 +786,7 @@ func (t *tester) registerTests() {
 		t.registerCgoTests(cgoHeading)
 	}
 
-	// DEDEGO_REMOVE_TEST-START
+	// DEDEGO-REMOVE_TEST-START
 	/*
 		if goos != "android" && !t.iOS() {
 			// Only start multiple test dir shards on builders,
@@ -813,7 +813,7 @@ func (t *tester) registerTests() {
 				}
 			}
 	*/
-	// DEDEGO_REMOVE_TEST-END
+	// DEDEGO-REMOVE_TEST-END
 	// Only run the API check on fast development platforms.
 	// Every platform checks the API on every GOOS/GOARCH/CGO_ENABLED combination anyway,
 	// so we really only need to run this check once anywhere to get adequate coverage.

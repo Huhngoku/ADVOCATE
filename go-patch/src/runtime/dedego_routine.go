@@ -1,4 +1,4 @@
-// DEDEGO_FILE_START
+// DEDEGO-FILE_START
 
 package runtime
 
