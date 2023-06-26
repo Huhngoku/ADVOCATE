@@ -13,14 +13,18 @@ type DedegoRoutine struct {
 	Trace []dedegoTraceElement
 }
 
-/*
- * set the project path
- * Params:
- * 	path: the path to the project
- */
-func DedegoInit(path string) {
-	projectPath = path
-}
+// /*
+//  * set the project path
+//  * Params:
+//  * 	path: the path to the project
+//  */
+// func DedegoInit(path string) {
+// 	EnableTrace()
+// 	if path == "" {
+// 		panic("DedegoInit: path is empty")
+// 	}
+// 	projectPath = path
+// }
 
 /*
  * Create a new dedego routine
@@ -57,9 +61,9 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * Return:
  * 	the index of the element in the trace
  */
-func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement,
-	checkInternal bool) int {
-	if checkInternal && doNotCollectForTrace(elem.getFile()) {
+func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
+	// do noting if dedego is disabled
+	if !dedegoEnabled {
 		return -1
 	}
 

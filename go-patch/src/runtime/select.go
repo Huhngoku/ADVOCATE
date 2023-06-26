@@ -138,13 +138,16 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// This block is called, if the code runs a select statement.
 	// DedegoSelectPre records the state of the select case, meaning which
 	// cases exists (channel / direction) and weather a default statement is present.
+	// Here the first lock order is set. This is only needed if the select
+	// is never executed.
 	// DedegoSelectPost2 is called after the select statement was executed.
-	// It records the internal case order of the select statement, which
+	// It records the final internal case order of the select statement, which
 	// is pseudo random and different from the order in the source code.
 	// The order is needed to determine which case was selected.
 	// The recording of the selected case is done with DedeGoSelectPost1 in
 	// the rect block further down.
-	dedegoIndex := DedegoSelectPre(&scases, nsends, block)
+
+	dedegoIndex := DedegoSelectPre(&scases, nsends, block, lockorder)
 
 	defer func(lockOrder []uint16) {
 		DedegoSelectPost2(dedegoIndex, lockOrder)

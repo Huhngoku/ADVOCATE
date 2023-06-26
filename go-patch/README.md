@@ -20,9 +20,10 @@ import (
   "os"
 )
 
-runtime.DedegoInit("path/to/project/root")
+runtime.EnableTrace()
 defer func() {
   file_name := "dedego.log"
+  os.Remove(file_name)
   output := runtime.AllTracesToString()
   err := ioutil.WriteFile(file_name, []byte(output), os.ModePerm)
   if err != nil {
@@ -37,9 +38,16 @@ For programs with many recorded
 operations this can lead to memory problems. In this case use
 
 ```go
-runtime.DedegoInit("path/to/project/root")
+import (
+  "runtime",
+  "io/ioutil"
+  "os"
+)
+
+runtime.EnableTrace()
 defer func() {
   file_name := "dedego.log"
+  os.Remove(file_name)
   file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
   if err != nil {
     panic(err)
@@ -68,11 +76,8 @@ defer func() {
 
 instead.
 
-In both cases you have to replace "path/to/project/root" with the path
-to your project. This prevents internal operations from being recorded.
-If you want to record all operations (including internal), set
-"path/to/project/root" as "~all~". In this case, all operations that happened
-after DedegoInit was called will be recorded.
+Autocompletion often includes "std/runtime" instead of "runtime". Make sure to 
+include the correct one.
 
 ## Trace structure
 

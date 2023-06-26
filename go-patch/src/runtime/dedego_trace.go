@@ -33,6 +33,8 @@ type dedegoTraceElement interface {
 	getFile() string
 }
 
+var dedegoEnabled bool = false
+
 /*
  * Return a string representation of the trace
  * Return:
@@ -76,7 +78,7 @@ func traceToString(trace *[]dedegoTraceElement) string {
  * 	index of the element in the trace
  */
 func insertIntoTrace(elem dedegoTraceElement) int {
-	return currentGoRoutine().addToTrace(elem, true)
+	return currentGoRoutine().addToTrace(elem)
 }
 
 /*
@@ -175,12 +177,12 @@ func GetNumberOfRoutines() int {
 
 /* Disable the collection of the trace */
 func DisableTrace() {
-	dedegoDisabled = true
+	dedegoEnabled = false
 }
 
 /* Enable the collection of the trace */
 func EnableTrace() {
-	dedegoDisabled = false
+	dedegoEnabled = true
 }
 
 // ============================= Routine ===========================
@@ -219,8 +221,7 @@ func (elem dedegoTraceSpawnElement) getFile() string {
  */
 func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
 	timer := GetDedegoCounter()
-	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId, timer: timer},
-		false)
+	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId, timer: timer})
 }
 
 // ============================= Mutex =============================
@@ -730,7 +731,8 @@ func (elem dedegoTraceSelectElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
+func DedegoSelectPre(cases *[]scase, nsends int, block bool,
+	lockOrder []uint16) int {
 	if cases == nil {
 		return -1
 	}
@@ -744,9 +746,15 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
 		}
 	}
 
+	send := make([]bool, len(lockOrder))
+	for i, lo := range lockOrder {
+		send[i] = (lo < uint16(nsends))
+	}
+
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nsends,
+		send: send,
 		defa: !block, file: file, line: line, timerPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -808,38 +816,29 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 
 // ============================= Internal ================================
 
-/*
- * Check if the file is internal, meening not from the running program
- * or if the collection of the trace is disabled
- * Params:
- * 	fileName: the name of the file
- * Return:
- * 	true if the file is internal, false otherwise
- */
-var dedegoDisabled bool = false
+// /*
+//   - Check if the file is internal, meening not from the running program
+//   - or if the collection of the trace is disabled
+//   - Params:
+//   - fileName: the name of the file
+//   - Return:
+//   - true if the file is internal, false otherwise
+//     */
 
-func doNotCollectForTrace(fileName string) bool {
-	// do not collect if dedego is enabled (used when printing the trace)
-	if dedegoDisabled {
-		return true
-	}
+// func doNotCollectForTrace(fileName string) bool {
+// 	// do not collect if dedego is enabled (used when printing the trace)
+// 	if !dedegoEnabled {
+// 		return true
+// 	}
 
-	// collect all operations execpt before DedegoInit is called
-	if projectPath == "~all~" {
-		return false
-	}
+// 	// do not collect internal operations
+// 	if len(fileName) < len(projectPath) {
+// 		return true
+// 	}
 
-	// do not collect operations before DedegoInit is called
-	if projectPath == "" {
-		return false
-	}
+// 	println(fileName[:len(projectPath)], projectPath)
 
-	// do not collect internal operations
-	if len(fileName) < len(projectPath) {
-		return true
-	}
-
-	return fileName[:len(projectPath)] != projectPath
-}
+// 	return fileName[:len(projectPath)] != projectPath
+// }
 
 // DEDEGO-FILE-END
