@@ -78,9 +78,9 @@ func intToString(n int) string {
 	}
 }
 
-var dedegoCurrentRoutineId = uint64(0)
-var dedegoCurrentObjectId = uint64(0)
-var dedegoGlobalCounter = uint64(0)
+var dedegoCurrentRoutineId atomic.Uint64
+var dedegoCurrentObjectId atomic.Uint64
+var dedegoGlobalCounter atomic.Uint64
 
 /*
  * Get a new id for a routine
@@ -88,7 +88,7 @@ var dedegoGlobalCounter = uint64(0)
  * 	new id
  */
 func GetDedegoRoutineId() uint64 {
-	return atomic.AddUint64(&dedegoCurrentRoutineId, 1)
+	return dedegoCurrentRoutineId.Add(1)
 }
 
 /*
@@ -97,7 +97,7 @@ func GetDedegoRoutineId() uint64 {
  * 	new id
  */
 func GetDedegoObjectId() uint64 {
-	return atomic.AddUint64(&dedegoCurrentObjectId, 1)
+	return dedegoCurrentObjectId.Add(1)
 }
 
 /*
@@ -106,7 +106,7 @@ func GetDedegoObjectId() uint64 {
  * 	new counter value
  */
 func GetDedegoCounter() uint64 {
-	return atomic.AddUint64(&dedegoGlobalCounter, 1)
+	return dedegoGlobalCounter.Add(1)
 }
 
 // DEDEGO-FILE-END

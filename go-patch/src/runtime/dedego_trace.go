@@ -814,6 +814,11 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 	currentGoRoutine().Trace[index] = elem
 }
 
+// ============================= Atomic ================================
+func DedegoAtomic() {
+
+}
+
 // ============================= Internal ================================
 
 // /*
