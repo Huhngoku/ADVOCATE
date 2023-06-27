@@ -31,30 +31,6 @@ runtime.EnableTrace()
 defer func() {
   file_name := "dedego.log"
   os.Remove(file_name)
-  output := runtime.AllTracesToString()
-  err := ioutil.WriteFile(file_name, []byte(output), os.ModePerm)
-  if err != nil {
-    panic(err)
-  }
-}()
-```
-
-to the beginning of the main function.
-
-For programs with many recorded 
-operations this can lead to memory problems. In this case use
-
-```go
-import (
-  "runtime",
-  "io/ioutil"
-  "os"
-)
-
-runtime.EnableTrace()
-defer func() {
-  file_name := "dedego.log"
-  os.Remove(file_name)
   file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
   if err != nil {
     panic(err)
@@ -81,10 +57,13 @@ defer func() {
 
 ```
 
-instead.
+to the beginning of the main function.
 
 Autocompletion often includes "std/runtime" instead of "runtime". Make sure to 
 include the correct one.
+
+After that run the program with `./go run main.go` or `./go build && ./main`,
+using the new runtime.
 
 ## Trace structure
 
@@ -165,6 +144,115 @@ Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST):
 - src/net/tcpsock_test.go
 - src/reflect/all_test.go
 
+## Example
+Let's create the trace for the following program:
+
+```go
+package main
+
+import (
+	"sync"
+	"time"
+)
+
+func main() {
+	c := make(chan int)
+	d := make(chan int)
+	m := sync.Mutex{}
+
+  go func() {
+    m.Lock()
+    c <- 1
+    m.Unlock()
+  }()
+
+  select {
+  case <-c:
+    println("c")
+  case <-d:
+    println("d")
+  }
+}
+```
+
+After adding the preamble, we get 
+
+```go
+package main
+
+import (
+	"os"
+	"runtime"
+	"sync"
+	"time"
+)
+
+func main() {
+	runtime.EnableTrace()
+	defer func() {
+		file_name := "dedego.log"
+		os.Remove(file_name)
+		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		runtime.DisableTrace()
+		numRout := runtime.GetNumberOfRoutines()
+		for i := 0; i < numRout; i++ {
+			c := make(chan string)
+			go func() {
+				runtime.TraceToStringByIdChannel(i, c)
+				close(c)
+			}()
+			for trace := range c {
+				if _, err := file.WriteString(trace); err != nil {
+					panic(err)
+				}
+			}
+			if _, err := file.WriteString("\n"); err != nil {
+				panic(err)
+			}
+		}
+		file.Close()
+	}()
+	c := make(chan int)
+	d := make(chan int)
+	m := sync.Mutex{}
+
+  go func() {
+    m.Lock()
+    c <- 1
+    m.Unlock()
+  }()
+
+  select {
+  case <-c:
+    println("c")
+  case <-d:
+    println("d")
+	}
+}
+```
+
+Running this leads to the following trace (indented lines are in the same line 
+as the previous line, only for better readability):
+
+```
+G,10,6;G,14,7;S,6,16,17,4r.3r,e,1,1,/home/erikkassubek/Uni/dedego/examples/worst/main.go:54;
+  M,8,28,29,-,L,e,s,/home/erikkassubek/Uni/dedego/go-patch/src/sync/once.go:70;
+  M,8,30,31,-,U,e,s,/home/erikkassubek/Uni/dedego/go-patch/src/sync/once.go:76
+
+
+
+
+M,5,11,12,-,L,e,s,/home/erikkassubek/Uni/dedego/examples/worst/main.go:47;
+  C,3,13,19,S,e,1,/home/erikkassubek/Uni/dedego/examples/worst/main.go:48;
+  M,5,20,21,-,U,e,s,/home/erikkassubek/Uni/dedego/examples/worst/main.go:49
+```
+
+The trace includes both the concurrent operations of the program it self, as well
+as internal operations used by the go runtime. The elements from the
+program are in file .../worst/main.go
 
 
 <!-- Program to run a dynamic analysis of concurrent Go programs to detect 
