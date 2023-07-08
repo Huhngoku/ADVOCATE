@@ -16,3 +16,7 @@ specifically, operations that happen in a specific order on one thread,
 will always be observed to happen in exactly that order by another thread.
 */
 package atomic
+
+func DedegoAtomic() {
+	println("DedegoAtomic")
+}

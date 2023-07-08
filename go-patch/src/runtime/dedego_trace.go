@@ -182,6 +182,16 @@ func DisableTrace() {
 
 /* Enable the collection of the trace */
 func EnableTrace() {
+	// link runtime with atomic via channel to receive information about
+	// atomic events
+	// c := make(chan uintptr)
+	// dedego.DedegoAtomicLink(c)
+	// go func() {
+	// 	for atomic := range c {
+	// 		DedegoAtomic(atomic)
+	// 	}
+	// }()
+
 	dedegoEnabled = true
 }
 
@@ -815,35 +825,37 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 }
 
 // ============================= Atomic ================================
-func DedegoAtomic() {
+// channel to receive information about atomic operations
+var dedegoAtomicChan chan int
 
+type dedegoTraceAtomicElement struct {
+	addr uintptr // address of the atomic variable
 }
 
-// ============================= Internal ================================
+func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
 
-// /*
-//   - Check if the file is internal, meening not from the running program
-//   - or if the collection of the trace is disabled
-//   - Params:
-//   - fileName: the name of the file
-//   - Return:
-//   - true if the file is internal, false otherwise
-//     */
+/*
+ * Get the file where the element was called
+ * Return:
+ * 	file where the element was called
+ */
+func (elem dedegoTraceAtomicElement) getFile() string {
+	return ""
+}
 
-// func doNotCollectForTrace(fileName string) bool {
-// 	// do not collect if dedego is enabled (used when printing the trace)
-// 	if !dedegoEnabled {
-// 		return true
-// 	}
+/*
+ * Get a string representation of the element
+ * Return:
+ * 	string representation of the element "A,'addr'"
+ *    'addr' (number): address of the atomic variable
+ */
+func (elem dedegoTraceAtomicElement) toString() string {
+	return "A," + uint64ToString(uint64(elem.addr))
+}
 
-// 	// do not collect internal operations
-// 	if len(fileName) < len(projectPath) {
-// 		return true
-// 	}
-
-// 	println(fileName[:len(projectPath)], projectPath)
-
-// 	return fileName[:len(projectPath)] != projectPath
-// }
+func DedegoAtomic(addr uintptr) {
+	println("Atomic:", addr)
+	insertIntoTrace(dedegoTraceAtomicElement{addr: addr})
+}
 
 // DEDEGO-FILE-END

@@ -112,13 +112,14 @@ Added files:
 - src/runtime/dedego_trace.go
 - src/runtime/dedego_util.go
 
-Changed files (marked with DEDEGO-ADD):
+Changed files (marked with DEDEGO-ADD or DEDEGO-REMOVE):
 
 - src/cmd/cgo/internal/test/testx.go
 - src/runtime/proc.go
 - src/runtime/runtime2.go
 - src/runtime/chan.go
 - src/runtime/select.go
+- src/runtime/internal/atomic/doc.go
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
@@ -129,6 +130,7 @@ Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST):
 - src/cmd/dist/test.go
 - src/cmd/go/stript_test.go
 - src/cmd/compile/internal/types2/sizeof_test.go
+- src/cmd/compile/internal/ssagen/ssa.go
 - src/context/x_test.go
 - src/crypto/internal/nistec/nistec_test.go
 - src/crypto/tls/tls_test.go

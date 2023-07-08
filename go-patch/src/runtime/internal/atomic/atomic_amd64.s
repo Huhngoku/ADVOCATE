@@ -85,6 +85,7 @@ TEXT ·CasRel(SB), NOSPLIT, $0-17
 //	*val += delta;
 //	return *val;
 TEXT ·Xadd(SB), NOSPLIT, $0-20
+	CALL	·DedegoAtomic(SB)
 	MOVQ	ptr+0(FP), BX
 	MOVL	delta+8(FP), AX
 	MOVL	AX, CX

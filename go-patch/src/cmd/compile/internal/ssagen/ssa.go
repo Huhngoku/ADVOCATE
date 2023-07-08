@@ -4771,43 +4771,47 @@ func InitTables() {
 
 	/******** sync/atomic ********/
 
-	// Note: these are disabled by flag_race in findIntrinsic below.
-	alias("sync/atomic", "LoadInt32", "runtime/internal/atomic", "Load", all...)
-	alias("sync/atomic", "LoadInt64", "runtime/internal/atomic", "Load64", all...)
-	alias("sync/atomic", "LoadPointer", "runtime/internal/atomic", "Loadp", all...)
-	alias("sync/atomic", "LoadUint32", "runtime/internal/atomic", "Load", all...)
-	alias("sync/atomic", "LoadUint64", "runtime/internal/atomic", "Load64", all...)
-	alias("sync/atomic", "LoadUintptr", "runtime/internal/atomic", "Load", p4...)
-	alias("sync/atomic", "LoadUintptr", "runtime/internal/atomic", "Load64", p8...)
+	// DEDEGO-REMOVE-START
+	/*
+		// Note: these are disabled by flag_race in findIntrinsic below.
+		alias("sync/atomic", "LoadInt32", "runtime/internal/atomic", "Load", all...)
+		alias("sync/atomic", "LoadInt64", "runtime/internal/atomic", "Load64", all...)
+		alias("sync/atomic", "LoadPointer", "runtime/internal/atomic", "Loadp", all...)
+		alias("sync/atomic", "LoadUint32", "runtime/internal/atomic", "Load", all...)
+		alias("sync/atomic", "LoadUint64", "runtime/internal/atomic", "Load64", all...)
+		alias("sync/atomic", "LoadUintptr", "runtime/internal/atomic", "Load", p4...)
+		alias("sync/atomic", "LoadUintptr", "runtime/internal/atomic", "Load64", p8...)
 
-	alias("sync/atomic", "StoreInt32", "runtime/internal/atomic", "Store", all...)
-	alias("sync/atomic", "StoreInt64", "runtime/internal/atomic", "Store64", all...)
-	// Note: not StorePointer, that needs a write barrier.  Same below for {CompareAnd}Swap.
-	alias("sync/atomic", "StoreUint32", "runtime/internal/atomic", "Store", all...)
-	alias("sync/atomic", "StoreUint64", "runtime/internal/atomic", "Store64", all...)
-	alias("sync/atomic", "StoreUintptr", "runtime/internal/atomic", "Store", p4...)
-	alias("sync/atomic", "StoreUintptr", "runtime/internal/atomic", "Store64", p8...)
+		alias("sync/atomic", "StoreInt32", "runtime/internal/atomic", "Store", all...)
+		alias("sync/atomic", "StoreInt64", "runtime/internal/atomic", "Store64", all...)
+		// Note: not StorePointer, that needs a write barrier.  Same below for {CompareAnd}Swap.
+		alias("sync/atomic", "StoreUint32", "runtime/internal/atomic", "Store", all...)
+		alias("sync/atomic", "StoreUint64", "runtime/internal/atomic", "Store64", all...)
+		alias("sync/atomic", "StoreUintptr", "runtime/internal/atomic", "Store", p4...)
+		alias("sync/atomic", "StoreUintptr", "runtime/internal/atomic", "Store64", p8...)
 
-	alias("sync/atomic", "SwapInt32", "runtime/internal/atomic", "Xchg", all...)
-	alias("sync/atomic", "SwapInt64", "runtime/internal/atomic", "Xchg64", all...)
-	alias("sync/atomic", "SwapUint32", "runtime/internal/atomic", "Xchg", all...)
-	alias("sync/atomic", "SwapUint64", "runtime/internal/atomic", "Xchg64", all...)
-	alias("sync/atomic", "SwapUintptr", "runtime/internal/atomic", "Xchg", p4...)
-	alias("sync/atomic", "SwapUintptr", "runtime/internal/atomic", "Xchg64", p8...)
+		alias("sync/atomic", "SwapInt32", "runtime/internal/atomic", "Xchg", all...)
+		alias("sync/atomic", "SwapInt64", "runtime/internal/atomic", "Xchg64", all...)
+		alias("sync/atomic", "SwapUint32", "runtime/internal/atomic", "Xchg", all...)
+		alias("sync/atomic", "SwapUint64", "runtime/internal/atomic", "Xchg64", all...)
+		alias("sync/atomic", "SwapUintptr", "runtime/internal/atomic", "Xchg", p4...)
+		alias("sync/atomic", "SwapUintptr", "runtime/internal/atomic", "Xchg64", p8...)
 
-	alias("sync/atomic", "CompareAndSwapInt32", "runtime/internal/atomic", "Cas", all...)
-	alias("sync/atomic", "CompareAndSwapInt64", "runtime/internal/atomic", "Cas64", all...)
-	alias("sync/atomic", "CompareAndSwapUint32", "runtime/internal/atomic", "Cas", all...)
-	alias("sync/atomic", "CompareAndSwapUint64", "runtime/internal/atomic", "Cas64", all...)
-	alias("sync/atomic", "CompareAndSwapUintptr", "runtime/internal/atomic", "Cas", p4...)
-	alias("sync/atomic", "CompareAndSwapUintptr", "runtime/internal/atomic", "Cas64", p8...)
+		alias("sync/atomic", "CompareAndSwapInt32", "runtime/internal/atomic", "Cas", all...)
+		alias("sync/atomic", "CompareAndSwapInt64", "runtime/internal/atomic", "Cas64", all...)
+		alias("sync/atomic", "CompareAndSwapUint32", "runtime/internal/atomic", "Cas", all...)
+		alias("sync/atomic", "CompareAndSwapUint64", "runtime/internal/atomic", "Cas64", all...)
+		alias("sync/atomic", "CompareAndSwapUintptr", "runtime/internal/atomic", "Cas", p4...)
+		alias("sync/atomic", "CompareAndSwapUintptr", "runtime/internal/atomic", "Cas64", p8...)
 
-	alias("sync/atomic", "AddInt32", "runtime/internal/atomic", "Xadd", all...)
-	alias("sync/atomic", "AddInt64", "runtime/internal/atomic", "Xadd64", all...)
-	alias("sync/atomic", "AddUint32", "runtime/internal/atomic", "Xadd", all...)
-	alias("sync/atomic", "AddUint64", "runtime/internal/atomic", "Xadd64", all...)
-	alias("sync/atomic", "AddUintptr", "runtime/internal/atomic", "Xadd", p4...)
-	alias("sync/atomic", "AddUintptr", "runtime/internal/atomic", "Xadd64", p8...)
+		alias("sync/atomic", "AddInt32", "runtime/internal/atomic", "Xadd", all...)
+		alias("sync/atomic", "AddInt64", "runtime/internal/atomic", "Xadd64", all...)
+		alias("sync/atomic", "AddUint32", "runtime/internal/atomic", "Xadd", all...)
+		alias("sync/atomic", "AddUint64", "runtime/internal/atomic", "Xadd64", all...)
+		alias("sync/atomic", "AddUintptr", "runtime/internal/atomic", "Xadd", p4...)
+		alias("sync/atomic", "AddUintptr", "runtime/internal/atomic", "Xadd64", p8...)
+	*/
+	// DEDEGO-REMOVE-END
 
 	/******** math/big ********/
 	alias("math/big", "mulWW", "math/bits", "Mul64", p8...)

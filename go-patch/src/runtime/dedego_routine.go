@@ -13,19 +13,6 @@ type DedegoRoutine struct {
 	Trace []dedegoTraceElement
 }
 
-// /*
-//  * set the project path
-//  * Params:
-//  * 	path: the path to the project
-//  */
-// func DedegoInit(path string) {
-// 	EnableTrace()
-// 	if path == "" {
-// 		panic("DedegoInit: path is empty")
-// 	}
-// 	projectPath = path
-// }
-
 /*
  * Create a new dedego routine
  * Params:
