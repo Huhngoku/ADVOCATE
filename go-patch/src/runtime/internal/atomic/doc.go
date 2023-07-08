@@ -22,28 +22,36 @@ import "unsafe"
 var dedegoAtomicLinked bool
 var dedegoAtomicChan chan<- uintptr
 
-func DedegoAtomic32(addr *int32) {
-	if !dedegoAtomicLinked {
-		return
-	}
+type addrType interface {
+	int32 | int64 | uintptr | uint32 | uint64
+}
 
-	dedegoAtomicChan <- uintptr(unsafe.Pointer(addr))
+func DedegoAtomic32(addr *int32) {
+	dedegoAtomicCom[int32](addr)
+}
+
+func DedegoAtomicU32(addr *uint32) {
+	dedegoAtomicCom[uint32](addr)
 }
 
 func DedegoAtomic64(addr *int64) {
+	dedegoAtomicCom[int64](addr)
+}
+
+func DedegoAtomicU64(addr *uint64) {
+	dedegoAtomicCom[uint64](addr)
+}
+
+func DedegoAtomicPtr(addr *uintptr) {
+	dedegoAtomicCom[uintptr](addr)
+}
+
+func dedegoAtomicCom[T addrType](addr *T) {
 	if !dedegoAtomicLinked {
 		return
 	}
 
 	dedegoAtomicChan <- uintptr(unsafe.Pointer(addr))
-}
-
-func DedegoAtomicPtr(addr *uintptr) {
-	if !dedegoAtomicLinked {
-		return
-	}
-
-	dedegoAtomicChan <- *addr
 }
 
 func DedegoAtomicLink(c chan<- uintptr) {
