@@ -22,7 +22,7 @@ import "unsafe"
 var dedegoAtomicLinked bool
 var dedegoAtomicChan chan<- uintptr
 
-func DedegoAtomic32Add(addr *int32, delta int32) {
+func DedegoAtomic32(addr *int32) {
 	if !dedegoAtomicLinked {
 		return
 	}
@@ -30,7 +30,28 @@ func DedegoAtomic32Add(addr *int32, delta int32) {
 	dedegoAtomicChan <- uintptr(unsafe.Pointer(addr))
 }
 
+func DedegoAtomic64(addr *int64) {
+	if !dedegoAtomicLinked {
+		return
+	}
+
+	dedegoAtomicChan <- uintptr(unsafe.Pointer(addr))
+}
+
+func DedegoAtomicPtr(addr *uintptr) {
+	if !dedegoAtomicLinked {
+		return
+	}
+
+	dedegoAtomicChan <- *addr
+}
+
 func DedegoAtomicLink(c chan<- uintptr) {
 	dedegoAtomicChan = c
 	dedegoAtomicLinked = true
+}
+
+func DedegoAtomicUnlink() {
+	dedegoAtomicChan = nil
+	dedegoAtomicLinked = false
 }

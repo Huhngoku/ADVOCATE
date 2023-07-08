@@ -2,7 +2,9 @@
 
 package runtime
 
-import at "runtime/internal/atomic"
+import (
+	at "runtime/internal/atomic"
+)
 
 type operation int // enum for operation
 
@@ -115,13 +117,15 @@ func TraceToStringById(id uint64) (string, bool) {
  * Args:
  * 	id: id of the routine
  * 	c: channel to send the trace to
+ *  atomic: it true, the atomic trace is returned
  */
-func TraceToStringByIdChannel(id int, c chan<- string) {
+func TraceToStringByIdChannel(id int, c chan<- string, atomic bool) {
 	// lock(DedegoRoutinesLock)
 	// defer unlock(DedegoRoutinesLock)
-	if trace, ok := DedegoRoutines[uint64(id)]; ok {
+	if atomic {
 		res := ""
-		for i, elem := range *trace {
+		println(len(atomicTrace))
+		for i, elem := range atomicTrace {
 			if i != 0 {
 				res += ";"
 			}
@@ -133,6 +137,22 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 			}
 		}
 		c <- res
+	} else {
+		if trace, ok := DedegoRoutines[uint64(id)]; ok {
+			res := ""
+			for i, elem := range *trace {
+				if i != 0 {
+					res += ";"
+				}
+				res += elem.toString()
+
+				if i%1000 == 0 {
+					c <- res
+					res = ""
+				}
+			}
+			c <- res
+		}
 	}
 }
 
@@ -179,6 +199,7 @@ func GetNumberOfRoutines() int {
 
 /* Disable the collection of the trace */
 func DisableTrace() {
+	at.DedegoAtomicUnlink()
 	dedegoEnabled = false
 }
 
@@ -827,14 +848,16 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 }
 
 // ============================= Atomic ================================
-// channel to receive information about atomic operations
-var dedegoAtomicChan chan int
+// trace for atomic operations
+var atomicTrace []dedegoTraceAtomicElement
+var atomicTraceLock mutex
 
 type dedegoTraceAtomicElement struct {
-	addr uintptr // address of the atomic variable
+	timer uint64  // global timer
+	addr  uintptr // address of the atomic variable
 }
 
-func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
+// func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
 
 /*
  * Get the file where the element was called
@@ -852,12 +875,15 @@ func (elem dedegoTraceAtomicElement) getFile() string {
  *    'addr' (number): address of the atomic variable
  */
 func (elem dedegoTraceAtomicElement) toString() string {
-	return "A," + uint64ToString(uint64(elem.addr))
+	return "A," + uint64ToString(elem.timer) + "," + uint64ToString(uint64(elem.addr))
 }
 
 func DedegoAtomic(addr uintptr) {
-	println("Atomic:", addr)
-	insertIntoTrace(dedegoTraceAtomicElement{addr: addr})
+	timer := GetDedegoCounter()
+	elem := dedegoTraceAtomicElement{addr: addr, timer: timer}
+	lock(&atomicTraceLock)
+	atomicTrace = append(atomicTrace, elem)
+	unlock(&atomicTraceLock)
 }
 
 // DEDEGO-FILE-END

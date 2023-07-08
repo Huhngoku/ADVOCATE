@@ -21,32 +21,36 @@ import (
 )
 
 runtime.EnableTrace()
-defer func() {
-  file_name := "dedego.log"
-  os.Remove(file_name)
-  file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-  if err != nil {
-    panic(err)
-  }
-  runtime.DisableTrace()
-  numRout := runtime.GetNumberOfRoutines()
-  for i := 0; i < numRout; i++ {
-    c := make(chan string)
-    go func() {
-      runtime.TraceToStringByIdChannel(i, c)
-      close(c)
-    }()
-    for trace := range c {
-      if _, err := file.WriteString(trace); err != nil {
-        panic(err)
-      }
-    }
-    if _, err := file.WriteString("\n"); err != nil {
-      panic(err)
-    }
-  }
-  file.Close()
-}()
+
+	defer func() {
+		runtime.DisableTrace()
+
+		file_name := "dedego.log"
+		os.Remove(file_name)
+		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+
+		numRout := runtime.GetNumberOfRoutines()
+		for i := 0; i <= numRout; i++ {
+			c := make(chan string)
+			go func() {
+				runtime.TraceToStringByIdChannel(i, c, i == numRout)
+				close(c)
+			}()
+			for trace := range c {
+				if _, err := file.WriteString(trace); err != nil {
+					panic(err)
+				}
+			}
+			if _, err := file.WriteString("\n"); err != nil {
+				panic(err)
+			}
+		}
+		file.Close()
+
+	}()
 
 ```
 
@@ -60,16 +64,20 @@ using the new runtime.
 
 The following is the structure of the trace T in BNF.
 ```
-T := L\nT | ""                                                  (trace)
+T := L\nta | ""                                                 (trace)
+t := L\nt  | ""                                                 (trace without atomics)
+a := "" | {A";"}A                                               (trace of atomics)
 L := "" | {E";"}E                                               (routine local trace)
 E := G | M | W | C | S                                          (trace element)
 G := "G,"tpre","id                                              (element for creation of new routine)
+A := "A,"tpre","addr                                            (element for atomic operation)
 M := "M,"tpre","tpost","id","rw","opM","exec","suc","pos        (element for operation on sync (rw)mutex)
 W := "W,"tpre","tpost","id","opW","exec","delta","val","pos     (element for operation on sync wait group)
 C := "C,"tpre","tpost","id","opC","exec","oId","pos             (element for operation on channel)
 S := "S,"tpre","tpost","id","cases","exec","chosen","oId","pos  (element for select)
 tpre := ℕ                                                       (timer when the operation is started)
 tpost := ℕ                                                      (timer when the operation has finished)
+addr := ℕ                                                       (pointer to the atomic variable, used as id)
 id := ℕ                                                         (unique id of the underling object)
 rw := "R" | "-"                                                 ("R" if the mutex is an RW mutex, "-" otherwise)
 opM := "L" | "LR" | "T" | "TR" | "U" | "UR"                     (operation on the mutex, L: lock, LR: rLock, T: tryLock, TR: tryRLock, U: unlock, UR: rUnlock)
@@ -110,6 +118,7 @@ Changed files (marked with DEDEGO-ADD):
 - src/runtime/runtime2.go
 - src/runtime/chan.go
 - src/runtime/select.go
+- src/runtime/internal/atomic/doc.go
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
@@ -180,19 +189,22 @@ import (
 
 func main() {
 	runtime.EnableTrace()
+
 	defer func() {
+		runtime.DisableTrace()
+
 		file_name := "dedego.log"
 		os.Remove(file_name)
 		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}
-		runtime.DisableTrace()
+
 		numRout := runtime.GetNumberOfRoutines()
-		for i := 0; i < numRout; i++ {
+		for i := 0; i <= numRout; i++ {
 			c := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, c)
+				runtime.TraceToStringByIdChannel(i, c, i == numRout)
 				close(c)
 			}()
 			for trace := range c {
@@ -206,6 +218,7 @@ func main() {
 		}
 		file.Close()
 	}()
+
 	c := make(chan int)
 	d := make(chan int)
 	m := sync.Mutex{}
