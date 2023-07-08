@@ -17,6 +17,20 @@ will always be observed to happen in exactly that order by another thread.
 */
 package atomic
 
-func DedegoAtomic() {
-	println("DedegoAtomic")
+import "unsafe"
+
+var dedegoAtomicLinked bool
+var dedegoAtomicChan chan<- uintptr
+
+func DedegoAtomic32Add(addr *int32, delta int32) {
+	if !dedegoAtomicLinked {
+		return
+	}
+
+	dedegoAtomicChan <- uintptr(unsafe.Pointer(addr))
+}
+
+func DedegoAtomicLink(c chan<- uintptr) {
+	dedegoAtomicChan = c
+	dedegoAtomicLinked = true
 }

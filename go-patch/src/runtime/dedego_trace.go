@@ -2,6 +2,8 @@
 
 package runtime
 
+import at "runtime/internal/atomic"
+
 type operation int // enum for operation
 
 const (
@@ -184,13 +186,13 @@ func DisableTrace() {
 func EnableTrace() {
 	// link runtime with atomic via channel to receive information about
 	// atomic events
-	// c := make(chan uintptr)
-	// dedego.DedegoAtomicLink(c)
-	// go func() {
-	// 	for atomic := range c {
-	// 		DedegoAtomic(atomic)
-	// 	}
-	// }()
+	c := make(chan uintptr)
+	at.DedegoAtomicLink(c)
+	go func() {
+		for atomic := range c {
+			DedegoAtomic(atomic)
+		}
+	}()
 
 	dedegoEnabled = true
 }
