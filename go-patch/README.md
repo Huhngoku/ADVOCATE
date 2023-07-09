@@ -33,10 +33,10 @@ defer func() {
 	}
 
 	numRout := runtime.GetNumberOfRoutines()
-	for i := 0; i <= numRout+1; i++ {
+	for i := 0; i <= numRout; i++ {
 		dedegoChan := make(chan string)
 		go func() {
-			runtime.TraceToStringByIdChannel(i, dedegoChan, i == numRout+1)
+			runtime.TraceToStringByIdChannel(i, dedegoChan)
 			close(dedegoChan)
 		}()
 		for trace := range dedegoChan {

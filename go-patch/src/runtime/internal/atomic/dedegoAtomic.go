@@ -19,6 +19,7 @@ func DedegoAtomicUnlink() {
 
 func DedegoAtomicXadd(addr *int32, delta int32) {
 	if linked {
+		// if line number changes, change in runtime/dedegoTrace.go DedegoChanSendPre
 		com <- uintptr(unsafe.Pointer(addr))
 	}
 }

@@ -119,12 +119,13 @@ func TraceToStringById(id uint64) (string, bool) {
  * 	c: channel to send the trace to
  *  atomic: it true, the atomic trace is returned
  */
-func TraceToStringByIdChannel(id int, c chan<- string, atomic bool) {
+func TraceToStringByIdChannel(id int, c chan<- string) {
 	// lock(DedegoRoutinesLock)
 	// defer unlock(DedegoRoutinesLock)
-	if atomic {
+
+	if trace, ok := DedegoRoutines[uint64(id)]; ok {
 		res := ""
-		for i, elem := range atomicTrace {
+		for i, elem := range *trace {
 			if i != 0 {
 				res += ";"
 			}
@@ -136,23 +137,8 @@ func TraceToStringByIdChannel(id int, c chan<- string, atomic bool) {
 			}
 		}
 		c <- res
-	} else {
-		if trace, ok := DedegoRoutines[uint64(id)]; ok {
-			res := ""
-			for i, elem := range *trace {
-				if i != 0 {
-					res += ";"
-				}
-				res += elem.toString()
-
-				if i%1000 == 0 {
-					c <- res
-					res = ""
-				}
-			}
-			c <- res
-		}
 	}
+
 }
 
 // }
@@ -620,7 +606,8 @@ func (elem dedegoTraceChannelElement) toString() string {
 }
 
 /*
- * Add a channel send to the trace
+ * Add a channel send to the trace. If the channel send was created by an atomic
+ * operation, add this to the trace as well
  * Args:
  * 	id: id of the channel
  * 	opId: id of the operation
@@ -629,10 +616,29 @@ func (elem dedegoTraceChannelElement) toString() string {
  */
 func DedegoChanSendPre(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
+	if isSuffix(file, "dedegoAtomic.go") && line == 23 {
+		// TODO: get result of channel communication to add to trace
+		DedegoAtomic(0)
+	}
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
 		file: file, line: line, timerPre: timer}
 	return insertIntoTrace(elem)
+}
+
+/*
+ * Helper function to check if a string ends with a suffix
+ * Args:
+ * 	s: string to check
+ * 	suffix: suffix to check
+ * Return:
+ * 	true if s ends with suffix, false otherwise
+ */
+func isSuffix(s, suffix string) bool {
+	if len(suffix) > len(s) {
+		return false
+	}
+	return s[len(s)-len(suffix):] == suffix
 }
 
 /*
@@ -850,16 +856,12 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 }
 
 // ============================= Atomic ================================
-// trace for atomic operations
-var atomicTrace []dedegoTraceAtomicElement
-var atomicTraceLock mutex
-
 type dedegoTraceAtomicElement struct {
 	timer uint64  // global timer
 	addr  uintptr // address of the atomic variable
 }
 
-// func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
+func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
 
 /*
  * Get the file where the element was called
@@ -887,9 +889,7 @@ func DedegoAtomic1(addr *int32, delta int32) {
 func DedegoAtomic(addr uintptr) {
 	timer := GetDedegoCounter()
 	elem := dedegoTraceAtomicElement{addr: addr, timer: timer}
-	lock(&atomicTraceLock)
-	atomicTrace = append(atomicTrace, elem)
-	unlock(&atomicTraceLock)
+	insertIntoTrace(elem)
 }
 
 // DEDEGO-FILE-END
