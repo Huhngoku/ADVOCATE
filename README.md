@@ -22,35 +22,35 @@ import (
 
 runtime.EnableTrace()
 
-	defer func() {
-		runtime.DisableTrace()
+defer func() {
+	runtime.DisableTrace()
 
-		file_name := "dedego.log"
-		os.Remove(file_name)
-		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
+	file_name := "dedego.log"
+	os.Remove(file_name)
+	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
 
-		numRout := runtime.GetNumberOfRoutines()
-		for i := 0; i <= numRout; i++ {
-			c := make(chan string)
-			go func() {
-				runtime.TraceToStringByIdChannel(i, c, i == numRout)
-				close(c)
-			}()
-			for trace := range c {
-				if _, err := file.WriteString(trace); err != nil {
-					panic(err)
-				}
-			}
-			if _, err := file.WriteString("\n"); err != nil {
+	numRout := runtime.GetNumberOfRoutines()
+	for i := 0; i <= numRout+1; i++ {
+		dedegoChan := make(chan string)
+		go func() {
+			runtime.TraceToStringByIdChannel(i, dedegoChan, i == numRout+1)
+			close(dedegoChan)
+		}()
+		for trace := range dedegoChan {
+			if _, err := file.WriteString(trace); err != nil {
 				panic(err)
 			}
 		}
-		file.Close()
+		if _, err := file.WriteString("\n"); err != nil {
+			panic(err)
+		}
+	}
+	file.Close()
 
-	}()
+}()
 
 ```
 
@@ -110,6 +110,7 @@ Added files:
 - src/runtime/dedego_routine.go
 - src/runtime/dedego_trace.go
 - src/runtime/dedego_util.go
+- src/runtime/internal/atomic/dedegoAtomic.go
 
 Changed files (marked with DEDEGO-ADD):
 
@@ -151,27 +152,28 @@ Let's create the trace for the following program:
 package main
 
 import (
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
 func main() {
 	c := make(chan int)
-	d := make(chan int)
-	m := sync.Mutex{}
 
-  go func() {
-    m.Lock()
-    c <- 1
-    m.Unlock()
-  }()
+	go func() {
+		for i := 0; i < 3; i++ {
+			c <- 1
+		}
+		close(c)
+	}()
 
-  select {
-  case <-c:
-    println("c")
-  case <-d:
-    println("d")
-  }
+	for a := range c {
+		_ = a
+	}
+
+	time.Sleep(1 * time.Second)
+
+	var a int32
+	atomic.AddInt32(&a, 1)
 }
 ```
 
@@ -183,7 +185,7 @@ package main
 import (
 	"os"
 	"runtime"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -201,13 +203,13 @@ func main() {
 		}
 
 		numRout := runtime.GetNumberOfRoutines()
-		for i := 0; i <= numRout; i++ {
-			c := make(chan string)
+		for i := 0; i <= numRout+1; i++ {
+			dedegoChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, c, i == numRout)
-				close(c)
+				runtime.TraceToStringByIdChannel(i, dedegoChan, i == numRout+1)
+				close(dedegoChan)
 			}()
-			for trace := range c {
+			for trace := range dedegoChan {
 				if _, err := file.WriteString(trace); err != nil {
 					panic(err)
 				}
@@ -217,24 +219,25 @@ func main() {
 			}
 		}
 		file.Close()
+
+	}()
+	c := make(chan int)
+
+	go func() {
+		for i := 0; i < 3; i++ {
+			c <- 1
+		}
+		close(c)
 	}()
 
-	c := make(chan int)
-	d := make(chan int)
-	m := sync.Mutex{}
-
-  go func() {
-    m.Lock()
-    c <- 1
-    m.Unlock()
-  }()
-
-  select {
-  case <-c:
-    println("c")
-  case <-d:
-    println("d")
+	for a := range c {
+		_ = a
 	}
+
+	time.Sleep(1 * time.Second)
+
+	var a int32
+	atomic.AddInt32(&a, 1)
 }
 ```
 
@@ -242,16 +245,17 @@ Running this leads to the following trace (indented lines are in the same line
 as the previous line, only for better readability):
 
 ```
-G,10,6;G,14,7;S,6,16,17,4r.3r,e,1,1,/home/erikkassubek/Uni/dedego/examples/worst/main.go:54;
-  M,8,28,29,-,L,e,s,/home/erikkassubek/Uni/dedego/go-patch/src/sync/once.go:70;
-  M,8,30,31,-,U,e,s,/home/erikkassubek/Uni/dedego/go-patch/src/sync/once.go:76
 
+ 
+G,1,2;G,2,3;G,3,4;C,1,4,9,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,1,10,11,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,2,13,13,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,4,16,20,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,4,21,22,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,4,23,28,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,4,29,30,R,e,4,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,3,32,33,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:22
 
+C,1,7,8,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
+C,1,5,6,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
 
+C,3,31,34,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:208
+C,4,17,18,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,19,24,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,25,26,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,27,27,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:65
+A,35,824634216240
 
-M,5,11,12,-,L,e,s,/home/erikkassubek/Uni/dedego/examples/worst/main.go:47;
-  C,3,13,19,S,e,1,/home/erikkassubek/Uni/dedego/examples/worst/main.go:48;
-  M,5,20,21,-,U,e,s,/home/erikkassubek/Uni/dedego/examples/worst/main.go:49
 ```
 
 The trace includes both the concurrent operations of the program it self, as well

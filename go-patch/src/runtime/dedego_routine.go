@@ -49,11 +49,10 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * 	the index of the element in the trace
  */
 func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
-	// do noting if dedego is disabled
-	if !dedegoEnabled {
+	// do nothing if tracer disabled
+	if dedegoDisabled {
 		return -1
 	}
-
 	// never needed in actual code, without it the compiler tests fail
 	if gi == nil {
 		return -1

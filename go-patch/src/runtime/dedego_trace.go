@@ -37,7 +37,7 @@ type dedegoTraceElement interface {
 	getFile() string
 }
 
-var dedegoEnabled bool = false
+var dedegoDisabled bool = false
 
 /*
  * Return a string representation of the trace
@@ -124,7 +124,6 @@ func TraceToStringByIdChannel(id int, c chan<- string, atomic bool) {
 	// defer unlock(DedegoRoutinesLock)
 	if atomic {
 		res := ""
-		println(len(atomicTrace))
 		for i, elem := range atomicTrace {
 			if i != 0 {
 				res += ";"
@@ -155,6 +154,8 @@ func TraceToStringByIdChannel(id int, c chan<- string, atomic bool) {
 		}
 	}
 }
+
+// }
 
 /*
  * Return the trace of all traces
@@ -197,12 +198,6 @@ func GetNumberOfRoutines() int {
 	return len(DedegoRoutines)
 }
 
-/* Disable the collection of the trace */
-func DisableTrace() {
-	at.DedegoAtomicUnlink()
-	dedegoEnabled = false
-}
-
 /* Enable the collection of the trace */
 func EnableTrace() {
 	// link runtime with atomic via channel to receive information about
@@ -211,11 +206,18 @@ func EnableTrace() {
 	at.DedegoAtomicLink(c)
 	go func() {
 		for atomic := range c {
+			println("atomic", atomic)
 			DedegoAtomic(atomic)
 		}
 	}()
 
-	dedegoEnabled = true
+	dedegoDisabled = false
+}
+
+/* Disable the collection of the trace */
+func DisableTrace() {
+	at.DedegoAtomicUnlink()
+	dedegoDisabled = true
 }
 
 // ============================= Routine ===========================
@@ -876,6 +878,10 @@ func (elem dedegoTraceAtomicElement) getFile() string {
  */
 func (elem dedegoTraceAtomicElement) toString() string {
 	return "A," + uint64ToString(elem.timer) + "," + uint64ToString(uint64(elem.addr))
+}
+
+func DedegoAtomic1(addr *int32, delta int32) {
+	println("DedegoAtomic1")
 }
 
 func DedegoAtomic(addr uintptr) {
