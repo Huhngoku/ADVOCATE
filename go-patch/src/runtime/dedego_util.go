@@ -2,10 +2,6 @@
 
 package runtime
 
-import (
-	"sync/atomic"
-)
-
 /*
  * Get a string representation of an uint32
  * Args:
@@ -78,9 +74,13 @@ func intToString(n int) string {
 	}
 }
 
-var dedegoCurrentRoutineId atomic.Uint64
-var dedegoCurrentObjectId atomic.Uint64
-var dedegoGlobalCounter atomic.Uint64
+var dedegoCurrentRoutineId uint64
+var dedegoCurrentObjectId uint64
+var dedegoGlobalCounter uint64
+
+var dedegoCurrentRoutineIdMutex mutex
+var dedegoCurrentObjectIdMutex mutex
+var dedegoGlobalCounterMutex mutex
 
 /*
  * Get a new id for a routine
@@ -88,7 +88,10 @@ var dedegoGlobalCounter atomic.Uint64
  * 	new id
  */
 func GetDedegoRoutineId() uint64 {
-	return dedegoCurrentRoutineId.Add(1)
+	lock(&dedegoCurrentRoutineIdMutex)
+	defer unlock(&dedegoCurrentRoutineIdMutex)
+	dedegoCurrentRoutineId += 1
+	return dedegoCurrentRoutineId
 }
 
 /*
@@ -97,7 +100,10 @@ func GetDedegoRoutineId() uint64 {
  * 	new id
  */
 func GetDedegoObjectId() uint64 {
-	return dedegoCurrentObjectId.Add(1)
+	lock(&dedegoCurrentObjectIdMutex)
+	defer unlock(&dedegoCurrentObjectIdMutex)
+	dedegoCurrentObjectId += 1
+	return dedegoCurrentObjectId
 }
 
 /*
@@ -106,7 +112,10 @@ func GetDedegoObjectId() uint64 {
  * 	new counter value
  */
 func GetDedegoCounter() uint64 {
-	return dedegoGlobalCounter.Add(1)
+	lock(&dedegoGlobalCounterMutex)
+	defer unlock(&dedegoGlobalCounterMutex)
+	dedegoGlobalCounter += 1
+	return dedegoGlobalCounter
 }
 
 // DEDEGO-FILE-END

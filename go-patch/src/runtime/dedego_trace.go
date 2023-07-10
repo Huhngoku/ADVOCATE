@@ -3,7 +3,6 @@
 package runtime
 
 import (
-	"runtime/internal/atomic"
 	at "runtime/internal/atomic"
 )
 
@@ -39,7 +38,7 @@ type dedegoTraceElement interface {
 }
 
 var dedegoDisabled bool = false
-var dedegoAtomicMap map[int64]int64 = make(map[int64]int64)
+var dedegoAtomicMap map[uint64]uint64 = make(map[uint64]uint64)
 var dedegoAtomicMapLock mutex
 
 /*
@@ -84,7 +83,6 @@ func traceToString(trace *[]dedegoTraceElement) string {
  * Return:
  * 	index of the element in the trace
  */
-//go:nosplit
 func insertIntoTrace(elem dedegoTraceElement) int {
 	return currentGoRoutine().addToTrace(elem)
 }
@@ -189,7 +187,6 @@ func GetNumberOfRoutines() int {
 }
 
 /* Enable the collection of the trace */
-//go:nosplit
 func InitAtomics() {
 	// link runtime with atomic via channel to receive information about
 	// atomic events
@@ -207,7 +204,6 @@ func InitAtomics() {
 }
 
 /* Disable the collection of the trace */
-//go:nosplit
 func DisableTrace() {
 	at.DedegoAtomicUnlink()
 	dedegoDisabled = true
@@ -247,7 +243,6 @@ func (elem dedegoTraceSpawnElement) getFile() string {
  * Args:
  * 	id: id of the routine
  */
-//go:nosplit
 func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
 	timer := GetDedegoCounter()
 	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId, timer: timer})
@@ -341,7 +336,6 @@ func (elem dedegoTraceMutexElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
 	op := opMutLock
 	if r {
@@ -363,7 +357,6 @@ func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
 	op := opMutTryLock
 	if r {
@@ -385,7 +378,6 @@ func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoUnlockPre(id uint64, rw bool, r bool) int {
 	op := opMutUnlock
 	if r {
@@ -405,7 +397,6 @@ func DedegoUnlockPre(id uint64, rw bool, r bool) int {
  * 	index: index of the operation in the trace
  * 	c: number of the send
  */
-//go:nosplit
 func DedegoPost(index int) {
 	// internal elements are not in the trace
 	if index == -1 {
@@ -443,7 +434,6 @@ func DedegoPost(index int) {
  * 	index: index of the operation in the trace
  * 	suc: true if the try was successful, false otherwise
  */
-//go:nosplit
 func DedegoPostTry(index int, suc bool) {
 	// internal elements are not in the trace
 	if index == -1 {
@@ -533,7 +523,6 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
 	var file string
 	var line int
@@ -556,7 +545,6 @@ func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
@@ -635,14 +623,13 @@ func (elem dedegoTraceChannelElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-var dedegoCounterAtomic atomic.Int64
+var dedegoCounterAtomic uint64
 
-//go:nosplit
 func DedegoChanSendPre(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
-	if isSuffix(file, "dedegoAtomic.go") && line == 34 {
-		// TODO: get result of channel communication to add to trace
-		DedegoAtomic(dedegoCounterAtomic.Add(1))
+	if isSuffix(file, "dedego_atomic.go") {
+		dedegoCounterAtomic += 1
+		DedegoAtomic(dedegoCounterAtomic)
 	}
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
@@ -673,7 +660,6 @@ func isSuffix(s, suffix string) bool {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoRecvPre(id uint64, opId uint64) int {
 	_, file, line, _ := Caller(3)
 	timer := GetDedegoCounter()
@@ -689,7 +675,6 @@ func DedegoRecvPre(id uint64, opId uint64) int {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoClose(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
@@ -703,7 +688,6 @@ func DedegoClose(id uint64) int {
  * Args:
  * 	index: index of the operation in the trace
  */
-//go:nosplit
 func DedegoChanPost(index int) {
 	if index == -1 {
 		return
@@ -799,7 +783,6 @@ func (elem dedegoTraceSelectElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-//go:nosplit
 func DedegoSelectPre(cases *[]scase, nsends int, block bool,
 	lockOrder []uint16) int {
 	if cases == nil {
@@ -835,7 +818,6 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool,
  * 	chosen: index of the chosen case
  * 	chosenChan: chosen channel
  */
-//go:nosplit
 func DedegoSelectPost1(index int, chosen int, chosenChan *hchan) {
 	// internal elements are not in the trace
 	if index == -1 {
@@ -861,7 +843,6 @@ func DedegoSelectPost1(index int, chosen int, chosenChan *hchan) {
  * 	index: index of the operation in the trace
  * 	lockOrder: lock order of the select
  */
-//go:nosplit
 func DedegoSelectPost2(index int, lockOrder []uint16) {
 	// internal elements are not in the trace
 	if index == -1 {
@@ -894,7 +875,7 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 // ============================= Atomic ================================
 type dedegoTraceAtomicElement struct {
 	timer uint64 // global timer
-	index int64  // index of the atomic event in dedegoAtomicMap
+	index uint64 // index of the atomic event in dedegoAtomicMap
 }
 
 func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
@@ -917,13 +898,12 @@ func (elem dedegoTraceAtomicElement) getFile() string {
 func (elem dedegoTraceAtomicElement) toString() string {
 	lock(&dedegoAtomicMapLock)
 	res := "A," + uint64ToString(elem.timer) + "," +
-		int64ToString(dedegoAtomicMap[elem.index])
+		uint64ToString(dedegoAtomicMap[elem.index])
 	unlock(&dedegoAtomicMapLock)
 	return res
 }
 
-//go:nosplit
-func DedegoAtomic(index int64) {
+func DedegoAtomic(index uint64) {
 	timer := GetDedegoCounter()
 	elem := dedegoTraceAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)

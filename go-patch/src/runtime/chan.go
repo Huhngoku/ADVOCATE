@@ -21,7 +21,6 @@ import (
 	"internal/abi"
 	"runtime/internal/atomic"
 	"runtime/internal/math"
-	at "sync/atomic"
 
 	"unsafe"
 )
@@ -53,9 +52,11 @@ type hchan struct {
 	lock mutex
 
 	// DEDEGO-ADD-START
-	id         uint64 // id of the channel
-	numberSend uint64 // number of completed send operations
-	numberRecv uint64 // number of completed recv operations
+	id              uint64 // id of the channel
+	numberSend      uint64 // number of completed send operations
+	numberSendMutex mutex  // mutex for numberSend
+	numberRecv      uint64 // number of completed recv operations
+	numberRecvMutex mutex  // mutex for numberRecv
 	// DEDEGO-ADD-END
 }
 
@@ -227,7 +228,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// the post information by DedeGoChanPost, if 'chansend' returns.
 	// dedegoIndex is used to connect the post event to the correct
 	// pre envent in the trace.
-	at.AddUint64(&c.numberSend, 1)
+	lock(&c.numberSendMutex)
+	c.numberSend++
+	unlock(&c.numberSendMutex)
 	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-ADD-END
@@ -564,7 +567,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// post information by DedeGoChanPost, if 'chansend' returns.
 	// dedegoIndex is used to connect the post event to the correct
 	// pre envent in the trace.
-	at.AddUint64(&c.numberRecv, 1)
+	lock(&c.numberRecvMutex)
+	c.numberRecv++
+	unlock(&c.numberRecvMutex)
 	dedegoIndex := DedegoRecvPre(c.id, c.numberRecv)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-ADD-END

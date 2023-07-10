@@ -120,10 +120,11 @@ Changed files (marked with DEDEGO-ADD):
 - src/runtime/chan.go
 - src/runtime/select.go
 - src/runtime/internal/atomic/doc.go
+- src/runtime/internal/atomic/atomic_amd64.go
+- src/runtime/internal/atomic/atomic_amd64.s
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
-- src/runtime/internal/atomic/atomic_amd64.s
 
 Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST): 
 

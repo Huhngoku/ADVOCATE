@@ -27,6 +27,11 @@ TEXT ·Loadint64(SB), NOSPLIT, $0-16
 //	} else
 //		return 0;
 TEXT ·Cas(SB),NOSPLIT,$0-17
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic32(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	old+8(FP), AX
 	MOVL	new+12(FP), CX
@@ -44,6 +49,11 @@ TEXT ·Cas(SB),NOSPLIT,$0-17
 //		return 0;
 //	}
 TEXT ·Cas64(SB), NOSPLIT, $0-25
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic64(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	old+8(FP), AX
 	MOVQ	new+16(FP), CX
@@ -88,7 +98,7 @@ TEXT ·Xadd(SB), NOSPLIT, $0-20
 	// DEDEGO-ADD-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomicUInt32(SB)
+	CALL	·DedegoAtomic32(SB)
 	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	delta+8(FP), AX
@@ -104,6 +114,11 @@ TEXT ·Xadd(SB), NOSPLIT, $0-20
 //	*val += delta;
 //	return *val;
 TEXT ·Xadd64(SB), NOSPLIT, $0-24
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic64(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	delta+8(FP), AX
 	MOVQ	AX, CX
@@ -128,6 +143,11 @@ TEXT ·Xadduintptr(SB), NOSPLIT, $0-24
 //	*ptr = new;
 //	return old;
 TEXT ·Xchg(SB), NOSPLIT, $0-20
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic32(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	new+8(FP), AX
 	XCHGL	AX, 0(BX)
@@ -140,6 +160,11 @@ TEXT ·Xchg(SB), NOSPLIT, $0-20
 //	*ptr = new;
 //	return old;
 TEXT ·Xchg64(SB), NOSPLIT, $0-24
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic64(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	new+8(FP), AX
 	XCHGQ	AX, 0(BX)
@@ -162,6 +187,11 @@ TEXT ·StorepNoWB(SB), NOSPLIT, $0-16
 	RET
 
 TEXT ·Store(SB), NOSPLIT, $0-12
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic32(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	val+8(FP), AX
 	XCHGL	AX, 0(BX)
@@ -174,6 +204,11 @@ TEXT ·Store8(SB), NOSPLIT, $0-9
 	RET
 
 TEXT ·Store64(SB), NOSPLIT, $0-16
+	// DEDEGO-ADD-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic64(SB)
+	// DEDEGO-ADD-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	val+8(FP), AX
 	XCHGQ	AX, 0(BX)
