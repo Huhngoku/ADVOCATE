@@ -11,6 +11,7 @@ type DedegoRoutine struct {
 	id    uint64
 	G     *g
 	Trace []dedegoTraceElement
+	lock  *mutex
 }
 
 /*
@@ -22,7 +23,8 @@ type DedegoRoutine struct {
  */
 func newDedegoRoutine(g *g) *DedegoRoutine {
 	routine := &DedegoRoutine{id: GetDedegoRoutineId(), G: g,
-		Trace: make([]dedegoTraceElement, 0)}
+		Trace: make([]dedegoTraceElement, 0),
+		lock:  &mutex{}}
 
 	if DedegoRoutinesLock == nil {
 		DedegoRoutinesLock = &mutex{}
@@ -44,7 +46,6 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * Add an element to the trace of the current routine
  * Params:
  * 	elem: the element to add
- * 	checkInternal: if true, only insert into trace if not internal
  * Return:
  * 	the index of the element in the trace
  */
@@ -57,6 +58,8 @@ func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
 	if gi == nil {
 		return -1
 	}
+	lock(gi.lock)
+	defer unlock(gi.lock)
 	if gi.Trace == nil {
 		gi.Trace = make([]dedegoTraceElement, 0)
 	}

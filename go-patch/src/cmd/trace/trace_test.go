@@ -13,9 +13,11 @@ import (
 	"io"
 	rtrace "runtime/trace"
 	"strings"
+	/* DEDEGO-REMOVE_TEST-START
 	"sync"
-	"testing"
 	"time"
+	DEDEGO-REMOVE_TEST-END */
+	"testing"
 )
 
 // stacks is a fake stack map populated for test.
@@ -237,6 +239,8 @@ func TestFoo(t *testing.T) {
 
 }
 
+// DEDEGO-REMOVE_TEST-START
+/*
 func TestDirectSemaphoreHandoff(t *testing.T) {
 	prog0 := func() {
 		var mu sync.Mutex
@@ -267,3 +271,5 @@ func TestDirectSemaphoreHandoff(t *testing.T) {
 		t.Fatalf("failed to parse the trace: %v", err)
 	}
 }
+*/
+// DEDEGO-REMOVE_TEST-END

@@ -20,7 +20,7 @@ import (
   "os"
 )
 
-runtime.EnableTrace()
+runtime.InitAtomics()
 
 defer func() {
 	runtime.DisableTrace()
@@ -123,6 +123,7 @@ Changed files (marked with DEDEGO-ADD):
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
+- src/runtime/internal/atomic/atomic_amd64.s
 
 Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST): 
 
@@ -144,6 +145,7 @@ Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST):
 - src/runtime/metrics_test.go
 - src/net/tcpsock_test.go
 - src/reflect/all_test.go
+- src/os/signal/signal_test.go
 
 ## Example
 Let's create the trace for the following program:
@@ -164,16 +166,16 @@ func main() {
 			c <- 1
 		}
 		close(c)
+		var a int32
+		var b int32
+		atomic.AddInt32(&a, 1)
+		atomic.AddInt32(&a, 1)
+		atomic.AddInt32(&b, 1)
 	}()
 
 	for a := range c {
 		_ = a
 	}
-
-	time.Sleep(1 * time.Second)
-
-	var a int32
-	atomic.AddInt32(&a, 1)
 }
 ```
 
@@ -190,7 +192,7 @@ import (
 )
 
 func main() {
-	runtime.EnableTrace()
+	runtime.InitAtomics()
 
 	defer func() {
 		runtime.DisableTrace()
@@ -203,10 +205,10 @@ func main() {
 		}
 
 		numRout := runtime.GetNumberOfRoutines()
-		for i := 0; i <= numRout+1; i++ {
+		for i := 0; i <= numRout; i++ {
 			dedegoChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, dedegoChan, i == numRout+1)
+				runtime.TraceToStringByIdChannel(i, dedegoChan)
 				close(dedegoChan)
 			}()
 			for trace := range dedegoChan {
@@ -228,16 +230,16 @@ func main() {
 			c <- 1
 		}
 		close(c)
+		var a int32
+		var b int32
+		atomic.AddInt32(&a, 1)
+		atomic.AddInt32(&a, 1)
+		atomic.AddInt32(&b, 1)
 	}()
 
 	for a := range c {
 		_ = a
 	}
-
-	time.Sleep(1 * time.Second)
-
-	var a int32
-	atomic.AddInt32(&a, 1)
 }
 ```
 
@@ -246,15 +248,14 @@ as the previous line, only for better readability):
 
 ```
 
- 
-G,1,2;G,2,3;G,3,4;C,1,4,9,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,1,10,11,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,2,13,13,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,4,16,20,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,4,21,22,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,4,23,28,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,4,29,30,R,e,4,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:68;C,3,32,33,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:22
+G,1,2;G,2,3;G,3,4;C,1,4,9,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,1,10,11,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,2,13,13,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,4,16,20,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74;C,4,21,22,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74;C,4,23,30,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74;C,4,31,32,R,e,4,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74
 
 C,1,7,8,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
 C,1,5,6,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
 
-C,3,31,34,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:208
-C,4,17,18,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,19,24,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,25,26,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,27,27,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:65
-A,35,824634216240
+C,3,33,34,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198;C,3,35,42,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198;C,3,43,44,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198;C,3,45,0,R,o,4,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198
+C,4,17,18,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,19,24,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,25,26,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,27,27,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:65;A,28,824633794968;C,3,29,36,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:34;A,37,824633794968;C,3,38,39,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:34;A,40,824633794972;C,3,41,46,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:34
+
 
 ```
 

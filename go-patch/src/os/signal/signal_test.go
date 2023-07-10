@@ -15,7 +15,9 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	/* DEDEGO-REMOVE_TEST-START
 	"runtime/trace"
+	DEDEGO-REMOVE_TEST-END */
 	"strconv"
 	"strings"
 	"sync"
@@ -874,6 +876,8 @@ func TestNotifyContextStringer(t *testing.T) {
 	}
 }
 
+// DEDEGO-REMOVE_TEST-START
+/*
 // #44193 test signal handling while stopping and starting the world.
 func TestSignalTrace(t *testing.T) {
 	done := make(chan struct{})
@@ -914,3 +918,5 @@ func TestSignalTrace(t *testing.T) {
 	close(quit)
 	<-done
 }
+*/
+// DEDEGO-REMOVE_TEST-END

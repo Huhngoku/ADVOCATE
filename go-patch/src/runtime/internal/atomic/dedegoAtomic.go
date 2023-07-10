@@ -2,12 +2,21 @@ package atomic
 
 // DEDEGO-FILE-START
 
-import "unsafe"
+import (
+	"sync/atomic"
+	"unsafe"
+)
 
-var com chan<- uintptr
+var com chan<- AtomicElem
 var linked bool
+var counter atomic.Int64
 
-func DedegoAtomicLink(c chan<- uintptr) {
+type AtomicElem struct {
+	Index int64
+	Addr  int64
+}
+
+func DedegoAtomicLink(c chan<- AtomicElem) {
 	com = c
 	linked = true
 }
@@ -17,10 +26,12 @@ func DedegoAtomicUnlink() {
 	linked = false
 }
 
-func DedegoAtomicXadd(addr *int32, delta int32) {
+//go:nosplit
+func DedegoAtomicUInt32(addr *uint32) {
 	if linked {
+		counter.Add(1)
 		// if line number changes, change in runtime/dedegoTrace.go DedegoChanSendPre
-		com <- uintptr(unsafe.Pointer(addr))
+		com <- AtomicElem{Index: counter.Load(), Addr: int64(uintptr(unsafe.Pointer(addr)))}
 	}
 }
 
