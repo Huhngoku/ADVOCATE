@@ -134,7 +134,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	lockorder := order1[ncases:][:ncases:ncases]
 	// NOTE: pollorder/lockorder's underlying array was not zero-initialized by compiler.
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// This block is called, if the code runs a select statement.
 	// DedegoSelectPre records the state of the select case, meaning which
 	// cases exists (channel / direction) and weather a default statement is present.
@@ -153,7 +153,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		DedegoSelectPost2(dedegoIndex, lockOrder)
 	}(lockorder)
 
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	// Even when raceenabled is true, there might be select
 	// statements in packages compiled without -race (e.g.,
@@ -530,7 +530,7 @@ retc:
 		blockevent(caseReleaseTime-t0, 1)
 	}
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// DedegoSelectPost1 records the selected case of the select (case != -1)
 	// or the fact that the default case was selected (case == -1)
 	if casi != -1 {
@@ -538,7 +538,7 @@ retc:
 	} else {
 		DedegoSelectPost1(dedegoIndex, -1, nil)
 	}
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	return casi, recvOK
 

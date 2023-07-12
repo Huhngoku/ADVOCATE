@@ -12,9 +12,9 @@ package sync
 
 import (
 	"internal/race"
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	"runtime"
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 	"sync/atomic"
 	"unsafe"
 )
@@ -37,9 +37,9 @@ func fatal(string)
 type Mutex struct {
 	state int32
 	sema  uint32
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	id uint64 // id for the mutex
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 }
 
 // A Locker represents an object that can be locked and unlocked.
@@ -85,7 +85,7 @@ const (
 // If the lock is already in use, the calling goroutine
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -101,7 +101,7 @@ func (m *Mutex) Lock() {
 	// pre event.
 	dedegoIndex := runtime.DedegoMutexLockPre(m.id, false, false)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	// Fast path: grab unlocked mutex.
 	if atomic.CompareAndSwapInt32(&m.state, 0, mutexLocked) {
@@ -120,7 +120,7 @@ func (m *Mutex) Lock() {
 // and use of TryLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -132,7 +132,7 @@ func (m *Mutex) TryLock() bool {
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
 	// dedegoIndex is used for DedegoPostTry to find the pre event.
 	dedegoIndex := runtime.DedegoMutexLockTry(m.id, false, false)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
 		runtime.DedegoPostTry(dedegoIndex, false)
@@ -143,22 +143,22 @@ func (m *Mutex) TryLock() bool {
 	// running now and can try to grab the mutex before that
 	// goroutine wakes up.
 	if !atomic.CompareAndSwapInt32(&m.state, old, old|mutexLocked) {
-		// DEDEGO-ADD-START
+		// DEDEGO-CHANGE-START
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
 		runtime.DedegoPostTry(dedegoIndex, false)
-		// DEDEGO-ADD-END
+		// DEDEGO-CHANGE-END
 		return false
 	}
 
 	if race.Enabled {
 		race.Acquire(unsafe.Pointer(m))
 	}
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// If the mutex was locked successfully, DedegoPostTry is called
 	// to update the trace.
 	runtime.DedegoPostTry(dedegoIndex, true)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 	return true
 }
 
@@ -258,7 +258,7 @@ func (m *Mutex) lockSlow() {
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not
@@ -270,7 +270,7 @@ func (m *Mutex) Unlock() {
 	// the rw mutexes.
 	dedegoIndex := runtime.DedegoUnlockPre(m.id, false, false)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled {
 		_ = m.state

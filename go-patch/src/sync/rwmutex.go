@@ -6,9 +6,9 @@ package sync
 
 import (
 	"internal/race"
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	"runtime"
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 	"sync/atomic"
 	"unsafe"
 )
@@ -42,9 +42,9 @@ type RWMutex struct {
 	readerSem   uint32       // semaphore for readers to wait for completing writers
 	readerCount atomic.Int32 // number of pending readers
 	readerWait  atomic.Int32 // number of departing readers
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	id uint64 // id for the mutex
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 }
 
 const rwmutexMaxReaders = 1 << 30
@@ -68,7 +68,7 @@ const rwmutexMaxReaders = 1 << 30
 // call excludes new readers from acquiring the lock. See the
 // documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -84,7 +84,7 @@ func (rw *RWMutex) RLock() {
 	// pre event.
 	dedegoIndex := runtime.DedegoMutexLockPre(rw.id, true, true)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -106,7 +106,7 @@ func (rw *RWMutex) RLock() {
 // and use of TryRLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (rw *RWMutex) TryRLock() bool {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -117,7 +117,7 @@ func (rw *RWMutex) TryRLock() bool {
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
 	// dedegoIndex is used for DedegoPostTry to find the pre event.
 	dedegoIndex := runtime.DedegoMutexLockTry(rw.id, true, true)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -129,11 +129,11 @@ func (rw *RWMutex) TryRLock() bool {
 			if race.Enabled {
 				race.Enable()
 			}
-			// DEDEGO-ADD-START
+			// DEDEGO-CHANGE-START
 			// If the mutex was not locked successfully, DedegoPostTry is called
 			// to update the trace.
 			runtime.DedegoPostTry(dedegoIndex, false)
-			// DEDEGO-ADD-END
+			// DEDEGO-CHANGE-END
 			return false
 		}
 		if rw.readerCount.CompareAndSwap(c, c+1) {
@@ -141,11 +141,11 @@ func (rw *RWMutex) TryRLock() bool {
 				race.Enable()
 				race.Acquire(unsafe.Pointer(&rw.readerSem))
 			}
-			// DEDEGO-ADD-START
+			// DEDEGO-CHANGE-START
 			// If the mutex was locked successfully, DedegoPostTry is called
 			// to update the trace.
 			runtime.DedegoPostTry(dedegoIndex, true)
-			// DEDEGO-ADD-END
+			// DEDEGO-CHANGE-END
 			return true
 		}
 	}
@@ -156,12 +156,12 @@ func (rw *RWMutex) TryRLock() bool {
 // It is a run-time error if rw is not locked for reading
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	dedegoIndex := runtime.DedegoUnlockPre(rw.id, true, true)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -193,7 +193,7 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // If the lock is already locked for reading or writing,
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -209,7 +209,7 @@ func (rw *RWMutex) Lock() {
 	// pre event.
 	dedegoIndex := runtime.DedegoMutexLockPre(rw.id, true, false)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -236,7 +236,7 @@ func (rw *RWMutex) Lock() {
 // and use of TryLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (rw *RWMutex) TryLock() bool {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -247,7 +247,7 @@ func (rw *RWMutex) TryLock() bool {
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
 	// dedegoIndex is used for DedegoPostTry to find the pre event.
 	dedegoIndex := runtime.DedegoMutexLockTry(rw.id, true, false)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 	if race.Enabled {
 		_ = rw.w.state
 		race.Disable()
@@ -256,11 +256,11 @@ func (rw *RWMutex) TryLock() bool {
 		if race.Enabled {
 			race.Enable()
 		}
-		// DEDEGO-ADD-START
+		// DEDEGO-CHANGE-START
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
 		runtime.DedegoPostTry(dedegoIndex, false)
-		// DEDEGO-ADD-END
+		// DEDEGO-CHANGE-END
 		return false
 	}
 	if !rw.readerCount.CompareAndSwap(0, -rwmutexMaxReaders) {
@@ -268,11 +268,11 @@ func (rw *RWMutex) TryLock() bool {
 		if race.Enabled {
 			race.Enable()
 		}
-		// DEDEGO-ADD-START
+		// DEDEGO-CHANGE-START
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
 		runtime.DedegoPostTry(dedegoIndex, false)
-		// DEDEGO-ADD-END
+		// DEDEGO-CHANGE-END
 		return false
 	}
 	if race.Enabled {
@@ -280,11 +280,11 @@ func (rw *RWMutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(&rw.readerSem))
 		race.Acquire(unsafe.Pointer(&rw.writerSem))
 	}
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// If the mutex was locked successfully, DedegoPostTry is called
 	// to update the trace.
 	runtime.DedegoPostTry(dedegoIndex, true)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	return true
 }
@@ -296,14 +296,14 @@ func (rw *RWMutex) TryLock() bool {
 // goroutine. One goroutine may RLock (Lock) a RWMutex and then
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not
 	// strictly necessary to record the post for the unlocking of a mutex.
 	dedegoIndex := runtime.DedegoUnlockPre(rw.id, true, false)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state

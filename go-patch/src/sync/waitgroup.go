@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	"runtime"
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 )
 
 // A WaitGroup waits for a collection of goroutines to finish.
@@ -30,9 +30,9 @@ type WaitGroup struct {
 	state atomic.Uint64 // high 32 bits are counter, low 32 bits are waiter count.
 	sema  uint32
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	id uint64 // id for the waitgroup
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 }
 
 // Add adds delta, which may be negative, to the WaitGroup counter.
@@ -61,7 +61,7 @@ func (wg *WaitGroup) Add(delta int) {
 	v := int32(state >> 32)
 	w := uint32(state)
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// Waitgroups don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a wg
 	// is directly in it's functions. If the id of the wg is the default
@@ -76,7 +76,7 @@ func (wg *WaitGroup) Add(delta int) {
 	// called but not finished (except if it panics). Therefore it is not
 	// necessary to record a post event.
 	runtime.DedegoWaitGroupAdd(wg.id, delta, v)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if race.Enabled && delta > 0 && v == int32(delta) {
 		// The first increment must be synchronized with Wait.
@@ -119,7 +119,7 @@ func (wg *WaitGroup) Wait() {
 	if race.Enabled {
 		race.Disable()
 	}
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// Waitgroups don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a wg
 	// is directly in it's functions. If the id of the wg is the default
@@ -134,7 +134,7 @@ func (wg *WaitGroup) Wait() {
 	// finish of the wait with a post.
 	dedegoIndex := runtime.DedegoWaitGroupWaitPre(wg.id)
 	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 	for {
 		state := wg.state.Load()
 		v := int32(state >> 32)

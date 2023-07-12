@@ -51,13 +51,13 @@ type hchan struct {
 	// with stack shrinking.
 	lock mutex
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	id              uint64 // id of the channel
 	numberSend      uint64 // number of completed send operations
 	numberSendMutex mutex  // mutex for numberSend
 	numberRecv      uint64 // number of completed recv operations
 	numberRecvMutex mutex  // mutex for numberRecv
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 }
 
 type waitq struct {
@@ -120,10 +120,10 @@ func makechan(t *chantype, size int) *hchan {
 	c.elemtype = elem
 	c.dataqsiz = uint(size)
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// get and save a new id for the channel
 	c.id = GetDedegoObjectId()
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	lockInit(&c.lock, lockRankHchan)
 
@@ -216,7 +216,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	lock(&c.lock)
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// this block is called if a send is made on a channel
 	// it increases the number of sends on the channel, which is used to
 	// identify the communication partner in the dedego analysis
@@ -233,7 +233,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	unlock(&c.numberSendMutex)
 	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend)
 	defer DedegoChanPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if c.closed != 0 {
 		unlock(&c.lock)
@@ -412,11 +412,11 @@ func closechan(c *hchan) {
 
 	c.closed = 1
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// DedegoClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	DedegoClose(c.id)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	var glist gList
 
@@ -555,7 +555,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 	lock(&c.lock)
 
-	// DEDEGO-ADD-START
+	// DEDEGO-CHANGE-START
 	// this block is called if a receive is made on a channel.
 	// It increases the number of receives on the channel, which is used to
 	// identify the communication partner in the dedego analysis.
@@ -572,7 +572,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	unlock(&c.numberRecvMutex)
 	dedegoIndex := DedegoRecvPre(c.id, c.numberRecv)
 	defer DedegoChanPost(dedegoIndex)
-	// DEDEGO-ADD-END
+	// DEDEGO-CHANGE-END
 
 	if c.closed != 0 {
 		if c.qcount == 0 {
