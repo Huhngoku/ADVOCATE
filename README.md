@@ -3,13 +3,15 @@
 ## How
 The go-patch folder contains a modified version of the go compiler and runtime.
 With this modified version it is possible to save a trace as described in
-'Trace Structure'. You can use the complete runtime/compiler from go-patch
-or take your own go environment and replace the files mentioned above.
+'Trace Structure'.
 
 To build the new runtime, run the 'all.bash' or 'all.bat' file in the 'src'
 directory. This will create a 'bin' directory containing a 'go' executable.
 This executable can be used as your new go envirement e.g. with
 `./go run main.go` or `./go build`.
+
+In some cases it is necessary to set the GOROOT environment variable to the 
+path of the `./go` executable.
 
 To create a trace, add
 
@@ -110,7 +112,7 @@ Added files:
 - src/runtime/dedego_routine.go
 - src/runtime/dedego_trace.go
 - src/runtime/dedego_util.go
-- src/runtime/internal/atomic/dedegoAtomic.go
+- src/runtime/internal/atomic/dedego_atomic.go
 
 Changed files (marked with DEDEGO-ADD):
 

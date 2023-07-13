@@ -9,6 +9,11 @@ import "unsafe"
 // Export some functions via linkname to assembly in sync/atomic.
 //
 //go:linkname Load
+// DEDEGO-CHANGE-START
+//go:linkname LoadDedego
+//go:linkname Load64Dedego
+//go:linkname LoadpDedego
+// DEDEGO-CHANGE-END
 //go:linkname Loadp
 //go:linkname Load64
 
@@ -18,17 +23,50 @@ func Load(ptr *uint32) uint32 {
 	return *ptr
 }
 
+// DEDEGO-CHANGE-START
+//
+//go:nosplit
+//go:noinline
+func LoadDedego(ptr *uint32) uint32 {
+	DedegoAtomic32(ptr)
+	return *ptr
+}
+
+// DEDEGO-CHANGE-END
+
 //go:nosplit
 //go:noinline
 func Loadp(ptr unsafe.Pointer) unsafe.Pointer {
 	return *(*unsafe.Pointer)(ptr)
 }
 
+// DEDEGO-CHANGE-START
+//
+//go:nosplit
+//go:noinline
+func LoadpDedego(ptr unsafe.Pointer) unsafe.Pointer {
+	DedegoAtomicPtr(ptr)
+	return *(*unsafe.Pointer)(ptr)
+}
+
+// DEDEGO-CHANGE-END
+
 //go:nosplit
 //go:noinline
 func Load64(ptr *uint64) uint64 {
 	return *ptr
 }
+
+// DEDEGO-CHANGE-START
+//
+//go:nosplit
+//go:noinline
+func Load64Dedego(ptr *uint64) uint64 {
+	DedegoAtomic64(ptr)
+	return *ptr
+}
+
+// DEDEGO-CHANGE-END
 
 //go:nosplit
 //go:noinline

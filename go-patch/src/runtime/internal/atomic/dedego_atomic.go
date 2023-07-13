@@ -30,7 +30,6 @@ func DedegoAtomicUnlink() {
 func DedegoAtomic64(addr *uint64) {
 	if linked {
 		counter += 1
-		// if line number changes, change in runtime/dedegoTrace.go DedegoChanSendPre
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr)))}
 	}
 }
@@ -38,8 +37,21 @@ func DedegoAtomic64(addr *uint64) {
 func DedegoAtomic32(addr *uint32) {
 	if linked {
 		counter += 1
-		// if line number changes, change in runtime/dedegoTrace.go DedegoChanSendPre
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr)))}
+	}
+}
+
+func DedegoAtomicUIntPtr(addr *uintptr) {
+	if linked {
+		counter += 1
+		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr)))}
+	}
+}
+
+func DedegoAtomicPtr(addr unsafe.Pointer) {
+	if linked {
+		counter += 1
+		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(addr))}
 	}
 }
 
