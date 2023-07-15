@@ -11,7 +11,10 @@ This executable can be used as your new go envirement e.g. with
 `./go run main.go` or `./go build`.
 
 In some cases it is necessary to set the GOROOT environment variable to the 
-path of the `./go` executable.
+path of the `./go` executable, e.g. with 
+```
+export GOROOT=$HOME/dedego/go-patch/
+```
 
 To create a trace, add
 
