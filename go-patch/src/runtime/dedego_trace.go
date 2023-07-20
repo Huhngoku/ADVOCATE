@@ -187,10 +187,10 @@ func GetNumberOfRoutines() int {
 }
 
 /* Enable the collection of the trace */
-func InitAtomics() {
+func InitAtomics(size int) {
 	// link runtime with atomic via channel to receive information about
 	// atomic events
-	c := make(chan at.AtomicElem)
+	c := make(chan at.AtomicElem, size)
 	at.DedegoAtomicLink(c)
 	go func() {
 		for atomic := range c {

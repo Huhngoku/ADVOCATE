@@ -25,7 +25,7 @@ import (
   "os"
 )
 
-runtime.InitAtomics()
+runtime.InitAtomics(0)
 
 defer func() {
 	runtime.DisableTrace()
@@ -61,6 +61,9 @@ defer func() {
 
 Autocompletion often includes "std/runtime" instead of "runtime". Make sure to 
 include the correct one.
+
+For some reason, `fmt.Print` and similar can lead to `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)`
+until the problem disappears.
 
 After that run the program with `./go run main.go` or `./go build && ./main`,
 using the new runtime.
@@ -183,6 +186,8 @@ func main() {
 	for a := range c {
 		_ = a
 	}
+
+	time.Sleep(time.Second)
 }
 ```
 
@@ -199,7 +204,7 @@ import (
 )
 
 func main() {
-	runtime.InitAtomics()
+	runtime.InitAtomics(0)
 
 	defer func() {
 		runtime.DisableTrace()
@@ -247,6 +252,7 @@ func main() {
 	for a := range c {
 		_ = a
 	}
+	time.Sleep(time.Second)
 }
 ```
 
@@ -255,13 +261,13 @@ as the previous line, only for better readability):
 
 ```
 
-G,1,2;G,2,3;G,3,4;C,1,4,9,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,1,10,11,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,2,13,13,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,4,16,20,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74;C,4,21,22,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74;C,4,23,30,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74;C,4,31,32,R,e,4,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:74
+G,1,2;G,2,3;G,3,4;C,1,4,9,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,1,10,11,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,2,13,13,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,4,16,20,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,4,21,22,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,4,23,30,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,4,31,32,R,e,4,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56
 
-C,1,7,8,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
-C,1,5,6,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
+C,1,5,6,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
+C,1,7,8,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
 
-C,3,33,34,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198;C,3,35,42,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198;C,3,43,44,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198;C,3,45,0,R,o,4,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:198
-C,4,17,18,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,19,24,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,25,26,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:63;C,4,27,27,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:65;A,28,824633794968;C,3,29,36,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:34;A,37,824633794968;C,3,38,39,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:34;A,40,824633794972;C,3,41,46,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedegoAtomic.go:34
+C,3,33,34,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196;C,3,35,42,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196;C,3,43,44,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196;C,3,45,0,R,o,4,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196
+C,4,17,18,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,4,19,24,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,4,25,26,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,4,27,27,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:48;A,28,824634851496;C,3,29,36,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,37,824634851496;C,3,38,39,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,40,824634851500;C,3,41,46,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:40
 
 
 ```

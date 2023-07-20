@@ -10,8 +10,6 @@ var com chan<- AtomicElem
 var linked bool
 var counter uint64
 
-// TODO: protect counter
-
 type AtomicElem struct {
 	Index uint64
 	Addr  uint64
@@ -27,6 +25,7 @@ func DedegoAtomicUnlink() {
 	linked = false
 }
 
+//go:nosplit
 func DedegoAtomic64(addr *uint64) {
 	if linked {
 		counter += 1
@@ -34,6 +33,7 @@ func DedegoAtomic64(addr *uint64) {
 	}
 }
 
+//go:nosplit
 func DedegoAtomic32(addr *uint32) {
 	if linked {
 		counter += 1
@@ -41,6 +41,7 @@ func DedegoAtomic32(addr *uint32) {
 	}
 }
 
+//go:nosplit
 func DedegoAtomicUIntPtr(addr *uintptr) {
 	if linked {
 		counter += 1
@@ -48,6 +49,7 @@ func DedegoAtomicUIntPtr(addr *uintptr) {
 	}
 }
 
+//go:nosplit
 func DedegoAtomicPtr(addr unsafe.Pointer) {
 	if linked {
 		counter += 1
