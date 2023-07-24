@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"runtime"
 	"sync"
@@ -9,23 +10,26 @@ import (
 
 func main() {
 	start := time.Now()
-	runtime.EnableTrace()
+	runtime.InitAtomics(0)
+
 	defer func() {
+		runtime.DisableTrace()
+
 		file_name := "dedego.log"
 		os.Remove(file_name)
 		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}
-		runtime.DisableTrace()
+
 		numRout := runtime.GetNumberOfRoutines()
-		for i := 0; i < numRout; i++ {
-			c := make(chan string)
+		for i := 0; i <= numRout; i++ {
+			dedegoChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, c)
-				close(c)
+				runtime.TraceToStringByIdChannel(i, dedegoChan)
+				close(dedegoChan)
 			}()
-			for trace := range c {
+			for trace := range dedegoChan {
 				if _, err := file.WriteString(trace); err != nil {
 					panic(err)
 				}
@@ -35,7 +39,9 @@ func main() {
 			}
 		}
 		file.Close()
-		println("With: ", time.Since(start).Seconds())
+		time_toal := time.Since(start)
+		log.Printf("With: %v", time_toal)
+
 	}()
 
 	c := make(chan int)
