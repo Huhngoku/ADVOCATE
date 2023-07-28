@@ -1,0 +1,51 @@
+# Trace
+
+The following is the structure of the trace T in BNF.
+```
+T := L\nta | ""                                                 (trace)
+t := L\nt  | ""                                                 (trace without atomics)
+a := "" | {A";"}A                                               (trace of atomics)
+L := "" | {E";"}E                                               (routine local trace)
+E := G | M | W | C | S                                          (trace element)
+G := "G,"tpre","id                                              (element for creation of new routine)
+A := "A,"tpre","addr                                            (element for atomic operation)
+M := "M,"tpre","tpost","id","rw","opM","exec","suc","pos        (element for operation on sync (rw)mutex)
+W := "W,"tpre","tpost","id","opW","exec","delta","val","pos     (element for operation on sync wait group)
+C := "C,"tpre","tpost","id","opC","exec","oId","pos             (element for operation on channel)
+S := "S,"tpre","tpost","id","cases","exec","chosen","oId","pos  (element for select)
+tpre := ℕ                                                       (timer when the operation is started)
+tpost := ℕ                                                      (timer when the operation has finished)
+addr := ℕ                                                       (pointer to the atomic variable, used as id)
+id := ℕ                                                         (unique id of the underling object)
+rw := "R" | "-"                                                 ("R" if the mutex is an RW mutex, "-" otherwise)
+opM := "L" | "LR" | "T" | "TR" | "U" | "UR"                     (operation on the mutex, L: lock, LR: rLock, T: tryLock, TR: tryRLock, U: unlock, UR: rUnlock)
+opW := "A" | "W"                                                (operation on the wait group, A: add (delta > 0) or done (delta < 0), W: wait)
+opC := "S" | "R" | "C"                                          (operation on the channel, S: send, R: receive, C: close)
+exec := "e" | "f"                                               (e: the operation was fully executed, o: the operation was not fully executed, e.g. a mutex was still waiting at a lock operation when the program was terminated or a channel never found an communication partner)
+suc := "s" | "f"                                                (the mutex lock was successful ("s") or it failed ("f", only possible for try(r)lock))
+pos := file":"line                                              (position in the code, where the operation was executed)
+file := 𝕊                                                       (file path of pos)
+line := ℕ                                                       (line number of pos)
+delta := ℕ                                                      (change of the internal counter of wait group, normally +1 for add, -1 for done)
+val := ℕ                                                        (internal counter of the wait group after the operation)
+oId := ℕ                                                        (identifier for an communication on the channel, the send and receive (or select) that have communicated share the same oId)
+cases := case | {case"."}case                                   (list of cases in select, seperated by .)
+case := cId""("r" | "s") | "d"                                  (case in select, consisting of channel id and "r" for receive or "s" for send. "d" shows an existing default case)  
+cId := ℕ                                                        (id of channel in select case)
+chosen := ℕ0 | "-1"                                             (index of the chosen case in cases, -1 for default case)    
+```
+
+The trace is stored in one file. Each line in the trace file corresponds to one 
+routine in the executed program. The elements in each line are separated by 
+semicolons (;). The different fields in each element are seperated by 
+commas (,). The first field always shows the type of the element:
+
+- G: creation of a new routine
+- A: atomic operation
+- M: mutex operation
+- W: wait group operation
+- C: channel operation
+- S: select operation
+
+The other fields are explained in the corresponding files in the trace directory.
+These files also describe how the trace elements are recorded.
