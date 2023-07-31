@@ -8,12 +8,11 @@ M,[tpre],[tpost],[id],[rw],[opM],[exec],[suc],[pos]
 ```
 where `M` identifies the element as a mutex element.
 The other fields are set as follows:
-- [tpre]: This is the value of the global counter when the routine starts 
+- [tpre] $\in \mathbb N$: This is the value of the global counter when the routine starts 
 the execution of the lock or unlock function
-- [tpost]: This is the value of the global counter when the routine has finished 
-its operation. For lock operations this can be either if the lock was successfully acquired or if the routines continues its execution without 
+- [tpost] $\in \mathbb N$: This is the value of the global counter when the mutex has finished its operation. For lock operations this can be either if the lock was successfully acquired or if the routines continues its execution without 
 acquiring the lock in case of a trylock. 
-- [id]: This is the unique id identifying this mutex
+- [id] $\in \mathbb N$: This is the unique id identifying this mutex
 - [rw]: This field records, whether the mutex is an rw mutex ([rw] = `R`) or not
 ([rw] = `-`)
 - [opM]: This field shows the operation of the element those can be
@@ -24,8 +23,8 @@ acquiring the lock in case of a trylock.
   - [opM] = `U`: Unlock
   - [opM] = `UR`: RUnlock
 - [exec]: This field shows, whether the operation was finished ([exec] = `e`) or
-not ([exec] = `f`). Failed can e.g. mean, that the routine still tried to
-acquire a lock, when the program was terminated. It is also set to `f`, if the 
+not ([exec] = `o`). Failed can e.g. mean, that the routine still tried to
+acquire a lock, when the program was terminated. It is also set to `o`, if the 
 program panicked during the execution of the operation, e.g. because an 
 RUnlock operation was called on a mutex that is currently held by and Lock 
 operation.
@@ -110,7 +109,9 @@ M,21,22,2,R,TR,e,s,example_file.go:37;M,23,24,2,R,UR,e,s,example_file.go:40;
 ## Implementation
 The recording of the mutex operations is implemented in the `go-patch/src/sync/mutex.go` and `go-patch/src/sync/rwmutex.go` files in the implementation of the 
 Lock, RLock, TryLock, TryRLock, Unlock and RUnlock function.\
-It consist of 
+To save the id of the mutex, a field for the id is added to the `Mutex` and 
+`RWMutex` structs.\
+The recording consist of 
 two function calls, one at the beginning and one at the end of each function.
 The first function call is called before the Operation tries to executed 
 and records the id ([id]) and type ([rw]) of the involved mutex, the called operation (opM), the position of the operation in the program ([pos]) and the counter at the beginning of the operation ([tpre]).\

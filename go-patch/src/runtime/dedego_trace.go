@@ -674,7 +674,7 @@ func isSuffix(s, suffix string) bool {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
+func DedegoChanRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 	_, file, line, _ := Caller(3)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
@@ -690,11 +690,13 @@ func DedegoRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoClose(id uint64) int {
+func DedegoChanClose(id uint64, qSize uint, qCount uint) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanClose, file: file,
-		line: line, timerPre: timer, timerPost: timer}
+		exec: true,
+		line: line, timerPre: timer, timerPost: timer, qSize: uint32(qSize),
+		qCountPre: uint32(qCount), qCountPost: uint32(qCount)}
 	return insertIntoTrace(elem)
 }
 

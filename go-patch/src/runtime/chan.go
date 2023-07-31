@@ -414,9 +414,9 @@ func closechan(c *hchan) {
 	c.closed = 1
 
 	// DEDEGO-CHANGE-START
-	// DedegoClose is called when a channel is closed. It creates a close event
+	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
-	DedegoClose(c.id)
+	DedegoChanClose(c.id, c.dataqsiz, c.qcount)
 	// DEDEGO-CHANGE-END
 
 	var glist gList
@@ -571,7 +571,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	lock(&c.numberRecvMutex)
 	c.numberRecv++
 	unlock(&c.numberRecvMutex)
-	dedegoIndex := DedegoRecvPre(c.id, c.numberRecv, c.dataqsiz, c.qcount)
+	dedegoIndex := DedegoChanRecvPre(c.id, c.numberRecv, c.dataqsiz, c.qcount)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-CHANGE-END
 
