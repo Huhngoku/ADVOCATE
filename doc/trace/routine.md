@@ -1,5 +1,4 @@
 # New Routine
-## When
 The spawning of a new routine is recorded in the trace. The following is 
 and example of code where such an trace element is recorded.
 ```go
