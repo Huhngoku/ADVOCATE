@@ -231,7 +231,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	lock(&c.numberSendMutex)
 	c.numberSend++
 	unlock(&c.numberSendMutex)
-	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend)
+	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz, c.qcount)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-CHANGE-END
 
@@ -259,6 +259,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 			c.sendx = 0
 		}
 		c.qcount++
+		DedegoChanPostQCount(dedegoIndex, c.qcount)
 		unlock(&c.lock)
 
 		return true
@@ -570,7 +571,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	lock(&c.numberRecvMutex)
 	c.numberRecv++
 	unlock(&c.numberRecvMutex)
-	dedegoIndex := DedegoRecvPre(c.id, c.numberRecv)
+	dedegoIndex := DedegoRecvPre(c.id, c.numberRecv, c.dataqsiz, c.qcount)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-CHANGE-END
 
@@ -613,6 +614,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			c.recvx = 0
 		}
 		c.qcount--
+		DedegoChanPostQCount(dedegoIndex, c.qcount)
 		unlock(&c.lock)
 		return true, true
 	}

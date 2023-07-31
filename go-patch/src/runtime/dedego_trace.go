@@ -288,8 +288,9 @@ func (elem dedegoTraceMutexElement) getFile() string {
  *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceMutexElement) toString() string {
-	res := "M," + uint64ToString(elem.id) + ","
+	res := "M,"
 	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+	res += uint64ToString(elem.id) + ","
 
 	if elem.rw {
 		res += "R,"
@@ -494,8 +495,9 @@ func (elem dedegoTraceWaitGroupElement) getFile() string {
  *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
-	res := "W," + uint64ToString(elem.id) + ","
+	res := "W,"
 	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+	res += uint64ToString(elem.id) + ","
 	switch elem.op {
 	case opWgAdd:
 		res += "A,"
@@ -556,14 +558,17 @@ func DedegoWaitGroupWaitPre(id uint64) int {
 // ============================= Channel =============================
 
 type dedegoTraceChannelElement struct {
-	id        uint64    // id of the channel
-	exec      bool      // set true if the operation was successfully finished
-	op        operation // operation
-	opId      uint64    // id of the operation
-	file      string    // file where the operation was called
-	line      int       // line where the operation was called
-	timerPre  uint64    // global timer before the operation
-	timerPost uint64    // global timer after the operation
+	id         uint64    // id of the channel
+	exec       bool      // set true if the operation was successfully finished
+	op         operation // operation
+	qSize      uint32    // size of the channel, 0 for unbuffered
+	qCountPre  uint32    // number of elements in the queue before the operation
+	qCountPost uint32    // number of elements in the queue after the operation
+	opId       uint64    // id of the operation
+	file       string    // file where the operation was called
+	line       int       // line where the operation was called
+	timerPre   uint64    // global timer before the operation
+	timerPost  uint64    // global timer after the operation
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -583,16 +588,17 @@ func (elem dedegoTraceChannelElement) getFile() string {
  * 	string representation of the element "C,'tpre','tpost','id','op','exec','pId','file':'line'"
  *    'tpre' (number): global timer before the operation
  *    'tpost' (number): global timer after the operation
- *    'id' (number): id of the mutex
+ *    'id' (number): id of the channel
  *	  'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
  *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
- *	  'pId' (number): id of the channel with wich the communication took place
+ *	  'pId' (number): id of the channel with witch the communication took place
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceChannelElement) toString() string {
-	res := "C," + uint64ToString(elem.id) + ","
+	res := "C,"
 	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+	res += uint64ToString(elem.id) + ","
 
 	switch elem.op {
 	case opChanSend:
@@ -610,6 +616,9 @@ func (elem dedegoTraceChannelElement) toString() string {
 	}
 
 	res += "," + uint64ToString(elem.opId)
+	res += "," + uint32ToString(elem.qSize)
+	res += "," + uint32ToString(elem.qCountPre)
+	res += "," + uint32ToString(elem.qCountPost)
 	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
 }
@@ -620,12 +629,14 @@ func (elem dedegoTraceChannelElement) toString() string {
  * Args:
  * 	id: id of the channel
  * 	opId: id of the operation
+ * 	qSize: size of the channel, 0 for unbuffered
+ * 	qCount: number of elements in the queue before the operation
  * Return:
  * 	index of the operation in the trace
  */
 var dedegoCounterAtomic uint64
 
-func DedegoChanSendPre(id uint64, opId uint64) int {
+func DedegoChanSendPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 	_, file, line, _ := Caller(3)
 	if isSuffix(file, "dedego_atomic.go") {
 		dedegoCounterAtomic += 1
@@ -633,7 +644,8 @@ func DedegoChanSendPre(id uint64, opId uint64) int {
 	}
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
-		file: file, line: line, timerPre: timer}
+		file: file, line: line, timerPre: timer, qSize: uint32(qSize),
+		qCountPre: uint32(qCount)}
 	return insertIntoTrace(elem)
 }
 
@@ -657,14 +669,17 @@ func isSuffix(s, suffix string) bool {
  * Args:
  * 	id: id of the channel
  * 	opId: id of the operation
+ * 	qSize: size of the channel
+ * 	qCount: number of elements in the channel before the receive operation
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoRecvPre(id uint64, opId uint64) int {
+func DedegoRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 	_, file, line, _ := Caller(3)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
-		file: file, line: line, timerPre: timer}
+		file: file, line: line, timerPre: timer, qSize: uint32(qSize),
+		qCountPre: uint32(qCount)}
 	return insertIntoTrace(elem)
 }
 
@@ -681,6 +696,21 @@ func DedegoClose(id uint64) int {
 	elem := dedegoTraceChannelElement{id: id, op: opChanClose, file: file,
 		line: line, timerPre: timer, timerPost: timer}
 	return insertIntoTrace(elem)
+}
+
+/*
+ * Set the size of the channel after the operation
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	qSize: size of the channel
+ */
+func DedegoChanPostQCount(index int, qCount uint) {
+	if index == -1 {
+		return
+	}
+	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
+	elem.qCountPost = uint32(qCount)
+	currentGoRoutine().Trace[index] = elem
 }
 
 /*
