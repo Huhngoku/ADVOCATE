@@ -1,5 +1,6 @@
-# Patch version of the Go Programming language for Dedego
+# Patch version of the Go programming language to record concurrent event
 
+The following is a short explanation. A complete description can be found 
 ## How
 The go-patch folder contains a modified version of the go compiler and runtime.
 With this modified version it is possible to save a trace as described in
