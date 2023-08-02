@@ -52,3 +52,11 @@ commas (,). The first field always shows the type of the element:
 
 The other fields are explained in the corresponding files in the trace directory.
 These files also describe how the trace elements are recorded.
+
+## Implementation
+The runtime of Go creates a struct `g` for each routine (implemented in `go-patch/src/runtime/runtime2.go`). This routine is used to locally store the trace for each routine. 
+In it, an additional field is added, storing the id of the routine, a reference to `g` and the list of trace elements (`Trace`) recorded for this routine. When creating a new routine, this list is created. A reference to this list is additionally stored in a map called `DedegoRoutines`, to prevent if from being deleted by the trash garbage collector.
+
+In the runtime package, it is possible to get the `g` for the currently run routine. If an element that is supposed to be recorded happens, the routine grabs the `g` of the routine where it happens, and adds the new element to the Trace stored in this `g`. The implementation of the functions, that add the new elements in the trace can be found in `go-patch/src/runtime/dedego_trace.go` with additional functions in `go-patch/src/runtime/dedego_routine.go` and `go-patch/src/runtime/dedego_util.go`. The functions defined in `dedego_trace.go`, are called in the functions where the operations on Mutexes, Channels and so on are defined, to record the executions of those operations. The implementation of those functions are additionally described in the files of the respective elements in the traceElements folder.
+
+After the program is finished, the Traces of all routines with references in `DedegoRoutines` are written into a single trace file.
