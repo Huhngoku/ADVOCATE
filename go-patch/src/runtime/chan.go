@@ -762,7 +762,12 @@ func chanparkcommit(gp *g, chanLock unsafe.Pointer) bool {
 //		... bar
 //	}
 func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
-	return chansend(c, elem, false, getcallerpc())
+	// DEDEGO-CHANGE-START
+	dedegoIndex := DedegoSelectPreOneNonDef(c, true)
+	res := chansend(c, elem, false, getcallerpc())
+	DedegoSelectPostOneNonDef(dedegoIndex, res)
+	return res
+	// DEDEGO-CHANGE-END
 }
 
 // compiler implements
@@ -782,7 +787,12 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 //		... bar
 //	}
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
-	return chanrecv(c, elem, false)
+	// DEDEGO-CHANGE-START
+	dedegoIndex := DedegoSelectPreOneNonDef(c, false)
+	res, recv := chanrecv(c, elem, false)
+	DedegoSelectPostOneNonDef(dedegoIndex, res)
+	return res, recv
+	// DEDEGO-CHANGE-END
 }
 
 //go:linkname reflect_chansend reflect.chansend0

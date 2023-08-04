@@ -844,6 +844,28 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool,
 }
 
 /*
+* Add a new select element to the trace if the select has exactly one non-default case
+ */
+func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
+	id := GetDedegoObjectId()
+
+	casesStr := []string{uint64ToString(c.id)}
+
+	nSend := 0
+	pSend := []bool{send}
+	if send {
+		nSend = 1
+	}
+
+	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
+	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nSend,
+		send: pSend,
+		defa: true, file: file, line: line, timerPre: timer}
+	return insertIntoTrace(elem)
+}
+
+/*
  * Add the chosen case to the select
  * Args:
  * 	index: index of the operation in the trace
@@ -897,6 +919,32 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
 			elem.opId = elem.chosenChan.numberRecv
 		}
 	}
+
+	lock(currentGoRoutine().lock)
+	defer unlock(currentGoRoutine().lock)
+
+	currentGoRoutine().Trace[index] = elem
+}
+
+/*
+ * Add the selected case for a select with one non-default and one default case
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	res: 0 for the non-default case, -1 for the default case
+ */
+func DedegoSelectPostOneNonDef(index int, res bool) {
+	if index == -1 {
+		return
+	}
+
+	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+
+	elem.exec = true
+	elem.chosen = -1
+	if res {
+		elem.chosen = 0
+	}
+	elem.timerPost = GetDedegoCounter()
 
 	lock(currentGoRoutine().lock)
 	defer unlock(currentGoRoutine().lock)

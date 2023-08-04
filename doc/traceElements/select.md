@@ -2,9 +2,6 @@
 
 Channel operations including select statements are recorded in the trace where the select statement is located.
 
-## Warning
-TODO: The recording of selects with exactly two cases, one of which is a default case contains an bug. This cas is not correctly recorded. This will be fixed soon
-
 ## Info
 Select statements with only one case are not recorded as select statements. If the case is an default case, it is not recorded at all. If the case is a send or receive, the select statement is equivalent to just the send/receive statement and therefor recorded as such. 
 
@@ -69,4 +66,13 @@ S,3,4,4,3r.2r.d,e,-1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16;C,5
 
 ## Implementation
 The recording of the select statement is done in the `selectgo` function in the `go-patch/src/runtime/select.go` file. It contains two function calls. The first one is called shortly after the beginning of the `selectgo` functions to record the available cases and there internal order. The second function call is done when `selectgo` returns, to record
-the successful execution of the statement and the selected case.
+the successful execution of the statement and the selected case.\
+Selects with only one case are automatically turned into a pure 
+send or receive by the compiler. For this reason, these cases must 
+not be additionally recorded.\
+Selects with exactly one non-default and one default case are als 
+rewritten by the compiler. In this case it is necessary to record 
+these cases, because the rewritten version does not use the `select`
+go function. For this reason, two additional recorder functions
+have been added to the `selectnbsend` and `selectnbrecv` functions 
+in the `go-patch/src/runtime/chan.go` file.
