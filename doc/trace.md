@@ -50,7 +50,7 @@ commas (,). The first field always shows the type of the element:
 - C: channel operation
 - S: select operation
 
-The other fields are explained in the corresponding files in the trace directory.
+The other fields are explained in the corresponding files in the `traceElements` directory.
 These files also describe how the trace elements are recorded.
 
 ## Implementation

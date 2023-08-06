@@ -27,7 +27,7 @@ defer func() {
 	}
 
 	numRout := runtime.GetNumberOfRoutines()
-	for i := 0; i <= numRout; i++ {
+	for i := 1; i <= numRout; i++ {
 		dedegoChan := make(chan string)
 		go func() {
 			runtime.TraceToStringByIdChannel(i, dedegoChan)
@@ -48,3 +48,11 @@ defer func() {
 It has to be included before any other code. It is also necessary to import the `runtime`,`io/ioutil` and `os` libraries. Warning: Many auto complete tools import the `std/runtime` instead of the `runtime` library. With this, the recording will not work. 
 
 We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace file will be automatically created as soon as the program execution finishes. It will be created as `dedego.log`.
+
+In some cases this will result in an 
+```
+fatal error: schedule: holding locks
+``` 
+error. The mainly occurs when using the `fmt.Print` command in the 
+program. In this case increase the argument in `InitAtomics` until 
+the program disappears.

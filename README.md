@@ -19,12 +19,6 @@ export GOROOT=$HOME/dedego/go-patch/
 To create a trace, add
 
 ```go
-import (
-  "runtime",
-  "io/ioutil"
-  "os"
-)
-
 runtime.InitAtomics(0)
 
 defer func() {
@@ -38,7 +32,7 @@ defer func() {
 	}
 
 	numRout := runtime.GetNumberOfRoutines()
-	for i := 0; i <= numRout; i++ {
+	for i := 1; i <= numRout; i++ {
 		dedegoChan := make(chan string)
 		go func() {
 			runtime.TraceToStringByIdChannel(i, dedegoChan)
@@ -58,108 +52,21 @@ defer func() {
 }()
 
 ```
+at the beginning of the main function.
+Also include the following imports 
+```go
+runtime
+io/ioutil
+os
+```
 
-Autocompletion often includes "std/runtime" instead of "runtime". Make sure to 
-include the correct one.
+Autocompletion often includes "std/runtime" instead of "runtime". Make sure to include the correct one.
 
 For some reason, `fmt.Print` and similar can lead to `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)`
 until the problem disappears.
 
 After that run the program with `./go run main.go` or `./go build && ./main`,
 using the new runtime.
-
-## Trace structure
-
-The following is the structure of the trace T in BNF.
-```
-T := L\nta | ""                                                 (trace)
-t := L\nt  | ""                                                 (trace without atomics)
-a := "" | {A";"}A                                               (trace of atomics)
-L := "" | {E";"}E                                               (routine local trace)
-E := G | M | W | C | S                                          (trace element)
-G := "G,"tpre","id                                              (element for creation of new routine)
-A := "A,"tpre","addr                                            (element for atomic operation)
-M := "M,"tpre","tpost","id","rw","opM","exec","suc","pos        (element for operation on sync (rw)mutex)
-W := "W,"tpre","tpost","id","opW","exec","delta","val","pos     (element for operation on sync wait group)
-C := "C,"tpre","tpost","id","opC","exec","oId","qSize","qCountPre","qCoundPost","pos             (element for operation on channel)
-S := "S,"tpre","tpost","id","cases","exec","chosen","oId","pos  (element for select)
-tpre := ℕ                                                       (timer when the operation is started)
-tpost := ℕ                                                      (timer when the operation has finished)
-addr := ℕ                                                       (pointer to the atomic variable, used as id)
-id := ℕ                                                         (unique id of the underling object)
-rw := "R" | "-"                                                 ("R" if the mutex is an RW mutex, "-" otherwise)
-opM := "L" | "LR" | "T" | "TR" | "U" | "UR"                     (operation on the mutex, L: lock, LR: rLock, T: tryLock, TR: tryRLock, U: unlock, UR: rUnlock)
-opW := "A" | "W"                                                (operation on the wait group, A: add (delta > 0) or done (delta < 0), W: wait)
-opC := "S" | "R" | "C"                                          (operation on the channel, S: send, R: receive, C: close)
-exec := "e" | "f"                                               (e: the operation was fully executed, o: the operation was not fully executed, e.g. a mutex was still waiting at a lock operation when the program was terminated or a channel never found an communication partner)
-suc := "s" | "f"                                                (the mutex lock was successful ("s") or it failed ("f", only possible for try(r)lock))
-pos := file":"line                                              (position in the code, where the operation was executed)
-file := 𝕊                                                       (file path of pos)
-line := ℕ                                                       (line number of pos)
-delta := ℕ                                                      (change of the internal counter of wait group, normally +1 for add, -1 for done)
-val := ℕ                                                        (internal counter of the wait group after the operation)
-oId := ℕ                                                        (identifier for an communication on the channel, the send and receive (or select) that have communicated share the same oId)
-qSize := ℕ                                                      (size of the channel queue, 0 for unbufferd)
-qCountPre := ℕ                                                  (number of elements in the queue before the operation)
-qCountPost := ℕ                                                 (number of elements in the queue after the operation)
-cases := case | {case"."}case                                   (list of cases in select, seperated by .)
-case := cId""("r" | "s") | "d"                                  (case in select, consisting of channel id and "r" for receive or "s" for send. "d" shows an existing default case)  
-cId := ℕ                                                        (id of channel in select case)
-chosen := ℕ0 | "-1"                                             (index of the chosen case in cases, -1 for default case)    
-```    
-```
-
-Info: 
-- \n: newline
-- ℕ: natural number not including 0
-- ℕ0: natural number including 0
-- 𝕊: string containing 1 or more characters
-- The tracer contains a global timer for all routines that is incremented every time an timer element (tpre/tpost) is recorded.
-
-## Changed files
-Added files:
-
-- src/runtime/dedego_routine.go
-- src/runtime/dedego_trace.go
-- src/runtime/dedego_util.go
-- src/runtime/internal/atomic/dedego_atomic.go
-
-Changed files (marked with DEDEGO-ADD):
-
-- src/cmd/cgo/internal/test/testx.go
-- src/runtime/proc.go
-- src/runtime/runtime2.go
-- src/runtime/chan.go
-- src/runtime/select.go
-- src/runtime/internal/atomic/doc.go
-- src/runtime/internal/atomic/atomic_amd64.go
-- src/runtime/internal/atomic/atomic_amd64.s
-- src/sync/mutex.go
-- src/sync/rwmutex.go
-- src/sync/waitgroup.go
-
-Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST): 
-
-- src/cmd/cgo/internal/test/cgo_test.go
-- src/cmd/dist/test.go
-- src/cmd/go/stript_test.go
-- src/cmd/compile/internal/types2/sizeof_test.go
-- src/context/x_test.go
-- src/crypto/internal/nistec/nistec_test.go
-- src/crypto/tls/tls_test.go
-- src/go/build/deps_test.
-- src/go/types/sizeof_test.go
-- src/internal/intern/inter_test.go
-- src/log/slog/text_handler_test.go
-- src/net/netip/netip_test.go
-- src/runtime/crash_cgo_test.go
-- src/runtime/sizeof_test.go
-- src/runtime/align_test.go
-- src/runtime/metrics_test.go
-- src/net/tcpsock_test.go
-- src/reflect/all_test.go
-- src/os/signal/signal_test.go
-
 
 ## Example
 Let's create the trace for the following program:
@@ -221,7 +128,7 @@ func main() {
 		}
 
 		numRout := runtime.GetNumberOfRoutines()
-		for i := 0; i <= numRout; i++ {
+		for i := 1; i <= numRout; i++ {
 			dedegoChan := make(chan string)
 			go func() {
 				runtime.TraceToStringByIdChannel(i, dedegoChan)
