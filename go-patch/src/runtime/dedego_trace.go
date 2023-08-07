@@ -199,7 +199,6 @@ func InitAtomics(size int) {
 	at.DedegoAtomicLink(c)
 	go func() {
 		for atomic := range c {
-			println(atomic.Operation)
 			lock(&dedegoAtomicMapLock)
 			dedegoAtomicMap[atomic.Index] = dedegoAtomicMapElem{
 				addr:      atomic.Addr,
