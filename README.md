@@ -30,6 +30,7 @@ defer func() {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
 	numRout := runtime.GetNumberOfRoutines()
 	for i := 1; i <= numRout; i++ {
@@ -47,7 +48,7 @@ defer func() {
 			panic(err)
 		}
 	}
-	file.Close()
+
 
 }()
 
@@ -126,6 +127,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		file.Close()
 
 		numRout := runtime.GetNumberOfRoutines()
 		for i := 1; i <= numRout; i++ {
@@ -143,8 +145,6 @@ func main() {
 				panic(err)
 			}
 		}
-		file.Close()
-
 	}()
 	c := make(chan int)
 

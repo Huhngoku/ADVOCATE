@@ -8,12 +8,20 @@ The recording of atomic elements is only implemented for computers with amd64 ar
 ## Trace element:
 The basic form of the trace element is 
 ```
-A,[tpost],[id]
+A,[tpost],[id],[op]
 ```
 where `A` identifies the element as an atomic operation.
 The other fields are set as follows:
 - [tpost]: This field shows the value of the internal counter when the operation is executed.
 - [id]: This field shows a number representing the variable. It is not possible to give every variable its own unique, consecutive id. For this reason, this id is equal to the memory position of the variable.
+- [op]: This field shows the type of operation. Those can be 
+	- `L`: Load
+	- `S`: Store
+	- `A`: Add
+	- `W`: Swap
+	- `C`: CompareAndSwap
+	- `U`: unknown (should not appear)
+
 Each atomic event is always followed by a channel send event. (see implementation)
 
 ## Example

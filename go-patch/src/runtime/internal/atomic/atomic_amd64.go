@@ -28,7 +28,7 @@ func Load(ptr *uint32) uint32 {
 //go:nosplit
 //go:noinline
 func LoadDedego(ptr *uint32) uint32 {
-	DedegoAtomic32(ptr)
+	DedegoAtomic32Load(ptr)
 	return *ptr
 }
 
@@ -62,7 +62,7 @@ func Load64(ptr *uint64) uint64 {
 //go:nosplit
 //go:noinline
 func Load64Dedego(ptr *uint64) uint64 {
-	DedegoAtomic64(ptr)
+	DedegoAtomic64Load(ptr)
 	return *ptr
 }
 

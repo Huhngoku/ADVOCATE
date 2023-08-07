@@ -37,8 +37,13 @@ type dedegoTraceElement interface {
 	getFile() string
 }
 
+type dedegoAtomicMapElem struct {
+	addr      uint64
+	operation int
+}
+
 var dedegoDisabled bool = false
-var dedegoAtomicMap map[uint64]uint64 = make(map[uint64]uint64)
+var dedegoAtomicMap map[uint64]dedegoAtomicMapElem = make(map[uint64]dedegoAtomicMapElem)
 var dedegoAtomicMapLock mutex
 
 /*
@@ -194,8 +199,12 @@ func InitAtomics(size int) {
 	at.DedegoAtomicLink(c)
 	go func() {
 		for atomic := range c {
+			println(atomic.Operation)
 			lock(&dedegoAtomicMapLock)
-			dedegoAtomicMap[atomic.Index] = atomic.Addr
+			dedegoAtomicMap[atomic.Index] = dedegoAtomicMapElem{
+				addr:      atomic.Addr,
+				operation: atomic.Operation,
+			}
 			unlock(&dedegoAtomicMapLock)
 		}
 	}()
@@ -954,8 +963,9 @@ func DedegoSelectPostOneNonDef(index int, res bool) {
 
 // ============================= Atomic ================================
 type dedegoTraceAtomicElement struct {
-	timer uint64 // global timer
-	index uint64 // index of the atomic event in dedegoAtomicMap
+	timer     uint64 // global timer
+	index     uint64 // index of the atomic event in dedegoAtomicMap
+	operation int    // type of operation
 }
 
 func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
@@ -975,10 +985,34 @@ func (elem dedegoTraceAtomicElement) getFile() string {
  * 	string representation of the element "A,'addr'"
  *    'addr' (number): address of the atomic variable
  */
+// enum for atomic operation, must be the same as in dedego_atomic.go
+const (
+	LoadOp = iota
+	StoreOp
+	AddOp
+	SwapOp
+	CompSwapOp
+)
+
 func (elem dedegoTraceAtomicElement) toString() string {
 	lock(&dedegoAtomicMapLock)
+	mapElement := dedegoAtomicMap[elem.index]
 	res := "A," + uint64ToString(elem.timer) + "," +
-		uint64ToString(dedegoAtomicMap[elem.index])
+		uint64ToString(mapElement.addr) + ","
+	switch mapElement.operation {
+	case LoadOp:
+		res += "L"
+	case StoreOp:
+		res += "S"
+	case AddOp:
+		res += "A"
+	case SwapOp:
+		res += "W"
+	case CompSwapOp:
+		res += "C"
+	default:
+		res += "U"
+	}
 	unlock(&dedegoAtomicMapLock)
 	return res
 }

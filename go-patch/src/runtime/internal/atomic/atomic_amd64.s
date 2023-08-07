@@ -30,7 +30,7 @@ TEXT ·Cas(SB),NOSPLIT,$0-17
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic32(SB)
+	CALL	·DedegoAtomic32CompSwap(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	old+8(FP), AX
@@ -52,7 +52,7 @@ TEXT ·Cas64(SB), NOSPLIT, $0-25
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic64(SB)
+	CALL	·DedegoAtomic64CompSwap(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	old+8(FP), AX
@@ -98,7 +98,7 @@ TEXT ·Xadd(SB), NOSPLIT, $0-20
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic32(SB)
+	CALL	·DedegoAtomic32Add(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	delta+8(FP), AX
@@ -117,7 +117,7 @@ TEXT ·Xadd64(SB), NOSPLIT, $0-24
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic64(SB)
+	CALL	·DedegoAtomic64Add(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	delta+8(FP), AX
@@ -146,7 +146,7 @@ TEXT ·Xchg(SB), NOSPLIT, $0-20
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic32(SB)
+	CALL	·DedegoAtomic32Swap(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	new+8(FP), AX
@@ -163,7 +163,7 @@ TEXT ·Xchg64(SB), NOSPLIT, $0-24
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic64(SB)
+	CALL	·DedegoAtomic64Swap(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	new+8(FP), AX
@@ -190,7 +190,7 @@ TEXT ·Store(SB), NOSPLIT, $0-12
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic32(SB)
+	CALL	·DedegoAtomic32Store(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	val+8(FP), AX
@@ -207,7 +207,7 @@ TEXT ·Store64(SB), NOSPLIT, $0-16
 	// DEDEGO-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·DedegoAtomic64(SB)
+	CALL	·DedegoAtomic64Store(SB)
 	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	val+8(FP), AX
