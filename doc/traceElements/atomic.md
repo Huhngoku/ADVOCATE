@@ -39,9 +39,9 @@ func main() {  // routine 1
 ```
 For the trace we ignore all internal operations. Because of the implementation of the recording, each atomic operation trace element is always followed by an channel operation. These channel operations and there communication partner have been left in the trace.
 ```
-G,1,2;A,2,824634851400;C,3,4,3,S,e,1,0,0,0,.../go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,7,824634851400;C,8,9,3,S,e,2,0,0,0,.../go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,12,824634851404;C,13,14,3,S,e,3,0,0,0,.../go-patch/src/runtime/internal/atomic/dedego_atomic.go:40
+G,1,2;A,2,824634851400;C,3,4,3,S,t,1,0,0,0,.../go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,7,824634851400;C,8,9,3,S,t,2,0,0,0,.../go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,12,824634851404;C,13,14,3,S,t,3,0,0,0,.../go-patch/src/runtime/internal/atomic/dedego_atomic.go:40
 
-C,5,6,3,R,e,1,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196;C,10,11,3,R,e,2,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196;C,15,16,3,R,e,3,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196;C,17,18,3,R,o,4,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196
+C,5,6,3,R,t,1,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196;C,10,11,3,R,e,2,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196;C,15,16,3,R,t,3,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196;C,17,18,3,R,f,4,0,0,0,.../go-patch/src/runtime/dedego_trace.go:196
 ```
 
 ## Implementation

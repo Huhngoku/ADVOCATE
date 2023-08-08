@@ -17,8 +17,8 @@ the execution of the operation
     - [opC] = `S`: send
     - [opC] = `R`: receive
     - [opC] = `C`: close
-- [exec]: This field shows, whether the operation was finished ([exec] = `e`) or
-not ([exec] = `o`). Failed can e.g. mean, that the routine still tried to send or receive when the program was terminated
+- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or
+not ([exec] = `f`). Failed can e.g. mean, that the routine still tried to send or receive when the program was terminated
 - [oId] $\in \mathbb N$: This field shows the communication id. This can be used to connect corresponding communications. If a send and a receive on the same channel (same channel id) have the same [oId], a message was send from the send to the receive. For close this is always `0`
 - [qSize] $\in \mathbb N_0$: This is the size of the channel. For unbuffered channels this is `0`.
 - [qCountPre] $\in \mathbb N_0$: This is the amount of elements 
@@ -49,8 +49,8 @@ func main() {    // routine 1
 ```
 If we ignore all internal operations, we would get the following trace:
 ```
-G,1,2;C,8,9,5,R,e,1,0,0,0,example_file.go:12;C,10,11,4,R,e,1,2,2,1,example_file.go:13;C,12,13,4,R,e,2,2,1,0,example_file.go:14;C,14,14,5,C,e,0,0,0,0,example_file.go:16
-C,2,3,4,S,e,1,2,0,1,example_file.go:7;C,4,5,4,S,e,2,2,1,2,example_file.go:8;C,6,7,5,S,e,1,0,0,0,example_file.go:9
+G,1,2;C,8,9,5,R,t,1,0,0,0,example_file.go:12;C,10,11,4,R,t,1,2,2,1,example_file.go:13;C,12,13,4,R,t,2,2,1,0,example_file.go:14;C,14,14,5,C,t,0,0,0,0,example_file.go:16
+C,2,3,4,S,t,1,2,0,1,example_file.go:7;C,4,5,4,S,t,2,2,1,2,example_file.go:8;C,6,7,5,S,e,1,0,0,0,example_file.go:9
 ```
 
 ## Implementation

@@ -18,7 +18,7 @@ The other fields are set as follows:
 - [id]: This field contains the unique id of the select statement
 - [cases]: This field shows the available cases in the trace. Each case is denoted by the id of the involved channel, followed by a `r` for receive cases or `s` for send cases. A default case is shown by a `d` (without any id number). The cases are separated by points (.). The 
 order of the cases must not be equal to the order of the cases in the select statement.
-- [exec]: This field shows, whether the operation was finished ([exec] = `e`) or not ([exec] = `o`). Failed can e.g. mean, that in a select with no default case, non of the cases could find a communication partner when the program terminates.
+- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or not ([exec] = `f`). Failed can e.g. mean, that in a select with no default case, non of the cases could find a communication partner when the program terminates.
 - [chosen]: This field shows the index of the chosen case. This index is equal to the position of the chosen case in [cases] (0 based). Because
 of an internal reordering of the cases, this index must not be equal to the index of the order of cases in the program code. If the default case 
 was selected, [chosen] is set to `-1`.
@@ -60,8 +60,8 @@ func main() {  // Routine 1
 ``` 
 If we ignore all internal operations, we get the following trace:
 ```
-G,1,2;S,7,8,5,2r.1r,e,1,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:19
-S,3,4,4,3r.2r.d,e,-1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16;C,5,6,1,S,e,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7
+G,1,2;S,7,8,5,2r.1r,t,1,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:19
+S,3,4,4,3r.2r.d,t,-1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16;C,5,6,1,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7
 ```
 
 ## Implementation

@@ -17,8 +17,8 @@ its operation.
 - [opW]: This filed identifies the operation type that was executed on the wait group:
     - [opW] = `A`: change of the internal counter by delta. This is done by Add or Done.
     - [opW] = `W`: wait on the wait group
-- [exec]: This field shows, whether the operation was finished ([exec] = `e`) or
-not ([exec] = `o`). Failed can e.g. mean, that the routine was still blocked by a wait operation when the program terminated.
+- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or
+not ([exec] = `f`). Failed can e.g. mean, that the routine was still blocked by a wait operation when the program terminated.
 - [delta]$\in \mathbb Z$ : This field shows the change of the internal value of the wait group.
 For Add this is a positive number. For Done this is `-1`. For Wait this is always 
 `0`.
@@ -51,8 +51,8 @@ func main() {  // routine 1
 ```
 If we ignore all internal operations we get the following trace:
 ```
-W,1,2,1,A,e,1,1,example_file.go:10;G,3,2;W,6,7,1,W,e,0,0,example_file.go:17
-W,4,5,1,A,e,-1,1,example_file.go:14
+W,1,2,1,A,t,1,1,example_file.go:10;G,3,2;W,6,7,1,W,t,0,0,example_file.go:17
+W,4,5,1,A,t,-1,1,example_file.go:14
 ```
 ## Implementation
 The recording of the operations is done in the `go-patch/src/sync/waitgroup.go` file in the `Add` (Add, Done) and `Wait` functions. To save the id of the wait group, an additional 
