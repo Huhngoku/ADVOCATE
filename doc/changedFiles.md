@@ -42,3 +42,4 @@ Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST):
 - src/net/tcpsock_test.go
 - src/reflect/all_test.go
 - src/os/signal/signal_test.go
+- src/go/internal/gccgoimporter/importer_test.go

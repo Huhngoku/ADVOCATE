@@ -289,8 +289,8 @@ func (elem dedegoTraceMutexElement) getFile() string {
  *    't' (number): global timer
  *    'id' (number): id of the mutex
  *    'rw' (R/-): R if it is a rwmutex, otherwise -
- *	  'op' (L/LR/T/TR/U/UR): L if it is a lock, LR if it is a rlock, T if it is a trylock, TR if it is a rtrylock, U if it is an unlock, UR if it is an runlock
- *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
+ *	  'op' (L/R/T/Y/U/N): L if it is a lock, R if it is a rlock, T if it is a trylock, Y if it is a rtrylock, U if it is an unlock, N if it is an runlock
+ *	  'exec' (t/f): t if the operation was successfully finished, f otherwise
  *	  'suc' (s/f): s if the trylock was successful, f otherwise
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
@@ -310,21 +310,21 @@ func (elem dedegoTraceMutexElement) toString() string {
 	case opMutLock:
 		res += "L"
 	case opMutRLock:
-		res += "LR"
+		res += "R"
 	case opMutTryLock:
 		res += "T"
 	case opMutRTryLock:
-		res += "TR"
+		res += "Y"
 	case opMutUnlock:
 		res += "U"
 	case opMutRUnlock:
-		res += "UR"
+		res += "N"
 	}
 
 	if elem.exec {
-		res += ",e"
+		res += ",t"
 	} else {
-		res += ",o"
+		res += ",f"
 	}
 
 	if elem.suc {
@@ -496,7 +496,7 @@ func (elem dedegoTraceWaitGroupElement) getFile() string {
  *    'tpost' (number): global after the operation
  *    'id' (number): id of the mutex
  *	  'op' (A/W): A if it is an add or Done, W if it is a wait
- *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
+ *	  'exec' (t/f): t if the operation was successfully finished, f otherwise
  *	  'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
  *	  'val' (number): value of the waitgroup after the operation
  *    'file' (string): file where the operation was called
@@ -514,9 +514,9 @@ func (elem dedegoTraceWaitGroupElement) toString() string {
 	}
 
 	if elem.exec {
-		res += "e,"
+		res += "t,"
 	} else {
-		res += "o,"
+		res += "f,"
 	}
 
 	res += intToString(elem.delta) + "," + int32ToString(elem.val)
@@ -598,7 +598,7 @@ func (elem dedegoTraceChannelElement) getFile() string {
  *    'tpost' (number): global timer after the operation
  *    'id' (number): id of the channel
  *	  'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
- *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
+ *	  'exec' (t/f): t if the operation was successfully finished, f otherwise
  *	  'pId' (number): id of the channel with witch the communication took place
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
@@ -618,9 +618,9 @@ func (elem dedegoTraceChannelElement) toString() string {
 	}
 
 	if elem.exec {
-		res += ",e"
+		res += ",t"
 	} else {
-		res += ",o"
+		res += ",f"
 	}
 
 	res += "," + uint64ToString(elem.opId)
@@ -775,7 +775,7 @@ func (elem dedegoTraceSelectElement) getFile() string {
  *    'tpost' (number): global timer after the operation
  *    'id' (number): id of the mutex
  *	  'cases' (string): cases of the select, id and r/s, separated by '.', d for default
- *	  'exec' (e/o): e if the operation was successfully finished, o otherwise
+ *	  'exec' (t/f): t if the operation was successfully finished, f otherwise
  *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
  *	  'opId' (number): id of the operation on the channel
  *    'file' (string): file where the operation was called
@@ -804,9 +804,9 @@ func (elem dedegoTraceSelectElement) toString() string {
 	}
 
 	if elem.exec {
-		res += ",e"
+		res += ",t"
 	} else {
-		res += ",o"
+		res += ",f"
 	}
 
 	res += "," + intToString(elem.chosen) + "," + uint64ToString(elem.opId)
@@ -855,6 +855,10 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool,
 * Add a new select element to the trace if the select has exactly one non-default case
  */
 func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
+	if c == nil {
+		return -1
+	}
+
 	id := GetDedegoObjectId()
 
 	casesStr := []string{uint64ToString(c.id)}
