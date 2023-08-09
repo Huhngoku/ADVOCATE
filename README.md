@@ -15,7 +15,7 @@ go runtime will create a trace of the program including
 - wait group operations
 
 The following is a short explanation about how to build and run the 
-new runtime. A full explanation of the created trace can be found in the 
+new runtime and create tge trace. A full explanation of the created trace can be found in the 
 `doc` directory. 
 
 ## Warning
