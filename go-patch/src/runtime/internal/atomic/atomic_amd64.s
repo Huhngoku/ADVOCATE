@@ -198,6 +198,11 @@ TEXT ·Store(SB), NOSPLIT, $0-12
 	RET
 
 TEXT ·Store8(SB), NOSPLIT, $0-9
+	// DEDEGO-CHANGE-START
+ 	MOVQ 	ptr+0(FP), AX
+  	MOVQ 	AX, 0(SP)
+	CALL	·DedegoAtomic32Store(SB)
+	// DEDEGO-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVB	val+8(FP), AX
 	XCHGB	AX, 0(BX)

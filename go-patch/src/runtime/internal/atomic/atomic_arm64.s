@@ -52,6 +52,11 @@ TEXT ·Casp1(SB), NOSPLIT, $0-25
 
 // uint32 ·Load(uint32 volatile* addr)
 TEXT ·Load(SB),NOSPLIT,$0-12
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL DedegoAtomic32Load(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	LDARW	(R0), R0
 	MOVW	R0, ret+8(FP)
@@ -59,6 +64,11 @@ TEXT ·Load(SB),NOSPLIT,$0-12
 
 // uint8 ·Load8(uint8 volatile* addr)
 TEXT ·Load8(SB),NOSPLIT,$0-9
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL DedegoAtomic32Load(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	LDARB	(R0), R0
 	MOVB	R0, ret+8(FP)
@@ -66,6 +76,11 @@ TEXT ·Load8(SB),NOSPLIT,$0-9
 
 // uint64 ·Load64(uint64 volatile* addr)
 TEXT ·Load64(SB),NOSPLIT,$0-16
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL DedegoAtomic64Load(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	LDAR	(R0), R0
 	MOVD	R0, ret+8(FP)
@@ -73,6 +88,11 @@ TEXT ·Load64(SB),NOSPLIT,$0-16
 
 // void *·Loadp(void *volatile *addr)
 TEXT ·Loadp(SB),NOSPLIT,$0-16
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL DedegoAtomicPtr(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	LDAR	(R0), R0
 	MOVD	R0, ret+8(FP)
@@ -103,18 +123,33 @@ TEXT ·StoreReluintptr(SB), NOSPLIT, $0-16
 	B	·Store64(SB)
 
 TEXT ·Store(SB), NOSPLIT, $0-12
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic32Store(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVW	val+8(FP), R1
 	STLRW	R1, (R0)
 	RET
 
 TEXT ·Store8(SB), NOSPLIT, $0-9
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic32Store(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVB	val+8(FP), R1
 	STLRB	R1, (R0)
 	RET
 
 TEXT ·Store64(SB), NOSPLIT, $0-16
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic64Store(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVD	val+8(FP), R1
 	STLR	R1, (R0)
@@ -126,6 +161,11 @@ TEXT ·Store64(SB), NOSPLIT, $0-16
 //	*ptr = new;
 //	return old;
 TEXT ·Xchg(SB), NOSPLIT, $0-20
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic32Swap(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVW	new+8(FP), R1
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
@@ -146,6 +186,11 @@ load_store_loop:
 //	*ptr = new;
 //	return old;
 TEXT ·Xchg64(SB), NOSPLIT, $0-24
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic64Swap(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVD	new+8(FP), R1
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
@@ -168,6 +213,11 @@ load_store_loop:
 //	} else
 //		return 0;
 TEXT ·Cas(SB), NOSPLIT, $0-17
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic32CompSwap(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVW	old+8(FP), R1
 	MOVW	new+12(FP), R2
@@ -199,6 +249,11 @@ ok:
 //              return 0;
 //      }
 TEXT ·Cas64(SB), NOSPLIT, $0-25
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic64CompSwap(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVD	old+8(FP), R1
 	MOVD	new+16(FP), R2
@@ -226,6 +281,11 @@ ok:
 //      *val += delta;
 //      return *val;
 TEXT ·Xadd(SB), NOSPLIT, $0-20
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic32Add(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVW	delta+8(FP), R1
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
@@ -247,6 +307,11 @@ load_store_loop:
 //      *val += delta;
 //      return *val;
 TEXT ·Xadd64(SB), NOSPLIT, $0-24
+	// DEDEGO-CHANGE-START
+	LDR X1, [SP,#0]           
+	STR X1, [SP]              
+	BL ·DedegoAtomic64Add(SB)
+	// DEDEGO-CHANGE-END
 	MOVD	ptr+0(FP), R0
 	MOVD	delta+8(FP), R1
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4

@@ -1,6 +1,28 @@
 # Patch version of the Go programming language to record concurrent event
 
-The following is a short explanation. A more complete description can be found in the `doc` directory.
+## What
+We want to statically analyze concurrent Go programs. For this we first have
+to record the program. To do this, we adapt the go runtime and compiler
+to automatically record a program while it runs. The modified runtime can 
+be found in the `go-patch` directory. Running a program with this modified 
+go runtime will create a trace of the program including 
+
+- spawning of new routines
+- atomic operations
+- mutex operations
+- channel operations
+- select operations
+- wait group operations
+
+The following is a short explanation about how to build and run the 
+new runtime. A full explanation of the created trace can be found in the 
+`doc` directory. 
+
+## Warning
+The modified runtime is currently only implemented and tested fot `amd64`. 
+For `arm64` an untested implementation exists, but there are no guaranties, that
+this implementation is runnable.
+
 ## How
 The go-patch folder contains a modified version of the go compiler and runtime.
 With this modified version it is possible to save a trace as described in
