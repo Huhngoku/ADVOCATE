@@ -1,5 +1,8 @@
 # Changed files
 
+The following is a list of all files in the Go runtime that have been 
+added or changed.
+
 Added files:
 
 - src/runtime/dedego_routine.go

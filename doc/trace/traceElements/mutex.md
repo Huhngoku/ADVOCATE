@@ -15,7 +15,7 @@ acquiring the lock in case of a trylock.
 - [id] $\in \mathbb N$: This is the unique id identifying this mutex
 - [rw]: This field records, whether the mutex is an rw mutex ([rw] = `R`) or not
 ([rw] = `-`)
-- [opM]: This field shows the operation of the element those can be
+- [opM]: This field shows the operation of the element. Those can be
   - [opM] = `L`: Lock
   - [opM] = `R`: RLock
   - [opM] = `T`: TryLock
@@ -26,9 +26,9 @@ acquiring the lock in case of a trylock.
 not ([exec] = `f`). Failed can e.g. mean, that the routine still tried to
 acquire a lock, when the program was terminated. It is also set to `f`, if the 
 program panicked during the execution of the operation, e.g. because an 
-RUnlock operation was called on a mutex that is currently held by and Lock 
+RUnlock operation was called on a mutex that is currently held by an Lock 
 operation.
-- [suc]: This field is used to determine if an TryLock was successful ([suc] = `t`)
+- [suc]: This field is used to determine if an Try(R)Lock was successful ([suc] = `t`)
 or not ([suc] = `f`) in acquiring the mutex. For all other operation it is always
 set to `t`.
 - [pos]: The last field show the position in the code, where the mutex operation 
@@ -97,7 +97,7 @@ we get the following trace. For simplicity we also assume, that the routine
 are executed consecutively, ignoring that the routines are normally
 run concurrent (this only effects the time stamps). We also ignore the elements showing the creation of the new go routines. These elements would all be at the end of the trace of the first routine (first line). This would also 
 shift the time steps.
-```
+```txt
 M,1,2,1,-,L,t,t,example_file.go:8;M,3,4,1,-,U,t,t,example_file.go:10
 M,5,6,1,-,T,t,t,example_file.go:13;M,7,8,1,-,U,t,t,example_file.go:16
 M,9,10,2,R,L,t,t,example_file.go:20;M,11,12,2,R,U,t,t,example_file.go:22

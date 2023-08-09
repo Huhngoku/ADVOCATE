@@ -59,7 +59,7 @@ func main() {  // Routine 1
 }
 ``` 
 If we ignore all internal operations, we get the following trace:
-```
+```txt
 G,1,2;S,7,8,5,2r.1r,t,1,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:19
 S,3,4,4,3r.2r.d,t,-1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16;C,5,6,1,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7
 ```

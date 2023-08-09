@@ -48,7 +48,7 @@ func main() {    // routine 1
 }
 ```
 If we ignore all internal operations, we would get the following trace:
-```
+```txt
 G,1,2;C,8,9,5,R,t,1,0,0,0,example_file.go:12;C,10,11,4,R,t,1,2,2,1,example_file.go:13;C,12,13,4,R,t,2,2,1,0,example_file.go:14;C,14,14,5,C,t,0,0,0,0,example_file.go:16
 C,2,3,4,S,t,1,2,0,1,example_file.go:7;C,4,5,4,S,t,2,2,1,2,example_file.go:8;C,6,7,5,S,e,1,0,0,0,example_file.go:9
 ```
@@ -70,5 +70,5 @@ The other two functions are called at the end of the
 operation, after the send or receive was fully executed.
 These functions record [qCountPost] (`DedegoChanPostQCount`)
 as well as [tpost] and [exec] (`DedegoChanPost`).\
-A close on a channel cannot block, it only needs one recording function. This function (`DedegoChanClose`) records all needed values. For [tpre] and [tpost] the same 
+As a close on a channel cannot block, it only needs one recording function. This function (`DedegoChanClose`) records all needed values. For [tpre] and [tpost] the same 
 value is set. The same is true for [qCountPre] and [qCountPost].

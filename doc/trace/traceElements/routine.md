@@ -24,7 +24,7 @@ the line number, where the trace of this new routine is saved in the trace.
 
 If we ignore all other internal elements regarding the counter, the element for 
 the given example would be stored in the trace in line 1 as
-```
+```txt
 G,1,2
 ```
 meaning, in routine 1 a new routine with id 2 was created at time 1.

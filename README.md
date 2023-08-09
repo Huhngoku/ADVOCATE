@@ -19,21 +19,20 @@ new runtime. A full explanation of the created trace can be found in the
 `doc` directory. 
 
 ## Warning
-The modified runtime is currently only implemented and tested fot `amd64`. 
+The modified runtime is currently only implemented and tested for `amd64`.
 For `arm64` an untested implementation exists, but there are no guaranties, that
 this implementation is runnable.
 
 ## How
 The go-patch folder contains a modified version of the go compiler and runtime.
-With this modified version it is possible to save a trace as described in
-'Trace Structure'.
+With this modified version it is possible to save a trace of the program.
 
 To build the new runtime, run the 'all.bash' or 'all.bat' file in the 'src'
 directory. This will create a 'bin' directory containing a 'go' executable.
 This executable can be used as your new go envirement e.g. with
 `./go run main.go` or `./go build`.
 
-It is necessary to set the GOROOT environment variable to the path of the `./go` executable, e.g. with 
+It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
 ```
 export GOROOT=$HOME/dedego/go-patch/
 ```
@@ -70,11 +69,9 @@ defer func() {
 			panic(err)
 		}
 	}
-
-
 }()
-
 ```
+
 at the beginning of the main function.
 Also include the following imports 
 ```go
@@ -149,7 +146,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		file.Close()
+		defer file.Close()
 
 		numRout := runtime.GetNumberOfRoutines()
 		for i := 1; i <= numRout; i++ {
@@ -168,6 +165,7 @@ func main() {
 			}
 		}
 	}()
+
 	c := make(chan int)
 
 	go func() {
@@ -192,19 +190,17 @@ func main() {
 Running this leads to the following trace (indented lines are in the same line 
 as the previous line, only for better readability):
 
-```
+```txt
+G,1,2;G,2,3;G,3,4;C,4,9,1,R,t,1,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,t,2,2,1,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,t,0,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,16,20,4,R,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,21,22,4,R,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,23,30,4,R,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,31,32,4,R,t,4,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56
 
-G,1,2;G,2,3;G,3,4;C,1,4,9,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,1,10,11,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,2,13,13,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,4,16,20,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,4,21,22,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,4,23,30,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,4,31,32,R,e,4,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56
+C,5,6,1,S,t,1,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
+C,7,8,1,S,t,2,2,0,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
 
-C,1,5,6,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
-C,1,7,8,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
-
-C,3,33,34,R,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196;C,3,35,42,R,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196;C,3,43,44,R,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196;C,3,45,0,R,o,4,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:196
-C,4,17,18,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,4,19,24,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,4,25,26,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,4,27,27,C,o,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:48;A,28,824634851496;C,3,29,36,S,e,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,37,824634851496;C,3,38,39,S,e,2,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:40;A,40,824634851500;C,3,41,46,S,e,3,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:40
-
-
+C,33,34,3,R,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,35,42,3,R,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,43,44,3,R,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,45,0,3,R,f,4,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201
+C,17,18,4,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,19,24,4,S,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,25,26,4,S,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,27,27,4,C,t,0,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:48;A,28,824634851496,A;C,29,36,3,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104;A,37,824634851496,A;C,38,39,3,S,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104;A,40,824634851500,A;C,41,46,3,S,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104
 ```
 
 The trace includes both the concurrent operations of the program it self, as well
-as internal operations used by the go runtime. The elements from the
-program are in file .../worst/main.go
+as internal operations used by the go runtime. An explanation of the trace 
+file including the explanations for all elements can be found in the `doc`
+directory.
