@@ -2,9 +2,7 @@
 The recording of atomics records atomic operations, both on normal types and on atomic types. This includes Add, CompareAndSwap, Swap, Load and Store operations.
 
 ## Info:
-The recording of atomic events is currently only implemented and tested for `amd64`.
-For `arm64` an untested implementation exists, but there are no guaranties, that
-this implementation is runnable.
+The recording of atomic events is currently only implemented for `amd64`.
 
 ## Trace element:
 The basic form of the trace element is 

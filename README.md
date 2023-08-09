@@ -19,9 +19,7 @@ new runtime and create tge trace. A full explanation of the created trace can be
 `doc` directory. 
 
 ## Warning
-The modified runtime is currently only implemented and tested for `amd64`.
-For `arm64` an untested implementation exists, but there are no guaranties, that
-this implementation is runnable.
+The recording of atomic operations only works with `amd64`.
 
 ## How
 The go-patch folder contains a modified version of the go compiler and runtime.
