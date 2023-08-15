@@ -26,14 +26,15 @@ const (
 *   pos (string): The position of the wait group in the code
  */
 type traceElementWait struct {
-	tpre  int
-	tpost int
-	id    int
-	opW   opW
-	exec  bool
-	delta int
-	val   int
-	pos   string
+	routine int
+	tpre    int
+	tpost   int
+	id      int
+	opW     opW
+	exec    bool
+	delta   int
+	val     int
+	pos     string
 }
 
 func AddTraceElementWait(routine int, tpre string, tpost string, id string,
@@ -75,12 +76,44 @@ func AddTraceElementWait(routine int, tpre string, tpost string, id string,
 		return errors.New("val is not an integer")
 	}
 
-	elem := traceElementWait{tpre_int, tpost_int, id_int, opW_op, exec_bool,
-		delta_int, val_int, pos}
+	elem := traceElementWait{routine, tpre_int, tpost_int, id_int, opW_op,
+		exec_bool, delta_int, val_int, pos}
 
 	return addElementToTrace(routine, elem)
 }
 
+/*
+ * Get the routine of the element
+ * Returns:
+ *   int: The routine of the element
+ */
+func (elem traceElementWait) getRoutine() int {
+	return elem.routine
+}
+
+/*
+ * Get the timestamp at the start of the event
+ * Returns:
+ *   int: The timestamp at the start of the event
+ */
+func (elem traceElementWait) getTpre() int {
+	return elem.tpre
+}
+
+/*
+ * Get the timestamp at the end of the event
+ * Returns:
+ *   int: The timestamp at the end of the event
+ */
+func (elem traceElementWait) getTpost() int {
+	return elem.tpost
+}
+
+/*
+ * Get the simple string representation of the element
+ * Returns:
+ *   string: The simple string representation of the element
+ */
 func (elem traceElementWait) getSimpleString() string {
 	return "W" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpre) + "," +
 		strconv.Itoa(elem.tpost) + "," + "," +

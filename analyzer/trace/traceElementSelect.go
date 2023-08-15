@@ -24,6 +24,7 @@ func (elem traceElementSelectCase) toString() string {
 /*
  * traceElementSelect is a trace element for a select statement
  * Fields:
+ *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
  *   id (int): The id of the select statement
@@ -35,6 +36,7 @@ func (elem traceElementSelectCase) toString() string {
  *   pos (string): The position of the select statement in the code
  */
 type traceElementSelect struct {
+	routine         int
 	tpre            int
 	tpost           int
 	id              int
@@ -113,12 +115,44 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 		return errors.New("oId is not an integer")
 	}
 
-	elem := traceElementSelect{tpre_int, tpost_int, id_int, cases_list,
+	elem := traceElementSelect{routine, tpre_int, tpost_int, id_int, cases_list,
 		containsDefault, exec_bool, chosenCase, oId_int, pos}
 
 	return addElementToTrace(routine, elem)
 }
 
+/*
+ * Get the routine of the element
+ * Returns:
+ *   int: The routine of the element
+ */
+func (elem traceElementSelect) getRoutine() int {
+	return elem.routine
+}
+
+/*
+ * Get the timestamp at the start of the event
+ * Returns:
+ *   int: The timestamp at the start of the event
+ */
+func (elem traceElementSelect) getTpre() int {
+	return elem.tpre
+}
+
+/*
+ * Get the timestamp at the end of the event
+ * Returns:
+ *   int: The timestamp at the end of the event
+ */
+func (elem traceElementSelect) getTpost() int {
+	return elem.tpost
+}
+
+/*
+ * Get the simple string representation of the element
+ * Returns:
+ *   string: The simple string representation of the element
+ */
 func (elem traceElementSelect) getSimpleString() string {
 	res := "S" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpre) + "," +
 		strconv.Itoa(elem.tpost) + " "

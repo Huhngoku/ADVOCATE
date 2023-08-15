@@ -20,6 +20,7 @@ const (
 /*
  * traceElementMutex is a trace element for a mutex
  * Fields:
+ *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
  *   id (int): The id of the mutex
@@ -30,14 +31,15 @@ const (
  *   pos (string): The position of the mutex operation in the code
  */
 type traceElementMutex struct {
-	tpre  int
-	tpost int
-	id    int
-	rw    bool
-	opM   opMutex
-	exec  bool
-	suc   bool
-	pos   string
+	routine int
+	tpre    int
+	tpost   int
+	id      int
+	rw      bool
+	opM     opMutex
+	exec    bool
+	suc     bool
+	pos     string
 }
 
 func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
@@ -90,11 +92,44 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 		return errors.New("suc is not a boolean")
 	}
 
-	elem := traceElementMutex{tpre_int, tpost_int, id_int, rw_bool, opM_int, exec_bool, suc_bool, pos}
+	elem := traceElementMutex{routine, tpre_int, tpost_int, id_int, rw_bool,
+		opM_int, exec_bool, suc_bool, pos}
 
 	return addElementToTrace(routine, elem)
 }
 
+/*
+ * Get the routine of the element
+ * Returns:
+ *   int: The routine of the element
+ */
+func (elem traceElementMutex) getRoutine() int {
+	return elem.routine
+}
+
+/*
+ * Get the tpre of the element.
+ * Returns:
+ *   int: The tpre of the element
+ */
+func (elem traceElementMutex) getTpre() int {
+	return elem.tpre
+}
+
+/*
+ * Get the tpost of the element.
+ * Returns:
+ *   int: The tpost of the element
+ */
+func (elem traceElementMutex) getTpost() int {
+	return elem.tpost
+}
+
+/*
+ * Get the simple string representation of the element
+ * Returns:
+ *   string: The simple string representation of the element
+ */
 func (elem traceElementMutex) getSimpleString() string {
 	return "M" + "," + strconv.Itoa(elem.tpre) + "," + strconv.Itoa(elem.tpost) +
 		strconv.Itoa(elem.id) + "," + strconv.FormatBool(elem.rw) + "," +

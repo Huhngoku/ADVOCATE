@@ -19,10 +19,13 @@ const (
 /*
  * Struct to save an atomic event in the trace
  * Fields:
+ *   routine (int): The routine id
  *   tpost (int): The timestamp of the event
  *   id (int): The id of the atomic variable
+ *   operation (int, enum): The operation on the atomic variable
  */
 type traceElementAtomic struct {
+	routine   int
 	tpost     int
 	id        int
 	operation opAtomic
@@ -63,11 +66,43 @@ func AddTraceElementAtomic(routine int, tpost string, id string,
 		return errors.New("operation is not a valid operation")
 	}
 
-	elem := traceElementAtomic{tpost_int, id_int, operation_int}
+	elem := traceElementAtomic{routine, tpost_int, id_int, operation_int}
 
 	return addElementToTrace(routine, elem)
 }
 
+/*
+ * Get the routine of the element
+ * Returns:
+ *   int: The routine of the element
+ */
+func (elem traceElementAtomic) getRoutine() int {
+	return elem.routine
+}
+
+/*
+ * Get the tpost of the element. For atomic elements, tpre and tpost are the same
+ * Returns:
+ *   int: The tpost of the element
+ */
+func (elem traceElementAtomic) getTpre() int {
+	return elem.tpost
+}
+
+/*
+ * Get the tpost of the element. For atomic elements, tpre and tpost are the same
+ * Returns:
+ *   int: The tpost of the element
+ */
+func (elem traceElementAtomic) getTpost() int {
+	return elem.tpost
+}
+
+/*
+ * Get the simple string representation of the element.
+ * Returns:
+ *   string: The simple string representation of the element
+ */
 func (elem traceElementAtomic) getSimpleString() string {
 	return "A" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpost) + "," +
 		strconv.Itoa(int(elem.operation))

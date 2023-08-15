@@ -104,7 +104,6 @@ func main() {
 		for i := 0; i < 3; i++ {
 			c <- 1
 		}
-		close(c)
 		var a int32
 		var b int32
 		atomic.AddInt32(&a, 1)
@@ -112,8 +111,8 @@ func main() {
 		atomic.AddInt32(&b, 1)
 	}()
 
-	for a := range c {
-		_ = a
+	for i := 0; i < 3; i++ {
+			<-c
 	}
 
 	time.Sleep(time.Second)
@@ -170,7 +169,6 @@ func main() {
 		for i := 0; i < 3; i++ {
 			c <- 1
 		}
-		close(c)
 		var a int32
 		var b int32
 		atomic.AddInt32(&a, 1)
@@ -178,9 +176,10 @@ func main() {
 		atomic.AddInt32(&b, 1)
 	}()
 
-	for a := range c {
-		_ = a
+	for i := 0; i < 3; i++ {
+			<-c
 	}
+
 	time.Sleep(time.Second)
 }
 ```
@@ -189,13 +188,13 @@ Running this leads to the following trace (indented lines are in the same line
 as the previous line, only for better readability):
 
 ```txt
-G,1,2;G,2,3;G,3,4;C,4,9,1,R,t,1,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,t,2,2,1,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,t,0,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,16,20,4,R,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,21,22,4,R,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,23,30,4,R,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,31,32,4,R,t,4,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56
+G,1,2;G,2,3;G,3,4;C,4,9,1,R,t,1,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,t,2,2,1,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,t,0,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;C,16,20,4,R,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,21,22,4,R,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56;C,23,43,4,R,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:56
 
 C,5,6,1,S,t,1,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcsweep.go:279
 C,7,8,1,S,t,2,2,0,1,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/mgcscavenge.go:652
 
-C,33,34,3,R,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,35,42,3,R,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,43,44,3,R,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,45,0,3,R,f,4,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201
-C,17,18,4,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,19,24,4,S,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,25,26,4,S,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,27,27,4,C,t,0,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:48;A,28,824634851496,A;C,29,36,3,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104;A,37,824634851496,A;C,38,39,3,S,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104;A,40,824634851500,A;C,41,46,3,S,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104
+C,27,33,3,R,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,34,35,3,R,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,36,41,3,R,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201;C,42,0,3,R,f,4,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/dedego_trace.go:201
+C,17,18,4,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,19,24,4,S,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;C,25,26,4,S,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:46;A,28,824634294432,A;C,29,30,3,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104;A,31,824634294432,A;C,32,37,3,S,t,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104;A,38,824634294436,A;C,39,40,3,S,t,3,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/src/runtime/internal/atomic/dedego_atomic.go:104
 ```
 
 The trace includes both the concurrent operations of the program it self, as well

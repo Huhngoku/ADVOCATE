@@ -8,9 +8,9 @@ import (
 )
 
 /*
- * Read a file
+ * Read and build the trace from a file
  */
-func Read(file_path string) {
+func CreateTraceFromFile(file_path string) {
 	file, err := os.Open(file_path)
 	if err != nil {
 		panic(err)
@@ -54,6 +54,9 @@ func processLine(line string, routine int) {
  *   routine (int): The routine id, equal to the line number
  */
 func processElement(element string, routine int) {
+	if element == "" {
+		return
+	}
 	fields := strings.Split(element, ",")
 	var err error = nil
 	switch fields[0] {
@@ -75,7 +78,7 @@ func processElement(element string, routine int) {
 		trace.AddTraceElementWait(routine, fields[1], fields[2], fields[3],
 			fields[4], fields[5], fields[6], fields[7], fields[8])
 	default:
-		panic("Unknown element type: " + fields[0])
+		panic("Unknown element type in: " + element)
 	}
 
 	if err != nil {
