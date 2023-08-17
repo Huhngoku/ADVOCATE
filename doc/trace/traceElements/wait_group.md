@@ -4,7 +4,7 @@ The Add, Done and Wait operations of a wait group are recorded in the trace wher
 ## Trace element
 The basic form of the trace element is 
 ```
-W,[tpre],[tpost],[id],[opW],[exec],[delta],[val],[pos]
+W,[tpre],[tpost],[id],[opW],[delta],[val],[pos]
 ```
 where `W` identifies the element as a wait group element. The following sets
 are set as follows:
@@ -17,8 +17,6 @@ its operation.
 - [opW]: This filed identifies the operation type that was executed on the wait group:
     - [opW] = `A`: change of the internal counter by delta. This is done by Add or Done.
     - [opW] = `W`: wait on the wait group
-- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or
-not ([exec] = `f`). Failed can e.g. mean, that the routine was still blocked by a wait operation when the program terminated.
 - [delta]$\in \mathbb Z$ : This field shows the change of the internal value of the wait group.
 For Add this is a positive number. For Done this is `-1`. For Wait this is always 
 `0`.

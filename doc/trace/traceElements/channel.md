@@ -5,7 +5,7 @@ trace of the routine where they occur.
 ## Trace element
 The basic form of the trace element is 
 ```
-C,[tpre],[tpost],[id],[opC],[exec],[oId],[qSize],[qCountPre],[qCoundPost],[pos] 
+C,[tpre],[tpost],[id],[opC],[oId],[qSize],[qCountPre],[qCoundPost],[pos] 
 ```
 where `C` identifies the element as a channel element. The other fields are 
 set as follows:
@@ -17,8 +17,6 @@ the execution of the operation
     - [opC] = `S`: send
     - [opC] = `R`: receive
     - [opC] = `C`: close
-- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or
-not ([exec] = `f`). Failed can e.g. mean, that the routine still tried to send or receive when the program was terminated
 - [oId] $\in \mathbb N$: This field shows the communication id. This can be used to connect corresponding communications. If a send and a receive on the same channel (same channel id) have the same [oId], a message was send from the send to the receive. For close this is always `0`
 - [qSize] $\in \mathbb N_0$: This is the size of the channel. For unbuffered channels this is `0`.
 - [qCountPre] $\in \mathbb N_0$: This is the amount of elements 

@@ -9,7 +9,7 @@ Select statements with only one case are not recorded as select statements. If t
 ## Trace element
 The basic form of the trace element is 
 ```
-S,[tpre],[tpost],[id],[cases],[exec],[chosen],[oId],[pos]
+S,[tpre],[tpost],[id],[cases],[chosen],[oId],[pos]
 ```
 where `S` identifies the element as a select element.
 The other fields are set as follows:
@@ -18,7 +18,6 @@ The other fields are set as follows:
 - [id]: This field contains the unique id of the select statement
 - [cases]: This field shows the available cases in the trace. Each case is denoted by the id of the involved channel, followed by a `r` for receive cases or `s` for send cases. A default case is shown by a `d` (without any id number). The cases are separated by points (.). The 
 order of the cases must not be equal to the order of the cases in the select statement.
-- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or not ([exec] = `f`). Failed can e.g. mean, that in a select with no default case, non of the cases could find a communication partner when the program terminates.
 - [chosen]: This field shows the index of the chosen case. This index is equal to the position of the chosen case in [cases] (0 based). Because
 of an internal reordering of the cases, this index must not be equal to the index of the order of cases in the program code. If the default case 
 was selected, [chosen] is set to `-1`.

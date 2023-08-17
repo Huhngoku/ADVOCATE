@@ -4,7 +4,7 @@ The locking and unlocking of sync.(rw)-mutexes is recorded in the trace where it
 ## Trace element
 The basic form of the trace element is 
 ```
-M,[tpre],[tpost],[id],[rw],[opM],[exec],[suc],[pos]
+M,[tpre],[tpost],[id],[rw],[opM],[suc],[pos]
 ```
 where `M` identifies the element as a mutex element.
 The other fields are set as follows:
@@ -22,12 +22,6 @@ acquiring the lock in case of a trylock.
   - [opM] = `Y`: TryRLock
   - [opM] = `U`: Unlock
   - [opM] = `N`: RUnlock
-- [exec]: This field shows, whether the operation was finished ([exec] = `t`) or
-not ([exec] = `f`). Failed can e.g. mean, that the routine still tried to
-acquire a lock, when the program was terminated. It is also set to `f`, if the 
-program panicked during the execution of the operation, e.g. because an 
-RUnlock operation was called on a mutex that is currently held by an Lock 
-operation.
 - [suc]: This field is used to determine if an Try(R)Lock was successful ([suc] = `t`)
 or not ([suc] = `f`) in acquiring the mutex. For all other operation it is always
 set to `t`.
