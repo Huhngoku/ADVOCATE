@@ -92,12 +92,12 @@ are executed consecutively, ignoring that the routines are normally
 run concurrent (this only effects the time stamps). We also ignore the elements showing the creation of the new go routines. These elements would all be at the end of the trace of the first routine (first line). This would also 
 shift the time steps.
 ```txt
-M,1,2,1,-,L,t,t,example_file.go:8;M,3,4,1,-,U,t,t,example_file.go:10
-M,5,6,1,-,T,t,t,example_file.go:13;M,7,8,1,-,U,t,t,example_file.go:16
-M,9,10,2,R,L,t,t,example_file.go:20;M,11,12,2,R,U,t,t,example_file.go:22
-M,13,14,2,R,T,t,t,example_file.go:25;M,15,16,2,R,U,t,t,example_file.go:28
-M,17,18,2,R,R,t,t,example_file.go:32;M,19,20,2,R,N,t,t,example_file.go:34
-M,21,22,2,R,Y,t,t,example_file.go:37;M,23,24,2,R,N,t,t,example_file.go:40
+M,1,2,1,-,L,t,example_file.go:8;M,3,4,1,-,U,t,example_file.go:10
+M,5,6,1,-,T,t,example_file.go:13;M,7,8,1,-,U,t,example_file.go:16
+M,9,10,2,R,L,t,example_file.go:20;M,11,12,2,R,U,t,example_file.go:22
+M,13,14,2,R,T,t,example_file.go:25;M,15,16,2,R,U,t,example_file.go:28
+M,17,18,2,R,R,t,example_file.go:32;M,19,20,2,R,N,t,example_file.go:34
+M,21,22,2,R,Y,t,example_file.go:37;M,23,24,2,R,N,t,example_file.go:40
 ```
 
 ## Implementation

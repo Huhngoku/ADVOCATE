@@ -29,27 +29,29 @@ The following is an example for a program with different channel operations:
 ```go
 package main
 func main() {    // routine 1
-    c := make(chan int, 2)  // id = 4
-	d := make(chan int, 0)  // id = 5
+    c := make(chan int, 2) // id = 4
+	d := make(chan int, 0) // id = 5
 
-	go func() {  // routine 2
-		c <- 1   // line 7
-		c <- 2   // line 8
-		d <- 1   // line 9
+	go func() { // routine 2
+		c <- 1 // line 7
+		c <- 2 // line 8
+		d <- 1 // line 9
+		d <- 1 // line 10
 	}()
 
-	<-d          // line 12
-	<-c          // line 13
-	<-c          // line 14
+	<-d // line 12
+	<-c // line 13
+	<-c // line 14
 
-	close(d)     // line 16
+	close(c) // line 16
 }
 ```
 If we ignore all internal operations, we would get the following trace:
 ```txt
-G,1,2;C,8,9,5,R,t,1,0,0,0,example_file.go:12;C,10,11,4,R,t,1,2,2,1,example_file.go:13;C,12,13,4,R,t,2,2,1,0,example_file.go:14;C,14,14,5,C,t,0,0,0,0,example_file.go:16
-C,2,3,4,S,t,1,2,0,1,example_file.go:7;C,4,5,4,S,t,2,2,1,2,example_file.go:8;C,6,7,5,S,e,1,0,0,0,example_file.go:9
+G,1,2;C,2,10,5,R,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:12;C,11,12,4,R,1,2,2,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:13;C,13,14,4,R,2,2,1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:14;C,15,15,4,C,0,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16
+C,3,4,4,S,1,2,0,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7;C,5,6,4,S,2,2,1,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:8;C,7,8,5,S,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:9;C,9,0,5,S,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:10
 ```
+In this example it is also shown what happens, when an operation is not fully executed. In this case [tpre] is set, but [tpost] is the default value of 0 (last element in trace, line 10).
 
 ## Implementation
 The recording of the channel operations is done in the 
