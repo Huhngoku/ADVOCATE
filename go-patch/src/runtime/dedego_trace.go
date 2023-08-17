@@ -613,15 +613,18 @@ func (elem dedegoTraceChannelElement) toString() string {
  * 	qSize: size of the channel, 0 for unbuffered
  * 	qCount: number of elements in the queue before the operation
  * Return:
- * 	index of the operation in the trace
+ * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
 var dedegoCounterAtomic uint64
 
 func DedegoChanSendPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 	_, file, line, _ := Caller(3)
+	// internal channels to record atomic operations
 	if isSuffix(file, "dedego_atomic.go") {
 		dedegoCounterAtomic += 1
 		DedegoAtomic(dedegoCounterAtomic)
+		// they are not recorded in the trace
+		return -1
 	}
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
@@ -657,6 +660,11 @@ func isSuffix(s, suffix string) bool {
  */
 func DedegoChanRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 	_, file, line, _ := Caller(3)
+	// do not record channel operation of internal channel to record atomic operations
+	if isSuffix(file, "dedego_trace.go") {
+		return -1
+	}
+
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
 		file: file, line: line, timerPre: timer, qSize: uint32(qSize),
