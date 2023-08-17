@@ -1,20 +1,18 @@
 # Trace
 
-The following is the structure of the trace T in BNF. There is an extra, 
+The following is the structure of the trace T in EBNF. There is an extra, 
 better readable
 explanation for all trace elements in the corresponding files in `traceElements`. 
 ```
-T := L\nta | ""                                                 (trace)
-t := L\nt  | ""                                                 (trace without atomics)
-a := "" | {A";"}A                                               (trace of atomics)
+T := L\nT | ""                                                  (trace)
 L := "" | {E";"}E                                               (routine local trace)
 E := G | M | W | C | S                                          (trace element)
 G := "G,"tpre","id                                              (element for creation of new routine)
 A := "A,"tpre","addr","opA                                      (element for atomic operation)
-M := "M,"tpre","tpost","id","rw","opM","exec","suc","pos        (element for operation on sync (rw)mutex)
-W := "W,"tpre","tpost","id","opW","exec","delta","val","pos     (element for operation on sync wait group)
-C := "C,"tpre","tpost","id","opC","exec","oId","qSize","qCountPre","qCoundPost","pos             (element for operation on channel)
-S := "S,"tpre","tpost","id","cases","exec","chosen","oId","pos  (element for select)
+M := "M,"tpre","tpost","id","rw","opM","suc","pos               (element for operation on sync (rw)mutex)
+W := "W,"tpre","tpost","id","opW","delta","val","pos            (element for operation on sync wait group)
+C := "C,"tpre","tpost","id","opC","oId","qSize","qCountPre","qCoundPost","pos             (element for operation on channel)
+S := "S,"tpre","tpost","id","cases","chosen","oId","pos         (element for select)
 tpre := ℕ                                                       (timer when the operation is started)
 tpost := ℕ                                                      (timer when the operation has finished)
 addr := ℕ                                                       (pointer to the atomic variable, used as id)
@@ -24,7 +22,6 @@ rw := "R" | "-"                                                 ("R" if the mute
 opM := "L" | "R" | "T" | "Y" | "U" | "N"                        (operation on the mutex, L: lock, R: rLock, T: tryLock, Y: tryRLock, U: unlock, N: rUnlock)
 opW := "A" | "W"                                                (operation on the wait group, A: add (delta > 0) or done (delta < 0), W: wait)
 opC := "S" | "R" | "C"                                          (operation on the channel, S: send, R: receive, C: close)
-exec := "t" | "f"                                               (e: the operation was fully executed, f: the operation was not fully executed, e.g. a mutex was still waiting at a lock operation when the program was terminated or a channel never found an communication partner)
 suc := "t" | "f"                                                (the mutex lock was successful ("t") or it failed ("f", only possible for try(r)lock))
 pos := file":"line                                              (position in the code, where the operation was executed)
 file := 𝕊                                                       (file path of pos)
