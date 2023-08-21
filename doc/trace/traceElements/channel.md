@@ -5,7 +5,7 @@ trace of the routine where they occur.
 ## Trace element
 The basic form of the trace element is 
 ```
-C,[tpre],[tpost],[id],[opC],[oId],[qSize],[qCountPre],[qCoundPost],[pos] 
+C,[tpre],[tpost],[id],[opC],[oId],[qSize],[pos] 
 ```
 where `C` identifies the element as a channel element. The other fields are 
 set as follows:
@@ -19,9 +19,6 @@ the execution of the operation
     - [opC] = `C`: close
 - [oId] $\in \mathbb N$: This field shows the communication id. This can be used to connect corresponding communications. If a send and a receive on the same channel (same channel id) have the same [oId], a message was send from the send to the receive. For close this is always `0`
 - [qSize] $\in \mathbb N_0$: This is the size of the channel. For unbuffered channels this is `0`.
-- [qCountPre] $\in \mathbb N_0$: This is the amount of elements 
-in the queue of the channel before the operation was executed.
-- [qCountPost] $\in \mathbb N_0$: This is the amount of elements in the queue of the channel after the operation was executed. For close it is always [qCountPre] = [qCountPost]
 - [pos]: The last field show the position in the code, where the mutex operation 
 was executed. It consists of the file and line number separated by a colon (:)
 ## Example
@@ -48,8 +45,8 @@ func main() {    // routine 1
 ```
 If we ignore all internal operations, we would get the following trace:
 ```txt
-G,1,2;C,2,10,5,R,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:12;C,11,12,4,R,1,2,2,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:13;C,13,14,4,R,2,2,1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:14;C,15,15,4,C,0,2,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16
-C,3,4,4,S,1,2,0,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7;C,5,6,4,S,2,2,1,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:8;C,7,8,5,S,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:9;C,9,0,5,S,2,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:10
+G,1,2;C,2,10,5,R,1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:12;C,11,12,4,R,1,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:13;C,13,14,4,R,2,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:14;C,15,15,4,C,0,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16
+C,3,4,4,S,1,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7;C,5,6,4,S,2,2,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:8;C,7,8,5,S,1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:9;C,9,0,5,S,2,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:10
 ```
 In this example it is also shown what happens, when an operation is not fully executed. In this case [tpre] is set, but [tpost] is the default value of 0 (last element in trace, line 10).
 
@@ -65,10 +62,9 @@ The recording of the channel operations is done in the
 queue, to determine, which send and receive operations are
 communication partners. Because of mutexes, that are already present in the original channel implementation,
 it is not possible to mix up these numbers.\
-For the send and receive operations three record functions are added. The first one (`DedegoChanSendPre`/`DedegoChanRecvPre`) at the beginning of the operation, which records [tpre], [id], [opC], [qSize], [qCountPre] and [pos].\
+For the send and receive operations three record functions are added. The first one (`DedegoChanSendPre`/`DedegoChanRecvPre`) at the beginning of the operation, which records [tpre], [id], [opC], [qSize] and [pos].\
 The other two functions are called at the end of the
 operation, after the send or receive was fully executed.
-These functions record [qCountPost] (`DedegoChanPostQCount`)
-as well as [tpost] and [exec] (`DedegoChanPost`).\
+These functions record [tpost] (`DedegoChanPost`).\
 As a close on a channel cannot block, it only needs one recording function. This function (`DedegoChanClose`) records all needed values. For [tpre] and [tpost] the same 
 value is set. The same is true for [qCountPre] and [qCountPost].

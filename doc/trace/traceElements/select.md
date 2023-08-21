@@ -9,20 +9,25 @@ Select statements with only one case are not recorded as select statements. If t
 ## Trace element
 The basic form of the trace element is 
 ```
-S,[tpre],[tpost],[id],[cases],[chosen],[oId],[pos]
+S,[tpre],[tpost],[id],[cases],[pos]
 ```
 where `S` identifies the element as a select element.
 The other fields are set as follows:
 - [tpre]: This is the value of the global counter when the routine gets to the select statement.
 - [tpost]: This is the value of the global counter when the select has finished, meaning if either on of the select cases has successfully send or received or the default case has been executed
 - [id]: This field contains the unique id of the select statement
-- [cases]: This field shows the available cases in the trace. Each case is denoted by the id of the involved channel, followed by a `r` for receive cases or `s` for send cases. A default case is shown by a `d` (without any id number). The cases are separated by points (.). The 
-order of the cases must not be equal to the order of the cases in the select statement.
-- [chosen]: This field shows the index of the chosen case. This index is equal to the position of the chosen case in [cases] (0 based). Because
-of an internal reordering of the cases, this index must not be equal to the index of the order of cases in the program code. If the default case 
-was selected, [chosen] is set to `-1`.
-- [oId]: This is the operation id of the send or receive statement executed in the select (see channel). The send/receive statement is not 
-additionally recorded as a separate channel element in the trace.
+- [cases]: This field shows a list of the available cases in the select. The
+cases are separated by a ~ symbol. The elements are equal to an equivalent 
+channel operation without the `pos` field, except that the fields are separated 
+by a decimapl point (.)
+instead of a comma. By checking the the `tpre` of those channel operations are 
+all the same as the `tpre` of the select. The `tpost` can be used to find out,
+which case was selected. For the selected and executed case, `tpost` is equal 
+to the `tpost` of the select statement. For all other cases it is zero. The channel 
+element also includes the operation id `oId`, to connect the sending and 
+receiving operations. If the 
+select contains a default case, it is denoted with a single `d` as the last 
+element in the cases list. If the default value was chosen it is capitalized (`D`).
 - [pos]: The last field show the position in the code, where the select is implemented. It consists of the file and line number separated by a colon (:). It the select only contains one case, the line number is 
 equal to the line of this case.
 

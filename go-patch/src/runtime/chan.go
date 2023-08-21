@@ -231,7 +231,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	lock(&c.numberSendMutex)
 	c.numberSend++
 	unlock(&c.numberSendMutex)
-	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz, c.qcount)
+	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-CHANGE-END
 
@@ -259,7 +259,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 			c.sendx = 0
 		}
 		c.qcount++
-		DedegoChanPostQCount(dedegoIndex, c.qcount)
 		unlock(&c.lock)
 
 		return true
@@ -416,7 +415,7 @@ func closechan(c *hchan) {
 	// DEDEGO-CHANGE-START
 	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
-	DedegoChanClose(c.id, c.dataqsiz, c.qcount)
+	DedegoChanClose(c.id, c.dataqsiz)
 	// DEDEGO-CHANGE-END
 
 	var glist gList
@@ -571,7 +570,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	lock(&c.numberRecvMutex)
 	c.numberRecv++
 	unlock(&c.numberRecvMutex)
-	dedegoIndex := DedegoChanRecvPre(c.id, c.numberRecv, c.dataqsiz, c.qcount)
+	dedegoIndex := DedegoChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
 	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-CHANGE-END
 
@@ -614,7 +613,6 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			c.recvx = 0
 		}
 		c.qcount--
-		DedegoChanPostQCount(dedegoIndex, c.qcount)
 		unlock(&c.lock)
 		return true, true
 	}

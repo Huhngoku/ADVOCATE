@@ -260,14 +260,14 @@ func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
 
 // type to save in the trace for mutexe
 type dedegoTraceMutexElement struct {
-	id        uint64    // id of the mutex
-	op        operation // operation
-	rw        bool      // true if it is a rwmutex
-	suc       bool      // success of the operation, only for tryLock
-	file      string    // file where the operation was called
-	line      int       // line where the operation was called
-	timerPre  uint64    // global timer at begin of operation
-	timerPost uint64    // global timer at end of operation
+	id    uint64    // id of the mutex
+	op    operation // operation
+	rw    bool      // true if it is a rwmutex
+	suc   bool      // success of the operation, only for tryLock
+	file  string    // file where the operation was called
+	line  int       // line where the operation was called
+	tPre  uint64    // global timer at begin of operation
+	tPost uint64    // global timer at end of operation
 }
 
 func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
@@ -284,7 +284,7 @@ func (elem dedegoTraceMutexElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "M,'tre','tpost','id','rw','op','suc','file':'line'"
+ * 	string representation of the element "M,'tre','tPost','id','rw','op','suc','file':'line'"
  *    't' (number): global timer
  *    'id' (number): id of the mutex
  *    'rw' (R/-): R if it is a rwmutex, otherwise -
@@ -295,7 +295,7 @@ func (elem dedegoTraceMutexElement) getFile() string {
  */
 func (elem dedegoTraceMutexElement) toString() string {
 	res := "M,"
-	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
 
 	if elem.rw {
@@ -345,7 +345,7 @@ func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
-		file: file, line: line, timerPre: timer}
+		file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -366,7 +366,7 @@ func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, file: file,
-		line: line, timerPre: timer}
+		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -387,7 +387,7 @@ func DedegoUnlockPre(id uint64, rw bool, r bool) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
-		file: file, line: line, timerPre: timer, timerPost: timer}
+		file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -416,10 +416,10 @@ func DedegoPost(index int) {
 
 	switch elem := currentGoRoutine().Trace[index].(type) {
 	case dedegoTraceMutexElement:
-		elem.timerPost = timer
+		elem.tPost = timer
 		currentGoRoutine().Trace[index] = elem
 	case dedegoTraceWaitGroupElement:
-		elem.timerPost = timer
+		elem.tPost = timer
 		currentGoRoutine().Trace[index] = elem
 
 	default:
@@ -445,7 +445,7 @@ func DedegoPostTry(index int, suc bool) {
 	switch elem := currentGoRoutine().Trace[index].(type) {
 	case dedegoTraceMutexElement:
 		elem.suc = suc
-		elem.timerPost = GetDedegoCounter()
+		elem.tPost = GetDedegoCounter()
 		currentGoRoutine().Trace[index] = elem
 	default:
 		panic("DedegoPostTry called on non mutex")
@@ -455,14 +455,14 @@ func DedegoPostTry(index int, suc bool) {
 // ============================= WaitGroup ===========================
 
 type dedegoTraceWaitGroupElement struct {
-	id        uint64    // id of the waitgroup
-	op        operation // operation
-	delta     int       // delta of the waitgroup
-	val       int32     // value of the waitgroup after the operation
-	file      string    // file where the operation was called
-	line      int       // line where the operation was called
-	timerPre  uint64    // global timer
-	timerPost uint64    // global timer
+	id    uint64    // id of the waitgroup
+	op    operation // operation
+	delta int       // delta of the waitgroup
+	val   int32     // value of the waitgroup after the operation
+	file  string    // file where the operation was called
+	line  int       // line where the operation was called
+	tPre  uint64    // global timer
+	tPost uint64    // global timer
 }
 
 func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
@@ -479,9 +479,9 @@ func (elem dedegoTraceWaitGroupElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "W,'tpre','tpost','id','op','delta','val','file':'line'"
- *    'tpre' (number): global before the operation
- *    'tpost' (number): global after the operation
+ * 	string representation of the element "W,'tPre','tPost','id','op','delta','val','file':'line'"
+ *    'tPre' (number): global before the operation
+ *    'tPost' (number): global after the operation
  *    'id' (number): id of the mutex
  *	  'op' (A/W): A if it is an add or Done, W if it is a wait
  *	  'delta' (number): delta of the waitgroup, positive for add, negative for done, 0 for wait
@@ -491,7 +491,7 @@ func (elem dedegoTraceWaitGroupElement) getFile() string {
  */
 func (elem dedegoTraceWaitGroupElement) toString() string {
 	res := "W,"
-	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
 	switch elem.op {
 	case opWgAdd:
@@ -524,7 +524,7 @@ func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
 	}
 	timer := GetDedegoCounter()
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
-		val: val, file: file, line: line, timerPre: timer, timerPost: timer}
+		val: val, file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 
 }
@@ -540,23 +540,21 @@ func DedegoWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, file: file,
-		line: line, timerPre: timer}
+		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
 // ============================= Channel =============================
 
 type dedegoTraceChannelElement struct {
-	id         uint64    // id of the channel
-	op         operation // operation
-	qSize      uint32    // size of the channel, 0 for unbuffered
-	qCountPre  uint32    // number of elements in the queue before the operation
-	qCountPost uint32    // number of elements in the queue after the operation
-	opId       uint64    // id of the operation
-	file       string    // file where the operation was called
-	line       int       // line where the operation was called
-	timerPre   uint64    // global timer before the operation
-	timerPost  uint64    // global timer after the operation
+	id    uint64    // id of the channel
+	op    operation // operation
+	qSize uint32    // size of the channel, 0 for unbuffered
+	opId  uint64    // id of the operation
+	file  string    // file where the operation was called
+	line  int       // line where the operation was called
+	tPre  uint64    // global timer before the operation
+	tPost uint64    // global timer after the operation
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -573,9 +571,9 @@ func (elem dedegoTraceChannelElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "C,'tpre','tpost','id','op','pId','file':'line'"
- *    'tpre' (number): global timer before the operation
- *    'tpost' (number): global timer after the operation
+ * 	string representation of the element "C,'tPre','tPost','id','op','pId','file':'line'"
+ *    'tPre' (number): global timer before the operation
+ *    'tPost' (number): global timer after the operation
  *    'id' (number): id of the channel
  *	  'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
  *	  'pId' (number): id of the channel with witch the communication took place
@@ -583,9 +581,21 @@ func (elem dedegoTraceChannelElement) getFile() string {
  *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceChannelElement) toString() string {
-	res := "C,"
-	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
-	res += uint64ToString(elem.id) + ","
+	return elem.toStringSep(",", true)
+}
+
+/*
+* Get a string representation of the element given a separator
+* Args:
+* 	sep: separator to use
+* 	showPos: true if the position of the operation should be shown
+* Return:
+* 	string representation of the element
+ */
+func (elem dedegoTraceChannelElement) toStringSep(sep string, showPos bool) string {
+	res := "C" + sep
+	res += uint64ToString(elem.tPre) + sep + uint64ToString(elem.tPost) + sep
+	res += uint64ToString(elem.id) + sep
 
 	switch elem.op {
 	case opChanSend:
@@ -596,11 +606,11 @@ func (elem dedegoTraceChannelElement) toString() string {
 		res += "C"
 	}
 
-	res += "," + uint64ToString(elem.opId)
-	res += "," + uint32ToString(elem.qSize)
-	res += "," + uint32ToString(elem.qCountPre)
-	res += "," + uint32ToString(elem.qCountPost)
-	res += "," + elem.file + ":" + intToString(elem.line)
+	res += sep + uint64ToString(elem.opId)
+	res += sep + uint32ToString(elem.qSize)
+	if showPos {
+		res += sep + elem.file + ":" + intToString(elem.line)
+	}
 	return res
 }
 
@@ -611,13 +621,12 @@ func (elem dedegoTraceChannelElement) toString() string {
  * 	id: id of the channel
  * 	opId: id of the operation
  * 	qSize: size of the channel, 0 for unbuffered
- * 	qCount: number of elements in the queue before the operation
  * Return:
  * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
 var dedegoCounterAtomic uint64
 
-func DedegoChanSendPre(id uint64, opId uint64, qSize uint, qCount uint) int {
+func DedegoChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "dedego_atomic.go") {
@@ -628,8 +637,7 @@ func DedegoChanSendPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 	}
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
-		file: file, line: line, timerPre: timer, qSize: uint32(qSize),
-		qCountPre: uint32(qCount)}
+		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
 
@@ -654,11 +662,10 @@ func isSuffix(s, suffix string) bool {
  * 	id: id of the channel
  * 	opId: id of the operation
  * 	qSize: size of the channel
- * 	qCount: number of elements in the channel before the receive operation
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoChanRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
+func DedegoChanRecvPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
 	if isSuffix(file, "dedego_trace.go") {
@@ -667,8 +674,7 @@ func DedegoChanRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
 
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
-		file: file, line: line, timerPre: timer, qSize: uint32(qSize),
-		qCountPre: uint32(qCount)}
+		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
 
@@ -679,28 +685,12 @@ func DedegoChanRecvPre(id uint64, opId uint64, qSize uint, qCount uint) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoChanClose(id uint64, qSize uint, qCount uint) int {
+func DedegoChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := dedegoTraceChannelElement{id: id, op: opChanClose, file: file,
-		line: line, timerPre: timer, timerPost: timer, qSize: uint32(qSize),
-		qCountPre: uint32(qCount), qCountPost: uint32(qCount)}
+		line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
-}
-
-/*
- * Set the size of the channel after the operation
- * Args:
- * 	index: index of the operation in the trace
- * 	qSize: size of the channel
- */
-func DedegoChanPostQCount(index int, qCount uint) {
-	if index == -1 {
-		return
-	}
-	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
-	elem.qCountPost = uint32(qCount)
-	currentGoRoutine().Trace[index] = elem
 }
 
 /*
@@ -713,25 +703,23 @@ func DedegoChanPost(index int) {
 		return
 	}
 	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
-	elem.timerPost = GetDedegoCounter()
+	elem.tPost = GetDedegoCounter()
 	currentGoRoutine().Trace[index] = elem
 }
 
 // ============================= Select ==============================
 
 type dedegoTraceSelectElement struct {
-	id         uint64   // id of the select
-	cases      []string // cases of the select
-	send       []bool   // true if the case is a send, false if it is a receive
-	nsend      int      // number of send cases
-	chosen     int      // index of the chosen case
-	chosenChan *hchan   // channel chosen
-	opId       uint64   // id of the operation
-	defa       bool     // set true if a default case exists
-	file       string   // file where the operation was called
-	line       int      // line where the operation was called
-	timerPre   uint64   // global timer before the operation
-	timerPost  uint64   // global timer after the operation
+	tPre    uint64                      // global timer before the operation
+	tPost   uint64                      // global timer after the operation
+	id      uint64                      // id of the select
+	cases   []dedegoTraceChannelElement // cases of the select
+	chosen  int                         // index of the chosen case in cases (0 indexed, -1 for default)
+	nsend   int                         // number of send cases
+	defa    bool                        // set true if a default case exists
+	defaSel bool                        // set true if a default case was chosen
+	file    string                      // file where the operation was called
+	line    int                         // line where the operation was called
 }
 
 func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
@@ -748,39 +736,39 @@ func (elem dedegoTraceSelectElement) getFile() string {
 /*
  * Get a string representation of the element
  * Return:
- * 	string representation of the element "S,'tpre','tpost','id','cases','chosen','opId','file':'line'"
- *    'tpre' (number): global timer before the operation
- *    'tpost' (number): global timer after the operation
+ * 	string representation of the element "S,'tPre','tPost','id','cases','opId','file':'line'"
+ *    'tPre' (number): global timer before the operation
+ *    'tPost' (number): global timer after the operation
  *    'id' (number): id of the mutex
- *	  'cases' (string): cases of the select, id and r/s, separated by '.', d for default
+ *	  'cases' (string): cases of the select, d for default
  *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
  *	  'opId' (number): id of the operation on the channel
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
 func (elem dedegoTraceSelectElement) toString() string {
-	res := "S," + uint64ToString(elem.id) + ","
-	res += uint64ToString(elem.timerPre) + "," + uint64ToString(elem.timerPost) + ","
+	res := "S,"
+	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
+	res += uint64ToString(elem.id) + ","
 
 	for i, ca := range elem.cases {
 		if i != 0 {
-			res += "."
+			res += "~"
 		}
-		res += ca
-		if elem.send[i] {
-			res += "s"
-		} else {
-			res += "r"
-		}
-	}
-	if elem.defa {
-		if len(elem.cases) != 0 {
-			res += "."
-		}
-		res += "d"
+		res += ca.toStringSep(".", false)
 	}
 
-	res += "," + intToString(elem.chosen) + "," + uint64ToString(elem.opId)
+	if elem.defa {
+		if len(elem.cases) != 0 {
+			res += "~"
+		}
+		if elem.defaSel {
+			res += "D"
+		} else {
+			res += "d"
+		}
+	}
+
 	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
 }
@@ -794,31 +782,23 @@ func (elem dedegoTraceSelectElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSelectPre(cases *[]scase, nsends int, block bool,
-	lockOrder []uint16) int {
+func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
+	timer := GetDedegoCounter()
 	if cases == nil {
 		return -1
 	}
+
 	id := GetDedegoObjectId()
-	casesStr := make([]string, len(*cases))
-	for i, ca := range *cases {
-		if ca.c == nil {
-			casesStr[i] = "-"
-		} else {
-			casesStr[i] = uint64ToString(ca.c.id)
-		}
-	}
-
-	send := make([]bool, len(lockOrder))
-	for i, lo := range lockOrder {
-		send[i] = (lo < uint16(nsends))
-	}
-
+	caseElements := make([]dedegoTraceChannelElement, len(*cases))
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
-	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nsends,
-		send: send,
-		defa: !block, file: file, line: line, timerPre: timer}
+
+	for i, ca := range *cases {
+		caseElements[i] = dedegoTraceChannelElement{id: ca.c.id,
+			qSize: uint32(ca.c.dataqsiz), tPre: timer}
+	}
+
+	elem := dedegoTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
+		defa: !block, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
@@ -826,26 +806,28 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool,
 * Add a new select element to the trace if the select has exactly one non-default case
  */
 func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
-	if c == nil {
-		return -1
-	}
+	// TODO: implement
+	// if c == nil {
+	// 	return -1
+	// }
 
-	id := GetDedegoObjectId()
+	// id := GetDedegoObjectId()
 
-	casesStr := []string{uint64ToString(c.id)}
+	// casesStr := []string{uint64ToString(c.id)}
 
-	nSend := 0
-	pSend := []bool{send}
-	if send {
-		nSend = 1
-	}
+	// nSend := 0
+	// pSend := []bool{send}
+	// if send {
+	// 	nSend = 1
+	// }
 
-	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
-	elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nSend,
-		send: pSend,
-		defa: true, file: file, line: line, timerPre: timer}
-	return insertIntoTrace(elem)
+	// _, file, line, _ := Caller(2)
+	// timer := GetDedegoCounter()
+	// elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nSend,
+	// 	send: pSend,
+	// 	defa: true, file: file, line: line, tPre: timer}
+	// return insertIntoTrace(elem)
+	return -1
 }
 
 /*
@@ -853,9 +835,8 @@ func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
  * Args:
  * 	index: index of the operation in the trace
  * 	chosen: index of the chosen case
- * 	chosenChan: chosen channel
  */
-func DedegoSelectPost1(index int, chosen int, chosenChan *hchan) {
+func DedegoSelectPostCase(index int, cases *[]scase, chosen int) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -863,9 +844,17 @@ func DedegoSelectPost1(index int, chosen int, chosenChan *hchan) {
 
 	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 
+	timer := GetDedegoCounter()
+
+	elem.tPost = timer
+	println("chosen1: ", chosen)
 	elem.chosen = chosen
-	elem.chosenChan = chosenChan
-	elem.timerPost = GetDedegoCounter()
+
+	if chosen == -1 { // default case
+		elem.defaSel = true
+	} else {
+		elem.cases[chosen].tPost = timer
+	}
 
 	lock(currentGoRoutine().lock)
 	defer unlock(currentGoRoutine().lock)
@@ -879,28 +868,42 @@ func DedegoSelectPost1(index int, chosen int, chosenChan *hchan) {
  * 	index: index of the operation in the trace
  * 	lockOrder: lock order of the select
  */
-func DedegoSelectPost2(index int, lockOrder []uint16) {
+func DedegoSelectPostLo(index int, lockOrder []uint16) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
 	}
 
 	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
-	send := make([]bool, len(lockOrder))
-	for i, lo := range lockOrder {
-		send[i] = (lo < uint16(elem.nsend))
-	}
-	elem.send = send
 
-	if elem.chosenChan != nil {
-		if send[elem.chosen] {
-			elem.chosenChan.numberSend++
-			elem.opId = elem.chosenChan.numberSend
-		} else {
-			elem.chosenChan.numberRecv++
-			elem.opId = elem.chosenChan.numberRecv
+	for i, op := range lockOrder {
+		opChan := opChanRecv
+		if op < uint16(elem.nsend) {
+			opChan = opChanSend
 		}
+		elem.cases[i].op = opChan
 	}
+
+	lock(currentGoRoutine().lock)
+	defer unlock(currentGoRoutine().lock)
+
+	currentGoRoutine().Trace[index] = elem
+}
+
+func DedegoSelectPostOId(index int, oId uint64, chosen int) {
+	if index == -1 {
+		return
+	}
+
+	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+
+	elem.chosen = chosen
+	println("chosen2: ", elem.chosen)
+	if elem.chosen == -1 {
+		return
+	}
+
+	elem.cases[chosen].opId = oId
 
 	lock(currentGoRoutine().lock)
 	defer unlock(currentGoRoutine().lock)
@@ -915,22 +918,23 @@ func DedegoSelectPost2(index int, lockOrder []uint16) {
  * 	res: 0 for the non-default case, -1 for the default case
  */
 func DedegoSelectPostOneNonDef(index int, res bool) {
-	if index == -1 {
-		return
-	}
+	// TODO: implement
+	// if index == -1 {
+	// 	return
+	// }
 
-	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+	// elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 
-	elem.chosen = -1
-	if res {
-		elem.chosen = 0
-	}
-	elem.timerPost = GetDedegoCounter()
+	// elem.chosen = -1
+	// if res {
+	// 	elem.chosen = 0
+	// }
+	// elem.tPost = GetDedegoCounter()
 
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
+	// lock(currentGoRoutine().lock)
+	// defer unlock(currentGoRoutine().lock)
 
-	currentGoRoutine().Trace[index] = elem
+	// currentGoRoutine().Trace[index] = elem
 }
 
 // ============================= Atomic ================================
