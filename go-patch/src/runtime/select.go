@@ -438,7 +438,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	goto retc
 
 bufrecv:
-	println("BufRecv")
 	// can receive from buffer
 	if raceenabled {
 		if cas.elem != nil {
@@ -459,10 +458,7 @@ bufrecv:
 	}
 	typedmemclr(c.elemtype, qp)
 	// DEDEGO-CHANGE-START
-	lock(&c.numberRecvMutex)
-	c.numberRecv++
-	unlock(&c.numberRecvMutex)
-	DedegoSelectPostOId(dedegoIndex, c.numberRecv, casi)
+	DedegoSelectPostNonDefault(dedegoIndex, c, casi, false)
 	// DEDEGO-CHANGE-END
 	c.recvx++
 	if c.recvx == c.dataqsiz {
@@ -473,7 +469,6 @@ bufrecv:
 	goto retc
 
 bufsend:
-	println("BufSend")
 	// can send to buffer
 	if raceenabled {
 		racenotify(c, c.sendx, nil)
@@ -487,10 +482,7 @@ bufsend:
 	}
 	typedmemmove(c.elemtype, chanbuf(c, c.sendx), cas.elem)
 	// DEDEGO-CHANGE-START
-	lock(&c.numberSendMutex)
-	c.numberSend++
-	unlock(&c.numberSendMutex)
-	DedegoSelectPostOId(dedegoIndex, c.numberSend, casi)
+	DedegoSelectPostNonDefault(dedegoIndex, c, casi, true)
 	// DEDEGO-CHANGE-END
 	c.sendx++
 	if c.sendx == c.dataqsiz {
@@ -501,9 +493,11 @@ bufsend:
 	goto retc
 
 recv:
-	println("Recv")
 	// can receive from sleeping sender (sg)
 	recv(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
+	// DEDEGO-CHANGE-START
+	DedegoSelectPostNonDefault(dedegoIndex, c, casi, false)
+	// DEDEGO-CHANGE-END
 	if debugSelect {
 		print("syncrecv: cas0=", cas0, " c=", c, "\n")
 	}
@@ -523,7 +517,6 @@ rclose:
 	goto retc
 
 send:
-	println("Send1", c.numberSend)
 	// can send to a sleeping receiver (sg)
 	if raceenabled {
 		raceReadObjectPC(c.elemtype, cas.elem, casePC(casi), chansendpc)
@@ -535,10 +528,12 @@ send:
 		asanread(cas.elem, c.elemtype.Size_)
 	}
 	send(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
+	// DEDEGO-CHANGE-START
+	DedegoSelectPostNonDefault(dedegoIndex, c, casi, true)
+	// DEDEGO-CHANGE-END
 	if debugSelect {
 		print("syncsend: cas0=", cas0, " c=", c, "\n")
 	}
-	println("Send2", c.numberSend)
 	goto retc
 
 retc:
@@ -547,15 +542,9 @@ retc:
 	}
 
 	// DEDEGO-CHANGE-START
-	// DedegoSelectPostCase records the selected case of the select (case != -1)
-	// or the fact that the default case was selected (case == -1)
-	// if casi != -1 {
-	// 	DedegoSelectPostCase(dedegoIndex, casi, scases[casi].c)
-	// } else {
-	// 	DedegoSelectPostCase(dedegoIndex, -1, nil)
-	// }
-	println("SRPost:", c.numberSend, c.numberRecv)
-	DedegoSelectPostCase(dedegoIndex, &scases, casi)
+	if casi == -1 {
+		DedegoSelectPostDefault(dedegoIndex)
+	}
 	// DEDEGO-CHANGE-END
 
 	return casi, recvOK
