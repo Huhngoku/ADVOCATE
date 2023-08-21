@@ -803,34 +803,6 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
 }
 
 /*
-* Add a new select element to the trace if the select has exactly one non-default case
- */
-func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
-	// TODO: implement
-	// if c == nil {
-	// 	return -1
-	// }
-
-	// id := GetDedegoObjectId()
-
-	// casesStr := []string{uint64ToString(c.id)}
-
-	// nSend := 0
-	// pSend := []bool{send}
-	// if send {
-	// 	nSend = 1
-	// }
-
-	// _, file, line, _ := Caller(2)
-	// timer := GetDedegoCounter()
-	// elem := dedegoTraceSelectElement{id: id, cases: casesStr, nsend: nSend,
-	// 	send: pSend,
-	// 	defa: true, file: file, line: line, tPre: timer}
-	// return insertIntoTrace(elem)
-	return -1
-}
-
-/*
  * Add the lock order to the select
  * Args:
  * 	index: index of the operation in the trace
@@ -918,29 +890,70 @@ func DedegoSelectPostDefault(index int) {
 }
 
 /*
+* Add a new select element to the trace if the select has exactly one
+* non-default case and a default case
+* Args:
+* 	c: channel of the non-default case
+* 	send: true if the non-default case is a send, false otherwise
+* Return:
+* 	index of the operation in the trace
+ */
+func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
+	if c == nil {
+		return -1
+	}
+
+	id := GetDedegoObjectId()
+	timer := GetDedegoCounter()
+
+	opChan := opChanRecv
+	if send {
+		opChan = opChanSend
+	}
+
+	caseElements := make([]dedegoTraceChannelElement, 1)
+	caseElements[0] = dedegoTraceChannelElement{id: c.id,
+		qSize: uint32(c.dataqsiz), tPre: timer, op: opChan}
+
+	nSend := 0
+	if send {
+		nSend = 1
+	}
+
+	_, file, line, _ := Caller(2)
+	elem := dedegoTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
+		defa: true, file: file, line: line, tPre: timer}
+	return insertIntoTrace(elem)
+}
+
+/*
  * Add the selected case for a select with one non-default and one default case
  * Args:
  * 	index: index of the operation in the trace
  * 	res: 0 for the non-default case, -1 for the default case
  */
-func DedegoSelectPostOneNonDef(index int, res bool) {
-	// TODO: implement
-	// if index == -1 {
-	// 	return
-	// }
+func DedegoSelectPostOneNonDef(index int, res bool, oId uint64) {
+	if index == -1 {
+		return
+	}
 
-	// elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+	timer := GetDedegoCounter()
+	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
 
-	// elem.chosen = -1
-	// if res {
-	// 	elem.chosen = 0
-	// }
-	// elem.tPost = GetDedegoCounter()
+	if res {
+		elem.chosen = 0
+		elem.cases[0].tPost = timer
+		elem.cases[0].opId = oId
+	} else {
+		elem.chosen = -1
+		elem.defaSel = true
+	}
+	elem.tPost = timer
 
-	// lock(currentGoRoutine().lock)
-	// defer unlock(currentGoRoutine().lock)
+	lock(currentGoRoutine().lock)
+	defer unlock(currentGoRoutine().lock)
 
-	// currentGoRoutine().Trace[index] = elem
+	currentGoRoutine().Trace[index] = elem
 }
 
 // ============================= Atomic ================================
