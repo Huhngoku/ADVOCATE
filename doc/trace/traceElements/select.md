@@ -42,7 +42,7 @@ func main() {  // Routine 1
 	e := make(chan int, 1)  // id = 3
 
 	go func() {  // routine 2
-		select {  // id = 4, line 7
+		select {  // id = 4, line 8
 		case <-d:
 			println("d1")
 		case <-e:
@@ -51,10 +51,10 @@ func main() {  // Routine 1
 			println("default")
 		}
 
-		c <- 1  // line 16
+		c <- 1  // line 17
 	}()
 
-	select {  // id = 5, line 19
+	select {  // id = 5, line 20
 	case <-c:
 		println("c2")
 	case <-d:
@@ -64,8 +64,8 @@ func main() {  // Routine 1
 ``` 
 If we ignore all internal operations, we get the following trace:
 ```txt
-G,1,2;S,7,8,5,2r.1r,t,1,1,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:19
-S,3,4,4,3r.2r.d,t,-1,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:16;C,5,6,1,S,t,1,0,0,0,/home/erikkassubek/Uni/dedego/go-patch/bin/main.go:7
+G,1,2;S,3,8,5,C.3.0.2.R.0.0~C.3.21.1.R.1.0,example_file.go:20
+S,4,5,4,C.4.0.3.R.0.1~C.4.0.2.R.0.0~D,example_file.go:8;C,6,7,1,S,1,0,example_file.go:17
 ```
 
 ## Implementation

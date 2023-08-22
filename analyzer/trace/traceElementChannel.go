@@ -34,18 +34,15 @@ var channelOperations = make(map[int][]*traceElementChannel)
 *   partner (*traceElementChannel): The partner of the channel operation
  */
 type traceElementChannel struct {
-	routine    int
-	tpre       int
-	tpost      int
-	id         int
-	opC        opChannel
-	exec       bool
-	oId        int
-	qSize      int
-	qCountPre  int
-	qCountPost int
-	pos        string
-	partner    *traceElementChannel
+	routine int
+	tpre    int
+	tpost   int
+	id      int
+	opC     opChannel
+	oId     int
+	qSize   int
+	pos     string
+	partner *traceElementChannel
 }
 
 /*
@@ -56,16 +53,12 @@ type traceElementChannel struct {
 *   tpost (string): The timestamp at the end of the event
 *   id (string): The id of the channel
 *   opC (string): The operation on the channel
-*   exec (string): The execution status of the operation
 *   oId (string): The id of the other communication
 *   qSize (string): The size of the channel queue
-*   qCountPre (string): The number of elements in the queue before the operation
-*   qCountPost (string): The number of elements in the queue after the operation
 *   pos (string): The position of the channel operation in the code
  */
 func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
-	opC string, exec string, oId string, qSize string, qCountPre string,
-	qCountPost string, pos string) error {
+	opC string, oId string, qSize string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -93,11 +86,6 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		return errors.New("opC is not a valid value")
 	}
 
-	exec_bool := false
-	if exec == "e" {
-		exec_bool = true
-	}
-
 	oId_int, err := strconv.Atoi(oId)
 	if err != nil {
 		return errors.New("oId is not an integer")
@@ -108,18 +96,15 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		return errors.New("qSize is not an integer")
 	}
 
-	qCountPre_int, err := strconv.Atoi(qCountPre)
-	if err != nil {
-		return errors.New("qCountPre is not an integer")
-	}
-
-	qCountPost_int, err := strconv.Atoi(qCountPost)
-	if err != nil {
-		return errors.New("qCountPost is not an integer")
-	}
-
-	elem := traceElementChannel{routine, tpre_int, tpost_int, id_int, opC_int,
-		exec_bool, oId_int, qSize_int, qCountPre_int, qCountPost_int, pos, nil}
+	elem := traceElementChannel{
+		routine: routine,
+		tpre:    tpre_int,
+		tpost:   tpost_int,
+		id:      id_int,
+		opC:     opC_int,
+		oId:     oId_int,
+		qSize:   qSize_int,
+		pos:     pos}
 
 	var partner *traceElementChannel = nil
 	if val, ok := channelOperations[id_int]; ok {
@@ -177,7 +162,11 @@ func (elem traceElementChannel) getTpost() int {
  *   string: The simple string representation of the element
  */
 func (elem traceElementChannel) getSimpleString() string {
-	return "A" + strconv.Itoa(elem.tpre) + "," + strconv.Itoa(elem.tpost) + "," +
-		strconv.Itoa(elem.id) + "," + strconv.Itoa(int(elem.opC)) + "," +
+	return elem.getSimpleStringSep(",")
+}
+
+func (elem traceElementChannel) getSimpleStringSep(sep string) string {
+	return "C" + strconv.Itoa(elem.tpre) + sep + strconv.Itoa(elem.tpost) + sep +
+		strconv.Itoa(elem.id) + sep + strconv.Itoa(int(elem.opC)) + sep +
 		strconv.Itoa(elem.oId)
 }

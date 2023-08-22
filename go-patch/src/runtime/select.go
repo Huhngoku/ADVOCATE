@@ -140,18 +140,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// cases exists (channel / direction) and weather a default statement is present.
 	// Here the first lock order is set. This is only needed if the select
 	// is never executed.
-	// DedegoSelectPostLo is called after the select statement was executed.
-	// It records the final internal case order of the select statement, which
-	// is pseudo random and different from the order in the source code.
-	// The order is needed to determine which case was selected.
-	// The recording of the selected case is done with DedeGoSelectPost1 in
-	// the rect block further down.
 	dedegoIndex := DedegoSelectPre(&scases, nsends, block)
-
-	defer func(lockOrder []uint16) {
-		DedegoSelectPostLo(dedegoIndex, lockOrder)
-	}(lockorder)
-
 	// DEDEGO-CHANGE-END
 
 	// Even when raceenabled is true, there might be select
@@ -303,6 +292,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	if !block {
 		selunlock(scases, lockorder)
 		casi = -1
+		println("no block")
 		goto retc
 	}
 
@@ -435,9 +425,11 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	selunlock(scases, lockorder)
+	println("selunlock")
 	goto retc
 
 bufrecv:
+	println("bufrecv")
 	// can receive from buffer
 	if raceenabled {
 		if cas.elem != nil {
@@ -457,9 +449,6 @@ bufrecv:
 		typedmemmove(c.elemtype, cas.elem, qp)
 	}
 	typedmemclr(c.elemtype, qp)
-	// DEDEGO-CHANGE-START
-	DedegoSelectPostNonDefault(dedegoIndex, c, casi, false)
-	// DEDEGO-CHANGE-END
 	c.recvx++
 	if c.recvx == c.dataqsiz {
 		c.recvx = 0
@@ -481,9 +470,6 @@ bufsend:
 		asanread(cas.elem, c.elemtype.Size_)
 	}
 	typedmemmove(c.elemtype, chanbuf(c, c.sendx), cas.elem)
-	// DEDEGO-CHANGE-START
-	DedegoSelectPostNonDefault(dedegoIndex, c, casi, true)
-	// DEDEGO-CHANGE-END
 	c.sendx++
 	if c.sendx == c.dataqsiz {
 		c.sendx = 0
@@ -493,11 +479,9 @@ bufsend:
 	goto retc
 
 recv:
+	println("recv")
 	// can receive from sleeping sender (sg)
 	recv(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
-	// DEDEGO-CHANGE-START
-	DedegoSelectPostNonDefault(dedegoIndex, c, casi, false)
-	// DEDEGO-CHANGE-END
 	if debugSelect {
 		print("syncrecv: cas0=", cas0, " c=", c, "\n")
 	}
@@ -528,23 +512,19 @@ send:
 		asanread(cas.elem, c.elemtype.Size_)
 	}
 	send(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
-	// DEDEGO-CHANGE-START
-	DedegoSelectPostNonDefault(dedegoIndex, c, casi, true)
-	// DEDEGO-CHANGE-END
 	if debugSelect {
 		print("syncsend: cas0=", cas0, " c=", c, "\n")
 	}
 	goto retc
 
 retc:
+	println("retc")
 	if caseReleaseTime > 0 {
 		blockevent(caseReleaseTime-t0, 1)
 	}
 
 	// DEDEGO-CHANGE-START
-	if casi == -1 {
-		DedegoSelectPostDefault(dedegoIndex)
-	}
+	DedegoSelectPost(dedegoIndex, c, casi, lockorder)
 	// DEDEGO-CHANGE-END
 
 	return casi, recvOK

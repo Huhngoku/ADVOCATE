@@ -26,7 +26,6 @@ const (
  *   id (int): The id of the mutex
  *   rw (bool): Whether the mutex is a read-write mutex
  *   opM (opMutex): The operation on the mutex
- *   exec (bool): The execution status of the operation
  *   suc (bool): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
  */
@@ -37,13 +36,12 @@ type traceElementMutex struct {
 	id      int
 	rw      bool
 	opM     opMutex
-	exec    bool
 	suc     bool
 	pos     string
 }
 
 func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
-	rw string, opM string, exec string, suc string, pos string) error {
+	rw string, opM string, suc string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -82,18 +80,20 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 		return errors.New("opM is not a valid operation")
 	}
 
-	exec_bool, err := strconv.ParseBool(exec)
-	if err != nil {
-		return errors.New("exec is not a boolean")
-	}
-
 	suc_bool, err := strconv.ParseBool(suc)
 	if err != nil {
 		return errors.New("suc is not a boolean")
 	}
 
-	elem := traceElementMutex{routine, tpre_int, tpost_int, id_int, rw_bool,
-		opM_int, exec_bool, suc_bool, pos}
+	elem := traceElementMutex{
+		routine: routine,
+		tpre:    tpre_int,
+		tpost:   tpost_int,
+		id:      id_int,
+		rw:      rw_bool,
+		opM:     opM_int,
+		suc:     suc_bool,
+		pos:     pos}
 
 	return addElementToTrace(routine, elem)
 }

@@ -64,19 +64,18 @@ func processElement(element string, routine int) {
 		err = trace.AddTraceElementAtomic(routine, fields[1], fields[2], fields[3])
 	case "C":
 		err = trace.AddTraceElementChannel(routine, fields[1], fields[2],
-			fields[3], fields[4], fields[5], fields[6], fields[7], fields[8],
-			fields[9], fields[10])
+			fields[3], fields[4], fields[5], fields[6], fields[7])
 	case "M":
 		err = trace.AddTraceElementMutex(routine, fields[1], fields[2],
-			fields[3], fields[4], fields[5], fields[6], fields[7], fields[8])
+			fields[3], fields[4], fields[5], fields[6], fields[7])
 	case "G":
 		err = trace.AddTraceElementRoutine(routine, fields[1], fields[2])
 	case "S":
 		trace.AddTraceElementSelect(routine, fields[1], fields[2], fields[3],
-			fields[4], fields[5], fields[6], fields[7], fields[8])
+			fields[4], fields[5], fields[6])
 	case "W":
 		trace.AddTraceElementWait(routine, fields[1], fields[2], fields[3],
-			fields[4], fields[5], fields[6], fields[7], fields[8])
+			fields[4], fields[5], fields[6], fields[7])
 	default:
 		panic("Unknown element type in: " + element)
 	}

@@ -20,7 +20,6 @@ const (
 *   tpost (int): The timestamp at the end of the event
 *   id (int): The id of the wait group
 *   opW (opW): The operation on the wait group
-*   exec (bool): The execution status of the operation
 *   delta (int): The delta of the wait group
 *   val (int): The value of the wait group
 *   pos (string): The position of the wait group in the code
@@ -31,14 +30,13 @@ type traceElementWait struct {
 	tpost   int
 	id      int
 	opW     opW
-	exec    bool
 	delta   int
 	val     int
 	pos     string
 }
 
 func AddTraceElementWait(routine int, tpre string, tpost string, id string,
-	opW string, exec string, delta string, val string, pos string) error {
+	opW string, delta string, val string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -61,11 +59,6 @@ func AddTraceElementWait(routine int, tpre string, tpost string, id string,
 		return errors.New("op is not a valid operation")
 	}
 
-	exec_bool, err := strconv.ParseBool(exec)
-	if err != nil {
-		return errors.New("exec is not a boolean")
-	}
-
 	delta_int, err := strconv.Atoi(delta)
 	if err != nil {
 		return errors.New("delta is not an integer")
@@ -76,8 +69,15 @@ func AddTraceElementWait(routine int, tpre string, tpost string, id string,
 		return errors.New("val is not an integer")
 	}
 
-	elem := traceElementWait{routine, tpre_int, tpost_int, id_int, opW_op,
-		exec_bool, delta_int, val_int, pos}
+	elem := traceElementWait{
+		routine: routine,
+		tpre:    tpre_int,
+		tpost:   tpost_int,
+		id:      id_int,
+		opW:     opW_op,
+		delta:   delta_int,
+		val:     val_int,
+		pos:     pos}
 
 	return addElementToTrace(routine, elem)
 }

@@ -7,21 +7,6 @@ import (
 )
 
 /*
- * traceElementSelectCase is a trace element for a select statement
- * Fields:
- *   channel (int): The id of the channel
- *   op (int, enum): The operation on the channel
- */
-type traceElementSelectCase struct {
-	channel int
-	op      opChannel
-}
-
-func (elem traceElementSelectCase) toString() string {
-	return strconv.Itoa(elem.channel) + "." + strconv.Itoa(int(elem.op))
-}
-
-/*
  * traceElementSelect is a trace element for a select statement
  * Fields:
  *   routine (int): The routine id
@@ -30,9 +15,8 @@ func (elem traceElementSelectCase) toString() string {
  *   id (int): The id of the select statement
  *   cases ([]traceElementSelectCase): The cases of the select statement
  *   containsDefault (bool): Whether the select statement contains a default case
- *   exec (int, enum): The execution status of the operation
- *   chosend (traceElementSelectCase): The case that was chosen
- *   oId (int): The id of the communication
+ *   chosenCase (traceElementSelectCase): The chosen case, nil if default case chosen
+ *   chosenDefault (bool): if the default case was chosen
  *   pos (string): The position of the select statement in the code
  */
 type traceElementSelect struct {
@@ -40,16 +24,14 @@ type traceElementSelect struct {
 	tpre            int
 	tpost           int
 	id              int
-	cases           []traceElementSelectCase
+	cases           []traceElementChannel
 	containsDefault bool
-	exec            bool
-	chosend         traceElementSelectCase
-	oId             int
+	chosenDefault   bool
 	pos             string
 }
 
 func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
-	cases string, exec string, chosen string, oId string, pos string) error {
+	cases string, oId string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -65,58 +47,72 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 		return errors.New("id is not an integer")
 	}
 
-	cs := strings.Split(cases, ".")
+	cs := strings.Split(cases, "~")
+	cases_list := make([]traceElementChannel, 0)
 	containsDefault := false
-	cases_list := make([]traceElementSelectCase, 0)
+	chosenDefault := false
 	for _, c := range cs {
 		if c == "d" {
 			containsDefault = true
 			break
 		}
+		if c == "D" {
+			containsDefault = true
+			chosenDefault = true
+			break
+		}
 
-		channelId, err := strconv.Atoi(c[:len(c)-1])
+		// read channel operation
+		case_list := strings.Split(c, ".")
+		c_tpre, err := strconv.Atoi(case_list[1])
 		if err != nil {
-			return err
+			return errors.New("c_tpre is not an integer")
+		}
+		c_tpost, err := strconv.Atoi(case_list[2])
+		if err != nil {
+			return errors.New("c_tpost is not an integer")
+		}
+		c_id, err := strconv.Atoi(case_list[3])
+		if err != nil {
+			return errors.New("c_id is not an integer")
+		}
+		var c_opC opChannel = send
+		if case_list[4] == "R" {
+			c_opC = recv
+		} else if case_list[4] == "C" {
+			panic("Close in select case list")
+		}
+		c_oId, err := strconv.Atoi(case_list[5])
+		if err != nil {
+			return errors.New("c_oId is not an integer")
+		}
+		c_oSize, err := strconv.Atoi(case_list[6])
+		if err != nil {
+			return errors.New("c_oSize is not an integer")
 		}
 
-		op := c[len(c)-1]
-		var opC opChannel = 0
-		switch op {
-		case 'r':
-			opC = recv
-		case 's':
-			opC = send
-		default:
-			return errors.New("op is not a valid operation")
-		}
-
-		elem := traceElementSelectCase{
-			channel: channelId,
-			op:      opC,
+		elem := traceElementChannel{
+			tpre:  c_tpre,
+			tpost: c_tpost,
+			id:    c_id,
+			opC:   c_opC,
+			oId:   c_oId,
+			qSize: c_oSize,
 		}
 
 		cases_list = append(cases_list, elem)
 	}
 
-	exec_bool, err := strconv.ParseBool(exec)
-	if err != nil {
-		return errors.New("exec is not a boolean")
+	elem := traceElementSelect{
+		routine:         routine,
+		tpre:            tpre_int,
+		tpost:           tpost_int,
+		id:              id_int,
+		cases:           cases_list,
+		containsDefault: containsDefault,
+		chosenDefault:   chosenDefault,
+		pos:             pos,
 	}
-
-	chosen_int, err := strconv.Atoi(chosen)
-	if err != nil {
-		return errors.New("chosen is not an integer")
-	}
-
-	chosenCase := cases_list[chosen_int]
-
-	oId_int, err := strconv.Atoi(oId)
-	if err != nil {
-		return errors.New("oId is not an integer")
-	}
-
-	elem := traceElementSelect{routine, tpre_int, tpost_int, id_int, cases_list,
-		containsDefault, exec_bool, chosenCase, oId_int, pos}
 
 	return addElementToTrace(routine, elem)
 }
@@ -154,20 +150,22 @@ func (elem traceElementSelect) getTpost() int {
  *   string: The simple string representation of the element
  */
 func (elem traceElementSelect) getSimpleString() string {
-	res := "S" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpre) + "," +
-		strconv.Itoa(elem.tpost) + " "
+	res := "S" + "," + strconv.Itoa(elem.tpre) + "," +
+		strconv.Itoa(elem.tpost) + "," + strconv.Itoa(elem.id) + ","
 
 	for i, c := range elem.cases {
 		if i != 0 {
-			res += "."
+			res += "~"
 		}
-		res += c.toString()
+		res += c.getSimpleStringSep(".")
 	}
 
 	if elem.containsDefault {
-		res += ".d"
+		if elem.chosenDefault {
+			res += ".D"
+		} else {
+			res += ".d"
+		}
 	}
-
-	res += "," + strconv.Itoa(elem.oId) + "," + elem.chosend.toString()
 	return res
 }

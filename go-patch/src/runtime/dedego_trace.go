@@ -803,42 +803,14 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
 }
 
 /*
- * Add the lock order to the select
- * Args:
- * 	index: index of the operation in the trace
- * 	lockOrder: lock order of the select
- */
-func DedegoSelectPostLo(index int, lockOrder []uint16) {
-	// internal elements are not in the trace
-	if index == -1 {
-		return
-	}
-
-	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
-
-	for i, op := range lockOrder {
-		opChan := opChanRecv
-		if op < uint16(elem.nsend) {
-			opChan = opChanSend
-		}
-		elem.cases[i].op = opChan
-	}
-
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
-
-	currentGoRoutine().Trace[index] = elem
-}
-
-/*
  * Post event for select in case of an non-default case
  * Args:
  * 	index: index of the operation in the trace
  * 	c: channel of the chosen case
  * 	chosenIndex: index of the chosen case in the select
- * 	send: true if the chosen case is a send, false otherwise
  */
-func DedegoSelectPostNonDefault(index int, c *hchan, chosenIndex int, send bool) {
+func DedegoSelectPost(index int, c *hchan, chosenIndex int,
+	lockOrder []uint16) {
 	if index == -1 || c == nil {
 		return
 	}
@@ -849,10 +821,26 @@ func DedegoSelectPostNonDefault(index int, c *hchan, chosenIndex int, send bool)
 	elem.chosen = chosenIndex
 	elem.tPost = timer
 
+	for i, op := range lockOrder {
+		opChan := opChanRecv
+		if op < uint16(elem.nsend) {
+			opChan = opChanSend
+		}
+		elem.cases[i].op = opChan
+	}
+
 	if chosenIndex == -1 { // default case
 		elem.defaSel = true
 	} else {
 		elem.cases[chosenIndex].tPost = timer
+		send := false
+		if elem.cases[chosenIndex].op == opChanSend {
+			send = true
+		} else if elem.cases[chosenIndex].op == opChanRecv {
+			send = false
+		} else {
+			panic("DedegoSelectPostNonDefault called on non sending channel op")
+		}
 		// set oId
 		if send {
 			c.numberSend++
@@ -863,25 +851,6 @@ func DedegoSelectPostNonDefault(index int, c *hchan, chosenIndex int, send bool)
 		}
 
 	}
-
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
-
-	currentGoRoutine().Trace[index] = elem
-}
-
-/*
- * Post event for select in case of an default case
- * Args:
- * 	index: index of the operation in the trace
- */
-func DedegoSelectPostDefault(index int) {
-	timer := GetDedegoCounter()
-	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
-
-	elem.chosen = -1
-	elem.tPost = timer
-	elem.defaSel = true
 
 	lock(currentGoRoutine().lock)
 	defer unlock(currentGoRoutine().lock)
