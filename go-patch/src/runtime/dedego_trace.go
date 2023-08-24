@@ -709,14 +709,12 @@ func DedegoChanPost(index int) {
 	if index == -1 {
 		return
 	}
-	println("POST: ", index)
 	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
 	elem.tPost = GetDedegoCounter()
 	currentGoRoutine().Trace[index] = elem
 }
 
 func DedegoChanPostCausedByClose(index int) {
-	println("CLOSED: ", index)
 	if index == -1 {
 		return
 	}

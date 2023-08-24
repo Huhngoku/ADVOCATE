@@ -82,11 +82,17 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 		} else if case_list[4] == "C" {
 			panic("Close in select case list")
 		}
-		c_oId, err := strconv.Atoi(case_list[5])
+
+		c_cl, err := strconv.ParseBool(case_list[5])
+		if err != nil {
+			return errors.New("c_cr is not a boolean")
+		}
+
+		c_oId, err := strconv.Atoi(case_list[6])
 		if err != nil {
 			return errors.New("c_oId is not an integer")
 		}
-		c_oSize, err := strconv.Atoi(case_list[6])
+		c_oSize, err := strconv.Atoi(case_list[7])
 		if err != nil {
 			return errors.New("c_oSize is not an integer")
 		}
@@ -96,6 +102,7 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 			tpost: c_tpost,
 			id:    c_id,
 			opC:   c_opC,
+			cl:    c_cl,
 			oId:   c_oId,
 			qSize: c_oSize,
 		}

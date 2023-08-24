@@ -39,6 +39,7 @@ type traceElementChannel struct {
 	tpost   int
 	id      int
 	opC     opChannel
+	cl      bool
 	oId     int
 	qSize   int
 	pos     string
@@ -53,12 +54,13 @@ type traceElementChannel struct {
 *   tpost (string): The timestamp at the end of the event
 *   id (string): The id of the channel
 *   opC (string): The operation on the channel
+*   cl (string): Whether the channel was finished because it was closed
 *   oId (string): The id of the other communication
 *   qSize (string): The size of the channel queue
 *   pos (string): The position of the channel operation in the code
  */
 func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
-	opC string, oId string, qSize string, pos string) error {
+	opC string, cl string, oId string, qSize string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -86,6 +88,11 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		return errors.New("opC is not a valid value")
 	}
 
+	cl_bool, err := strconv.ParseBool(cl)
+	if err != nil {
+		return errors.New("suc is not a boolean")
+	}
+
 	oId_int, err := strconv.Atoi(oId)
 	if err != nil {
 		return errors.New("oId is not an integer")
@@ -102,6 +109,7 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		tpost:   tpost_int,
 		id:      id_int,
 		opC:     opC_int,
+		cl:      cl_bool,
 		oId:     oId_int,
 		qSize:   qSize_int,
 		pos:     pos}

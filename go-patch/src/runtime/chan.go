@@ -317,7 +317,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	releaseSudog(mysg)
 	if closed {
 		// DEDEGO-CHANGE-START
-		println("CLOSED")
 		DedegoChanPostCausedByClose(dedegoIndex)
 		// DEDEGO-CHANGE-END
 		if c.closed == 0 {
