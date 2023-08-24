@@ -316,6 +316,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	mysg.c = nil
 	releaseSudog(mysg)
 	if closed {
+		// DEDEGO-CHANGE-START
+		println("CLOSED")
+		DedegoChanPostCausedByClose(dedegoIndex)
+		// DEDEGO-CHANGE-END
 		if c.closed == 0 {
 			throw("chansend: spurious wakeup")
 		}
@@ -399,6 +403,13 @@ func closechan(c *hchan) {
 	}
 
 	lock(&c.lock)
+
+	// DEDEGO-CHANGE-START
+	// DedegoChanClose is called when a channel is closed. It creates a close event
+	// in the trace.
+	DedegoChanClose(c.id, c.dataqsiz)
+	// DEDEGO-CHANGE-END
+
 	if c.closed != 0 {
 		unlock(&c.lock)
 		panic(plainError("close of closed channel"))
@@ -411,12 +422,6 @@ func closechan(c *hchan) {
 	}
 
 	c.closed = 1
-
-	// DEDEGO-CHANGE-START
-	// DedegoChanClose is called when a channel is closed. It creates a close event
-	// in the trace.
-	DedegoChanClose(c.id, c.dataqsiz)
-	// DEDEGO-CHANGE-END
 
 	var glist gList
 
@@ -583,6 +588,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			if ep != nil {
 				typedmemclr(c.elemtype, ep)
 			}
+			// DEDEGO-CHANGE-START
+			DedegoChanPostCausedByClose(dedegoIndex)
+			// DEDEGO-CHANGE-END
 			return true, false
 		}
 		// The channel has been closed, but the channel's buffer have data.
@@ -661,6 +669,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		blockevent(mysg.releasetime-t0, 2)
 	}
 	success := mysg.success
+	// DEDEGO-CHANGE-START
+	if !success {
+		DedegoChanPostCausedByClose(dedegoIndex)
+	}
+	// DEDEGO-CHANGE-END
 	gp.param = nil
 	mysg.c = nil
 	releaseSudog(mysg)

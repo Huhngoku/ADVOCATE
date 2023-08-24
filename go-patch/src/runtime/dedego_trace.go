@@ -547,14 +547,15 @@ func DedegoWaitGroupWaitPre(id uint64) int {
 // ============================= Channel =============================
 
 type dedegoTraceChannelElement struct {
-	id    uint64    // id of the channel
-	op    operation // operation
-	qSize uint32    // size of the channel, 0 for unbuffered
-	opId  uint64    // id of the operation
-	file  string    // file where the operation was called
-	line  int       // line where the operation was called
-	tPre  uint64    // global timer before the operation
-	tPost uint64    // global timer after the operation
+	id     uint64    // id of the channel
+	op     operation // operation
+	qSize  uint32    // size of the channel, 0 for unbuffered
+	opId   uint64    // id of the operation
+	file   string    // file where the operation was called
+	line   int       // line where the operation was called
+	tPre   uint64    // global timer before the operation
+	tPost  uint64    // global timer after the operation
+	closed bool      // true if the channel operation was finished, because the channel was closed at another routine
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
@@ -604,6 +605,12 @@ func (elem dedegoTraceChannelElement) toStringSep(sep string, showPos bool) stri
 		res += "R"
 	case opChanClose:
 		res += "C"
+	}
+
+	if elem.closed {
+		res += sep + "t"
+	} else {
+		res += sep + "f"
 	}
 
 	res += sep + uint64ToString(elem.opId)
@@ -702,8 +709,19 @@ func DedegoChanPost(index int) {
 	if index == -1 {
 		return
 	}
+	println("POST: ", index)
 	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
 	elem.tPost = GetDedegoCounter()
+	currentGoRoutine().Trace[index] = elem
+}
+
+func DedegoChanPostCausedByClose(index int) {
+	println("CLOSED: ", index)
+	if index == -1 {
+		return
+	}
+	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
+	elem.closed = true
 	currentGoRoutine().Trace[index] = elem
 }
 

@@ -292,7 +292,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	if !block {
 		selunlock(scases, lockorder)
 		casi = -1
-		println("no block")
 		goto retc
 	}
 
@@ -425,7 +424,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	selunlock(scases, lockorder)
-	println("selunlock")
 	goto retc
 
 bufrecv:
@@ -479,7 +477,6 @@ bufsend:
 	goto retc
 
 recv:
-	println("recv")
 	// can receive from sleeping sender (sg)
 	recv(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
 	if debugSelect {
@@ -518,7 +515,6 @@ send:
 	goto retc
 
 retc:
-	println("retc")
 	if caseReleaseTime > 0 {
 		blockevent(caseReleaseTime-t0, 1)
 	}
