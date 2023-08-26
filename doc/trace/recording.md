@@ -52,6 +52,8 @@ It has to be included before any other code. It is also necessary to import the 
 
 We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace file will be automatically created as soon as the program execution finishes. It will be created as `dedego.log`.
 
+## Known problems
+
 In some cases this will result in an 
 ```
 fatal error: schedule: holding locks
@@ -59,3 +61,10 @@ fatal error: schedule: holding locks
 error. The mainly occurs when using the `fmt.Print` command in the 
 program. In this case increase the argument in `InitAtomics` until 
 the problem disappears.
+
+If the program is stopped because of an panic while the main routine is
+sleeping, it is possible, that no trace file is created. If the panic
+occurs only occasional, it is possible to run the program again, to get
+the trace file (assuming the panic does not occur again). If it occurs
+in every run, it is necessary to first fix this panic, before a trace can
+be recorded.
