@@ -11,8 +11,8 @@ G := "G,"tpre","id                                              (element for cre
 A := "A,"tpre","addr","opA                                      (element for atomic operation)
 M := "M,"tpre","tpost","id","rw","opM","suc","pos               (element for operation on sync (rw)mutex)
 W := "W,"tpre","tpost","id","opW","delta","val","pos            (element for operation on sync wait group)
-C := "C,"tpre","tpost","id","opC","cl",oId","qSize","qCountPre","qCoundPost","pos             (element for operation on channel)
-S := "S,"tpre","tpost","id","cases","chosen","oId","pos         (element for select)
+C := "C,"tpre","tpost","id","opC","cl",oId","qSize","pos        (element for operation on channel)
+S := "S,"tpre","tpost","id","cases","pos                        (element for select)
 tpre := ℕ                                                       (timer when the operation is started)
 tpost := ℕ                                                      (timer when the operation has finished)
 addr := ℕ                                                       (pointer to the atomic variable, used as id)
@@ -33,10 +33,9 @@ oId := ℕ                                                        (identifier fo
 qSize := ℕ                                                      (size of the channel queue, 0 for unbufferd)
 qCountPre := ℕ                                                  (number of elements in the queue before the operation)
 qCountPost := ℕ                                                 (number of elements in the queue after the operation)
-cases := case | {case"."}case                                   (list of cases in select, seperated by .)
-case := cId""("r" | "s") | "d"                                  (case in select, consisting of channel id and "r" for receive or "s" for send. "d" shows an existing default case)  
-cId := ℕ                                                        (id of channel in select case)
-chosen := ℕ0 | "-1"                                             (index of the chosen case in cases, -1 for default case)    
+cases := case | {case"~"}case                                   (list of cases in select, seperated by ~)
+case := "C."tpre"."tpost"."id"."opC"."cl".oId"."qSize" | "d" | "D"     (case in select, if channel case, equal to channel element but without position and seperated by ".". "d" if select contains default but was not selected, "D" if default was selected)
+cId := ℕ                                                        (id of channel in select case) 
 ```
 
 The trace is stored in one file. Each line in the trace file corresponds to one 

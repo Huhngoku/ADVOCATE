@@ -824,9 +824,11 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
  * 	index: index of the operation in the trace
  * 	c: channel of the chosen case
  * 	chosenIndex: index of the chosen case in the select
+ * 	lockOrder: order of the locks
+ * 	rClosed: true if the channel was closed at another routine
  */
 func DedegoSelectPost(index int, c *hchan, chosenIndex int,
-	lockOrder []uint16) {
+	lockOrder []uint16, rClosed bool) {
 	if index == -1 || c == nil {
 		return
 	}
@@ -849,6 +851,7 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 		elem.defaSel = true
 	} else {
 		elem.cases[chosenIndex].tPost = timer
+		elem.cases[chosenIndex].closed = rClosed
 		send := false
 		if elem.cases[chosenIndex].op == opChanSend {
 			send = true

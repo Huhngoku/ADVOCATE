@@ -141,6 +141,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// Here the first lock order is set. This is only needed if the select
 	// is never executed.
 	dedegoIndex := DedegoSelectPre(&scases, nsends, block)
+	dedegoRClose := false // case was chosen, because channel was closed
 	// DEDEGO-CHANGE-END
 
 	// Even when raceenabled is true, there might be select
@@ -424,10 +425,12 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	selunlock(scases, lockorder)
+	// DEDEGO-CHANGE-START
+	dedegoRClose = !caseSuccess
+	// DEDEGO-CHANGE-END
 	goto retc
 
 bufrecv:
-	println("bufrecv")
 	// can receive from buffer
 	if raceenabled {
 		if cas.elem != nil {
@@ -489,6 +492,7 @@ rclose:
 	// read at end of closed channel
 	selunlock(scases, lockorder)
 	recvOK = false
+	dedegoRClose = true
 	if cas.elem != nil {
 		typedmemclr(c.elemtype, cas.elem)
 	}
@@ -520,7 +524,7 @@ retc:
 	}
 
 	// DEDEGO-CHANGE-START
-	DedegoSelectPost(dedegoIndex, c, casi, lockorder)
+	DedegoSelectPost(dedegoIndex, c, casi, lockorder, dedegoRClose)
 	// DEDEGO-CHANGE-END
 
 	return casi, recvOK
@@ -528,6 +532,10 @@ retc:
 sclose:
 	// send on closed channel
 	selunlock(scases, lockorder)
+	// DEDEGO-CHANGE-START
+	dedegoRClose = true
+	DedegoSelectPost(dedegoIndex, c, casi, lockorder, dedegoRClose)
+	// DEDEGO-CHANGE-END
 	panic(plainError("send on closed channel"))
 }
 
