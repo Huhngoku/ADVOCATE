@@ -1,41 +1,25 @@
 package trace
 
 import (
-	"errors"
 	"fmt"
+	"sort"
 )
 
-var trace map[int][]traceElement = make(map[int][]traceElement)
+type sortByTPre []traceElement
+
+func (a sortByTPre) Len() int           { return len(a) }
+func (a sortByTPre) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortByTPre) Less(i, j int) bool { return a[i].getTpre() < a[j].getTpre() }
+
+var trace []traceElement = make([]traceElement, 0)
 
 /*
-* Create a new routine in the trace
-* Args:
-*   routine (int): The routine id
+* Get the trace
+* Returns:
+*   []traceElement: The trace
  */
-func NewRoutine(routine int) error {
-	if _, ok := trace[routine]; ok {
-		return errors.New("routine already exists")
-	}
-	trace[routine] = make([]traceElement, 0)
-	return nil
-}
-
-func CheckTraceChannel() bool {
-	res := true
-	for i, routine := range trace {
-		for j, element := range routine {
-			switch elem := element.(type) {
-			case traceElementChannel:
-				if elem.partner == nil {
-					fmt.Println(i, j, "Error")
-					res = false
-				} else {
-					fmt.Println(i, j, "Ok")
-				}
-			}
-		}
-	}
-	return res
+func GetTrace() []traceElement {
+	return trace
 }
 
 /*
@@ -47,9 +31,36 @@ func CheckTraceChannel() bool {
 *   error: An error if the routine does not exist
  */
 func addElementToTrace(routine int, element traceElement) error {
-	if _, ok := trace[routine]; !ok {
-		return errors.New("routine does not exist")
-	}
-	trace[routine] = append(trace[routine], element)
+	trace = append(trace, element)
 	return nil
+}
+
+func FindPartner() {
+	for _, elem := range trace {
+		switch e := elem.(type) {
+		case traceElementChannel:
+			e.findPartnerChannel()
+		}
+	}
+}
+
+func Sort() {
+	sort.Sort(sortByTPre(trace))
+}
+
+func CheckTraceChannel() bool {
+	res := true
+	for i, element := range trace {
+		switch elem := element.(type) {
+		case traceElementChannel:
+			if elem.partner == nil {
+				fmt.Println(i, elem.toString(), "Error")
+				res = false
+			} else {
+				fmt.Println(i, elem.toString(), "Ok")
+			}
+		}
+
+	}
+	return res
 }

@@ -114,8 +114,8 @@ func (elem traceElementWait) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementWait) getSimpleString() string {
+func (elem traceElementWait) toString() string {
 	return "W" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpre) + "," +
 		strconv.Itoa(elem.tpost) + "," + "," +
-		strconv.Itoa(elem.delta)
+		strconv.Itoa(elem.delta) + "," + strconv.Itoa(elem.val) + "," + elem.pos
 }

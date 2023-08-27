@@ -14,9 +14,6 @@ const (
 	close
 )
 
-// map to store operations where partner has not jet been found
-var channelOperations = make(map[int][]*traceElementChannel)
-
 /*
 * traceElementChannel is a trace element for a channel
 * Fields:
@@ -114,26 +111,6 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		qSize:   qSize_int,
 		pos:     pos}
 
-	var partner *traceElementChannel = nil
-	if val, ok := channelOperations[id_int]; ok {
-		for i, e := range val {
-			if e.opC == opC_int {
-				elem.partner = e
-				e.partner = &elem
-				// remove elem
-				channelOperations[id_int] = append(channelOperations[id_int][:i],
-					channelOperations[id_int][i+1:]...)
-				break
-			}
-		}
-		if partner == nil {
-			channelOperations[id_int] = append(channelOperations[id_int], &elem)
-		}
-	} else {
-		channelOperations[id_int] = make([]*traceElementChannel, 0)
-		channelOperations[id_int] = append(channelOperations[id_int], &elem)
-	}
-
 	return addElementToTrace(routine, elem)
 }
 
@@ -169,12 +146,32 @@ func (elem traceElementChannel) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementChannel) getSimpleString() string {
-	return elem.getSimpleStringSep(",")
+func (elem traceElementChannel) toString() string {
+	return elem.toStringSep(",")
 }
 
-func (elem traceElementChannel) getSimpleStringSep(sep string) string {
-	return "C" + strconv.Itoa(elem.tpre) + sep + strconv.Itoa(elem.tpost) + sep +
+func (elem traceElementChannel) toStringSep(sep string) string {
+	return "C," + strconv.Itoa(elem.tpre) + sep + strconv.Itoa(elem.tpost) + sep +
 		strconv.Itoa(elem.id) + sep + strconv.Itoa(int(elem.opC)) + sep +
-		strconv.Itoa(elem.oId)
+		strconv.Itoa(elem.oId) + sep + strconv.Itoa(elem.qSize) + sep + elem.pos
+}
+
+// map to store operations where partner has not jet been found
+var channelOperations = make([]*traceElementChannel, 0)
+
+func (elem *traceElementChannel) findPartnerChannel() {
+	for i, e := range channelOperations {
+		if e.id == elem.id && e.opC == elem.opC {
+			elem.partner = e
+			e.partner = elem
+			// remove elem
+			channelOperations = append(channelOperations[:i],
+				channelOperations[i+1:]...)
+			break
+		}
+	}
+	if elem.partner == nil {
+		println("append")
+		channelOperations = append(channelOperations, elem)
+	}
 }

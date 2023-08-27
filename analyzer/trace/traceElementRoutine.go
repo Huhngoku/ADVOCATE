@@ -65,6 +65,6 @@ func (elem traceElementRoutine) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementRoutine) getSimpleString() string {
+func (elem traceElementRoutine) toString() string {
 	return "G" + "," + strconv.Itoa(elem.tpre) + "," + strconv.Itoa(elem.id)
 }

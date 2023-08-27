@@ -15,7 +15,7 @@ type traceElement interface {
 	getTpre() int
 	getTpost() int
 	getRoutine() int
-	getSimpleString() string
+	toString() string
 }
 
 /*

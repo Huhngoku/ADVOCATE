@@ -29,6 +29,10 @@ func CreateTraceFromFile(file_path string) {
 	if err := scanner.Err(); err != nil {
 		panic(err)
 	}
+
+	trace.Sort() // sort the trace by tpre
+
+	trace.FindPartner() // set all partner
 }
 
 /*
@@ -38,9 +42,6 @@ func CreateTraceFromFile(file_path string) {
  *   routine (int): The routine id, equal to the line number
  */
 func processLine(line string, routine int) {
-	// create element for routine in trace
-	trace.NewRoutine(routine)
-
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
 		processElement(element, routine)

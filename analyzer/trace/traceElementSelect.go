@@ -156,7 +156,7 @@ func (elem traceElementSelect) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementSelect) getSimpleString() string {
+func (elem traceElementSelect) toString() string {
 	res := "S" + "," + strconv.Itoa(elem.tpre) + "," +
 		strconv.Itoa(elem.tpost) + "," + strconv.Itoa(elem.id) + ","
 
@@ -164,7 +164,7 @@ func (elem traceElementSelect) getSimpleString() string {
 		if i != 0 {
 			res += "~"
 		}
-		res += c.getSimpleStringSep(".")
+		res += c.toStringSep(".")
 	}
 
 	if elem.containsDefault {
@@ -174,5 +174,6 @@ func (elem traceElementSelect) getSimpleString() string {
 			res += ".d"
 		}
 	}
+	res += "," + elem.pos
 	return res
 }

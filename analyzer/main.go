@@ -11,6 +11,7 @@ func main() {
 
 	res := trace.CheckTraceChannel()
 	if !res {
-		print("Error")
+		print("Error END")
 	}
+
 }
