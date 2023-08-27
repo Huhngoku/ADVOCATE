@@ -54,6 +54,8 @@ We now run the program like normal (with the created `./go` program in `go-patch
 
 ## Known problems
 
+### Holding Locks
+
 In some cases this will result in an 
 ```
 fatal error: schedule: holding locks
@@ -61,6 +63,8 @@ fatal error: schedule: holding locks
 error. The mainly occurs when using the `fmt.Print` command in the 
 program. In this case increase the argument in `InitAtomics` until 
 the problem disappears.
+
+### Panic
 
 If the program is stopped because of an panic while the main routine is
 sleeping, it is possible, that no trace file is created. If the panic
