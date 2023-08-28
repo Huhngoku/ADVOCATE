@@ -121,7 +121,7 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 		pos:             pos,
 	}
 
-	return addElementToTrace(routine, elem)
+	return addElementToTrace(routine, &elem)
 }
 
 /*
@@ -129,7 +129,7 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem traceElementSelect) getRoutine() int {
+func (elem *traceElementSelect) getRoutine() int {
 	return elem.routine
 }
 
@@ -138,7 +138,7 @@ func (elem traceElementSelect) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (elem traceElementSelect) getTpre() int {
+func (elem *traceElementSelect) getTpre() int {
 	return elem.tpre
 }
 
@@ -147,7 +147,7 @@ func (elem traceElementSelect) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (elem traceElementSelect) getTpost() int {
+func (elem *traceElementSelect) getTpost() int {
 	return elem.tpost
 }
 
@@ -156,7 +156,7 @@ func (elem traceElementSelect) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementSelect) toString() string {
+func (elem *traceElementSelect) toString() string {
 	res := "S" + "," + strconv.Itoa(elem.tpre) + "," +
 		strconv.Itoa(elem.tpost) + "," + strconv.Itoa(elem.id) + ","
 

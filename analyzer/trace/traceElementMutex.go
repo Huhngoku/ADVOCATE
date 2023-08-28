@@ -95,7 +95,7 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 		suc:     suc_bool,
 		pos:     pos}
 
-	return addElementToTrace(routine, elem)
+	return addElementToTrace(routine, &elem)
 }
 
 /*
@@ -103,7 +103,7 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem traceElementMutex) getRoutine() int {
+func (elem *traceElementMutex) getRoutine() int {
 	return elem.routine
 }
 
@@ -112,7 +112,7 @@ func (elem traceElementMutex) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem traceElementMutex) getTpre() int {
+func (elem *traceElementMutex) getTpre() int {
 	return elem.tpre
 }
 
@@ -121,7 +121,7 @@ func (elem traceElementMutex) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem traceElementMutex) getTpost() int {
+func (elem *traceElementMutex) getTpost() int {
 	return elem.tpost
 }
 
@@ -130,7 +130,7 @@ func (elem traceElementMutex) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementMutex) toString() string {
+func (elem *traceElementMutex) toString() string {
 	return "M" + "," + strconv.Itoa(elem.tpre) + "," + strconv.Itoa(elem.tpost) +
 		strconv.Itoa(elem.id) + "," + strconv.FormatBool(elem.rw) + "," +
 		strconv.Itoa(int(elem.opM)) + "," + strconv.FormatBool(elem.suc) + "," +

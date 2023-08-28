@@ -30,7 +30,7 @@ func AddTraceElementRoutine(routine int, tpre string, id string) error {
 	}
 
 	elem := traceElementRoutine{routine, tpre_int, id_int}
-	return addElementToTrace(routine, elem)
+	return addElementToTrace(routine, &elem)
 }
 
 /*
@@ -38,7 +38,7 @@ func AddTraceElementRoutine(routine int, tpre string, id string) error {
  * Returns:
  *   int: The routine of the element
  */
-func (elem traceElementRoutine) getRoutine() int {
+func (elem *traceElementRoutine) getRoutine() int {
 	return elem.routine
 }
 
@@ -47,7 +47,7 @@ func (elem traceElementRoutine) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem traceElementRoutine) getTpre() int {
+func (elem *traceElementRoutine) getTpre() int {
 	return elem.tpre
 }
 
@@ -56,7 +56,7 @@ func (elem traceElementRoutine) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem traceElementRoutine) getTpost() int {
+func (elem *traceElementRoutine) getTpost() int {
 	return elem.tpre
 }
 
@@ -65,6 +65,6 @@ func (elem traceElementRoutine) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementRoutine) toString() string {
+func (elem *traceElementRoutine) toString() string {
 	return "G" + "," + strconv.Itoa(elem.tpre) + "," + strconv.Itoa(elem.id)
 }

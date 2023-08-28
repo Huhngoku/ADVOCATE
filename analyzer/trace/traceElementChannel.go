@@ -58,6 +58,7 @@ type traceElementChannel struct {
  */
 func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 	opC string, cl string, oId string, qSize string, pos string) error {
+	println(tpre, oId)
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -111,7 +112,7 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		qSize:   qSize_int,
 		pos:     pos}
 
-	return addElementToTrace(routine, elem)
+	return addElementToTrace(routine, &elem)
 }
 
 /*
@@ -119,7 +120,7 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem traceElementChannel) getRoutine() int {
+func (elem *traceElementChannel) getRoutine() int {
 	return elem.routine
 }
 
@@ -128,7 +129,7 @@ func (elem traceElementChannel) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem traceElementChannel) getTpre() int {
+func (elem *traceElementChannel) getTpre() int {
 	return elem.tpre
 }
 
@@ -137,7 +138,7 @@ func (elem traceElementChannel) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem traceElementChannel) getTpost() int {
+func (elem *traceElementChannel) getTpost() int {
 	return elem.tpost
 }
 
@@ -146,11 +147,11 @@ func (elem traceElementChannel) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementChannel) toString() string {
+func (elem *traceElementChannel) toString() string {
 	return elem.toStringSep(",")
 }
 
-func (elem traceElementChannel) toStringSep(sep string) string {
+func (elem *traceElementChannel) toStringSep(sep string) string {
 	return "C," + strconv.Itoa(elem.tpre) + sep + strconv.Itoa(elem.tpost) + sep +
 		strconv.Itoa(elem.id) + sep + strconv.Itoa(int(elem.opC)) + sep +
 		strconv.Itoa(elem.oId) + sep + strconv.Itoa(elem.qSize) + sep + elem.pos
@@ -159,19 +160,25 @@ func (elem traceElementChannel) toStringSep(sep string) string {
 // map to store operations where partner has not jet been found
 var channelOperations = make([]*traceElementChannel, 0)
 
-func (elem *traceElementChannel) findPartnerChannel() {
-	for i, e := range channelOperations {
-		if e.id == elem.id && e.opC == elem.opC {
-			elem.partner = e
-			e.partner = elem
-			// remove elem
-			channelOperations = append(channelOperations[:i],
-				channelOperations[i+1:]...)
+/*
+ * Function to find communication partner for send and receive operations
+ */
+func (elem *traceElementChannel) findPartner() {
+	if elem.opC == close {
+		return
+	}
+
+	// check if partner is already in channelOperations
+	for _, partner := range channelOperations {
+		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
+			elem.partner = partner
+			partner.partner = elem
 			break
 		}
 	}
+
+	// if partner is not found, add to channelOperations
 	if elem.partner == nil {
-		println("append")
 		channelOperations = append(channelOperations, elem)
 	}
 }

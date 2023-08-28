@@ -5,12 +5,6 @@ import (
 	"sort"
 )
 
-type sortByTPre []traceElement
-
-func (a sortByTPre) Len() int           { return len(a) }
-func (a sortByTPre) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a sortByTPre) Less(i, j int) bool { return a[i].getTpre() < a[j].getTpre() }
-
 var trace []traceElement = make([]traceElement, 0)
 
 /*
@@ -35,24 +29,44 @@ func addElementToTrace(routine int, element traceElement) error {
 	return nil
 }
 
+/*
+ * Function to start the search for all partner elements
+ * TODO: only channel is implemented, missing select, mutex, ...
+ */
 func FindPartner() {
 	for _, elem := range trace {
 		switch e := elem.(type) {
-		case traceElementChannel:
-			e.findPartnerChannel()
+		case *traceElementChannel:
+			e.findPartner()
 		}
 	}
 }
 
-func Sort() {
-	sort.Sort(sortByTPre(trace))
-}
+/*
+ * Sort the trace by tpre
+ */
+type sortByTPre []traceElement
 
+func (a sortByTPre) Len() int           { return len(a) }
+func (a sortByTPre) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortByTPre) Less(i, j int) bool { return a[i].getTpre() < a[j].getTpre() }
+func Sort()                             { sort.Sort(sortByTPre(trace)) }
+
+/*
+ * Check if all channel operations have a partner
+ * Returns:
+ *   bool: True if all channel operations have a partner, false otherwise
+ * TODO:
+ *   remove
+ */
 func CheckTraceChannel() bool {
 	res := true
 	for i, element := range trace {
 		switch elem := element.(type) {
-		case traceElementChannel:
+		case *traceElementChannel:
+			if elem.opC == 2 { // close
+				continue
+			}
 			if elem.partner == nil {
 				fmt.Println(i, elem.toString(), "Error")
 				res = false

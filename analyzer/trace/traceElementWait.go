@@ -79,7 +79,7 @@ func AddTraceElementWait(routine int, tpre string, tpost string, id string,
 		val:     val_int,
 		pos:     pos}
 
-	return addElementToTrace(routine, elem)
+	return addElementToTrace(routine, &elem)
 }
 
 /*
@@ -87,7 +87,7 @@ func AddTraceElementWait(routine int, tpre string, tpost string, id string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem traceElementWait) getRoutine() int {
+func (elem *traceElementWait) getRoutine() int {
 	return elem.routine
 }
 
@@ -96,7 +96,7 @@ func (elem traceElementWait) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (elem traceElementWait) getTpre() int {
+func (elem *traceElementWait) getTpre() int {
 	return elem.tpre
 }
 
@@ -105,7 +105,7 @@ func (elem traceElementWait) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (elem traceElementWait) getTpost() int {
+func (elem *traceElementWait) getTpost() int {
 	return elem.tpost
 }
 
@@ -114,7 +114,7 @@ func (elem traceElementWait) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementWait) toString() string {
+func (elem *traceElementWait) toString() string {
 	return "W" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpre) + "," +
 		strconv.Itoa(elem.tpost) + "," + "," +
 		strconv.Itoa(elem.delta) + "," + strconv.Itoa(elem.val) + "," + elem.pos

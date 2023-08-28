@@ -68,7 +68,7 @@ func AddTraceElementAtomic(routine int, tpost string, id string,
 
 	elem := traceElementAtomic{routine, tpost_int, id_int, operation_int}
 
-	return addElementToTrace(routine, elem)
+	return addElementToTrace(routine, &elem)
 }
 
 /*
@@ -76,7 +76,7 @@ func AddTraceElementAtomic(routine int, tpost string, id string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem traceElementAtomic) getRoutine() int {
+func (elem *traceElementAtomic) getRoutine() int {
 	return elem.routine
 }
 
@@ -85,7 +85,7 @@ func (elem traceElementAtomic) getRoutine() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem traceElementAtomic) getTpre() int {
+func (elem *traceElementAtomic) getTpre() int {
 	return elem.tpost
 }
 
@@ -94,7 +94,7 @@ func (elem traceElementAtomic) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem traceElementAtomic) getTpost() int {
+func (elem *traceElementAtomic) getTpost() int {
 	return elem.tpost
 }
 
@@ -103,7 +103,7 @@ func (elem traceElementAtomic) getTpost() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem traceElementAtomic) toString() string {
+func (elem *traceElementAtomic) toString() string {
 	return "A" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpost) + "," +
 		strconv.Itoa(int(elem.operation))
 }
