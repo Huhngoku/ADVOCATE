@@ -9,7 +9,7 @@ func main() {
 	file_path := "./dedego.log"
 	reader.CreateTraceFromFile(file_path)
 
-	res := trace.CheckTraceChannel()
+	res := trace.CheckTrace()
 	if !res {
 		print("Error END")
 	}

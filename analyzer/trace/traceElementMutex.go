@@ -83,6 +83,7 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 
 	suc_bool, err := strconv.ParseBool(suc)
 	if err != nil {
+		println(suc)
 		return errors.New("suc is not a boolean")
 	}
 
@@ -146,16 +147,19 @@ var mutexNoPartner []*traceElementMutex
  * is set in the element.
  * The functions assumes, that the trace list is sorted by tpost
  */
-func (elem *traceElementMutex) getPartner() {
+func (elem *traceElementMutex) findPartner() {
 	// check if the element should have a partner
 	if elem.tpost == 0 || !elem.suc {
 		return
 	}
 
+	print(elem.opM)
+
 	found := false
 	if elem.opM == LockOp || elem.opM == RLockOp || elem.opM == TryLockOp {
 		// add lock operations to list of locks without partner
 		mutexNoPartner = append(mutexNoPartner, elem)
+		found = true // set to true to prevent panic
 	} else if elem.opM == UnlockOp || elem.opM == RUnlockOp {
 		// for unlock operations, check find the last lock operation
 		// on the same mutex
@@ -164,9 +168,10 @@ func (elem *traceElementMutex) getPartner() {
 			if elem.id != lock.id {
 				continue
 			}
-			if lock.opM == LockOp || lock.opM == RLockOp || lock.opM == TryLockOp {
-				panic("Two consecutive clock on the same channel without unlock in between")
+			if lock.opM == UnlockOp || lock.opM == RUnlockOp {
+				panic("Two consecutive lock on the same channel without unlock in between")
 			}
+			println("Found")
 			elem.partner = lock
 			lock.partner = elem
 			mutexNoPartner = append(mutexNoPartner[:i], mutexNoPartner[i+1:]...)

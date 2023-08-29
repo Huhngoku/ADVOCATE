@@ -42,6 +42,8 @@ func FindPartner() {
 			for _, c := range e.cases {
 				c.findPartner()
 			}
+		case *traceElementMutex:
+			e.findPartner()
 		}
 	}
 }
@@ -57,25 +59,32 @@ func (a sortByTPost) Less(i, j int) bool { return a[i].getTpost() < a[j].getTpos
 func Sort()                              { sort.Sort(sortByTPost(trace)) }
 
 /*
- * Check if all channel operations have a partner
+ * Check if all channel and mutex operations have a partner (if they should have one)
  * Returns:
  *   bool: True if all channel operations have a partner, false otherwise
  * TODO:
  *   remove
  */
-func CheckTraceChannel() bool {
+func CheckTrace() bool {
 	res := true
-	for i, element := range trace {
+	for _, element := range trace {
 		switch elem := element.(type) {
 		case *traceElementChannel:
 			if elem.opC == 2 { // close
 				continue
 			}
 			if elem.partner == nil {
-				fmt.Println(i, elem.toString(), "Error")
+				fmt.Println(elem.toString(), "Error")
 				res = false
 			} else {
-				fmt.Println(i, elem.toString(), "Ok")
+				fmt.Println(elem.toString(), "Ok")
+			}
+		case *traceElementMutex:
+			if elem.partner == nil {
+				fmt.Println(elem.toString(), "Error")
+				res = false
+			} else {
+				fmt.Println(elem.toString(), "Ok")
 			}
 		}
 
