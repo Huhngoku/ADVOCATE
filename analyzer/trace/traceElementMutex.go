@@ -38,6 +38,7 @@ type traceElementMutex struct {
 	opM     opMutex
 	suc     bool
 	pos     string
+	partner *traceElementMutex
 }
 
 func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
@@ -135,4 +136,48 @@ func (elem *traceElementMutex) toString() string {
 		strconv.Itoa(elem.id) + "," + strconv.FormatBool(elem.rw) + "," +
 		strconv.Itoa(int(elem.opM)) + "," + strconv.FormatBool(elem.suc) + "," +
 		elem.pos
+}
+
+// mutex operations, for which no partner has been found yet
+var mutexNoPartner []*traceElementMutex
+
+/*
+ * Find pairs of lock and unlock operations. If a partner is found, the partner
+ * is set in the element.
+ * The functions assumes, that the trace list is sorted by tpost
+ */
+func (elem *traceElementMutex) getPartner() {
+	// check if the element should have a partner
+	if elem.tpost == 0 || !elem.suc {
+		return
+	}
+
+	found := false
+	if elem.opM == LockOp || elem.opM == RLockOp || elem.opM == TryLockOp {
+		// add lock operations to list of locks without partner
+		mutexNoPartner = append(mutexNoPartner, elem)
+	} else if elem.opM == UnlockOp || elem.opM == RUnlockOp {
+		// for unlock operations, check find the last lock operation
+		// on the same mutex
+		for i := len(mutexNoPartner) - 1; i >= 0; i-- {
+			lock := mutexNoPartner[i]
+			if elem.id != lock.id {
+				continue
+			}
+			if lock.opM == LockOp || lock.opM == RLockOp || lock.opM == TryLockOp {
+				panic("Two consecutive clock on the same channel without unlock in between")
+			}
+			elem.partner = lock
+			lock.partner = elem
+			mutexNoPartner = append(mutexNoPartner[:i], mutexNoPartner[i+1:]...)
+			found = true
+			break
+		}
+	} else {
+		panic("Unknown mutex operation")
+	}
+
+	if !found {
+		panic("Unlock without prior lock")
+	}
 }

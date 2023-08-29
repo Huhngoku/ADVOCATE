@@ -30,7 +30,7 @@ func CreateTraceFromFile(file_path string) {
 		panic(err)
 	}
 
-	// trace.Sort() // sort the trace by tpre
+	trace.Sort() // sort the trace by tpre
 
 	trace.FindPartner() // set all partner
 }

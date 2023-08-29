@@ -168,7 +168,11 @@ var channelOperations = make([]*traceElementChannel, 0)
 var closeOperations = make([]*traceElementChannel, 0)
 
 /*
- * Function to find communication partner for send and receive operations
+ * Function to find communication partner for channel operations
+ * This includes send/receive pairs with or without select, as well as
+ * close operations for send/receive/select, which where
+ * executed because of a close operation on the channel.
+ * If a partner is found, the partner field of the element is set.
  */
 func (elem *traceElementChannel) findPartner() {
 	if elem.tpost == 0 { // if tpost is 0, the operation was not finished
@@ -180,6 +184,7 @@ func (elem *traceElementChannel) findPartner() {
 	}
 
 	// check if partner is already in channelOperations
+	i := 0
 	for _, partner := range channelOperations {
 		// check for send receive
 		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
@@ -192,8 +197,15 @@ func (elem *traceElementChannel) findPartner() {
 		if elem.opC == close {
 			if elem.id == partner.id && partner.cl {
 				partner.partner = elem
+				break
 			}
 		}
+		i++
+	}
+
+	// remove the partner element, if an partner was found
+	if elem.partner != nil {
+		channelOperations = append(channelOperations[:i], channelOperations[i+1:]...)
 	}
 
 	// check if partner is already in closeOperations
@@ -208,7 +220,7 @@ func (elem *traceElementChannel) findPartner() {
 	}
 
 	// if partner is not found, add to channelOperations
-	if elem.partner == nil {
+	if elem.partner == nil && elem.opC != close {
 		channelOperations = append(channelOperations, elem)
 	}
 }

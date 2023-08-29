@@ -49,12 +49,12 @@ func FindPartner() {
 /*
  * Sort the trace by tpre
  */
-type sortByTPre []traceElement
+type sortByTPost []traceElement
 
-func (a sortByTPre) Len() int           { return len(a) }
-func (a sortByTPre) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a sortByTPre) Less(i, j int) bool { return a[i].getTpre() < a[j].getTpre() }
-func Sort()                             { sort.Sort(sortByTPre(trace)) }
+func (a sortByTPost) Len() int           { return len(a) }
+func (a sortByTPost) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a sortByTPost) Less(i, j int) bool { return a[i].getTpost() < a[j].getTpost() }
+func Sort()                              { sort.Sort(sortByTPost(trace)) }
 
 /*
  * Check if all channel operations have a partner
