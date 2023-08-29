@@ -47,6 +47,14 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 		return errors.New("id is not an integer")
 	}
 
+	elem := traceElementSelect{
+		routine: routine,
+		tpre:    tpre_int,
+		tpost:   tpost_int,
+		id:      id_int,
+		pos:     pos,
+	}
+
 	cs := strings.Split(cases, "~")
 	cases_list := make([]traceElementChannel, 0)
 	containsDefault := false
@@ -105,21 +113,15 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 			cl:    c_cl,
 			oId:   c_oId,
 			qSize: c_oSize,
+			sel:   &elem,
 		}
 
 		cases_list = append(cases_list, elem)
 	}
 
-	elem := traceElementSelect{
-		routine:         routine,
-		tpre:            tpre_int,
-		tpost:           tpost_int,
-		id:              id_int,
-		cases:           cases_list,
-		containsDefault: containsDefault,
-		chosenDefault:   chosenDefault,
-		pos:             pos,
-	}
+	elem.containsDefault = containsDefault
+	elem.chosenDefault = chosenDefault
+	elem.cases = cases_list
 
 	return addElementToTrace(routine, &elem)
 }

@@ -28,6 +28,7 @@ const (
 *   qCountPre (int): The number of elements in the queue before the operation
 *   qCountPost (int): The number of elements in the queue after the operation
 *   pos (string): The position of the channel operation in the code
+*   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
 *   partner (*traceElementChannel): The partner of the channel operation
  */
 type traceElementChannel struct {
@@ -40,6 +41,7 @@ type traceElementChannel struct {
 	oId     int
 	qSize   int
 	pos     string
+	sel     *traceElementSelect
 	partner *traceElementChannel
 }
 
@@ -110,7 +112,8 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		cl:      cl_bool,
 		oId:     oId_int,
 		qSize:   qSize_int,
-		pos:     pos}
+		pos:     pos,
+	}
 
 	return addElementToTrace(routine, &elem)
 }
@@ -157,23 +160,50 @@ func (elem *traceElementChannel) toStringSep(sep string) string {
 		strconv.Itoa(elem.oId) + sep + strconv.Itoa(elem.qSize) + sep + elem.pos
 }
 
-// map to store operations where partner has not jet been found
+// list to store operations where partner has not jet been found
 var channelOperations = make([]*traceElementChannel, 0)
+
+// list to store close operations, to find operations, that were executed
+// because of a close on a channel
+var closeOperations = make([]*traceElementChannel, 0)
 
 /*
  * Function to find communication partner for send and receive operations
  */
 func (elem *traceElementChannel) findPartner() {
-	if elem.opC == close {
+	if elem.tpost == 0 { // if tpost is 0, the operation was not finished
 		return
+	}
+
+	if elem.opC == close { // close operation has no partner
+		closeOperations = append(closeOperations, elem)
 	}
 
 	// check if partner is already in channelOperations
 	for _, partner := range channelOperations {
+		// check for send receive
 		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
 			elem.partner = partner
 			partner.partner = elem
 			break
+		}
+
+		// check new close
+		if elem.opC == close {
+			if elem.id == partner.id && partner.cl {
+				partner.partner = elem
+			}
+		}
+	}
+
+	// check if partner is already in closeOperations
+	for _, partner := range closeOperations {
+		if elem.id == partner.id {
+			if elem.opC == close && partner.cl {
+				partner.partner = elem
+			} else if elem.cl && partner.opC == close {
+				elem.partner = partner
+			}
 		}
 	}
 

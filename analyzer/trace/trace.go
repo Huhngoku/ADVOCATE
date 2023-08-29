@@ -38,6 +38,10 @@ func FindPartner() {
 		switch e := elem.(type) {
 		case *traceElementChannel:
 			e.findPartner()
+		case *traceElementSelect:
+			for _, c := range e.cases {
+				c.findPartner()
+			}
 		}
 	}
 }
