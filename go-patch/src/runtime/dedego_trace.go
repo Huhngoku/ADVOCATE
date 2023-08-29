@@ -289,7 +289,7 @@ func (elem dedegoTraceMutexElement) getFile() string {
  *    'id' (number): id of the mutex
  *    'rw' (R/-): R if it is a rwmutex, otherwise -
  *	  'op' (L/R/T/Y/U/N): L if it is a lock, R if it is a rlock, T if it is a trylock, Y if it is a rtrylock, U if it is an unlock, N if it is an runlock
- *	  'suc' (s/f): s if the trylock was successful, f otherwise
+ *	  'suc' (t/f): s if the trylock was successful, f otherwise
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
@@ -320,7 +320,7 @@ func (elem dedegoTraceMutexElement) toString() string {
 	}
 
 	if elem.suc {
-		res += ",s"
+		res += ",t"
 	} else {
 		res += ",f"
 	}
