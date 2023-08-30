@@ -1,6 +1,7 @@
 package trace
 
 import (
+	"analyzer/debug"
 	"fmt"
 	"sort"
 )
@@ -34,18 +35,26 @@ func addElementToTrace(routine int, element traceElement) error {
  * TODO: only channel is implemented, missing select, mutex, ...
  */
 func FindPartner() {
+	debug.Log("Find partners...", 2)
 	for _, elem := range trace {
 		switch e := elem.(type) {
 		case *traceElementChannel:
+			debug.Log("Find partner for channel operation "+e.toString(), 3)
 			e.findPartner()
 		case *traceElementSelect:
+			debug.Log("Find partner for select operation "+e.toString(), 3)
 			for _, c := range e.cases {
 				c.findPartner()
 			}
 		case *traceElementMutex:
+			debug.Log("Find partner for mutex operation "+e.toString(), 3)
 			e.findPartner()
 		}
 	}
+
+	// check if there are operations without partner
+	checkChannelOperations()
+	debug.Log("Find partners finished", 2)
 }
 
 /*
@@ -56,7 +65,11 @@ type sortByTPost []traceElement
 func (a sortByTPost) Len() int           { return len(a) }
 func (a sortByTPost) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a sortByTPost) Less(i, j int) bool { return a[i].getTpost() < a[j].getTpost() }
-func Sort()                              { sort.Sort(sortByTPost(trace)) }
+func Sort() {
+	debug.Log("Sort Trace...", 2)
+	sort.Sort(sortByTPost(trace))
+	debug.Log("Trace sorted", 2)
+}
 
 /*
  * Check if all channel and mutex operations have a partner (if they should have one)

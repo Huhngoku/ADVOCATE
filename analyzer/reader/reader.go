@@ -1,9 +1,11 @@
 package reader
 
 import (
+	"analyzer/debug"
 	"analyzer/trace"
 	"bufio"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -11,8 +13,10 @@ import (
  * Read and build the trace from a file
  */
 func CreateTraceFromFile(file_path string) {
+	debug.Log("Create trace from file "+file_path+"...", 2)
 	file, err := os.Open(file_path)
 	if err != nil {
+		debug.Log("Error opening file: "+file_path, 1)
 		panic(err)
 	}
 	defer file.Close()
@@ -27,12 +31,15 @@ func CreateTraceFromFile(file_path string) {
 	}
 
 	if err := scanner.Err(); err != nil {
+		debug.Log("Error reading file line", 1)
 		panic(err)
 	}
 
 	trace.Sort() // sort the trace by tpre
 
 	trace.FindPartner() // set all partner
+
+	debug.Log("Trace created", 2)
 }
 
 /*
@@ -42,6 +49,7 @@ func CreateTraceFromFile(file_path string) {
  *   routine (int): The routine id, equal to the line number
  */
 func processLine(line string, routine int) {
+	debug.Log("Read routine "+strconv.Itoa(routine), 3)
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
 		processElement(element, routine)
@@ -56,8 +64,10 @@ func processLine(line string, routine int) {
  */
 func processElement(element string, routine int) {
 	if element == "" {
+		debug.Log("Routine "+strconv.Itoa(routine)+" is empty", 3)
 		return
 	}
+	debug.Log("Read element "+element, 3)
 	fields := strings.Split(element, ",")
 	var err error = nil
 	switch fields[0] {

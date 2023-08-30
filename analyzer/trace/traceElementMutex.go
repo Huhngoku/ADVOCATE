@@ -1,6 +1,7 @@
 package trace
 
 import (
+	"analyzer/debug"
 	"errors"
 	"strconv"
 )
@@ -83,7 +84,6 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 
 	suc_bool, err := strconv.ParseBool(suc)
 	if err != nil {
-		println(suc)
 		return errors.New("suc is not a boolean")
 	}
 
@@ -150,13 +150,13 @@ var mutexNoPartner []*traceElementMutex
 func (elem *traceElementMutex) findPartner() {
 	// check if the element should have a partner
 	if elem.tpost == 0 || !elem.suc {
+		debug.Log("Mutex operation "+elem.toString()+" has not executed", 3)
 		return
 	}
 
-	print(elem.opM)
-
 	found := false
 	if elem.opM == LockOp || elem.opM == RLockOp || elem.opM == TryLockOp {
+		debug.Log("Add mutex lock operations "+elem.toString()+" to mutexNoPartner", 3)
 		// add lock operations to list of locks without partner
 		mutexNoPartner = append(mutexNoPartner, elem)
 		found = true // set to true to prevent panic
@@ -169,11 +169,12 @@ func (elem *traceElementMutex) findPartner() {
 				continue
 			}
 			if lock.opM == UnlockOp || lock.opM == RUnlockOp {
-				panic("Two consecutive lock on the same channel without unlock in between")
+				debug.Log("Two consecutive lock on the same channel without unlock in between: "+elem.toString()+lock.toString(), 1)
 			}
-			println("Found")
+			debug.Log("Found partner for mutex operation "+lock.toString()+" <-> "+elem.toString(), 3)
 			elem.partner = lock
 			lock.partner = elem
+			debug.Log("Remove mutex lock operation "+lock.toString()+" from mutexNoPartner", 3)
 			mutexNoPartner = append(mutexNoPartner[:i], mutexNoPartner[i+1:]...)
 			found = true
 			break
@@ -183,6 +184,6 @@ func (elem *traceElementMutex) findPartner() {
 	}
 
 	if !found {
-		panic("Unlock without prior lock")
+		debug.Log("Unlock "+elem.toString()+" without prior lock", 1)
 	}
 }

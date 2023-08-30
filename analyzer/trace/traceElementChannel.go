@@ -1,6 +1,7 @@
 package trace
 
 import (
+	"analyzer/debug"
 	"errors"
 	"strconv"
 )
@@ -60,7 +61,6 @@ type traceElementChannel struct {
  */
 func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 	opC string, cl string, oId string, qSize string, pos string) error {
-	println(tpre, oId)
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -176,10 +176,12 @@ var closeOperations = make([]*traceElementChannel, 0)
  */
 func (elem *traceElementChannel) findPartner() {
 	if elem.tpost == 0 { // if tpost is 0, the operation was not finished
+		debug.Log("Channel operation "+elem.toString()+" was not finished", 3)
 		return
 	}
 
 	if elem.opC == close { // close operation has no partner
+		debug.Log("Add close operation "+elem.toString()+" to closeOperations", 3)
 		closeOperations = append(closeOperations, elem)
 	}
 
@@ -188,6 +190,7 @@ func (elem *traceElementChannel) findPartner() {
 	for _, partner := range channelOperations {
 		// check for send receive
 		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
+			debug.Log("Found partner for channel operation"+partner.toString()+" <-> "+elem.toString(), 3)
 			elem.partner = partner
 			partner.partner = elem
 			break
@@ -195,6 +198,7 @@ func (elem *traceElementChannel) findPartner() {
 
 		// check new close
 		if elem.opC == close {
+			debug.Log("Check for new close operation "+elem.toString(), 3)
 			if elem.id == partner.id && partner.cl {
 				partner.partner = elem
 				break
@@ -205,15 +209,19 @@ func (elem *traceElementChannel) findPartner() {
 
 	// remove the partner element, if an partner was found
 	if elem.partner != nil {
+		debug.Log("Partner found. Remove "+elem.partner.toString()+" from channelOperations", 3)
 		channelOperations = append(channelOperations[:i], channelOperations[i+1:]...)
 	}
 
 	// check if partner is already in closeOperations
 	for _, partner := range closeOperations {
+		debug.Log("Check for close partner "+partner.toString(), 3)
 		if elem.id == partner.id {
 			if elem.opC == close && partner.cl {
+				debug.Log("Found close partner "+partner.toString()+" for "+elem.toString(), 3)
 				partner.partner = elem
 			} else if elem.cl && partner.opC == close {
+				debug.Log("Found close partner "+partner.toString()+" for "+elem.toString(), 3)
 				elem.partner = partner
 			}
 		}
@@ -221,6 +229,13 @@ func (elem *traceElementChannel) findPartner() {
 
 	// if partner is not found, add to channelOperations
 	if elem.partner == nil && elem.opC != close {
+		debug.Log("No partner found. Add "+elem.toString()+" to channelOperations", 3)
 		channelOperations = append(channelOperations, elem)
+	}
+}
+
+func checkChannelOperations() {
+	for _, elem := range channelOperations {
+		debug.Log("Channel operation "+elem.toString()+" has no partner", 1)
 	}
 }
