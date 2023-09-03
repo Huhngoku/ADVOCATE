@@ -35,7 +35,7 @@ type traceElementWait struct {
 	pos     string
 }
 
-func AddTraceElementWait(routine int, tpre string, tpost string, id string,
+func addTraceElementWait(routine int, tpre string, tpost string, id string,
 	opW string, delta string, val string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
@@ -79,7 +79,7 @@ func AddTraceElementWait(routine int, tpre string, tpost string, id string,
 		val:     val_int,
 		pos:     pos}
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*

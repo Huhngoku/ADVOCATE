@@ -1,9 +1,9 @@
 package trace
 
 import (
-	"analyzer/debug"
-	"fmt"
 	"sort"
+
+	"analyzer/debug"
 )
 
 var trace []traceElement = make([]traceElement, 0)
@@ -25,14 +25,13 @@ func GetTrace() []traceElement {
 * Returns:
 *   error: An error if the routine does not exist
  */
-func addElementToTrace(routine int, element traceElement) error {
+func addElementToTrace(element traceElement) error {
 	trace = append(trace, element)
 	return nil
 }
 
 /*
  * Function to start the search for all partner elements
- * TODO: only channel is implemented, missing select, mutex, ...
  */
 func FindPartner() {
 	debug.Log("Find partners...", 2)
@@ -58,6 +57,15 @@ func FindPartner() {
 }
 
 /*
+* Calculate vector clocks
+ */
+func CalculateVectorClocks() {
+	debug.Log("Calculate vector clocks...", 2)
+
+	debug.Log("Vector clock calculation finished", 2)
+}
+
+/*
  * Sort the trace by tpre
  */
 type sortByTPost []traceElement
@@ -69,38 +77,4 @@ func Sort() {
 	debug.Log("Sort Trace...", 2)
 	sort.Sort(sortByTPost(trace))
 	debug.Log("Trace sorted", 2)
-}
-
-/*
- * Check if all channel and mutex operations have a partner (if they should have one)
- * Returns:
- *   bool: True if all channel operations have a partner, false otherwise
- * TODO:
- *   remove
- */
-func CheckTrace() bool {
-	res := true
-	for _, element := range trace {
-		switch elem := element.(type) {
-		case *traceElementChannel:
-			if elem.opC == 2 { // close
-				continue
-			}
-			if elem.partner == nil {
-				fmt.Println(elem.toString(), "Error")
-				res = false
-			} else {
-				fmt.Println(elem.toString(), "Ok")
-			}
-		case *traceElementMutex:
-			if elem.partner == nil {
-				fmt.Println(elem.toString(), "Error")
-				res = false
-			} else {
-				fmt.Println(elem.toString(), "Ok")
-			}
-		}
-
-	}
-	return res
 }

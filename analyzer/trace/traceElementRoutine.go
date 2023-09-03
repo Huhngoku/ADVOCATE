@@ -18,7 +18,7 @@ type traceElementRoutine struct {
 	id      int
 }
 
-func AddTraceElementRoutine(routine int, tpre string, id string) error {
+func addTraceElementRoutine(routine int, tpre string, id string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -30,7 +30,7 @@ func AddTraceElementRoutine(routine int, tpre string, id string) error {
 	}
 
 	elem := traceElementRoutine{routine, tpre_int, id_int}
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*

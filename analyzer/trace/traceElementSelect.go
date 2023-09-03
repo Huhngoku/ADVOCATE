@@ -30,8 +30,8 @@ type traceElementSelect struct {
 	pos             string
 }
 
-func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
-	cases string, oId string, pos string) error {
+func addTraceElementSelect(routine int, tpre string, tpost string, id string,
+	cases string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -123,7 +123,7 @@ func AddTraceElementSelect(routine int, tpre string, tpost string, id string,
 	elem.chosenDefault = chosenDefault
 	elem.cases = cases_list
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*

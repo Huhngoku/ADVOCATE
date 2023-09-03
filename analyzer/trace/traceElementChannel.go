@@ -1,9 +1,10 @@
 package trace
 
 import (
-	"analyzer/debug"
 	"errors"
 	"strconv"
+
+	"analyzer/debug"
 )
 
 // enum for opC
@@ -59,7 +60,7 @@ type traceElementChannel struct {
 *   qSize (string): The size of the channel queue
 *   pos (string): The position of the channel operation in the code
  */
-func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
+func addTraceElementChannel(routine int, tpre string, tpost string, id string,
 	opC string, cl string, oId string, qSize string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
@@ -115,7 +116,7 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		pos:     pos,
 	}
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -190,7 +191,10 @@ func (elem *traceElementChannel) findPartner() {
 	for _, partner := range channelOperations {
 		// check for send receive
 		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
-			debug.Log("Found partner for channel operation"+partner.toString()+" <-> "+elem.toString(), 3)
+			debug.Log(
+				"Found partner for channel operation"+partner.toString()+" <-> "+elem.toString(),
+				3,
+			)
 			elem.partner = partner
 			partner.partner = elem
 			break

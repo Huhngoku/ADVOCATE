@@ -1,12 +1,12 @@
-package reader
+package trace
 
 import (
-	"analyzer/debug"
-	"analyzer/trace"
 	"bufio"
 	"os"
 	"strconv"
 	"strings"
+
+	"analyzer/debug"
 )
 
 /*
@@ -35,9 +35,9 @@ func CreateTraceFromFile(file_path string) {
 		panic(err)
 	}
 
-	trace.Sort() // sort the trace by tpre
+	Sort() // sort the trace by tpre
 
-	trace.FindPartner() // set all partner
+	FindPartner() // set all partner
 
 	debug.Log("Trace created", 2)
 }
@@ -72,20 +72,20 @@ func processElement(element string, routine int) {
 	var err error = nil
 	switch fields[0] {
 	case "A":
-		err = trace.AddTraceElementAtomic(routine, fields[1], fields[2], fields[3])
+		err = addTraceElementAtomic(routine, fields[1], fields[2], fields[3])
 	case "C":
-		err = trace.AddTraceElementChannel(routine, fields[1], fields[2],
+		err = addTraceElementChannel(routine, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7], fields[8])
 	case "M":
-		err = trace.AddTraceElementMutex(routine, fields[1], fields[2],
+		err = addTraceElementMutex(routine, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7])
 	case "G":
-		err = trace.AddTraceElementRoutine(routine, fields[1], fields[2])
+		err = addTraceElementRoutine(routine, fields[1], fields[2])
 	case "S":
-		trace.AddTraceElementSelect(routine, fields[1], fields[2], fields[3],
-			fields[4], fields[5], fields[6])
+		err = addTraceElementSelect(routine, fields[1], fields[2], fields[3],
+			fields[4], fields[5])
 	case "W":
-		trace.AddTraceElementWait(routine, fields[1], fields[2], fields[3],
+		err = addTraceElementWait(routine, fields[1], fields[2], fields[3],
 			fields[4], fields[5], fields[6], fields[7])
 	default:
 		panic("Unknown element type in: " + element)

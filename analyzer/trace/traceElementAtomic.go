@@ -38,7 +38,7 @@ type traceElementAtomic struct {
  *   tpost (string): The timestamp of the event
  *   id (string): The id of the atomic variable
  */
-func AddTraceElementAtomic(routine int, tpost string, id string,
+func addTraceElementAtomic(routine int, tpost string, id string,
 	operation string) error {
 	tpost_int, err := strconv.Atoi(tpost)
 	if err != nil {
@@ -68,7 +68,7 @@ func AddTraceElementAtomic(routine int, tpost string, id string,
 
 	elem := traceElementAtomic{routine, tpost_int, id_int, operation_int}
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*

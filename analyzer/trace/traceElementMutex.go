@@ -1,9 +1,10 @@
 package trace
 
 import (
-	"analyzer/debug"
 	"errors"
 	"strconv"
+
+	"analyzer/debug"
 )
 
 // enum for opM
@@ -42,7 +43,7 @@ type traceElementMutex struct {
 	partner *traceElementMutex
 }
 
-func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
+func addTraceElementMutex(routine int, tpre string, tpost string, id string,
 	rw string, opM string, suc string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
@@ -97,7 +98,7 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 		suc:     suc_bool,
 		pos:     pos}
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*
