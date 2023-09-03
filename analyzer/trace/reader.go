@@ -35,10 +35,8 @@ func CreateTraceFromFile(file_path string) {
 		panic(err)
 	}
 
-	Sort() // sort the trace by tpre
-
+	Sort()        // sort the trace by tpre
 	FindPartner() // set all partner
-
 	debug.Log("Trace created", 2)
 }
 

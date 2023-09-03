@@ -53,7 +53,7 @@ func FindPartner() {
 
 	// check if there are operations without partner
 	checkChannelOperations()
-	debug.Log("Find partners finished", 2)
+	debug.Log("Partners found", 2)
 }
 
 /*
