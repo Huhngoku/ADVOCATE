@@ -62,7 +62,11 @@ func FindPartner() {
 func CalculateVectorClocks() {
 	debug.Log("Calculate vector clocks...", 2)
 
-	debug.Log("Vector clock calculation finished", 2)
+	for _, elem := range trace {
+
+	}
+
+	debug.Log("Vector clock calculation completed", 2)
 }
 
 /*

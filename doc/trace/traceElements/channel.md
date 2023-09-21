@@ -9,7 +9,7 @@ C,[tpre],[tpost],[id],[opC],[cl],[oId],[qSize],[pos]
 ```
 where `C` identifies the element as a channel element. The other fields are 
 set as follows:
-- [tpre] $\in \mathbb N$ : This is the value of the global counter when the routine starts 
+- [tpre] $\in \mathbb N$ : This is the value of the global counter when the operation starts 
 the execution of the operation
 - [tpost]$\in \mathbb N$: This is the value of the global counter when the channel has finished its operation. For close we get [tpost] = [tpre]
 - [id]$\in \mathbb N$: This shows the unique id of the channel

@@ -6,13 +6,14 @@ explanation for all trace elements in the corresponding files in `traceElements`
 ```
 T := L\nT | ""                                                  (trace)
 L := "" | {E";"}E                                               (routine local trace)
-E := G | M | W | C | S                                          (trace element)
+E := G | M | W | C | S | O                                      (trace element)
 G := "G,"tpre","id                                              (element for creation of new routine)
 A := "A,"tpre","addr","opA                                      (element for atomic operation)
 M := "M,"tpre","tpost","id","rw","opM","suc","pos               (element for operation on sync (rw)mutex)
 W := "W,"tpre","tpost","id","opW","delta","val","pos            (element for operation on sync wait group)
 C := "C,"tpre","tpost","id","opC","cl",oId","qSize","pos        (element for operation on channel)
 S := "S,"tpre","tpost","id","cases","pos                        (element for select)
+O := "O,"tpre",tpost","id","suco","pos                                 (element for once)
 tpre := ℕ                                                       (timer when the operation is started)
 tpost := ℕ                                                      (timer when the operation has finished)
 addr := ℕ                                                       (pointer to the atomic variable, used as id)
@@ -35,6 +36,7 @@ qCountPre := ℕ                                                  (number of ele
 qCountPost := ℕ                                                 (number of elements in the queue after the operation)
 cases := case | {case"~"}case                                   (list of cases in select, seperated by ~)
 case := "C."tpre"."tpost"."id"."opC"."cl".oId"."qSize" | "d" | "D"     (case in select, if channel case, equal to channel element but without position and seperated by ".". "d" if select contains default but was not selected, "D" if default was selected)
+suco := t | f                                                   (true if function in once was executed, false if not)
 cId := ℕ                                                        (id of channel in select case) 
 ```
 

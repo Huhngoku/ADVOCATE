@@ -34,7 +34,6 @@ const (
 type dedegoTraceElement interface {
 	isDedegoTraceElement()
 	toString() string
-	getFile() string
 }
 
 type dedegoAtomicMapElem struct {
@@ -238,15 +237,6 @@ func (elem dedegoTraceSpawnElement) toString() string {
 }
 
 /*
- * Get the file where the element was called
- * Return:
- * 	empty string
- */
-func (elem dedegoTraceSpawnElement) getFile() string {
-	return ""
-}
-
-/*
  * Add a routine spawn to the trace
  * Args:
  * 	id: id of the routine
@@ -271,15 +261,6 @@ type dedegoTraceMutexElement struct {
 }
 
 func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
-
-/*
- * Get the file where the element was called
- * Return:
- * 	file where the element was called
- */
-func (elem dedegoTraceMutexElement) getFile() string {
-	return elem.file
-}
 
 /*
  * Get a string representation of the element
@@ -411,16 +392,13 @@ func DedegoPost(index int) {
 
 	timer := GetDedegoCounter()
 
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
-
-	switch elem := currentGoRoutine().Trace[index].(type) {
+	switch elem := currentGoRoutine().getElement(index).(type) {
 	case dedegoTraceMutexElement:
 		elem.tPost = timer
-		currentGoRoutine().Trace[index] = elem
+		currentGoRoutine().updateElement(index, elem)
 	case dedegoTraceWaitGroupElement:
 		elem.tPost = timer
-		currentGoRoutine().Trace[index] = elem
+		currentGoRoutine().updateElement(index, elem)
 
 	default:
 		panic("DedegoPost called on non mutex, waitgroup or channel")
@@ -439,14 +417,11 @@ func DedegoPostTry(index int, suc bool) {
 		return
 	}
 
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
-
-	switch elem := currentGoRoutine().Trace[index].(type) {
+	switch elem := currentGoRoutine().getElement(index).(type) {
 	case dedegoTraceMutexElement:
 		elem.suc = suc
 		elem.tPost = GetDedegoCounter()
-		currentGoRoutine().Trace[index] = elem
+		currentGoRoutine().updateElement(index, elem)
 	default:
 		panic("DedegoPostTry called on non mutex")
 	}
@@ -466,15 +441,6 @@ type dedegoTraceWaitGroupElement struct {
 }
 
 func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
-
-/*
- * Get the file where the element was called
- * Return:
- * 	file where the element was called
- */
-func (elem dedegoTraceWaitGroupElement) getFile() string {
-	return elem.file
-}
 
 /*
  * Get a string representation of the element
@@ -559,15 +525,6 @@ type dedegoTraceChannelElement struct {
 }
 
 func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
-
-/*
- * Get the file where the element was called
- * Return:
- * 	file where the element was called
- */
-func (elem dedegoTraceChannelElement) getFile() string {
-	return elem.file
-}
 
 /*
  * Get a string representation of the element
@@ -709,18 +666,18 @@ func DedegoChanPost(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(dedegoTraceChannelElement)
 	elem.tPost = GetDedegoCounter()
-	currentGoRoutine().Trace[index] = elem
+	currentGoRoutine().updateElement(index, elem)
 }
 
 func DedegoChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().Trace[index].(dedegoTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(dedegoTraceChannelElement)
 	elem.closed = true
-	currentGoRoutine().Trace[index] = elem
+	currentGoRoutine().updateElement(index, elem)
 }
 
 // ============================= Select ==============================
@@ -739,15 +696,6 @@ type dedegoTraceSelectElement struct {
 }
 
 func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
-
-/*
- * Get the file where the element was called
- * Return:
- * 	file where the element was called
- */
-func (elem dedegoTraceSelectElement) getFile() string {
-	return elem.file
-}
 
 /*
  * Get a string representation of the element
@@ -834,7 +782,7 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 	}
 
 	timer := GetDedegoCounter()
-	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+	elem := currentGoRoutine().getElement(index).(dedegoTraceSelectElement)
 
 	elem.chosen = chosenIndex
 	elem.tPost = timer
@@ -871,10 +819,7 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 
 	}
 
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
-
-	currentGoRoutine().Trace[index] = elem
+	currentGoRoutine().updateElement(index, elem)
 }
 
 /*
@@ -926,7 +871,7 @@ func DedegoSelectPostOneNonDef(index int, res bool, oId uint64) {
 	}
 
 	timer := GetDedegoCounter()
-	elem := currentGoRoutine().Trace[index].(dedegoTraceSelectElement)
+	elem := currentGoRoutine().getElement(index).(dedegoTraceSelectElement)
 
 	if res {
 		elem.chosen = 0
@@ -938,10 +883,7 @@ func DedegoSelectPostOneNonDef(index int, res bool, oId uint64) {
 	}
 	elem.tPost = timer
 
-	lock(currentGoRoutine().lock)
-	defer unlock(currentGoRoutine().lock)
-
-	currentGoRoutine().Trace[index] = elem
+	currentGoRoutine().updateElement(index, elem)
 }
 
 // ============================= Atomic ================================
@@ -952,15 +894,6 @@ type dedegoTraceAtomicElement struct {
 }
 
 func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
-
-/*
- * Get the file where the element was called
- * Return:
- * 	file where the element was called
- */
-func (elem dedegoTraceAtomicElement) getFile() string {
-	return ""
-}
 
 /*
  * Get a string representation of the element
@@ -1004,6 +937,62 @@ func DedegoAtomic(index uint64) {
 	timer := GetDedegoCounter()
 	elem := dedegoTraceAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)
+}
+
+// ======================= Once ============================
+type dedegoOnceElement struct {
+	tpre  uint64 // global timer at the beginning of the execution
+	tpost uint64 // global timer at the end of the execution
+	id    uint64 // id of the once
+	suc   bool   // true if the do on the once was called for the first time
+	file  string // file where the operation was called
+	line  int    // line where the operation was called
+}
+
+func (elem dedegoOnceElement) isDedegoTraceElement() {}
+
+/*
+ * Return a string representation of the element
+ * Return:
+ * 	string representation of the element "O,'tpre','tpost','id','suc','file':'line"
+ *    'tpre' (number): global timer at the beginning of the execution
+ *    'tpost' (number): global timer at the end of the execution
+ *    'id' (number): id of the once
+ *    'suc' (t/f): true if the do on the once was called for the first time, false otherwise
+ *    'file' (string): file where the operation was called
+ *    'line' (string): line where the operation was called
+ */
+func (elem dedegoOnceElement) toString() string {
+	res := "O,"
+	res += uint64ToString(elem.tpre) + ","
+	res += uint64ToString(elem.tpost) + ","
+	res += uint64ToString(elem.id) + ","
+	if elem.suc {
+		res += "t"
+	} else {
+		res += "f"
+	}
+	res += "," + elem.file + ":" + intToString(elem.line)
+	return res
+}
+
+func DedegoOncePre(id uint64) int {
+	_, file, line, _ := Caller(2)
+	timer := GetDedegoCounter()
+	elem := dedegoOnceElement{id: id, tpre: timer, file: file, line: line}
+	return insertIntoTrace(elem)
+}
+
+func DedegoOncePost(index int, suc bool) {
+	if index == -1 {
+		return
+	}
+	timer := GetDedegoCounter()
+	elem := currentGoRoutine().getElement(index).(dedegoOnceElement)
+	elem.tpost = timer
+	elem.suc = suc
+
+	currentGoRoutine().updateElement(index, elem)
 }
 
 // DEDEGO-FILE-END

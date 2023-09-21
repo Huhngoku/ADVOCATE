@@ -67,6 +67,40 @@ func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
 	return len(gi.Trace) - 1
 }
 
+func (gi *DedegoRoutine) getElement(index int) dedegoTraceElement {
+	lock(gi.lock)
+	defer unlock(gi.lock)
+	return gi.Trace[index]
+}
+
+/*
+ * Update an element in the trace of the current routine
+ * Params:
+ * 	index: the index of the element to update
+ * 	elem: the new element
+ */
+func (gi *DedegoRoutine) updateElement(index int, elem dedegoTraceElement) {
+	if dedegoDisabled {
+		return
+	}
+
+	if gi == nil {
+		return
+	}
+
+	if gi.Trace == nil {
+		panic("Tried to update element in nil trace")
+	}
+
+	if index >= len(gi.Trace) {
+		panic("Tried to update element out of bounds")
+	}
+
+	lock(gi.lock)
+	defer unlock(gi.lock)
+	gi.Trace[index] = elem
+}
+
 /*
  * Get the current routine
  * Return:

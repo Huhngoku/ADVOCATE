@@ -8,7 +8,7 @@ M,[tpre],[tpost],[id],[rw],[opM],[suc],[pos]
 ```
 where `M` identifies the element as a mutex element.
 The other fields are set as follows:
-- [tpre] $\in \mathbb N$: This is the value of the global counter when the routine starts 
+- [tpre] $\in \mathbb N$: This is the value of the global counter when the operation starts 
 the execution of the lock or unlock function
 - [tpost] $\in \mathbb N$: This is the value of the global counter when the mutex has finished its operation. For lock operations this can be either if the lock was successfully acquired or if the routines continues its execution without 
 acquiring the lock in case of a trylock. 

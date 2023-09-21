@@ -14,6 +14,7 @@ func main() {
 	flag.Parse()
 	debug.SetDebugLevel(*level)
 	trace.CreateTraceFromFile(*file_path)
+	trace.CalculateVectorClocks()
 
 	debug.Log("Finished analyzis.\nTotal runtime: "+debug.GetRuntime(), 2)
 }

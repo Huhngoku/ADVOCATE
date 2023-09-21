@@ -39,21 +39,8 @@ func newVectorClock(size int) vectorClock {
  * Args:
  *   pos (int): The position to increment
  */
-func (vc *vectorClock) increment(pos int) {
+func (vc *vectorClock) inc(pos int) {
 	vc.clock[pos]++
-}
-
-/*
- * Receive a vector clock and update the vector clock by incrementing it
- * and then taking the element
- * wise maximum of the two vector clocks
- * Args:
- *   pos (int): The position to increment
- *   rec (vectorClock): The received vector clock
- */
-func (vc *vectorClock) receive(pos int, rec *vectorClock) {
-	vc.increment(pos)
-	vc.max(rec)
 }
 
 /*
@@ -62,7 +49,7 @@ func (vc *vectorClock) receive(pos int, rec *vectorClock) {
  * Args:
  *   rec (vectorClock): The received vector clock
  */
-func (vc *vectorClock) max(rec *vectorClock) {
+func (vc *vectorClock) sync(rec *vectorClock) {
 	for i := 0; i < vc.size; i++ {
 		if vc.clock[i] < rec.clock[i] {
 			vc.clock[i] = rec.clock[i]

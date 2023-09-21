@@ -18,7 +18,7 @@ The trace element has the following form
 G,[tpre],[id]
 ```
 where `G` identifies the element as an routine creation element.\
-- [tpre] $\in \mathbb N$: This if the time. It is replaced by the integer value of the global counter at the moment of the routines creation.
+- [tpre] $\in \mathbb N$: This is the time. It is replaced by the integer value of the global counter at the moment of the routines creation.
 - [id] $\in \mathbb N$: This is the id of the newly created routine. This integer id corresponds with
 the line number, where the trace of this new routine is saved in the trace.
 

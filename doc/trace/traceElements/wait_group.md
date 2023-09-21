@@ -6,12 +6,11 @@ The basic form of the trace element is
 ```
 W,[tpre],[tpost],[id],[opW],[delta],[val],[pos]
 ```
-where `W` identifies the element as a wait group element. The following sets
-are set as follows:
+where `W` identifies the element as a wait group element. The following sets are set as follows:
 
-- [tpre] $\in\mathbb N: This is the value of the global counter when the routine starts
+- [tpre] $\in\mathbb N: This is the value of the global counter when the operation starts
 the execution of the lock or unlock function
-- [tpost] $\in\mathbb N: This is the value of the global counter when the routine has finished
+- [tpost] $\in\mathbb N: This is the value of the global counter when the operation has finished
 its operation.
 - [id] $\in\mathbb N: This is the unique id identifying this wait group
 - [opW]: This filed identifies the operation type that was executed on the wait group:

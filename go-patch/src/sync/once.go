@@ -5,6 +5,9 @@
 package sync
 
 import (
+	// DEDEGO-CHANGE-BEGIN
+	"runtime"
+	// DEDEGO-CHANGE-END
 	"sync/atomic"
 )
 
@@ -23,6 +26,9 @@ type Once struct {
 	// and fewer instructions (to calculate offset) on other architectures.
 	done uint32
 	m    Mutex
+	// DEDEGO-CHANGE-BEGIN
+	id uint64 // id of the once
+	// DEDEGO-CHANGE-END
 }
 
 // Do calls the function f if and only if Do is being called for the
@@ -60,17 +66,38 @@ func (o *Once) Do(f func()) {
 	// This is why the slow path falls back to a mutex, and why
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
+	// DEDEGO-CHANGE-START
+	if o.id == 0 {
+		o.id = runtime.GetDedegoObjectId()
+	}
+	index := runtime.DedegoOncePre(o.id)
+	res := false
+	// DEDEGO-CHANGE-END
+
 	if atomic.LoadUint32(&o.done) == 0 {
 		// Outlined slow-path to allow inlining of the fast-path.
-		o.doSlow(f)
+		// DEDEGO-CHANGE-START
+		res = o.doSlow(f)
+		// DEDEGO-CHANGE-END
 	}
+	// DEDEGO-CHANGE-START
+	runtime.DedegoOncePost(index, res)
+	// DEDEGO-CHANGE-END
 }
 
-func (o *Once) doSlow(f func()) {
+// DEDEGO-CHANGE-START
+func (o *Once) doSlow(f func()) bool {
+	// DEDEGO-CHANGE-END
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.done == 0 {
 		defer atomic.StoreUint32(&o.done, 1)
 		f()
+		// DEDEGO-CHANGE-START
+		return true
+		// DEDEGO-CHANGE-END
 	}
+	// DEDEGO-CHANGE-START
+	return false
+	// DEDEGO-CHANGE-END
 }

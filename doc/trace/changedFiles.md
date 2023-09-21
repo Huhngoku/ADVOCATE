@@ -10,7 +10,7 @@ Added files:
 - src/runtime/dedego_util.go
 - src/runtime/internal/atomic/dedego_atomic.go
 
-Changed files (marked with DEDEGO-ADD):
+Changed files (marked with DEDEGO-CHANGE):
 
 - src/cmd/cgo/internal/test/testx.go
 - src/runtime/proc.go
@@ -23,6 +23,7 @@ Changed files (marked with DEDEGO-ADD):
 - src/sync/mutex.go
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
+- src/sync/once.go
 
 Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST): 
 
