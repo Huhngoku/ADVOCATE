@@ -12,6 +12,8 @@ import (
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
+ *   vpre (vectorClock): The vector clock at the start of the event
+ *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the select statement
  *   cases ([]traceElementSelectCase): The cases of the select statement
  *   containsDefault (bool): Whether the select statement contains a default case
@@ -23,6 +25,8 @@ type traceElementSelect struct {
 	routine         int
 	tpre            int
 	tpost           int
+	vpre            vectorClock
+	vpost           vectorClock
 	id              int
 	cases           []traceElementChannel
 	containsDefault bool
@@ -30,8 +34,19 @@ type traceElementSelect struct {
 	pos             string
 }
 
-func addTraceElementSelect(routine int, tpre string, tpost string, id string,
-	cases string, pos string) error {
+/*
+ * Add a new select statement trace element
+ * Args:
+ *   routine (int): The routine id
+ *   numberOfRoutines (int): The number of routines in the trace
+ *   tpre (string): The timestamp at the start of the event
+ *   tpost (string): The timestamp at the end of the event
+ *   id (string): The id of the select statement
+ *   cases (string): The cases of the select statement
+ *   pos (string): The position of the select statement in the code
+ */
+func addTraceElementSelect(routine int, numberOfRoutines int, tpre string,
+	tpost string, id string, cases string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -51,6 +66,8 @@ func addTraceElementSelect(routine int, tpre string, tpost string, id string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
+		vpre:    newVectorClock(numberOfRoutines),
+		vpost:   newVectorClock(numberOfRoutines),
 		id:      id_int,
 		pos:     pos,
 	}
@@ -151,6 +168,24 @@ func (elem *traceElementSelect) getTpre() int {
  */
 func (elem *traceElementSelect) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the vector clock at the begin of the event
+ * Returns:
+ *   vectorClock: The vector clock at the begin of the event
+ */
+func (elem *traceElementSelect) getVpre() *vectorClock {
+	return &elem.vpre
+}
+
+/*
+ * Get the vector clock at the end of the event
+ * Returns:
+ *   vectorClock: The vector clock at the end of the event
+ */
+func (elem *traceElementSelect) getVpost() *vectorClock {
+	return &elem.vpost
 }
 
 /*

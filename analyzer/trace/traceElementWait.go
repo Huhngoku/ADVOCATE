@@ -18,6 +18,8 @@ const (
 * Fields:
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
+*   vpre (vectorClock): The vector clock at the start of the event
+*   vpost (vectorClock): The vector clock at the end of the event
 *   id (int): The id of the wait group
 *   opW (opW): The operation on the wait group
 *   delta (int): The delta of the wait group
@@ -28,6 +30,8 @@ type traceElementWait struct {
 	routine int
 	tpre    int
 	tpost   int
+	vpre    vectorClock
+	vpost   vectorClock
 	id      int
 	opW     opW
 	delta   int
@@ -35,8 +39,22 @@ type traceElementWait struct {
 	pos     string
 }
 
-func addTraceElementWait(routine int, tpre string, tpost string, id string,
-	opW string, delta string, val string, pos string) error {
+/*
+ * Create a new wait group trace element
+ * Args:
+ *   routine (int): The routine id
+ *   numberOfRoutines (int): The number of routines in the trace
+ *   tpre (string): The timestamp at the start of the event
+ *   tpost (string): The timestamp at the end of the event
+ *   id (string): The id of the wait group
+ *   opW (string): The operation on the wait group
+ *   delta (string): The delta of the wait group
+ *   val (string): The value of the wait group
+ *   pos (string): The position of the wait group in the code
+ */
+func addTraceElementWait(routine int, numberOfRoutines int, tpre string,
+	tpost string, id string, opW string, delta string, val string,
+	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -73,6 +91,8 @@ func addTraceElementWait(routine int, tpre string, tpost string, id string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
+		vpre:    newVectorClock(numberOfRoutines),
+		vpost:   newVectorClock(numberOfRoutines),
 		id:      id_int,
 		opW:     opW_op,
 		delta:   delta_int,
@@ -107,6 +127,24 @@ func (elem *traceElementWait) getTpre() int {
  */
 func (elem *traceElementWait) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the vector clock at the begin of the event
+ * Returns:
+ *   vectorClock: The vector clock at the begin of the event
+ */
+func (elem *traceElementWait) getVpre() *vectorClock {
+	return &elem.vpre
+}
+
+/*
+ * Get the vector clock at the end of the event
+ * Returns:
+ *   vectorClock: The vector clock at the end of the event
+ */
+func (elem *traceElementWait) getVpost() *vectorClock {
+	return &elem.vpost
 }
 
 /*

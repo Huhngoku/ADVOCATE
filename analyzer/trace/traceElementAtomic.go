@@ -21,12 +21,14 @@ const (
  * Fields:
  *   routine (int): The routine id
  *   tpost (int): The timestamp of the event
+ *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the atomic variable
  *   operation (int, enum): The operation on the atomic variable
  */
 type traceElementAtomic struct {
 	routine   int
 	tpost     int
+	vpost     vectorClock
 	id        int
 	operation opAtomic
 }
@@ -35,11 +37,13 @@ type traceElementAtomic struct {
  * Create a new atomic trace element
  * Args:
  *   routine (int): The routine id
+ *   numberOfRoutines (int): The number of routines in the trace
  *   tpost (string): The timestamp of the event
  *   id (string): The id of the atomic variable
+ *   operation (string): The operation on the atomic variable
  */
-func addTraceElementAtomic(routine int, tpost string, id string,
-	operation string) error {
+func addTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
+	id string, operation string) error {
 	tpost_int, err := strconv.Atoi(tpost)
 	if err != nil {
 		return errors.New("tpost is not an integer")
@@ -66,7 +70,13 @@ func addTraceElementAtomic(routine int, tpost string, id string,
 		return errors.New("operation is not a valid operation")
 	}
 
-	elem := traceElementAtomic{routine, tpost_int, id_int, operation_int}
+	elem := traceElementAtomic{
+		routine:   routine,
+		tpost:     tpost_int,
+		vpost:     newVectorClock(numberOfRoutines),
+		id:        id_int,
+		operation: operation_int,
+	}
 
 	return addElementToTrace(&elem)
 }
@@ -96,6 +106,25 @@ func (elem *traceElementAtomic) getTpre() int {
  */
 func (elem *traceElementAtomic) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the vector clock at the begin of the event. It is equal to the vector clock
+ * at the end of the event.
+ * Returns:
+ *   vectorClock: The vector clock at the begin of the event
+ */
+func (elem *traceElementAtomic) getVpre() *vectorClock {
+	return &elem.vpost
+}
+
+/*
+ * Get the vector clock at the end of the event
+ * Returns:
+ *   vectorClock: The vector clock at the end of the event
+ */
+func (elem *traceElementAtomic) getVpost() *vectorClock {
+	return &elem.vpost
 }
 
 /*
