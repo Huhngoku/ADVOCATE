@@ -1,9 +1,10 @@
 package trace
 
 import (
-	"analyzer/debug"
 	"errors"
 	"strconv"
+
+	"analyzer/debug"
 )
 
 // enum for opM
@@ -24,6 +25,8 @@ const (
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
+ *   vpre (vectorClock): The vector clock at the start of the event
+ *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the mutex
  *   rw (bool): Whether the mutex is a read-write mutex
  *   opM (opMutex): The operation on the mutex
@@ -34,6 +37,8 @@ type traceElementMutex struct {
 	routine int
 	tpre    int
 	tpost   int
+	vpre    vectorClock
+	vpost   vectorClock
 	id      int
 	rw      bool
 	opM     opMutex
@@ -42,8 +47,22 @@ type traceElementMutex struct {
 	partner *traceElementMutex
 }
 
-func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
-	rw string, opM string, suc string, pos string) error {
+/*
+ * Create a new mutex trace element
+ * Args:
+ *   routine (int): The routine id
+ *   numberOfRoutines (int): The number of routines in the trace
+ *   tpre (string): The timestamp at the start of the event
+ *   tpost (string): The timestamp at the end of the event
+ *   id (string): The id of the mutex
+ *   rw (string): Whether the mutex is a read-write mutex
+ *   opM (string): The operation on the mutex
+ *   suc (string): Whether the operation was successful (only for trylock else always true)
+ *   pos (string): The position of the mutex operation in the code
+ */
+func addTraceElementMutex(routine int, numberOfRoutines int, tpre string,
+	tpost string, id string, rw string, opM string, suc string,
+	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -91,13 +110,15 @@ func AddTraceElementMutex(routine int, tpre string, tpost string, id string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
+		vpre:    newVectorClock(numberOfRoutines),
+		vpost:   newVectorClock(numberOfRoutines),
 		id:      id_int,
 		rw:      rw_bool,
 		opM:     opM_int,
 		suc:     suc_bool,
 		pos:     pos}
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -125,6 +146,24 @@ func (elem *traceElementMutex) getTpre() int {
  */
 func (elem *traceElementMutex) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the vector clock at the begin of the event
+ * Returns:
+ *   vectorClock: The vector clock at the begin of the event
+ */
+func (elem *traceElementMutex) getVpre() *vectorClock {
+	return &elem.vpre
+}
+
+/*
+ * Get the vector clock at the end of the event
+ * Returns:
+ *   vectorClock: The vector clock at the end of the event
+ */
+func (elem *traceElementMutex) getVpost() *vectorClock {
+	return &elem.vpost
 }
 
 /*

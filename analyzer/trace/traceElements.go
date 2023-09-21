@@ -1,19 +1,11 @@
 package trace
 
-// enum for happens before
-type happensBefore int
-
-const (
-	Before happensBefore = iota
-	Concurrent
-	After
-	None
-)
-
 // Interface for trace elements
 type traceElement interface {
 	getTpre() int
 	getTpost() int
+	getVpre() *vectorClock
+	getVpost() *vectorClock
 	getRoutine() int
 	toString() string
 }
@@ -53,8 +45,8 @@ func GetHappensBefore(first traceElement, second traceElement) happensBefore {
 		return getHappensBeforeSameRoutine(first, second)
 	}
 
-	// TODO: remove panic if implemented
-	panic("Not implemented")
+	return getHappensBefore(first.getVpre(), first.getVpost(), second.getVpre(),
+		second.getVpost())
 }
 
 /*

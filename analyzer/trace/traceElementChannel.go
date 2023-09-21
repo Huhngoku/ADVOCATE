@@ -1,9 +1,10 @@
 package trace
 
 import (
-	"analyzer/debug"
 	"errors"
 	"strconv"
+
+	"analyzer/debug"
 )
 
 // enum for opC
@@ -21,6 +22,8 @@ const (
 *   routine (int): The routine id
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
+*   vpre (vectorClock): The vector clock at the start of the event
+*   vpost (vectorClock): The vector clock at the end of the event
 *   id (int): The id of the channel
 *   opC (int, enum): The operation on the channel
 *   exec (int, enum): The execution status of the operation
@@ -36,6 +39,8 @@ type traceElementChannel struct {
 	routine int
 	tpre    int
 	tpost   int
+	vpre    vectorClock
+	vpost   vectorClock
 	id      int
 	opC     opChannel
 	cl      bool
@@ -50,6 +55,7 @@ type traceElementChannel struct {
 * Create a new channel trace element
 * Args:
 *   routine (int): The routine id
+*   numberOfRoutines (int): The number of routines in the trace
 *   tpre (string): The timestamp at the start of the event
 *   tpost (string): The timestamp at the end of the event
 *   id (string): The id of the channel
@@ -59,8 +65,9 @@ type traceElementChannel struct {
 *   qSize (string): The size of the channel queue
 *   pos (string): The position of the channel operation in the code
  */
-func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
-	opC string, cl string, oId string, qSize string, pos string) error {
+func addTraceElementChannel(routine int, numberOfRoutines int, tpre string,
+	tpost string, id string, opC string, cl string, oId string, qSize string,
+	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -107,6 +114,8 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
+		vpre:    newVectorClock(numberOfRoutines),
+		vpost:   newVectorClock(numberOfRoutines),
 		id:      id_int,
 		opC:     opC_int,
 		cl:      cl_bool,
@@ -115,7 +124,7 @@ func AddTraceElementChannel(routine int, tpre string, tpost string, id string,
 		pos:     pos,
 	}
 
-	return addElementToTrace(routine, &elem)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -143,6 +152,24 @@ func (elem *traceElementChannel) getTpre() int {
  */
 func (elem *traceElementChannel) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the vector clock at the begin of the event
+ * Returns:
+ *   vectorClock: The vector clock at the begin of the event
+ */
+func (elem *traceElementChannel) getVpre() *vectorClock {
+	return &elem.vpre
+}
+
+/*
+ * Get the vector clock at the end of the event
+ * Returns:
+ *   vectorClock: The vector clock at the end of the event
+ */
+func (elem *traceElementChannel) getVpost() *vectorClock {
+	return &elem.vpost
 }
 
 /*
@@ -190,7 +217,10 @@ func (elem *traceElementChannel) findPartner() {
 	for _, partner := range channelOperations {
 		// check for send receive
 		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
-			debug.Log("Found partner for channel operation"+partner.toString()+" <-> "+elem.toString(), 3)
+			debug.Log(
+				"Found partner for channel operation"+partner.toString()+" <-> "+elem.toString(),
+				3,
+			)
 			elem.partner = partner
 			partner.partner = elem
 			break
