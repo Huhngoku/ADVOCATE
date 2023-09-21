@@ -57,12 +57,32 @@ TEXT ·Load(SB),NOSPLIT,$0-12
 	MOVW	R0, ret+8(FP)
 	RET
 
+// DEDEGO-CHANGE-START
+// uint32 ·Load(uint32 volatile* addr)
+TEXT ·LoadDedego(SB),NOSPLIT,$0-12
+// TODO: implement recording
+	MOVD	ptr+0(FP), R0
+	LDARW	(R0), R0
+	MOVW	R0, ret+8(FP)
+	RET
+// DEDEGO-CAHNGE-END
+
 // uint8 ·Load8(uint8 volatile* addr)
 TEXT ·Load8(SB),NOSPLIT,$0-9
 	MOVD	ptr+0(FP), R0
 	LDARB	(R0), R0
 	MOVB	R0, ret+8(FP)
 	RET
+
+// DEDEGO-CHANGE-START
+// uint8 ·Load8(uint8 volatile* addr)
+TEXT ·Load8Dedego(SB),NOSPLIT,$0-9
+// TODO: implement recording
+	MOVD	ptr+0(FP), R0
+	LDARB	(R0), R0
+	MOVB	R0, ret+8(FP)
+	RET
+// DEDEGO-CHANGE-END
 
 // uint64 ·Load64(uint64 volatile* addr)
 TEXT ·Load64(SB),NOSPLIT,$0-16
@@ -71,12 +91,32 @@ TEXT ·Load64(SB),NOSPLIT,$0-16
 	MOVD	R0, ret+8(FP)
 	RET
 
+// DEDEGO-CHANGE-START
+// uint64 ·Load64(uint64 volatile* addr)
+TEXT ·Load64Dedego(SB),NOSPLIT,$0-16
+// TODO: implement recording
+	MOVD	ptr+0(FP), R0
+	LDAR	(R0), R0
+	MOVD	R0, ret+8(FP)
+	RET
+// DEDEGO-CHANGE-END
+
 // void *·Loadp(void *volatile *addr)
 TEXT ·Loadp(SB),NOSPLIT,$0-16
 	MOVD	ptr+0(FP), R0
 	LDAR	(R0), R0
 	MOVD	R0, ret+8(FP)
 	RET
+
+// DEDEGO-CHANGE-START
+// void *·Loadp(void *volatile *addr)
+TEXT ·LoadpDedego(SB),NOSPLIT,$0-16
+// TODO: implement recording
+	MOVD	ptr+0(FP), R0
+	LDAR	(R0), R0
+	MOVD	R0, ret+8(FP)
+	RET
+// DEDEGO-CHANGE-END
 
 // uint32 ·LoadAcq(uint32 volatile* addr)
 TEXT ·LoadAcq(SB),NOSPLIT,$0-12
