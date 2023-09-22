@@ -47,8 +47,8 @@ func main() {    // routine 1
 ```
 If we ignore all internal operations, we would get the following trace:
 ```txt
-G,1,2;C,2,10,5,R,1,0,example_file.go:12;C,11,12,4,R,1,2,example_file.go:13;C,13,14,4,R,2,2,example_file.go:14;C,15,15,4,C,0,2,example_file.go:16
-C,3,4,4,S,1,2,example_file.go:7;C,5,6,4,S,2,2,example_file.go:8;C,7,8,5,S,1,0,example_file.go:9;C,9,0,5,S,2,0,example_file.go:10
+G,1,2;C,2,10,5,R,f,1,0,example_file.go:12;C,11,12,4,R,f,1,2,example_file.go:13;C,13,14,4,R,f,2,2,example_file.go:14;C,15,15,4,C,f,0,2,example_file.go:16
+C,3,4,4,S,f,1,2,example_file.go:7;C,5,6,4,S,f,2,2,example_file.go:8;C,7,8,5,S,f,1,0,example_file.go:9;C,9,0,5,S,f,2,0,example_file.go:10
 ```
 In this example it is also shown what happens, when an operation is not fully executed. In this case [tpre] is set, but [tpost] is the default value of 0 (last element in trace, line 10).
 
