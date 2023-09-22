@@ -10,7 +10,7 @@ Added files:
 - src/runtime/dedego_util.go
 - src/runtime/internal/atomic/dedego_atomic.go
 
-Changed files (marked with DEDEGO-CHANGE):
+Changed files (marked with DEDEGO-CHANGE, außer in .s):
 
 - src/cmd/cgo/internal/test/testx.go
 - src/runtime/proc.go
