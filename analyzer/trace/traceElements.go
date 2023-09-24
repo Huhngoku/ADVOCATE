@@ -28,7 +28,6 @@ func GetRelationshipInRecordedRun(first traceElement, second traceElement) happe
 	}
 }
 
-// TODO: Implement this
 /*
 * Return a given happens-before relationship (befor, after, concurrent),
 * given two trace elements. This relationship must hold even with a valid

@@ -62,9 +62,9 @@ func FindPartner() {
 func CalculateVectorClocks() {
 	debug.Log("Calculate vector clocks...", 2)
 
-	for _, elem := range trace {
+	// for _, elem := range trace {
 
-	}
+	// }
 
 	debug.Log("Vector clock calculation completed", 2)
 }
@@ -74,9 +74,19 @@ func CalculateVectorClocks() {
  */
 type sortByTPost []traceElement
 
-func (a sortByTPost) Len() int           { return len(a) }
-func (a sortByTPost) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a sortByTPost) Less(i, j int) bool { return a[i].getTpost() < a[j].getTpost() }
+func (a sortByTPost) Len() int      { return len(a) }
+func (a sortByTPost) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortByTPost) Less(i, j int) bool {
+	a_i := a[i].getTpost()
+	if a_i == 0 {
+		a_i = a[i].getTpre()
+	}
+	a_j := a[j].getTpost()
+	if a_j == 0 {
+		a_j = a[j].getTpre()
+	}
+	return a_i < a_j
+}
 func Sort() {
 	debug.Log("Sort Trace...", 2)
 	sort.Sort(sortByTPost(trace))
