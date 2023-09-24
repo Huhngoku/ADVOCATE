@@ -34,6 +34,7 @@ const (
 *   pos (string): The position of the channel operation in the code
 *   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
 *   partner (*traceElementChannel): The partner of the channel operation
+*   pre (*traceElementPre): The pre element of the channel operation
  */
 type traceElementChannel struct {
 	routine int
@@ -49,6 +50,7 @@ type traceElementChannel struct {
 	pos     string
 	sel     *traceElementSelect
 	partner *traceElementChannel
+	pre     *traceElementPre
 }
 
 /*
@@ -124,7 +126,16 @@ func addTraceElementChannel(routine int, numberOfRoutines int, tpre string,
 		pos:     pos,
 	}
 
-	return addElementToTrace(&elem)
+	elem_pre := traceElementPre{
+		elem:     &elem,
+		elemType: Chan,
+	}
+
+	elem.pre = &elem_pre
+
+	res1 := addElementToTrace(&elem_pre)
+	res2 := addElementToTrace(&elem)
+	return errors.Join(res1, res2)
 }
 
 /*
@@ -152,6 +163,19 @@ func (elem *traceElementChannel) getTpre() int {
  */
 func (elem *traceElementChannel) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the timer, that is used for the sorting of the trace
+ * Returns:
+ *   float32: The time of the element
+ */
+func (elem *traceElementChannel) getTsort() float32 {
+	if elem.partner == nil {
+		// add 0.5 to tpre, so that is sorted after the pre event
+		return float32(elem.tpre) + 0.5
+	}
+	return float32(elem.tpost)
 }
 
 /*
@@ -264,6 +288,19 @@ func (elem *traceElementChannel) findPartner() {
 	}
 }
 
+/*
+ * Update and calculate the vector clock of the element
+ * Args:
+ *   vc (vectorClock): The current vector clocks
+ * TODO: implement
+ */
+func (elem *traceElementChannel) calculateVectorClock(vc *[]vectorClock) {
+
+}
+
+/*
+ * Function to check if there are channel operations without partner
+ */
 func checkChannelOperations() {
 	for _, elem := range channelOperations {
 		debug.Log("Channel operation "+elem.toString()+" has no partner", 1)

@@ -7,6 +7,7 @@ import (
 )
 
 var trace []traceElement = make([]traceElement, 0)
+var currentVectorClocks []vectorClock = make([]vectorClock, 0)
 
 /*
 * Get the trace
@@ -59,12 +60,40 @@ func FindPartner() {
 /*
 * Calculate vector clocks
  */
-func CalculateVectorClocks() {
+func CalculateVectorClocks(numberOfRoutines int) {
 	debug.Log("Calculate vector clocks...", 2)
 
-	// for _, elem := range trace {
+	// create current vector clock
+	currentVectorClocks = make([]vectorClock, numberOfRoutines)
+	for i := 0; i < numberOfRoutines; i++ {
+		currentVectorClocks[i] = newVectorClock(numberOfRoutines)
+	}
 
-	// }
+	for _, elem := range trace {
+		switch e := elem.(type) {
+		case *traceElementAtomic:
+			debug.Log("Calculate vector clock for atomic operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		case *traceElementChannel:
+			debug.Log("Calculate vector clock for channel operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		case *traceElementMutex:
+			debug.Log("Calculate vector clock for mutex operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		case *traceElementRoutine:
+			debug.Log("Calculate vector clock for routine operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		case *traceElementSelect:
+			debug.Log("Calculate vector clock for select operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		case *traceElementWait:
+			debug.Log("Calculate vector clock for go operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		case *traceElementPre:
+			debug.Log("Calculate vector clock for pre operation "+e.toString(), 3)
+			e.calculateVectorClock(&currentVectorClocks)
+		}
+	}
 
 	debug.Log("Vector clock calculation completed", 2)
 }
@@ -77,15 +106,7 @@ type sortByTPost []traceElement
 func (a sortByTPost) Len() int      { return len(a) }
 func (a sortByTPost) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a sortByTPost) Less(i, j int) bool {
-	a_i := a[i].getTpost()
-	if a_i == 0 {
-		a_i = a[i].getTpre()
-	}
-	a_j := a[j].getTpost()
-	if a_j == 0 {
-		a_j = a[j].getTpre()
-	}
-	return a_i < a_j
+	return a[i].getTsort() < a[j].getTsort()
 }
 func Sort() {
 	debug.Log("Sort Trace...", 2)

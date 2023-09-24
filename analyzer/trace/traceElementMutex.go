@@ -32,6 +32,8 @@ const (
  *   opM (opMutex): The operation on the mutex
  *   suc (bool): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
+ *   partner (*traceElementMutex): The partner of the mutex operation
+ *   pre (*traceElementPre): The pre element of the mutex operation
  */
 type traceElementMutex struct {
 	routine int
@@ -45,6 +47,7 @@ type traceElementMutex struct {
 	suc     bool
 	pos     string
 	partner *traceElementMutex
+	pre     *traceElementPre
 }
 
 /*
@@ -118,7 +121,13 @@ func addTraceElementMutex(routine int, numberOfRoutines int, tpre string,
 		suc:     suc_bool,
 		pos:     pos}
 
-	return addElementToTrace(&elem)
+	elem_pre := traceElementPre{
+		elem:     &elem,
+		elemType: Mutex}
+
+	err1 := addElementToTrace(&elem_pre)
+	err2 := addElementToTrace(&elem)
+	return errors.Join(err1, err2)
 }
 
 /*
@@ -146,6 +155,18 @@ func (elem *traceElementMutex) getTpre() int {
  */
 func (elem *traceElementMutex) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the timer, that is used for the sorting of the trace
+ * Returns:
+ *   int: The timer of the element
+ */
+func (elem *traceElementMutex) getTsort() float32 {
+	if elem.tpost == 0 {
+		return float32(elem.tpre) + 0.5
+	}
+	return float32(elem.tpost)
 }
 
 /*
@@ -226,3 +247,11 @@ func (elem *traceElementMutex) findPartner() {
 		debug.Log("Unlock "+elem.toString()+" without prior lock", 1)
 	}
 }
+
+/*
+ * Update and calculate the vector clock of the element
+ * Args:
+ *   vc (vectorClock): The current vector clocks
+ * TODO: implement
+ */
+func (elem *traceElementMutex) calculateVectorClock(vc *[]vectorClock) {}

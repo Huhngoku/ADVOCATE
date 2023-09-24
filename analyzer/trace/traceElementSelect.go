@@ -20,6 +20,7 @@ import (
  *   chosenCase (traceElementSelectCase): The chosen case, nil if default case chosen
  *   chosenDefault (bool): if the default case was chosen
  *   pos (string): The position of the select statement in the code
+ *   pre (*traceElementPre): The pre element of the select statement
  */
 type traceElementSelect struct {
 	routine         int
@@ -32,6 +33,7 @@ type traceElementSelect struct {
 	containsDefault bool
 	chosenDefault   bool
 	pos             string
+	pre             *traceElementPre
 }
 
 /*
@@ -140,7 +142,16 @@ func addTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 	elem.chosenDefault = chosenDefault
 	elem.cases = cases_list
 
-	return addElementToTrace(&elem)
+	// create the pre event
+	elem_pre := traceElementPre{
+		elem:     &elem,
+		elemType: Select,
+	}
+	elem.pre = &elem_pre
+
+	err1 := addElementToTrace(&elem_pre)
+	err2 := addElementToTrace(&elem)
+	return errors.Join(err1, err2)
 }
 
 /*
@@ -168,6 +179,18 @@ func (elem *traceElementSelect) getTpre() int {
  */
 func (elem *traceElementSelect) getTpost() int {
 	return elem.tpost
+}
+
+/*
+ * Get the timer, that is used for the sorting of the trace
+ * Returns:
+ *   int: The timer of the element
+ */
+func (elem *traceElementSelect) getTsort() float32 {
+	if elem.tpost == 0 {
+		return float32(elem.tpre) + 0.5
+	}
+	return float32(elem.tpost)
 }
 
 /*
@@ -213,4 +236,13 @@ func (elem *traceElementSelect) toString() string {
 	}
 	res += "," + elem.pos
 	return res
+}
+
+/*
+ * Update and calculate the vector clock of the element
+ * Args:
+ *   vc (vectorClock): The current vector clocks
+ * TODO: implement
+ */
+func (elem *traceElementSelect) calculateVectorClock(vc *[]vectorClock) {
 }

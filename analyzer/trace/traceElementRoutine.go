@@ -76,6 +76,15 @@ func (elem *traceElementRoutine) getTpost() int {
 }
 
 /*
+ * Get the timer, that is used for the sorting of the trace
+ * Returns:
+ *   int: The timer of the element
+ */
+func (elem *traceElementRoutine) getTsort() float32 {
+	return float32(elem.tpost)
+}
+
+/*
  * Get the vector clock at the begin of the event. It is equal to the vector clock
  * at the end of the event.
  * Returns:
@@ -101,4 +110,13 @@ func (elem *traceElementRoutine) getVpost() *vectorClock {
  */
 func (elem *traceElementRoutine) toString() string {
 	return "G" + "," + strconv.Itoa(elem.tpost) + "," + strconv.Itoa(elem.id)
+}
+
+/*
+ * Update and calculate the vector clock of the element
+ * Args:
+ *   vc (vectorClock): The current vector clocks
+ * TODO: implement
+ */
+func (elem *traceElementRoutine) calculateVectorClock(vc *[]vectorClock) {
 }

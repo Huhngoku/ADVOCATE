@@ -11,15 +11,18 @@ import (
 
 /*
  * Read and build the trace from a file
+ * Args:
+ *   file_path (string): The path to the log file
+ * Returns:
+ *   int: The number of routines in the trace
  */
-func CreateTraceFromFile(file_path string) {
+func CreateTraceFromFile(file_path string) int {
 	debug.Log("Create trace from file "+file_path+"...", 2)
 	file, err := os.Open(file_path)
 	if err != nil {
 		debug.Log("Error opening file: "+file_path, 1)
 		panic(err)
 	}
-	defer file.Close()
 
 	debug.Log("Count number of routines...", 3)
 	numberOfRoutines := 0
@@ -27,9 +30,16 @@ func CreateTraceFromFile(file_path string) {
 	for scanner.Scan() {
 		numberOfRoutines++
 	}
+	file.Close()
+
+	file2, err := os.Open(file_path)
+	if err != nil {
+		debug.Log("Error opening file: "+file_path, 1)
+		panic(err)
+	}
 
 	debug.Log("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", 3)
-	scanner = bufio.NewScanner(file)
+	scanner = bufio.NewScanner(file2)
 	routine := 0
 	for scanner.Scan() {
 		routine++
@@ -45,6 +55,7 @@ func CreateTraceFromFile(file_path string) {
 	Sort()        // sort the trace by tpre
 	FindPartner() // set all partner
 	debug.Log("Trace created", 2)
+	return numberOfRoutines
 }
 
 /*

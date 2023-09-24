@@ -25,6 +25,7 @@ const (
 *   delta (int): The delta of the wait group
 *   val (int): The value of the wait group
 *   pos (string): The position of the wait group in the code
+*   pre (*traceElementPre): The pre element of the wait group
  */
 type traceElementWait struct {
 	routine int
@@ -37,6 +38,7 @@ type traceElementWait struct {
 	delta   int
 	val     int
 	pos     string
+	pre     *traceElementPre
 }
 
 /*
@@ -99,7 +101,16 @@ func addTraceElementWait(routine int, numberOfRoutines int, tpre string,
 		val:     val_int,
 		pos:     pos}
 
-	return addElementToTrace(&elem)
+	// create the pre event
+	elem_pre := traceElementPre{
+		elem:     &elem,
+		elemType: Wait,
+	}
+
+	err1 := addElementToTrace(&elem_pre)
+	err2 := addElementToTrace(&elem)
+
+	return errors.Join(err1, err2)
 }
 
 /*
@@ -148,6 +159,18 @@ func (elem *traceElementWait) getVpost() *vectorClock {
 }
 
 /*
+ * Get the timer, that is used for the sorting of the trace
+ * Returns:
+ *   int: The timer of the element
+ */
+func (elem *traceElementWait) getTsort() float32 {
+	if elem.tpost == 0 {
+		return float32(elem.tpre) + 0.5
+	}
+	return float32(elem.tpost)
+}
+
+/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
@@ -157,3 +180,11 @@ func (elem *traceElementWait) toString() string {
 		strconv.Itoa(elem.tpost) + "," + "," +
 		strconv.Itoa(elem.delta) + "," + strconv.Itoa(elem.val) + "," + elem.pos
 }
+
+/*
+ * Update and calculate the vector clock of the element
+ * Args:
+ *   vc (vectorClock): The current vector clocks
+ * TODO: implement
+ */
+func (elem *traceElementWait) calculateVectorClock(vc *[]vectorClock) {}
