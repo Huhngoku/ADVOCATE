@@ -143,8 +143,8 @@ func addTraceElementChannel(routine int, numberOfRoutines int, tpre string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem *traceElementChannel) getRoutine() int {
-	return elem.routine
+func (ch *traceElementChannel) getRoutine() int {
+	return ch.routine
 }
 
 /*
@@ -152,8 +152,8 @@ func (elem *traceElementChannel) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem *traceElementChannel) getTpre() int {
-	return elem.tpre
+func (ch *traceElementChannel) getTpre() int {
+	return ch.tpre
 }
 
 /*
@@ -161,8 +161,8 @@ func (elem *traceElementChannel) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem *traceElementChannel) getTpost() int {
-	return elem.tpost
+func (ch *traceElementChannel) getTpost() int {
+	return ch.tpost
 }
 
 /*
@@ -170,12 +170,12 @@ func (elem *traceElementChannel) getTpost() int {
  * Returns:
  *   float32: The time of the element
  */
-func (elem *traceElementChannel) getTsort() float32 {
-	if elem.partner == nil {
+func (ch *traceElementChannel) getTsort() float32 {
+	if ch.partner == nil {
 		// add 0.5 to tpre, so that is sorted after the pre event
-		return float32(elem.tpre) + 0.5
+		return float32(ch.tpre) + 0.5
 	}
-	return float32(elem.tpost)
+	return float32(ch.tpost)
 }
 
 /*
@@ -183,8 +183,8 @@ func (elem *traceElementChannel) getTsort() float32 {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (elem *traceElementChannel) getVpre() *vectorClock {
-	return &elem.vpre
+func (ch *traceElementChannel) getVpre() *vectorClock {
+	return &ch.vpre
 }
 
 /*
@@ -192,8 +192,8 @@ func (elem *traceElementChannel) getVpre() *vectorClock {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (elem *traceElementChannel) getVpost() *vectorClock {
-	return &elem.vpost
+func (ch *traceElementChannel) getVpost() *vectorClock {
+	return &ch.vpost
 }
 
 /*
@@ -201,14 +201,14 @@ func (elem *traceElementChannel) getVpost() *vectorClock {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem *traceElementChannel) toString() string {
-	return elem.toStringSep(",")
+func (ch *traceElementChannel) toString() string {
+	return ch.toStringSep(",")
 }
 
-func (elem *traceElementChannel) toStringSep(sep string) string {
-	return "C," + strconv.Itoa(elem.tpre) + sep + strconv.Itoa(elem.tpost) + sep +
-		strconv.Itoa(elem.id) + sep + strconv.Itoa(int(elem.opC)) + sep +
-		strconv.Itoa(elem.oId) + sep + strconv.Itoa(elem.qSize) + sep + elem.pos
+func (ch *traceElementChannel) toStringSep(sep string) string {
+	return "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tpost) + sep +
+		strconv.Itoa(ch.id) + sep + strconv.Itoa(int(ch.opC)) + sep +
+		strconv.Itoa(ch.oId) + sep + strconv.Itoa(ch.qSize) + sep + ch.pos
 }
 
 // list to store operations where partner has not jet been found
@@ -225,36 +225,36 @@ var closeOperations = make([]*traceElementChannel, 0)
  * executed because of a close operation on the channel.
  * If a partner is found, the partner field of the element is set.
  */
-func (elem *traceElementChannel) findPartner() {
-	if elem.tpost == 0 { // if tpost is 0, the operation was not finished
-		debug.Log("Channel operation "+elem.toString()+" was not finished", 3)
+func (ch *traceElementChannel) findPartner() {
+	if ch.tpost == 0 { // if tpost is 0, the operation was not finished
+		debug.Log("Channel operation "+ch.toString()+" was not finished", 3)
 		return
 	}
 
-	if elem.opC == close { // close operation has no partner
-		debug.Log("Add close operation "+elem.toString()+" to closeOperations", 3)
-		closeOperations = append(closeOperations, elem)
+	if ch.opC == close { // close operation has no partner
+		debug.Log("Add close operation "+ch.toString()+" to closeOperations", 3)
+		closeOperations = append(closeOperations, ch)
 	}
 
 	// check if partner is already in channelOperations
 	i := 0
 	for _, partner := range channelOperations {
 		// check for send receive
-		if elem.id == partner.id && elem.opC != partner.opC && elem.oId == partner.oId {
+		if ch.id == partner.id && ch.opC != partner.opC && ch.oId == partner.oId {
 			debug.Log(
-				"Found partner for channel operation"+partner.toString()+" <-> "+elem.toString(),
+				"Found partner for channel operation"+partner.toString()+" <-> "+ch.toString(),
 				3,
 			)
-			elem.partner = partner
-			partner.partner = elem
+			ch.partner = partner
+			partner.partner = ch
 			break
 		}
 
 		// check new close
-		if elem.opC == close {
-			debug.Log("Check for new close operation "+elem.toString(), 3)
-			if elem.id == partner.id && partner.cl {
-				partner.partner = elem
+		if ch.opC == close {
+			debug.Log("Check for new close operation "+ch.toString(), 3)
+			if ch.id == partner.id && partner.cl {
+				partner.partner = ch
 				break
 			}
 		}
@@ -262,29 +262,29 @@ func (elem *traceElementChannel) findPartner() {
 	}
 
 	// remove the partner element, if an partner was found
-	if elem.partner != nil {
-		debug.Log("Partner found. Remove "+elem.partner.toString()+" from channelOperations", 3)
+	if ch.partner != nil {
+		debug.Log("Partner found. Remove "+ch.partner.toString()+" from channelOperations", 3)
 		channelOperations = append(channelOperations[:i], channelOperations[i+1:]...)
 	}
 
 	// check if partner is already in closeOperations
 	for _, partner := range closeOperations {
 		debug.Log("Check for close partner "+partner.toString(), 3)
-		if elem.id == partner.id {
-			if elem.opC == close && partner.cl {
-				debug.Log("Found close partner "+partner.toString()+" for "+elem.toString(), 3)
-				partner.partner = elem
-			} else if elem.cl && partner.opC == close {
-				debug.Log("Found close partner "+partner.toString()+" for "+elem.toString(), 3)
-				elem.partner = partner
+		if ch.id == partner.id {
+			if ch.opC == close && partner.cl {
+				debug.Log("Found close partner "+partner.toString()+" for "+ch.toString(), 3)
+				partner.partner = ch
+			} else if ch.cl && partner.opC == close {
+				debug.Log("Found close partner "+partner.toString()+" for "+ch.toString(), 3)
+				ch.partner = partner
 			}
 		}
 	}
 
 	// if partner is not found, add to channelOperations
-	if elem.partner == nil && elem.opC != close {
-		debug.Log("No partner found. Add "+elem.toString()+" to channelOperations", 3)
-		channelOperations = append(channelOperations, elem)
+	if ch.partner == nil && ch.opC != close {
+		debug.Log("No partner found. Add "+ch.toString()+" to channelOperations", 3)
+		channelOperations = append(channelOperations, ch)
 	}
 }
 
@@ -294,7 +294,7 @@ func (elem *traceElementChannel) findPartner() {
  *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (elem *traceElementChannel) calculateVectorClock(vc *[]vectorClock) {
+func (ch *traceElementChannel) calculateVectorClock(vc *[]vectorClock) {
 
 }
 

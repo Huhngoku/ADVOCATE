@@ -29,8 +29,8 @@ type traceElementPre struct {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem *traceElementPre) getTpre() int {
-	return elem.elem.getTpre()
+func (pre *traceElementPre) getTpre() int {
+	return pre.elem.getTpre()
 }
 
 /*
@@ -38,8 +38,8 @@ func (elem *traceElementPre) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem *traceElementPre) getTpost() int {
-	return elem.elem.getTpost()
+func (pre *traceElementPre) getTpost() int {
+	return pre.elem.getTpost()
 }
 
 /*
@@ -47,8 +47,8 @@ func (elem *traceElementPre) getTpost() int {
  * Returns:
  *   float32: The timer of the element
  */
-func (elem *traceElementPre) getTsort() float32 {
-	return float32(elem.elem.getTpre())
+func (pre *traceElementPre) getTsort() float32 {
+	return float32(pre.elem.getTpre())
 }
 
 /*
@@ -56,8 +56,8 @@ func (elem *traceElementPre) getTsort() float32 {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (elem *traceElementPre) getVpre() *vectorClock {
-	return elem.elem.getVpre()
+func (pre *traceElementPre) getVpre() *vectorClock {
+	return pre.elem.getVpre()
 }
 
 /*
@@ -65,8 +65,8 @@ func (elem *traceElementPre) getVpre() *vectorClock {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (elem *traceElementPre) getVpost() *vectorClock {
-	return elem.elem.getVpost()
+func (pre *traceElementPre) getVpost() *vectorClock {
+	return pre.elem.getVpost()
 }
 
 /*
@@ -74,8 +74,8 @@ func (elem *traceElementPre) getVpost() *vectorClock {
  * Returns:
  *   int: The routine of the element
  */
-func (elem *traceElementPre) getRoutine() int {
-	return elem.elem.getRoutine()
+func (pre *traceElementPre) getRoutine() int {
+	return pre.elem.getRoutine()
 }
 
 /*
@@ -83,8 +83,8 @@ func (elem *traceElementPre) getRoutine() int {
  * Returns:
  *   string: The string representation of the element
  */
-func (elem *traceElementPre) toString() string {
-	return "Pre{" + elem.elem.toString() + "}"
+func (pre *traceElementPre) toString() string {
+	return "Pre{" + pre.elem.toString() + "}"
 }
 
 /*
@@ -92,6 +92,6 @@ func (elem *traceElementPre) toString() string {
  * Params:
  *   vc (vectorClock): The current vector clocks
  */
-func (elem *traceElementPre) calculateVectorClock(vc *[]vectorClock) {
+func (pre *traceElementPre) calculateVectorClock(vc *[]vectorClock) {
 
 }

@@ -135,8 +135,8 @@ func addTraceElementMutex(routine int, numberOfRoutines int, tpre string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem *traceElementMutex) getRoutine() int {
-	return elem.routine
+func (mu *traceElementMutex) getRoutine() int {
+	return mu.routine
 }
 
 /*
@@ -144,8 +144,8 @@ func (elem *traceElementMutex) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem *traceElementMutex) getTpre() int {
-	return elem.tpre
+func (mu *traceElementMutex) getTpre() int {
+	return mu.tpre
 }
 
 /*
@@ -153,8 +153,8 @@ func (elem *traceElementMutex) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem *traceElementMutex) getTpost() int {
-	return elem.tpost
+func (mu *traceElementMutex) getTpost() int {
+	return mu.tpost
 }
 
 /*
@@ -162,11 +162,11 @@ func (elem *traceElementMutex) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (elem *traceElementMutex) getTsort() float32 {
-	if elem.tpost == 0 {
-		return float32(elem.tpre) + 0.5
+func (mu *traceElementMutex) getTsort() float32 {
+	if mu.tpost == 0 {
+		return float32(mu.tpre) + 0.5
 	}
-	return float32(elem.tpost)
+	return float32(mu.tpost)
 }
 
 /*
@@ -174,8 +174,8 @@ func (elem *traceElementMutex) getTsort() float32 {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (elem *traceElementMutex) getVpre() *vectorClock {
-	return &elem.vpre
+func (mu *traceElementMutex) getVpre() *vectorClock {
+	return &mu.vpre
 }
 
 /*
@@ -183,8 +183,8 @@ func (elem *traceElementMutex) getVpre() *vectorClock {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (elem *traceElementMutex) getVpost() *vectorClock {
-	return &elem.vpost
+func (mu *traceElementMutex) getVpost() *vectorClock {
+	return &mu.vpost
 }
 
 /*
@@ -192,11 +192,11 @@ func (elem *traceElementMutex) getVpost() *vectorClock {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem *traceElementMutex) toString() string {
-	return "M" + "," + strconv.Itoa(elem.tpre) + "," + strconv.Itoa(elem.tpost) +
-		strconv.Itoa(elem.id) + "," + strconv.FormatBool(elem.rw) + "," +
-		strconv.Itoa(int(elem.opM)) + "," + strconv.FormatBool(elem.suc) + "," +
-		elem.pos
+func (mu *traceElementMutex) toString() string {
+	return "M" + "," + strconv.Itoa(mu.tpre) + "," + strconv.Itoa(mu.tpost) +
+		strconv.Itoa(mu.id) + "," + strconv.FormatBool(mu.rw) + "," +
+		strconv.Itoa(int(mu.opM)) + "," + strconv.FormatBool(mu.suc) + "," +
+		mu.pos
 }
 
 // mutex operations, for which no partner has been found yet
@@ -207,33 +207,33 @@ var mutexNoPartner []*traceElementMutex
  * is set in the element.
  * The functions assumes, that the trace list is sorted by tpost
  */
-func (elem *traceElementMutex) findPartner() {
+func (mu *traceElementMutex) findPartner() {
 	// check if the element should have a partner
-	if elem.tpost == 0 || !elem.suc {
-		debug.Log("Mutex operation "+elem.toString()+" has not executed", 3)
+	if mu.tpost == 0 || !mu.suc {
+		debug.Log("Mutex operation "+mu.toString()+" has not executed", 3)
 		return
 	}
 
 	found := false
-	if elem.opM == LockOp || elem.opM == RLockOp || elem.opM == TryLockOp {
-		debug.Log("Add mutex lock operations "+elem.toString()+" to mutexNoPartner", 3)
+	if mu.opM == LockOp || mu.opM == RLockOp || mu.opM == TryLockOp {
+		debug.Log("Add mutex lock operations "+mu.toString()+" to mutexNoPartner", 3)
 		// add lock operations to list of locks without partner
-		mutexNoPartner = append(mutexNoPartner, elem)
+		mutexNoPartner = append(mutexNoPartner, mu)
 		found = true // set to true to prevent panic
-	} else if elem.opM == UnlockOp || elem.opM == RUnlockOp {
+	} else if mu.opM == UnlockOp || mu.opM == RUnlockOp {
 		// for unlock operations, check find the last lock operation
 		// on the same mutex
 		for i := len(mutexNoPartner) - 1; i >= 0; i-- {
 			lock := mutexNoPartner[i]
-			if elem.id != lock.id {
+			if mu.id != lock.id {
 				continue
 			}
 			if lock.opM == UnlockOp || lock.opM == RUnlockOp {
-				debug.Log("Two consecutive lock on the same channel without unlock in between: "+elem.toString()+lock.toString(), 1)
+				debug.Log("Two consecutive lock on the same channel without unlock in between: "+mu.toString()+lock.toString(), 1)
 			}
-			debug.Log("Found partner for mutex operation "+lock.toString()+" <-> "+elem.toString(), 3)
-			elem.partner = lock
-			lock.partner = elem
+			debug.Log("Found partner for mutex operation "+lock.toString()+" <-> "+mu.toString(), 3)
+			mu.partner = lock
+			lock.partner = mu
 			debug.Log("Remove mutex lock operation "+lock.toString()+" from mutexNoPartner", 3)
 			mutexNoPartner = append(mutexNoPartner[:i], mutexNoPartner[i+1:]...)
 			found = true
@@ -244,7 +244,7 @@ func (elem *traceElementMutex) findPartner() {
 	}
 
 	if !found {
-		debug.Log("Unlock "+elem.toString()+" without prior lock", 1)
+		debug.Log("Unlock "+mu.toString()+" without prior lock", 1)
 	}
 }
 
@@ -254,4 +254,4 @@ func (elem *traceElementMutex) findPartner() {
  *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (elem *traceElementMutex) calculateVectorClock(vc *[]vectorClock) {}
+func (mu *traceElementMutex) calculateVectorClock(vc *[]vectorClock) {}

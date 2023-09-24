@@ -118,8 +118,8 @@ func addTraceElementWait(routine int, numberOfRoutines int, tpre string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem *traceElementWait) getRoutine() int {
-	return elem.routine
+func (wa *traceElementWait) getRoutine() int {
+	return wa.routine
 }
 
 /*
@@ -127,8 +127,8 @@ func (elem *traceElementWait) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (elem *traceElementWait) getTpre() int {
-	return elem.tpre
+func (wa *traceElementWait) getTpre() int {
+	return wa.tpre
 }
 
 /*
@@ -136,8 +136,8 @@ func (elem *traceElementWait) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (elem *traceElementWait) getTpost() int {
-	return elem.tpost
+func (wa *traceElementWait) getTpost() int {
+	return wa.tpost
 }
 
 /*
@@ -145,8 +145,8 @@ func (elem *traceElementWait) getTpost() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (elem *traceElementWait) getVpre() *vectorClock {
-	return &elem.vpre
+func (wa *traceElementWait) getVpre() *vectorClock {
+	return &wa.vpre
 }
 
 /*
@@ -154,8 +154,8 @@ func (elem *traceElementWait) getVpre() *vectorClock {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (elem *traceElementWait) getVpost() *vectorClock {
-	return &elem.vpost
+func (wa *traceElementWait) getVpost() *vectorClock {
+	return &wa.vpost
 }
 
 /*
@@ -163,11 +163,11 @@ func (elem *traceElementWait) getVpost() *vectorClock {
  * Returns:
  *   int: The timer of the element
  */
-func (elem *traceElementWait) getTsort() float32 {
-	if elem.tpost == 0 {
-		return float32(elem.tpre) + 0.5
+func (wa *traceElementWait) getTsort() float32 {
+	if wa.tpost == 0 {
+		return float32(wa.tpre) + 0.5
 	}
-	return float32(elem.tpost)
+	return float32(wa.tpost)
 }
 
 /*
@@ -175,10 +175,10 @@ func (elem *traceElementWait) getTsort() float32 {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem *traceElementWait) toString() string {
-	return "W" + strconv.Itoa(elem.id) + "," + strconv.Itoa(elem.tpre) + "," +
-		strconv.Itoa(elem.tpost) + "," + "," +
-		strconv.Itoa(elem.delta) + "," + strconv.Itoa(elem.val) + "," + elem.pos
+func (wa *traceElementWait) toString() string {
+	return "W" + strconv.Itoa(wa.id) + "," + strconv.Itoa(wa.tpre) + "," +
+		strconv.Itoa(wa.tpost) + "," + "," +
+		strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val) + "," + wa.pos
 }
 
 /*
@@ -187,4 +187,4 @@ func (elem *traceElementWait) toString() string {
  *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (elem *traceElementWait) calculateVectorClock(vc *[]vectorClock) {}
+func (wa *traceElementWait) calculateVectorClock(vc *[]vectorClock) {}

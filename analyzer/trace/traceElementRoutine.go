@@ -53,8 +53,8 @@ func addTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem *traceElementRoutine) getRoutine() int {
-	return elem.routine
+func (ro *traceElementRoutine) getRoutine() int {
+	return ro.routine
 }
 
 /*
@@ -62,8 +62,8 @@ func (elem *traceElementRoutine) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (elem *traceElementRoutine) getTpre() int {
-	return elem.tpost
+func (ro *traceElementRoutine) getTpre() int {
+	return ro.tpost
 }
 
 /*
@@ -71,8 +71,8 @@ func (elem *traceElementRoutine) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (elem *traceElementRoutine) getTpost() int {
-	return elem.tpost
+func (ro *traceElementRoutine) getTpost() int {
+	return ro.tpost
 }
 
 /*
@@ -80,8 +80,8 @@ func (elem *traceElementRoutine) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (elem *traceElementRoutine) getTsort() float32 {
-	return float32(elem.tpost)
+func (ro *traceElementRoutine) getTsort() float32 {
+	return float32(ro.tpost)
 }
 
 /*
@@ -90,8 +90,8 @@ func (elem *traceElementRoutine) getTsort() float32 {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (elem *traceElementRoutine) getVpre() *vectorClock {
-	return &elem.vpost
+func (ro *traceElementRoutine) getVpre() *vectorClock {
+	return &ro.vpost
 }
 
 /*
@@ -99,8 +99,8 @@ func (elem *traceElementRoutine) getVpre() *vectorClock {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (elem *traceElementRoutine) getVpost() *vectorClock {
-	return &elem.vpost
+func (ro *traceElementRoutine) getVpost() *vectorClock {
+	return &ro.vpost
 }
 
 /*
@@ -108,8 +108,8 @@ func (elem *traceElementRoutine) getVpost() *vectorClock {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem *traceElementRoutine) toString() string {
-	return "G" + "," + strconv.Itoa(elem.tpost) + "," + strconv.Itoa(elem.id)
+func (ro *traceElementRoutine) toString() string {
+	return "G" + "," + strconv.Itoa(ro.tpost) + "," + strconv.Itoa(ro.id)
 }
 
 /*
@@ -118,5 +118,5 @@ func (elem *traceElementRoutine) toString() string {
  *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (elem *traceElementRoutine) calculateVectorClock(vc *[]vectorClock) {
+func (ro *traceElementRoutine) calculateVectorClock(vc *[]vectorClock) {
 }

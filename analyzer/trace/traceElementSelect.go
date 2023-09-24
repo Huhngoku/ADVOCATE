@@ -159,8 +159,8 @@ func addTraceElementSelect(routine int, numberOfRoutines int, tpre string,
  * Returns:
  *   int: The routine of the element
  */
-func (elem *traceElementSelect) getRoutine() int {
-	return elem.routine
+func (se *traceElementSelect) getRoutine() int {
+	return se.routine
 }
 
 /*
@@ -168,8 +168,8 @@ func (elem *traceElementSelect) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (elem *traceElementSelect) getTpre() int {
-	return elem.tpre
+func (se *traceElementSelect) getTpre() int {
+	return se.tpre
 }
 
 /*
@@ -177,8 +177,8 @@ func (elem *traceElementSelect) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (elem *traceElementSelect) getTpost() int {
-	return elem.tpost
+func (se *traceElementSelect) getTpost() int {
+	return se.tpost
 }
 
 /*
@@ -186,11 +186,11 @@ func (elem *traceElementSelect) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (elem *traceElementSelect) getTsort() float32 {
-	if elem.tpost == 0 {
-		return float32(elem.tpre) + 0.5
+func (se *traceElementSelect) getTsort() float32 {
+	if se.tpost == 0 {
+		return float32(se.tpre) + 0.5
 	}
-	return float32(elem.tpost)
+	return float32(se.tpost)
 }
 
 /*
@@ -198,8 +198,8 @@ func (elem *traceElementSelect) getTsort() float32 {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (elem *traceElementSelect) getVpre() *vectorClock {
-	return &elem.vpre
+func (se *traceElementSelect) getVpre() *vectorClock {
+	return &se.vpre
 }
 
 /*
@@ -207,8 +207,8 @@ func (elem *traceElementSelect) getVpre() *vectorClock {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (elem *traceElementSelect) getVpost() *vectorClock {
-	return &elem.vpost
+func (se *traceElementSelect) getVpost() *vectorClock {
+	return &se.vpost
 }
 
 /*
@@ -216,25 +216,25 @@ func (elem *traceElementSelect) getVpost() *vectorClock {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (elem *traceElementSelect) toString() string {
-	res := "S" + "," + strconv.Itoa(elem.tpre) + "," +
-		strconv.Itoa(elem.tpost) + "," + strconv.Itoa(elem.id) + ","
+func (se *traceElementSelect) toString() string {
+	res := "S" + "," + strconv.Itoa(se.tpre) + "," +
+		strconv.Itoa(se.tpost) + "," + strconv.Itoa(se.id) + ","
 
-	for i, c := range elem.cases {
+	for i, c := range se.cases {
 		if i != 0 {
 			res += "~"
 		}
 		res += c.toStringSep(".")
 	}
 
-	if elem.containsDefault {
-		if elem.chosenDefault {
+	if se.containsDefault {
+		if se.chosenDefault {
 			res += ".D"
 		} else {
 			res += ".d"
 		}
 	}
-	res += "," + elem.pos
+	res += "," + se.pos
 	return res
 }
 
@@ -244,5 +244,5 @@ func (elem *traceElementSelect) toString() string {
  *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (elem *traceElementSelect) calculateVectorClock(vc *[]vectorClock) {
+func (se *traceElementSelect) calculateVectorClock(vc *[]vectorClock) {
 }
