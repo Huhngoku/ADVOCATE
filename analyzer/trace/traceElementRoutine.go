@@ -80,8 +80,8 @@ func (ro *traceElementRoutine) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (ro *traceElementRoutine) getTsort() float32 {
-	return float32(ro.tpost)
+func (ro *traceElementRoutine) getTsort() int {
+	return ro.tpost
 }
 
 /*

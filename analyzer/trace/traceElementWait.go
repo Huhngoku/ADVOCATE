@@ -2,6 +2,7 @@ package trace
 
 import (
 	"errors"
+	"math"
 	"strconv"
 )
 
@@ -163,11 +164,12 @@ func (wa *traceElementWait) getVpost() *vectorClock {
  * Returns:
  *   int: The timer of the element
  */
-func (wa *traceElementWait) getTsort() float32 {
+func (wa *traceElementWait) getTsort() int {
 	if wa.tpost == 0 {
-		return float32(wa.tpre) + 0.5
+		// add at the end of the trace
+		return math.MaxInt
 	}
-	return float32(wa.tpost)
+	return wa.tpost
 }
 
 /*

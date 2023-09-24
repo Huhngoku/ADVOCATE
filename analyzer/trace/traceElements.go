@@ -4,7 +4,7 @@ package trace
 type traceElement interface {
 	getTpre() int
 	getTpost() int
-	getTsort() float32
+	getTsort() int
 	getVpre() *vectorClock
 	getVpost() *vectorClock
 	getRoutine() int

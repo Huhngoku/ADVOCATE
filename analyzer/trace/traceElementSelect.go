@@ -2,6 +2,7 @@ package trace
 
 import (
 	"errors"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -186,11 +187,12 @@ func (se *traceElementSelect) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (se *traceElementSelect) getTsort() float32 {
+func (se *traceElementSelect) getTsort() int {
 	if se.tpost == 0 {
-		return float32(se.tpre) + 0.5
+		// add at the end of the trace
+		return math.MaxInt
 	}
-	return float32(se.tpost)
+	return se.tpost
 }
 
 /*

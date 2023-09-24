@@ -2,6 +2,7 @@ package trace
 
 import (
 	"errors"
+	"math"
 	"strconv"
 
 	"analyzer/debug"
@@ -170,12 +171,12 @@ func (ch *traceElementChannel) getTpost() int {
  * Returns:
  *   float32: The time of the element
  */
-func (ch *traceElementChannel) getTsort() float32 {
+func (ch *traceElementChannel) getTsort() int {
 	if ch.partner == nil {
-		// add 0.5 to tpre, so that is sorted after the pre event
-		return float32(ch.tpre) + 0.5
+		// add to the end of the trace
+		return math.MaxInt
 	}
-	return float32(ch.tpost)
+	return ch.tpost
 }
 
 /*

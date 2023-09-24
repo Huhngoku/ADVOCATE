@@ -47,8 +47,8 @@ func (pre *traceElementPre) getTpost() int {
  * Returns:
  *   float32: The timer of the element
  */
-func (pre *traceElementPre) getTsort() float32 {
-	return float32(pre.elem.getTpre())
+func (pre *traceElementPre) getTsort() int {
+	return pre.elem.getTpre()
 }
 
 /*

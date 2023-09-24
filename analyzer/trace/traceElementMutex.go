@@ -2,6 +2,7 @@ package trace
 
 import (
 	"errors"
+	"math"
 	"strconv"
 
 	"analyzer/debug"
@@ -162,11 +163,12 @@ func (mu *traceElementMutex) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (mu *traceElementMutex) getTsort() float32 {
+func (mu *traceElementMutex) getTsort() int {
 	if mu.tpost == 0 {
-		return float32(mu.tpre) + 0.5
+		// add at the end of the trace
+		return math.MaxInt
 	}
-	return float32(mu.tpost)
+	return mu.tpost
 }
 
 /*

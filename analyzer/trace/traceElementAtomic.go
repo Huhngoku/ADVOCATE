@@ -113,8 +113,8 @@ func (at *traceElementAtomic) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (at *traceElementAtomic) getTsort() float32 {
-	return float32(at.tpost)
+func (at *traceElementAtomic) getTsort() int {
+	return at.tpost
 }
 
 /*
