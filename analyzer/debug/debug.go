@@ -12,6 +12,7 @@ var blue = "\033[34m"
 
 /*
 * Print a log message if the log level is sufficiant
+* 1 = errors, 2 = info, 3 = debug
 * Args:
 *   message: message to print
 *   level: level of the message

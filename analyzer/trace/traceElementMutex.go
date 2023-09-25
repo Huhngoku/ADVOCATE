@@ -271,5 +271,8 @@ func (mu *traceElementMutex) updateVectorClock() {
 	case RUnlockOp:
 		mu.vpost = vc.RUnlock(mu.routine, mu.id, numberOfRoutines,
 			&currentVectorClocks)
+	default:
+		err := "Unknown mutex operation: " + mu.toString()
+		debug.Log(err, 1)
 	}
 }

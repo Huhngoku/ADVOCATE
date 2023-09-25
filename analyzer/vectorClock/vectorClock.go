@@ -30,8 +30,9 @@ func NewVectorClock(size int) VectorClock {
  * Args:
  *   routine (int): The routine/position to increment
  */
-func (vc *VectorClock) Inc(routine int) {
+func (vc *VectorClock) Inc(routine int) VectorClock {
 	vc.clock[routine]++
+	return *vc
 }
 
 /*

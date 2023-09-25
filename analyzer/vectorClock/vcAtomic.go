@@ -28,8 +28,7 @@ func newLw(index int, nRout int) {
 func Write(routine int, id int, numberOfRoutines int, vc *[]VectorClock) VectorClock {
 	newLw(id, numberOfRoutines)
 	lw[id] = (*vc)[routine]
-	(*vc)[routine].Inc(routine)
-	return (*vc)[routine]
+	return (*vc)[routine].Inc(routine)
 }
 
 /*
@@ -45,8 +44,7 @@ func Write(routine int, id int, numberOfRoutines int, vc *[]VectorClock) VectorC
 func Read(routine int, id int, numberOfRoutines int, vc *[]VectorClock) VectorClock {
 	newLw(id, numberOfRoutines)
 	(*vc)[routine] = (*vc)[routine].Sync(lw[id])
-	(*vc)[routine].Inc(routine)
-	return (*vc)[routine]
+	return (*vc)[routine].Inc(routine)
 }
 
 /*
