@@ -35,7 +35,6 @@ const (
  *   suc (bool): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
  *   partner (*traceElementMutex): The partner of the mutex operation
- *   pre (*traceElementPre): The pre element of the mutex operation
  */
 type traceElementMutex struct {
 	routine int

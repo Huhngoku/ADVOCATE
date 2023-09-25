@@ -36,7 +36,6 @@ const (
 *   pos (string): The position of the channel operation in the code
 *   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
 *   partner (*traceElementChannel): The partner of the channel operation
-*   pre (*traceElementPre): The pre element of the channel operation
  */
 type traceElementChannel struct {
 	routine int

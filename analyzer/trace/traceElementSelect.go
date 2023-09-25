@@ -22,7 +22,6 @@ import (
  *   chosenCase (traceElementSelectCase): The chosen case, nil if default case chosen
  *   chosenDefault (bool): if the default case was chosen
  *   pos (string): The position of the select statement in the code
- *   pre (*traceElementPre): The pre element of the select statement
  */
 type traceElementSelect struct {
 	routine int

@@ -28,7 +28,6 @@ const (
 *   delta (int): The delta of the wait group
 *   val (int): The value of the wait group
 *   pos (string): The position of the wait group in the code
-*   pre (*traceElementPre): The pre element of the wait group
  */
 type traceElementWait struct {
 	routine int
