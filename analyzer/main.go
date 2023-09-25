@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	"analyzer/debug"
+	"analyzer/reader.go"
 	"analyzer/trace"
 )
 
@@ -13,8 +14,9 @@ func main() {
 
 	flag.Parse()
 	debug.SetDebugLevel(*level)
-	numberOfROutines := trace.CreateTraceFromFile(*file_path)
-	trace.CalculateVectorClocks(numberOfROutines)
+	numberOfROutines := reader.CreateTraceFromFile(*file_path)
+	trace.SetNumberOfRoutines(numberOfROutines)
+	trace.CalculateVectorClocks()
 
 	debug.Log("Finished analyzis.\nTotal runtime: "+debug.GetRuntime(), 2)
 }

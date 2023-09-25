@@ -1,6 +1,7 @@
 package trace
 
 import (
+	vc "analyzer/vectorClock"
 	"errors"
 	"strconv"
 )
@@ -28,7 +29,7 @@ const (
 type traceElementAtomic struct {
 	routine   int
 	tpost     int
-	vpost     vectorClock
+	vpost     vc.VectorClock
 	id        int
 	operation opAtomic
 }
@@ -42,7 +43,7 @@ type traceElementAtomic struct {
  *   id (string): The id of the atomic variable
  *   operation (string): The operation on the atomic variable
  */
-func addTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
+func AddTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
 	id string, operation string) error {
 	tpost_int, err := strconv.Atoi(tpost)
 	if err != nil {
@@ -73,7 +74,7 @@ func addTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
 	elem := traceElementAtomic{
 		routine:   routine,
 		tpost:     tpost_int,
-		vpost:     newVectorClock(numberOfRoutines),
+		vpost:     vc.NewVectorClock(numberOfRoutines),
 		id:        id_int,
 		operation: operation_int,
 	}
@@ -123,16 +124,16 @@ func (at *traceElementAtomic) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (at *traceElementAtomic) getVpre() *vectorClock {
-	return &at.vpost
-}
+// func (at *traceElementAtomic) getVpre() *vc.VectorClock {
+// 	return &at.vpost
+// }
 
 /*
  * Get the vector clock at the end of the event
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (at *traceElementAtomic) getVpost() *vectorClock {
+func (at *traceElementAtomic) getVpost() *vc.VectorClock {
 	return &at.vpost
 }
 
@@ -148,10 +149,8 @@ func (at *traceElementAtomic) toString() string {
 
 /*
  * Update and calculate the vector clock of the element
- * Args:
- *   vc (vectorClock): the current vector clock
  * TODO: implement
  */
-func (at *traceElementAtomic) calculateVectorClock(vc *[]vectorClock) {
+func (at *traceElementAtomic) updateVectorClock() {
 
 }

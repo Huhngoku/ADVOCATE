@@ -1,4 +1,4 @@
-package trace
+package reader
 
 import (
 	"bufio"
@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"analyzer/debug"
+	"analyzer/trace"
 )
 
 /*
@@ -39,12 +40,13 @@ func CreateTraceFromFile(file_path string) int {
 	}
 
 	debug.Log("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", 3)
+
 	scanner = bufio.NewScanner(file2)
 	routine := 0
 	for scanner.Scan() {
-		routine++
 		line := scanner.Text()
 		processLine(line, routine, numberOfRoutines)
+		routine++
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -52,8 +54,8 @@ func CreateTraceFromFile(file_path string) int {
 		panic(err)
 	}
 
-	Sort()        // sort the trace by tpre
-	FindPartner() // set all partner
+	trace.Sort()        // sort the trace, TODO: change to interlacing
+	trace.FindPartner() // set all partner
 	debug.Log("Trace created", 2)
 	return numberOfRoutines
 }
@@ -90,20 +92,20 @@ func processElement(element string, routine int, numberOfRoutines int) {
 	var err error = nil
 	switch fields[0] {
 	case "A":
-		err = addTraceElementAtomic(routine, numberOfRoutines, fields[1], fields[2], fields[3])
+		err = trace.AddTraceElementAtomic(routine, numberOfRoutines, fields[1], fields[2], fields[3])
 	case "C":
-		err = addTraceElementChannel(routine, numberOfRoutines, fields[1], fields[2],
+		err = trace.AddTraceElementChannel(routine, numberOfRoutines, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7], fields[8])
 	case "M":
-		err = addTraceElementMutex(routine, numberOfRoutines, fields[1], fields[2],
+		err = trace.AddTraceElementMutex(routine, numberOfRoutines, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7])
 	case "G":
-		err = addTraceElementRoutine(routine, numberOfRoutines, fields[1], fields[2])
+		err = trace.AddTraceElementRoutine(routine, numberOfRoutines, fields[1], fields[2])
 	case "S":
-		err = addTraceElementSelect(routine, numberOfRoutines, fields[1], fields[2], fields[3],
+		err = trace.AddTraceElementSelect(routine, numberOfRoutines, fields[1], fields[2], fields[3],
 			fields[4], fields[5])
 	case "W":
-		err = addTraceElementWait(routine, numberOfRoutines, fields[1], fields[2], fields[3],
+		err = trace.AddTraceElementWait(routine, numberOfRoutines, fields[1], fields[2], fields[3],
 			fields[4], fields[5], fields[6], fields[7])
 	default:
 		panic("Unknown element type in: " + element)

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"analyzer/debug"
+	vc "analyzer/vectorClock"
 )
 
 // enum for opM
@@ -40,15 +41,14 @@ type traceElementMutex struct {
 	routine int
 	tpre    int
 	tpost   int
-	vpre    vectorClock
-	vpost   vectorClock
+	// vpre    vc.VectorClock
+	vpost   vc.VectorClock
 	id      int
 	rw      bool
 	opM     opMutex
 	suc     bool
 	pos     string
 	partner *traceElementMutex
-	pre     *traceElementPre
 }
 
 /*
@@ -64,7 +64,7 @@ type traceElementMutex struct {
  *   suc (string): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
  */
-func addTraceElementMutex(routine int, numberOfRoutines int, tpre string,
+func AddTraceElementMutex(routine int, numberOfRoutines int, tpre string,
 	tpost string, id string, rw string, opM string, suc string,
 	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
@@ -114,21 +114,15 @@ func addTraceElementMutex(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		vpre:    newVectorClock(numberOfRoutines),
-		vpost:   newVectorClock(numberOfRoutines),
-		id:      id_int,
-		rw:      rw_bool,
-		opM:     opM_int,
-		suc:     suc_bool,
-		pos:     pos}
+		// vpre:    vc.NewVectorClock(numberOfRoutines),
+		vpost: vc.NewVectorClock(numberOfRoutines),
+		id:    id_int,
+		rw:    rw_bool,
+		opM:   opM_int,
+		suc:   suc_bool,
+		pos:   pos}
 
-	elem_pre := traceElementPre{
-		elem:     &elem,
-		elemType: Mutex}
-
-	err1 := addElementToTrace(&elem_pre)
-	err2 := addElementToTrace(&elem)
-	return errors.Join(err1, err2)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -176,16 +170,16 @@ func (mu *traceElementMutex) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (mu *traceElementMutex) getVpre() *vectorClock {
-	return &mu.vpre
-}
+// func (mu *traceElementMutex) getVpre() *vc.VectorClock {
+// 	return &mu.vpre
+// }
 
 /*
  * Get the vector clock at the end of the event
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (mu *traceElementMutex) getVpost() *vectorClock {
+func (mu *traceElementMutex) getVpost() *vc.VectorClock {
 	return &mu.vpost
 }
 
@@ -251,9 +245,31 @@ func (mu *traceElementMutex) findPartner() {
 }
 
 /*
- * Update and calculate the vector clock of the element
- * Args:
- *   vc (vectorClock): The current vector clocks
- * TODO: implement
+ * Update the vector clock of the trace and element
  */
-func (mu *traceElementMutex) calculateVectorClock(vc *[]vectorClock) {}
+func (mu *traceElementMutex) updateVectorClock() {
+	switch mu.opM {
+	case LockOp:
+		mu.vpost = vc.Lock(mu.routine, mu.id, numberOfRoutines,
+			&currentVectorClocks)
+	case RLockOp:
+		mu.vpost = vc.RLock(mu.routine, mu.id, numberOfRoutines,
+			&currentVectorClocks)
+	case TryLockOp:
+		if mu.suc {
+			mu.vpost = vc.Lock(mu.routine, mu.id, numberOfRoutines,
+				&currentVectorClocks)
+		}
+	case TryRLockOp:
+		if mu.suc {
+			mu.vpost = vc.RLock(mu.routine, mu.id, numberOfRoutines,
+				&currentVectorClocks)
+		}
+	case UnlockOp:
+		mu.vpost = vc.Unlock(mu.routine, mu.id, numberOfRoutines,
+			&currentVectorClocks)
+	case RUnlockOp:
+		mu.vpost = vc.RUnlock(mu.routine, mu.id, numberOfRoutines,
+			&currentVectorClocks)
+	}
+}

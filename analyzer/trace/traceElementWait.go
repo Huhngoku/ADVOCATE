@@ -1,6 +1,7 @@
 package trace
 
 import (
+	vc "analyzer/vectorClock"
 	"errors"
 	"math"
 	"strconv"
@@ -32,14 +33,13 @@ type traceElementWait struct {
 	routine int
 	tpre    int
 	tpost   int
-	vpre    vectorClock
-	vpost   vectorClock
-	id      int
-	opW     opW
-	delta   int
-	val     int
-	pos     string
-	pre     *traceElementPre
+	// vpre    vc.VectorClock
+	vpost vc.VectorClock
+	id    int
+	opW   opW
+	delta int
+	val   int
+	pos   string
 }
 
 /*
@@ -55,7 +55,7 @@ type traceElementWait struct {
  *   val (string): The value of the wait group
  *   pos (string): The position of the wait group in the code
  */
-func addTraceElementWait(routine int, numberOfRoutines int, tpre string,
+func AddTraceElementWait(routine int, numberOfRoutines int, tpre string,
 	tpost string, id string, opW string, delta string, val string,
 	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
@@ -94,24 +94,15 @@ func addTraceElementWait(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		vpre:    newVectorClock(numberOfRoutines),
-		vpost:   newVectorClock(numberOfRoutines),
-		id:      id_int,
-		opW:     opW_op,
-		delta:   delta_int,
-		val:     val_int,
-		pos:     pos}
+		// vpre:    vc.NewVectorClock(numberOfRoutines),
+		vpost: vc.NewVectorClock(numberOfRoutines),
+		id:    id_int,
+		opW:   opW_op,
+		delta: delta_int,
+		val:   val_int,
+		pos:   pos}
 
-	// create the pre event
-	elem_pre := traceElementPre{
-		elem:     &elem,
-		elemType: Wait,
-	}
-
-	err1 := addElementToTrace(&elem_pre)
-	err2 := addElementToTrace(&elem)
-
-	return errors.Join(err1, err2)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -146,16 +137,16 @@ func (wa *traceElementWait) getTpost() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (wa *traceElementWait) getVpre() *vectorClock {
-	return &wa.vpre
-}
+// func (wa *traceElementWait) getVpre() *vc.VectorClock {
+// 	return &wa.vpre
+// }
 
 /*
  * Get the vector clock at the end of the event
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (wa *traceElementWait) getVpost() *vectorClock {
+func (wa *traceElementWait) getVpost() *vc.VectorClock {
 	return &wa.vpost
 }
 
@@ -185,8 +176,6 @@ func (wa *traceElementWait) toString() string {
 
 /*
  * Update and calculate the vector clock of the element
- * Args:
- *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (wa *traceElementWait) calculateVectorClock(vc *[]vectorClock) {}
+func (wa *traceElementWait) updateVectorClock() {}

@@ -1,6 +1,7 @@
 package trace
 
 import (
+	vc "analyzer/vectorClock"
 	"errors"
 	"math"
 	"strconv"
@@ -24,17 +25,16 @@ import (
  *   pre (*traceElementPre): The pre element of the select statement
  */
 type traceElementSelect struct {
-	routine         int
-	tpre            int
-	tpost           int
-	vpre            vectorClock
-	vpost           vectorClock
+	routine int
+	tpre    int
+	tpost   int
+	// vpre            vc.VectorClock
+	vpost           vc.VectorClock
 	id              int
 	cases           []traceElementChannel
 	containsDefault bool
 	chosenDefault   bool
 	pos             string
-	pre             *traceElementPre
 }
 
 /*
@@ -48,7 +48,7 @@ type traceElementSelect struct {
  *   cases (string): The cases of the select statement
  *   pos (string): The position of the select statement in the code
  */
-func addTraceElementSelect(routine int, numberOfRoutines int, tpre string,
+func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 	tpost string, id string, cases string, pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
 	if err != nil {
@@ -69,10 +69,10 @@ func addTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		vpre:    newVectorClock(numberOfRoutines),
-		vpost:   newVectorClock(numberOfRoutines),
-		id:      id_int,
-		pos:     pos,
+		// vpre:    vc.NewVectorClock(numberOfRoutines),
+		vpost: vc.NewVectorClock(numberOfRoutines),
+		id:    id_int,
+		pos:   pos,
 	}
 
 	cs := strings.Split(cases, "~")
@@ -143,16 +143,7 @@ func addTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 	elem.chosenDefault = chosenDefault
 	elem.cases = cases_list
 
-	// create the pre event
-	elem_pre := traceElementPre{
-		elem:     &elem,
-		elemType: Select,
-	}
-	elem.pre = &elem_pre
-
-	err1 := addElementToTrace(&elem_pre)
-	err2 := addElementToTrace(&elem)
-	return errors.Join(err1, err2)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -200,16 +191,16 @@ func (se *traceElementSelect) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (se *traceElementSelect) getVpre() *vectorClock {
-	return &se.vpre
-}
+// func (se *traceElementSelect) getVpre() *vc.VectorClock {
+// 	return &se.vpre
+// }
 
 /*
  * Get the vector clock at the end of the event
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (se *traceElementSelect) getVpost() *vectorClock {
+func (se *traceElementSelect) getVpost() *vc.VectorClock {
 	return &se.vpost
 }
 
@@ -242,9 +233,7 @@ func (se *traceElementSelect) toString() string {
 
 /*
  * Update and calculate the vector clock of the element
- * Args:
- *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (se *traceElementSelect) calculateVectorClock(vc *[]vectorClock) {
+func (se *traceElementSelect) updateVectorClock() {
 }

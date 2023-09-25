@@ -1,6 +1,7 @@
 package trace
 
 import (
+	vc "analyzer/vectorClock"
 	"errors"
 	"strconv"
 )
@@ -16,7 +17,7 @@ import (
 type traceElementRoutine struct {
 	routine int
 	tpost   int
-	vpost   vectorClock
+	vpost   vc.VectorClock
 	id      int
 }
 
@@ -28,7 +29,7 @@ type traceElementRoutine struct {
  *   tpost (string): The timestamp at the end of the event
  *   id (string): The id of the new routine
  */
-func addTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
+func AddTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
 	id string) error {
 	tpost_int, err := strconv.Atoi(tpost)
 	if err != nil {
@@ -39,11 +40,12 @@ func addTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
+	id_int -= 1 // trace is 1 based, internal is 0 based
 
 	elem := traceElementRoutine{
 		routine: routine,
 		tpost:   tpost_int,
-		vpost:   newVectorClock(numberOfRoutines),
+		vpost:   vc.NewVectorClock(numberOfRoutines),
 		id:      id_int}
 	return addElementToTrace(&elem)
 }
@@ -90,16 +92,16 @@ func (ro *traceElementRoutine) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (ro *traceElementRoutine) getVpre() *vectorClock {
-	return &ro.vpost
-}
+// func (ro *traceElementRoutine) getVpre() *vc.VectorClock {
+// 	return &ro.vpost
+// }
 
 /*
  * Get the vector clock at the end of the event
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (ro *traceElementRoutine) getVpost() *vectorClock {
+func (ro *traceElementRoutine) getVpost() *vc.VectorClock {
 	return &ro.vpost
 }
 
@@ -114,9 +116,7 @@ func (ro *traceElementRoutine) toString() string {
 
 /*
  * Update and calculate the vector clock of the element
- * Args:
- *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (ro *traceElementRoutine) calculateVectorClock(vc *[]vectorClock) {
+func (ro *traceElementRoutine) updateVectorClock() {
 }

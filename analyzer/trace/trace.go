@@ -1,22 +1,14 @@
 package trace
 
 import (
-	"sort"
-
 	"analyzer/debug"
+	vc "analyzer/vectorClock"
+	"sort"
 )
 
 var trace []traceElement = make([]traceElement, 0)
-var currentVectorClocks []vectorClock = make([]vectorClock, 0)
-
-/*
-* Get the trace
-* Returns:
-*   []traceElement: The trace
- */
-func GetTrace() []traceElement {
-	return trace
-}
+var currentVectorClocks []vc.VectorClock = make([]vc.VectorClock, 0)
+var numberOfRoutines int = 0
 
 /*
 * Add an element to the trace
@@ -29,6 +21,15 @@ func GetTrace() []traceElement {
 func addElementToTrace(element traceElement) error {
 	trace = append(trace, element)
 	return nil
+}
+
+/*
+ * Set the number of routines
+ * Args:
+ *   n (int): The number of routines
+ */
+func SetNumberOfRoutines(n int) {
+	numberOfRoutines = n
 }
 
 /*
@@ -60,46 +61,44 @@ func FindPartner() {
 /*
 * Calculate vector clocks
  */
-func CalculateVectorClocks(numberOfRoutines int) {
+func CalculateVectorClocks() {
 	debug.Log("Calculate vector clocks...", 2)
 
 	// create current vector clock
-	currentVectorClocks = make([]vectorClock, numberOfRoutines)
+	currentVectorClocks = make([]vc.VectorClock, numberOfRoutines)
 	for i := 0; i < numberOfRoutines; i++ {
-		currentVectorClocks[i] = newVectorClock(numberOfRoutines)
+		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
 	}
 
 	for _, elem := range trace {
 		switch e := elem.(type) {
 		case *traceElementAtomic:
-			debug.Log("Calculate vector clock for atomic operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
+			debug.Log("Update vector clock for atomic operation "+e.toString(), 3)
+			e.updateVectorClock()
 		case *traceElementChannel:
-			debug.Log("Calculate vector clock for channel operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
+			debug.Log("Update vector clock for channel operation "+e.toString(), 3)
+			e.updateVectorClock()
 		case *traceElementMutex:
-			debug.Log("Calculate vector clock for mutex operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
+			debug.Log("Update vector clock for mutex operation "+e.toString(), 3)
+			e.updateVectorClock()
 		case *traceElementRoutine:
-			debug.Log("Calculate vector clock for routine operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
+			debug.Log("Update vector clock for routine operation "+e.toString(), 3)
+			e.updateVectorClock()
 		case *traceElementSelect:
-			debug.Log("Calculate vector clock for select operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
+			debug.Log("Update vector clock for select operation "+e.toString(), 3)
+			e.updateVectorClock()
 		case *traceElementWait:
-			debug.Log("Calculate vector clock for go operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
-		case *traceElementPre:
-			debug.Log("Calculate vector clock for pre operation "+e.toString(), 3)
-			e.calculateVectorClock(&currentVectorClocks)
+			debug.Log("Update vector clock for go operation "+e.toString(), 3)
+			e.updateVectorClock()
 		}
 	}
 
 	debug.Log("Vector clock calculation completed", 2)
 }
 
+// TODO: change to interlace not sort
 /*
- * Sort the trace by tpre
+ * Sort the trace by tpost
  */
 type sortByTPost []traceElement
 

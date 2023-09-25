@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"analyzer/debug"
+	vc "analyzer/vectorClock"
 )
 
 // enum for opC
@@ -41,8 +42,8 @@ type traceElementChannel struct {
 	routine int
 	tpre    int
 	tpost   int
-	vpre    vectorClock
-	vpost   vectorClock
+	vpre    vc.VectorClock
+	vpost   vc.VectorClock
 	id      int
 	opC     opChannel
 	cl      bool
@@ -51,7 +52,6 @@ type traceElementChannel struct {
 	pos     string
 	sel     *traceElementSelect
 	partner *traceElementChannel
-	pre     *traceElementPre
 }
 
 /*
@@ -68,7 +68,7 @@ type traceElementChannel struct {
 *   qSize (string): The size of the channel queue
 *   pos (string): The position of the channel operation in the code
  */
-func addTraceElementChannel(routine int, numberOfRoutines int, tpre string,
+func AddTraceElementChannel(routine int, numberOfRoutines int, tpre string,
 	tpost string, id string, opC string, cl string, oId string, qSize string,
 	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)
@@ -117,26 +117,17 @@ func addTraceElementChannel(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		vpre:    newVectorClock(numberOfRoutines),
-		vpost:   newVectorClock(numberOfRoutines),
-		id:      id_int,
-		opC:     opC_int,
-		cl:      cl_bool,
-		oId:     oId_int,
-		qSize:   qSize_int,
-		pos:     pos,
+		// vpre:    vc.NewVectorClock(numberOfRoutines),
+		vpost: vc.NewVectorClock(numberOfRoutines),
+		id:    id_int,
+		opC:   opC_int,
+		cl:    cl_bool,
+		oId:   oId_int,
+		qSize: qSize_int,
+		pos:   pos,
 	}
 
-	elem_pre := traceElementPre{
-		elem:     &elem,
-		elemType: Chan,
-	}
-
-	elem.pre = &elem_pre
-
-	res1 := addElementToTrace(&elem_pre)
-	res2 := addElementToTrace(&elem)
-	return errors.Join(res1, res2)
+	return addElementToTrace(&elem)
 }
 
 /*
@@ -184,16 +175,16 @@ func (ch *traceElementChannel) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
-func (ch *traceElementChannel) getVpre() *vectorClock {
-	return &ch.vpre
-}
+// func (ch *traceElementChannel) getVpre() *vc.VectorClock {
+// 	return &ch.vpre
+// }
 
 /*
  * Get the vector clock at the end of the event
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (ch *traceElementChannel) getVpost() *vectorClock {
+func (ch *traceElementChannel) getVpost() *vc.VectorClock {
 	return &ch.vpost
 }
 
@@ -291,11 +282,9 @@ func (ch *traceElementChannel) findPartner() {
 
 /*
  * Update and calculate the vector clock of the element
- * Args:
- *   vc (vectorClock): The current vector clocks
  * TODO: implement
  */
-func (ch *traceElementChannel) calculateVectorClock(vc *[]vectorClock) {
+func (ch *traceElementChannel) updateVectorClock() {
 
 }
 
