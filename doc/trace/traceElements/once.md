@@ -14,7 +14,7 @@ the execution of the lock or unlock function
 - [tpost] $\in\mathbb N: This is the value of the global counter when the operation has finished
 its operation.
 - [id] $\in\mathbb N: This is the unique id identifying this once
-- [suc] $\on \{t, f\}$ records, whether the function in the once was 
+- [suc] $\in \{t, f\}$ records, whether the function in the once was 
 executed (`t`) or not (`f`). Exactly on trace element per once must be `t`.
 - [pos]: The last field show the position in the code, where the mutex operation 
 was executed. It consists of the file and line number separated by a colon (:)
