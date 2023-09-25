@@ -27,11 +27,11 @@ const (
  *   operation (int, enum): The operation on the atomic variable
  */
 type traceElementAtomic struct {
-	routine   int
-	tpost     int
-	vpost     vc.VectorClock
-	id        int
-	operation opAtomic
+	routine int
+	tpost   int
+	vpost   vc.VectorClock
+	id      int
+	opA     opAtomic
 }
 
 /*
@@ -55,28 +55,28 @@ func AddTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
 		return errors.New("tpost is not an integer")
 	}
 
-	var operation_int opAtomic = 0
+	var opA_int opAtomic = 0
 	switch operation {
 	case "L":
-		operation_int = LoadOp
+		opA_int = LoadOp
 	case "S":
-		operation_int = StoreOp
+		opA_int = StoreOp
 	case "A":
-		operation_int = AddOp
+		opA_int = AddOp
 	case "W":
-		operation_int = SwapOp
+		opA_int = SwapOp
 	case "C":
-		operation_int = CompSwapOp
+		opA_int = CompSwapOp
 	default:
 		return errors.New("operation is not a valid operation")
 	}
 
 	elem := traceElementAtomic{
-		routine:   routine,
-		tpost:     tpost_int,
-		vpost:     vc.NewVectorClock(numberOfRoutines),
-		id:        id_int,
-		operation: operation_int,
+		routine: routine,
+		tpost:   tpost_int,
+		vpost:   vc.NewVectorClock(numberOfRoutines),
+		id:      id_int,
+		opA:     opA_int,
 	}
 
 	return addElementToTrace(&elem)
@@ -144,13 +144,22 @@ func (at *traceElementAtomic) getVpost() *vc.VectorClock {
  */
 func (at *traceElementAtomic) toString() string {
 	return "A" + strconv.Itoa(at.id) + "," + strconv.Itoa(at.tpost) + "," +
-		strconv.Itoa(int(at.operation))
+		strconv.Itoa(int(at.opA))
 }
 
 /*
  * Update and calculate the vector clock of the element
- * TODO: implement
  */
 func (at *traceElementAtomic) updateVectorClock() {
-
+	switch at.opA {
+	case LoadOp:
+		at.vpost = vc.Read(at.routine, at.id, numberOfRoutines,
+			&currentVectorClocks)
+	case StoreOp, AddOp:
+		at.vpost = vc.Write(at.routine, at.id, numberOfRoutines,
+			&currentVectorClocks)
+	case SwapOp, CompSwapOp:
+		at.vpost = vc.Swap(at.routine, at.id, numberOfRoutines,
+			&currentVectorClocks)
+	}
 }

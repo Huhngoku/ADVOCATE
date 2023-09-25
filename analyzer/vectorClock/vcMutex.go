@@ -1,8 +1,15 @@
 package vectorClock
 
+// vector clocks for last release times
 var relW map[int]VectorClock = make(map[int]VectorClock)
 var relR map[int]VectorClock = make(map[int]VectorClock)
 
+/*
+ * Create a new relW and relR if needed
+ * Args:
+ *   index (int): The id of the atomic variable
+ *   nRout (int): The number of routines in the trace
+ */
 func newRel(index int, nRout int) {
 	if _, ok := relW[index]; !ok {
 		relW[index] = NewVectorClock(nRout)
