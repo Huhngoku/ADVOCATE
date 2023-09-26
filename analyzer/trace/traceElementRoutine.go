@@ -119,4 +119,5 @@ func (ro *traceElementRoutine) toString() string {
  * TODO: implement
  */
 func (ro *traceElementRoutine) updateVectorClock() {
+	ro.vpost = vc.Fork(ro.routine, ro.id, currentVectorClocks)
 }
