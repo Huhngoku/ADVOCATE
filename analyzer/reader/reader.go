@@ -44,9 +44,9 @@ func CreateTraceFromFile(file_path string) int {
 	scanner = bufio.NewScanner(file2)
 	routine := 0
 	for scanner.Scan() {
+		routine++
 		line := scanner.Text()
 		processLine(line, routine, numberOfRoutines)
-		routine++
 	}
 
 	if err := scanner.Err(); err != nil {

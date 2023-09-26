@@ -21,14 +21,14 @@ func newWg(index int, nRout int) {
  *   routine (int): The routine id
  *   id (int): The id of the wait group
  *   numberOfRoutines (int): The number of routines in the trace
- *   cv (*[]VectorClock): The vector clocks
+ *   vc (map[int]VectorClock): The vector clocks
  * Returns:
  *   (VectorClock): The vector clock for the add or done
  */
-func Change(routine int, id int, numberOfRoutines int, cv *[]VectorClock) VectorClock {
-	newWg(id, numberOfRoutines)
-	wg[id] = (*cv)[routine].Sync(wg[id])
-	return (*cv)[routine].Inc(routine)
+func Change(routine int, id int, vc map[int]VectorClock) VectorClock {
+	newWg(id, vc[id].size)
+	wg[id].Sync(vc[routine])
+	return vc[routine].Inc(routine).Copy()
 }
 
 /*
@@ -37,12 +37,12 @@ func Change(routine int, id int, numberOfRoutines int, cv *[]VectorClock) Vector
  *   routine (int): The routine id
  *   id (int): The id of the wait group
  *   numberOfRoutines (int): The number of routines in the trace
- *   cv (*[]VectorClock): The vector clocks
+ *   vc (*map[int]VectorClock): The vector clocks
  * Returns:
  *   (VectorClock): The vector clock for the wait
  */
-func Wait(routine int, id int, numberOfRoutines int, cv *[]VectorClock) VectorClock {
-	newWg(id, numberOfRoutines)
-	(*cv)[routine] = (*cv)[routine].Sync(wg[id])
-	return (*cv)[routine].Inc(routine)
+func Wait(routine int, id int, vc map[int]VectorClock) VectorClock {
+	newWg(id, vc[id].size)
+	vc[routine].Sync(wg[id])
+	return vc[routine].Inc(routine).Copy()
 }

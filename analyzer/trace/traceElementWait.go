@@ -180,11 +180,9 @@ func (wa *traceElementWait) toString() string {
 func (wa *traceElementWait) updateVectorClock() {
 	switch wa.opW {
 	case ChangeOp:
-		wa.vpost = vc.Change(wa.routine, wa.id, numberOfRoutines,
-			&currentVectorClocks)
+		wa.vpost = vc.Change(wa.routine, wa.id, currentVectorClocks)
 	case WaitOp:
-		wa.vpost = vc.Wait(wa.routine, wa.id, numberOfRoutines,
-			&currentVectorClocks)
+		wa.vpost = vc.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:
 		err := "Unknown operation on wait group: " + wa.toString()
 		debug.Log(err, 1)

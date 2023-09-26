@@ -20,15 +20,14 @@ func newOSuc(index int, nRout int) {
  * Args:
  *   routine (int): The routine id
  *   id (int): The id of the atomic variable
- *   nRout (int): The number of routines in the trace
- *   vc (vectorClock): The current vector clocks
+ *   vc (map[int]VectorClock): The current vector clocks
  * Returns:
  *   (vectorClock): The new vector clock
  */
-func DoSuc(routine int, id int, nRout int, vc *[]VectorClock) VectorClock {
-	newOSuc(id, nRout)
-	oSuc[id] = (*vc)[routine]
-	return (*vc)[routine].Inc(routine)
+func DoSuc(routine int, id int, vc map[int]VectorClock) VectorClock {
+	newOSuc(id, vc[id].size)
+	oSuc[id] = vc[routine]
+	return vc[routine].Inc(routine).Copy()
 }
 
 /*
@@ -36,13 +35,12 @@ func DoSuc(routine int, id int, nRout int, vc *[]VectorClock) VectorClock {
  * Args:
  *   routine (int): The routine id
  *   id (int): The id of the atomic variable
- *   nRout (int): The number of routines in the trace
- *   vc (vectorClock): The current vector clocks
+ *   vc (map[int]VectorClock): The current vector clocks
  * Returns:
  *   (vectorClock): The new vector clock
  */
-func DoFail(routine int, id int, nRout int, vc *[]VectorClock) VectorClock {
-	newOSuc(id, nRout)
-	(*vc)[routine] = (*vc)[routine].Sync(oSuc[id])
-	return (*vc)[routine].Inc(routine)
+func DoFail(routine int, id int, vc map[int]VectorClock) VectorClock {
+	newOSuc(id, vc[id].size)
+	vc[routine].Sync(oSuc[id])
+	return vc[routine].Inc(routine).Copy()
 }

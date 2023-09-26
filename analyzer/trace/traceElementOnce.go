@@ -151,10 +151,8 @@ func (on *traceElementOnce) toString() string {
  */
 func (on *traceElementOnce) updateVectorClock() {
 	if on.suc {
-		on.vpost = vc.DoSuc(on.routine, on.id, numberOfRoutines,
-			&currentVectorClocks)
+		on.vpost = vc.DoSuc(on.routine, on.id, currentVectorClocks)
 	} else {
-		on.vpost = vc.DoFail(on.routine, on.id, numberOfRoutines,
-			&currentVectorClocks)
+		on.vpost = vc.DoFail(on.routine, on.id, currentVectorClocks)
 	}
 }

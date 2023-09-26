@@ -7,7 +7,7 @@ import (
 )
 
 var trace []traceElement = make([]traceElement, 0)
-var currentVectorClocks []vc.VectorClock = make([]vc.VectorClock, 0)
+var currentVectorClocks map[int]vc.VectorClock = make(map[int]vc.VectorClock)
 var numberOfRoutines int = 0
 
 /*
@@ -64,9 +64,7 @@ func FindPartner() {
 func CalculateVectorClocks() {
 	debug.Log("Calculate vector clocks...", 2)
 
-	// create current vector clock
-	currentVectorClocks = make([]vc.VectorClock, numberOfRoutines)
-	for i := 0; i < numberOfRoutines; i++ {
+	for i := 1; i <= numberOfRoutines; i++ {
 		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
 	}
 

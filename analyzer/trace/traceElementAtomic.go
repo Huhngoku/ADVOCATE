@@ -154,14 +154,11 @@ func (at *traceElementAtomic) toString() string {
 func (at *traceElementAtomic) updateVectorClock() {
 	switch at.opA {
 	case LoadOp:
-		at.vpost = vc.Read(at.routine, at.id, numberOfRoutines,
-			&currentVectorClocks)
+		at.vpost = vc.Read(at.routine, at.id, currentVectorClocks)
 	case StoreOp, AddOp:
-		at.vpost = vc.Write(at.routine, at.id, numberOfRoutines,
-			&currentVectorClocks)
+		at.vpost = vc.Write(at.routine, at.id, currentVectorClocks)
 	case SwapOp, CompSwapOp:
-		at.vpost = vc.Swap(at.routine, at.id, numberOfRoutines,
-			&currentVectorClocks)
+		at.vpost = vc.Swap(at.routine, at.id, currentVectorClocks)
 	default:
 		err := "Unknown operation: " + at.toString()
 		debug.Log(err, 1)

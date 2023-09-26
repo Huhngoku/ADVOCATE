@@ -8,7 +8,7 @@ package vectorClock
  */
 type VectorClock struct {
 	size  int
-	clock []int
+	clock map[int]int
 }
 
 /*
@@ -21,35 +21,46 @@ type VectorClock struct {
 func NewVectorClock(size int) VectorClock {
 	return VectorClock{
 		size:  size,
-		clock: make([]int, size),
+		clock: make(map[int]int),
 	}
 }
 
 /*
  * Increment the vector clock at the given position
  * Args:
- *   routine (int): The routine/position to increment
+ *   routine (int): The routine to increment
+ * Returns:
+ *   (vectorClock): The vector clock
  */
-func (vc *VectorClock) Inc(routine int) VectorClock {
+func (vc VectorClock) Inc(routine int) VectorClock {
 	vc.clock[routine]++
-	return *vc
+	return vc
 }
 
 /*
- * Return the new vector clock given a received vector clock by taking the
- * element wise maximum of the two vector clocks
+ * Update the vector clock with the received vector clock
  * Args:
  *   rec (vectorClock): The received vector clock
- * Returns:
- *   (vectorClock): The new vector clock
  */
-func (vc *VectorClock) Sync(rec VectorClock) VectorClock {
+func (vc VectorClock) Sync(rec VectorClock) {
 	for i := 0; i < vc.size; i++ {
 		if vc.clock[i] > rec.clock[i] {
 			rec.clock[i] = vc.clock[i]
 		}
 	}
-	return rec
+}
+
+/*
+ * Create a copy of the vector clock
+ * Returns:
+ *   (vectorClock): The copy of the vector clock
+ */
+func (vc VectorClock) Copy() VectorClock {
+	newVc := NewVectorClock(vc.size)
+	for i := 0; i < vc.size; i++ {
+		newVc.clock[i] = vc.clock[i]
+	}
+	return newVc
 }
 
 /*

@@ -249,27 +249,21 @@ func (mu *traceElementMutex) findPartner() {
 func (mu *traceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
-		mu.vpost = vc.Lock(mu.routine, mu.id, numberOfRoutines,
-			&currentVectorClocks)
+		mu.vpost = vc.Lock(mu.routine, mu.id, currentVectorClocks)
 	case RLockOp:
-		mu.vpost = vc.RLock(mu.routine, mu.id, numberOfRoutines,
-			&currentVectorClocks)
+		mu.vpost = vc.RLock(mu.routine, mu.id, currentVectorClocks)
 	case TryLockOp:
 		if mu.suc {
-			mu.vpost = vc.Lock(mu.routine, mu.id, numberOfRoutines,
-				&currentVectorClocks)
+			mu.vpost = vc.Lock(mu.routine, mu.id, currentVectorClocks)
 		}
 	case TryRLockOp:
 		if mu.suc {
-			mu.vpost = vc.RLock(mu.routine, mu.id, numberOfRoutines,
-				&currentVectorClocks)
+			mu.vpost = vc.RLock(mu.routine, mu.id, currentVectorClocks)
 		}
 	case UnlockOp:
-		mu.vpost = vc.Unlock(mu.routine, mu.id, numberOfRoutines,
-			&currentVectorClocks)
+		mu.vpost = vc.Unlock(mu.routine, mu.id, currentVectorClocks)
 	case RUnlockOp:
-		mu.vpost = vc.RUnlock(mu.routine, mu.id, numberOfRoutines,
-			&currentVectorClocks)
+		mu.vpost = vc.RUnlock(mu.routine, mu.id, currentVectorClocks)
 	default:
 		err := "Unknown mutex operation: " + mu.toString()
 		debug.Log(err, 1)
