@@ -210,93 +210,38 @@ var channelOperations = make([]*traceElementChannel, 0)
 var closeOperations = make([]*traceElementChannel, 0)
 
 /*
- * Function to find communication partner for channel operations
- * This includes send/receive pairs with or without select, as well as
- * close operations for send/receive/select, which where
- * executed because of a close operation on the channel.
- * If a partner is found, the partner field of the element is set.
- */
-func (ch *traceElementChannel) findPartner() {
-	if ch.tpost == 0 { // if tpost is 0, the operation was not finished
-		debug.Log("Channel operation "+ch.toString()+" was not finished", 3)
-		return
-	}
-
-	if ch.opC == close { // close operation has no partner
-		debug.Log("Add close operation "+ch.toString()+" to closeOperations", 3)
-		closeOperations = append(closeOperations, ch)
-	}
-
-	// check if partner is already in channelOperations
-	i := 0
-	for _, partner := range channelOperations {
-		// check for send receive
-		if ch.id == partner.id && ch.opC != partner.opC && ch.oId == partner.oId {
-			debug.Log(
-				"Found partner for channel operation"+partner.toString()+" <-> "+ch.toString(),
-				3,
-			)
-			ch.partner = partner
-			partner.partner = ch
-			break
-		}
-
-		// check new close
-		if ch.opC == close {
-			debug.Log("Check for new close operation "+ch.toString(), 3)
-			if ch.id == partner.id && partner.cl {
-				partner.partner = ch
-				break
-			}
-		}
-		i++
-	}
-
-	// remove the partner element, if an partner was found
-	if ch.partner != nil {
-		debug.Log("Partner found. Remove "+ch.partner.toString()+" from channelOperations", 3)
-		channelOperations = append(channelOperations[:i], channelOperations[i+1:]...)
-	}
-
-	// check if partner is already in closeOperations
-	for _, partner := range closeOperations {
-		debug.Log("Check for close partner "+partner.toString(), 3)
-		if ch.id == partner.id {
-			if ch.opC == close && partner.cl {
-				debug.Log("Found close partner "+partner.toString()+" for "+ch.toString(), 3)
-				partner.partner = ch
-			} else if ch.cl && partner.opC == close {
-				debug.Log("Found close partner "+partner.toString()+" for "+ch.toString(), 3)
-				ch.partner = partner
-			}
-		}
-	}
-
-	// if partner is not found, add to channelOperations
-	if ch.partner == nil && ch.opC != close {
-		debug.Log("No partner found. Add "+ch.toString()+" to channelOperations", 3)
-		channelOperations = append(channelOperations, ch)
-	}
-}
-
-/*
  * Update and calculate the vector clock of the element
  * TODO: implement
  */
 func (ch *traceElementChannel) updateVectorClock() {
 	if ch.qSize == 0 { // unbuffered channel
 		switch ch.opC {
-		case send:
-			vc.Unbuffered(ch.routine, ch.partner.routine, ch.id, currentVectorClocks)
+		case send, recv:
+			partnerRoutine := ch.findUnbufferedPartner()
+			if partnerRoutine != -1 {
+				vc.Unbuffered(ch.routine, partnerRoutine, currentVectorClocks)
+				// advance index of receive routine, send routine is already advanced
+				increaseIndex(partnerRoutine)
+			}
 		}
 	}
 }
 
-/*
- * Function to check if there are channel operations without partner
- */
-func checkChannelOperations() {
-	for _, elem := range channelOperations {
-		debug.Log("Channel operation "+elem.toString()+" has no partner", 1)
+func (ch *traceElementChannel) findUnbufferedPartner() int {
+	for routine, trace := range traces {
+		if currentIndex[routine] == -1 {
+			continue
+		}
+		elem := trace[currentIndex[routine]]
+		switch e := elem.(type) {
+		case *traceElementChannel:
+			if ch.routine != e.getRoutine() && e.id == ch.id && e.oId == ch.oId {
+				return routine
+			}
+		default:
+			continue
+		}
 	}
+	debug.Log("Could not find unbuffered partner for "+ch.toString(), 1)
+	return -1
 }
