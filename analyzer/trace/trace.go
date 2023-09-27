@@ -69,6 +69,12 @@ func CalculateVectorClocks() {
 	}
 
 	for _, elem := range trace {
+		// ignore non executed operations
+		if elem.getTpost() == 0 {
+			debug.Log("Skip vector clock calculation for "+elem.toString(), 3)
+			continue
+		}
+
 		switch e := elem.(type) {
 		case *traceElementAtomic:
 			debug.Log("Update vector clock for atomic operation "+e.toString(), 3)
