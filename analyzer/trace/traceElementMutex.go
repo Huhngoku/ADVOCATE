@@ -198,52 +198,6 @@ func (mu *traceElementMutex) toString() string {
 var mutexNoPartner []*traceElementMutex
 
 /*
- * Find pairs of lock and unlock operations. If a partner is found, the partner
- * is set in the element.
- * The functions assumes, that the trace list is sorted by tpost
- */
-func (mu *traceElementMutex) findPartner() {
-	// check if the element should have a partner
-	if mu.tpost == 0 || !mu.suc {
-		debug.Log("Mutex operation "+mu.toString()+" has not executed", 3)
-		return
-	}
-
-	found := false
-	if mu.opM == LockOp || mu.opM == RLockOp || mu.opM == TryLockOp {
-		debug.Log("Add mutex lock operations "+mu.toString()+" to mutexNoPartner", 3)
-		// add lock operations to list of locks without partner
-		mutexNoPartner = append(mutexNoPartner, mu)
-		found = true // set to true to prevent panic
-	} else if mu.opM == UnlockOp || mu.opM == RUnlockOp {
-		// for unlock operations, check find the last lock operation
-		// on the same mutex
-		for i := len(mutexNoPartner) - 1; i >= 0; i-- {
-			lock := mutexNoPartner[i]
-			if mu.id != lock.id {
-				continue
-			}
-			if lock.opM == UnlockOp || lock.opM == RUnlockOp {
-				debug.Log("Two consecutive lock on the same channel without unlock in between: "+mu.toString()+lock.toString(), 1)
-			}
-			debug.Log("Found partner for mutex operation "+lock.toString()+" <-> "+mu.toString(), 3)
-			mu.partner = lock
-			lock.partner = mu
-			debug.Log("Remove mutex lock operation "+lock.toString()+" from mutexNoPartner", 3)
-			mutexNoPartner = append(mutexNoPartner[:i], mutexNoPartner[i+1:]...)
-			found = true
-			break
-		}
-	} else {
-		panic("Unknown mutex operation")
-	}
-
-	if !found {
-		debug.Log("Unlock "+mu.toString()+" without prior lock", 1)
-	}
-}
-
-/*
  * Update the vector clock of the trace and element
  */
 func (mu *traceElementMutex) updateVectorClock() {

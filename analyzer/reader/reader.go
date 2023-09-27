@@ -54,8 +54,6 @@ func CreateTraceFromFile(file_path string) int {
 		panic(err)
 	}
 
-	trace.Sort()        // sort the trace, TODO: change to interlacing
-	trace.FindPartner() // set all partner
 	debug.Log("Trace created", 2)
 	return numberOfRoutines
 }

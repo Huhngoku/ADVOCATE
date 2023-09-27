@@ -284,7 +284,12 @@ func (ch *traceElementChannel) findPartner() {
  * TODO: implement
  */
 func (ch *traceElementChannel) updateVectorClock() {
-
+	if ch.qSize == 0 { // unbuffered channel
+		switch ch.opC {
+		case send:
+			vc.Unbuffered(ch.routine, ch.partner.routine, ch.id, currentVectorClocks)
+		}
+	}
 }
 
 /*

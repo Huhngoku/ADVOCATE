@@ -3,11 +3,11 @@ package trace
 import (
 	"analyzer/debug"
 	vc "analyzer/vectorClock"
-	"sort"
 )
 
-var trace []traceElement = make([]traceElement, 0)
+var traces map[int][]traceElement = make(map[int][]traceElement)
 var currentVectorClocks map[int]vc.VectorClock = make(map[int]vc.VectorClock)
+var currentIndex map[int]int = make(map[int]int)
 var numberOfRoutines int = 0
 
 /*
@@ -19,7 +19,8 @@ var numberOfRoutines int = 0
 *   error: An error if the routine does not exist
  */
 func addElementToTrace(element traceElement) error {
-	trace = append(trace, element)
+	routine := element.getRoutine()
+	traces[routine] = append(traces[routine], element)
 	return nil
 }
 
@@ -33,32 +34,6 @@ func SetNumberOfRoutines(n int) {
 }
 
 /*
- * Function to start the search for all partner elements
- */
-func FindPartner() {
-	debug.Log("Find partners...", 2)
-	for _, elem := range trace {
-		switch e := elem.(type) {
-		case *traceElementChannel:
-			debug.Log("Find partner for channel operation "+e.toString(), 3)
-			e.findPartner()
-		case *traceElementSelect:
-			debug.Log("Find partner for select operation "+e.toString(), 3)
-			for _, c := range e.cases {
-				c.findPartner()
-			}
-		case *traceElementMutex:
-			debug.Log("Find partner for mutex operation "+e.toString(), 3)
-			e.findPartner()
-		}
-	}
-
-	// check if there are operations without partner
-	checkChannelOperations()
-	debug.Log("Partners found", 2)
-}
-
-/*
 * Calculate vector clocks
  */
 func CalculateVectorClocks() {
@@ -68,7 +43,7 @@ func CalculateVectorClocks() {
 		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
 	}
 
-	for _, elem := range trace {
+	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// ignore non executed operations
 		if elem.getTpost() == 0 {
 			debug.Log("Skip vector clock calculation for "+elem.toString(), 3)
@@ -100,19 +75,40 @@ func CalculateVectorClocks() {
 	debug.Log("Vector clock calculation completed", 2)
 }
 
-// TODO: change to interlace not sort
-/*
- * Sort the trace by tpost
- */
-type sortByTPost []traceElement
+func getNextElement() traceElement {
+	// find the local trace, where the element on which currentIndex points to
+	// has the smallest tpost
+	var minTpost int = -1
+	var minRoutine int = -1
+	for routine, trace := range traces {
+		// no more elements in the routine trace
+		if currentIndex[routine] == -1 {
+			continue
+		}
+		// ignore non executed operations
+		if trace[currentIndex[routine]].getTpost() == 0 {
+			continue
+		}
+		if minTpost == -1 || trace[currentIndex[routine]].getTpost() < minTpost {
+			minTpost = trace[currentIndex[routine]].getTpost()
+			minRoutine = routine
+		}
+	}
 
-func (a sortByTPost) Len() int      { return len(a) }
-func (a sortByTPost) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortByTPost) Less(i, j int) bool {
-	return a[i].getTsort() < a[j].getTsort()
+	// all elements have been processed
+	if minRoutine == -1 {
+		return nil
+	}
+
+	// return the element and increase the index
+	element := traces[minRoutine][currentIndex[minRoutine]]
+	increaseIndex(minRoutine)
+	return element
 }
-func Sort() {
-	debug.Log("Sort Trace...", 2)
-	sort.Sort(sortByTPost(trace))
-	debug.Log("Trace sorted", 2)
+
+func increaseIndex(routine int) {
+	currentIndex[routine]++
+	if currentIndex[routine] >= len(traces[routine]) {
+		currentIndex[routine] = -1
+	}
 }

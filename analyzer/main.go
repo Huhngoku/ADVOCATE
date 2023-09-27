@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	"analyzer/debug"
-	"analyzer/reader.go"
+	"analyzer/reader"
 	"analyzer/trace"
 )
 
