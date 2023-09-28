@@ -31,8 +31,7 @@ const (
 *   exec (int, enum): The execution status of the operation
 *   oId (int): The id of the other communication
 *   qSize (int): The size of the channel queue
-*   qCountPre (int): The number of elements in the queue before the operation
-*   qCountPost (int): The number of elements in the queue after the operation
+*   qCount (int): The number of elements in the queue after the operation
 *   pos (string): The position of the channel operation in the code
 *   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
 *   partner (*traceElementChannel): The partner of the channel operation
@@ -50,7 +49,6 @@ type traceElementChannel struct {
 	qSize   int
 	pos     string
 	sel     *traceElementSelect
-	partner *traceElementChannel
 }
 
 /*
@@ -162,7 +160,7 @@ func (ch *traceElementChannel) getTpost() int {
  *   float32: The time of the element
  */
 func (ch *traceElementChannel) getTsort() int {
-	if ch.partner == nil {
+	if ch.tpost == 0 {
 		// add to the end of the trace
 		return math.MaxInt
 	}
@@ -216,13 +214,37 @@ var closeOperations = make([]*traceElementChannel, 0)
 func (ch *traceElementChannel) updateVectorClock() {
 	if ch.qSize == 0 { // unbuffered channel
 		switch ch.opC {
-		case send, recv:
-			partnerRoutine := ch.findUnbufferedPartner()
-			if partnerRoutine != -1 {
-				vc.Unbuffered(ch.routine, partnerRoutine, currentVectorClocks)
+		case send:
+			recv := ch.findUnbufferedPartner()
+			if recv != -1 {
+				vc.Unbuffered(ch.routine, recv, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
-				increaseIndex(partnerRoutine)
+				increaseIndex(recv)
 			}
+		case recv:
+			err := "Found recv before send: " + ch.toString()
+			debug.Log(err, debug.ERROR)
+		case close:
+			vc.Close(ch.routine, ch.id, currentVectorClocks)
+		default:
+			err := "Unknown operation: " + ch.toString()
+			debug.Log(err, debug.ERROR)
+		}
+	} else { // buffered channel
+		switch ch.opC {
+		case send:
+			vc.Send(ch.routine, ch.id, ch.qSize, currentVectorClocks)
+		case recv:
+			if ch.cl { // recv on closed channel
+				vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+			} else {
+				vc.Recv(ch.routine, ch.id, ch.qSize, currentVectorClocks)
+			}
+		case close:
+			vc.Close(ch.routine, ch.id, currentVectorClocks)
+		default:
+			err := "Unknown operation: " + ch.toString()
+			debug.Log(err, debug.ERROR)
 		}
 	}
 }
@@ -242,6 +264,6 @@ func (ch *traceElementChannel) findUnbufferedPartner() int {
 			continue
 		}
 	}
-	debug.Log("Could not find unbuffered partner for "+ch.toString(), 1)
+	debug.Log("Could not find unbuffered partner for "+ch.toString(), debug.ERROR)
 	return -1
 }

@@ -10,6 +10,14 @@ var red = "\033[31m"
 var green = "\033[32m"
 var blue = "\033[34m"
 
+type level int
+
+const (
+	ERROR level = 1
+	INFO  level = 2
+	DEBUG level = 3
+)
+
 /*
 * Print a log message if the log level is sufficiant
 * 1 = errors, 2 = info, 3 = debug
@@ -17,13 +25,13 @@ var blue = "\033[34m"
 *   message: message to print
 *   level: level of the message
  */
-func Log(message string, level int) {
-	if level <= levelDebug {
-		if level == 1 {
+func Log(message string, level level) {
+	if int(level) <= levelDebug {
+		if level == ERROR {
 			println(red + message + reset)
-		} else if level == 2 {
+		} else if level == INFO {
 			println(green + message + reset)
-		} else if level == 3 {
+		} else if level == DEBUG {
 			println(blue + message + reset)
 		} else {
 			println(message)

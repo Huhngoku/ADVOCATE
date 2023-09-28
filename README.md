@@ -25,7 +25,7 @@ The recording of atomic operations is only tested with `amd64`. For `arm64` an u
 The go-patch folder contains a modified version of the go compiler and runtime.
 With this modified version it is possible to save a trace of the program.
 
-To build the new runtime, run the 'all.bash' or 'all.bat' file in the 'src'
+To build the new runtime, run the 'make.bash' or 'make.bat' file in the 'src'
 directory. This will create a 'bin' directory containing a 'go' executable.
 This executable can be used as your new go envirement e.g. with
 `./go run main.go` or `./go build`.

@@ -37,7 +37,7 @@ func SetNumberOfRoutines(n int) {
 * Calculate vector clocks
  */
 func CalculateVectorClocks() {
-	debug.Log("Calculate vector clocks...", 2)
+	debug.Log("Calculate vector clocks...", debug.INFO)
 
 	for i := 1; i <= numberOfRoutines; i++ {
 		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
@@ -46,33 +46,33 @@ func CalculateVectorClocks() {
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// ignore non executed operations
 		if elem.getTpost() == 0 {
-			debug.Log("Skip vector clock calculation for "+elem.toString(), 3)
+			debug.Log("Skip vector clock calculation for "+elem.toString(), debug.DEBUG)
 			continue
 		}
 
 		switch e := elem.(type) {
 		case *traceElementAtomic:
-			debug.Log("Update vector clock for atomic operation "+e.toString(), 3)
+			debug.Log("Update vector clock for atomic operation "+e.toString(), debug.DEBUG)
 			e.updateVectorClock()
 		case *traceElementChannel:
-			debug.Log("Update vector clock for channel operation "+e.toString(), 3)
+			debug.Log("Update vector clock for channel operation "+e.toString(), debug.DEBUG)
 			e.updateVectorClock()
 		case *traceElementMutex:
-			debug.Log("Update vector clock for mutex operation "+e.toString(), 3)
+			debug.Log("Update vector clock for mutex operation "+e.toString(), debug.DEBUG)
 			e.updateVectorClock()
 		case *traceElementRoutine:
-			debug.Log("Update vector clock for routine operation "+e.toString(), 3)
+			debug.Log("Update vector clock for routine operation "+e.toString(), debug.DEBUG)
 			e.updateVectorClock()
 		case *traceElementSelect:
-			debug.Log("Update vector clock for select operation "+e.toString(), 3)
+			debug.Log("Update vector clock for select operation "+e.toString(), debug.DEBUG)
 			e.updateVectorClock()
 		case *traceElementWait:
-			debug.Log("Update vector clock for go operation "+e.toString(), 3)
+			debug.Log("Update vector clock for go operation "+e.toString(), debug.DEBUG)
 			e.updateVectorClock()
 		}
 	}
 
-	debug.Log("Vector clock calculation completed", 2)
+	debug.Log("Vector clock calculation completed", debug.INFO)
 }
 
 func getNextElement() traceElement {

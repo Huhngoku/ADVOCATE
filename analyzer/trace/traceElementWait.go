@@ -185,6 +185,6 @@ func (wa *traceElementWait) updateVectorClock() {
 		wa.vpost = vc.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:
 		err := "Unknown operation on wait group: " + wa.toString()
-		debug.Log(err, 1)
+		debug.Log(err, debug.ERROR)
 	}
 }

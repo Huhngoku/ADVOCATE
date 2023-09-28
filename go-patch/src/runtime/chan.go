@@ -232,7 +232,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	c.numberSend++
 	unlock(&c.numberSendMutex)
 	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz)
-	defer DedegoChanPost(dedegoIndex)
 	// DEDEGO-CHANGE-END
 
 	if c.closed != 0 {
@@ -243,12 +242,18 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if sg := c.recvq.dequeue(); sg != nil {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
+		// DEDEGO-CHANGE-START
+		DedegoChanPost(dedegoIndex)
+		// DEDEGO-CHANGE-END
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
 		return true
 	}
 
 	if c.qcount < c.dataqsiz {
 		// Space is available in the channel buffer. Enqueue the element to send.
+		// DEDEGO-CHANGE-START
+		DedegoChanPost(dedegoIndex)
+		// DEDEGO-CHANGE-END
 		qp := chanbuf(c, c.sendx)
 		if raceenabled {
 			racenotify(c, c.sendx, nil)
@@ -265,6 +270,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	}
 
 	if !block {
+		// DEDEGO-CHANGE-START
+		DedegoChanPost(dedegoIndex)
+		// DEDEGO-CHANGE-END
 		unlock(&c.lock)
 		return false
 	}
@@ -313,6 +321,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if mysg.releasetime > 0 {
 		blockevent(mysg.releasetime-t0, 2)
 	}
+	// DEDEGO-CHANGE-START
+	DedegoChanPost(dedegoIndex)
+	// DEDEGO-CHANGE-END
 	mysg.c = nil
 	releaseSudog(mysg)
 	if closed {

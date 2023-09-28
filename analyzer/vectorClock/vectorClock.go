@@ -33,6 +33,9 @@ func NewVectorClock(size int) VectorClock {
  *   (vectorClock): The vector clock
  */
 func (vc VectorClock) Inc(routine int) VectorClock {
+	if vc.clock == nil {
+		vc.clock = make(map[int]int)
+	}
 	vc.clock[routine]++
 	return vc
 }
