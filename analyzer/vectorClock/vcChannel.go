@@ -76,9 +76,6 @@ func Send(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorC
 func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorClock {
 	newBufferedVCs(id, size, vc[rout].size)
 
-	if !bufferedVCs[id][0].occupied {
-		debug.Log("Read from unoccupied buffer position", debug.ERROR)
-	}
 	v := bufferedVCs[id][0].vc
 	vc[rout].Sync(v)
 	if fifo {

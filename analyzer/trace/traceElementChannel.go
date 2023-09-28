@@ -214,16 +214,17 @@ var closeOperations = make([]*traceElementChannel, 0)
 func (ch *traceElementChannel) updateVectorClock() {
 	if ch.qSize == 0 { // unbuffered channel
 		switch ch.opC {
-		case send:
-			recv := ch.findUnbufferedPartner()
-			if recv != -1 {
-				vc.Unbuffered(ch.routine, recv, currentVectorClocks)
+		case send, recv:
+			partner := ch.findUnbufferedPartner()
+			if partner != -1 {
+				vc.Unbuffered(ch.routine, partner, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
-				increaseIndex(recv)
+				increaseIndex(partner)
+			} else {
+				if ch.cl { // recv on closed channel
+					vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+				}
 			}
-		case recv:
-			err := "Found recv before send: " + ch.toString()
-			debug.Log(err, debug.ERROR)
 		case close:
 			vc.Close(ch.routine, ch.id, currentVectorClocks)
 		default:
@@ -250,6 +251,11 @@ func (ch *traceElementChannel) updateVectorClock() {
 }
 
 func (ch *traceElementChannel) findUnbufferedPartner() int {
+	// return -1 if closed by channel
+	if ch.cl {
+		return -1
+	}
+
 	for routine, trace := range traces {
 		if currentIndex[routine] == -1 {
 			continue
@@ -260,10 +266,13 @@ func (ch *traceElementChannel) findUnbufferedPartner() int {
 			if ch.routine != e.getRoutine() && e.id == ch.id && e.oId == ch.oId {
 				return routine
 			}
+		case *traceElementSelect:
+			if ch.routine != e.getRoutine() && e.chosenCase.oId == ch.id && e.chosenCase.oId == ch.oId {
+				return routine
+			}
 		default:
 			continue
 		}
 	}
-	debug.Log("Could not find unbuffered partner for "+ch.toString(), debug.ERROR)
 	return -1
 }

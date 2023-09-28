@@ -64,8 +64,8 @@ func main() {  // Routine 1
 ``` 
 If we ignore all internal operations, we get the following trace:
 ```txt
-G,1,2;S,3,8,5,C.3.0.2.R.0.0~C.3.21.1.R.1.0,example_file.go:20
-S,4,5,4,C.4.0.3.R.0.1~C.4.0.2.R.0.0~D,example_file.go:8;C,6,7,1,S,1,0,example_file.go:17
+G,1,2;S,3,8,5,C.3.0.2.R.f.0.0~C.3.8.1.R.f.1.0,example_file.go:20
+S,4,5,4,C.4.0.3.R.f.0.1~C.4.0.2.R.f.0.0~D,example_file.go:8;C,6,7,1,S,1,0,example_file.go:17
 ```
 
 ## Implementation

@@ -14,7 +14,6 @@ import (
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
- *   vpre (vectorClock): The vector clock at the start of the event
  *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the select statement
  *   cases ([]traceElementSelectCase): The cases of the select statement
@@ -31,6 +30,7 @@ type traceElementSelect struct {
 	vpost           vc.VectorClock
 	id              int
 	cases           []traceElementChannel
+	chosenCase      traceElementChannel
 	containsDefault bool
 	chosenDefault   bool
 	pos             string
@@ -124,7 +124,7 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 			return errors.New("c_oSize is not an integer")
 		}
 
-		elem := traceElementChannel{
+		elem_case := traceElementChannel{
 			tpre:  c_tpre,
 			tpost: c_tpost,
 			id:    c_id,
@@ -135,7 +135,10 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 			sel:   &elem,
 		}
 
-		cases_list = append(cases_list, elem)
+		cases_list = append(cases_list, elem_case)
+		if elem_case.tpost != 0 {
+			elem.chosenCase = elem_case
+		}
 	}
 
 	elem.containsDefault = containsDefault
@@ -231,8 +234,13 @@ func (se *traceElementSelect) toString() string {
 }
 
 /*
- * Update and calculate the vector clock of the element
- * TODO: implement
+ * Update and calculate the vector clock of the select element.
+ * For now, we assume the select acted like the chosen channel operation
+ * was just a normal channel operation. For the default, we do not update the vc.
  */
 func (se *traceElementSelect) updateVectorClock() {
+	if se.chosenDefault { // no update for return
+		return
+	}
+	se.chosenCase.updateVectorClock()
 }
