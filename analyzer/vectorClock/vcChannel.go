@@ -18,6 +18,10 @@ var bufferedVCsCount map[int]int = make(map[int]int)
 // vc of close on channel
 var closeVC map[int]VectorClock = make(map[int]VectorClock)
 
+// last send and receive on channel
+var lastSend map[int]VectorClock = make(map[int]VectorClock)
+var lastRecv map[int]VectorClock = make(map[int]VectorClock)
+
 /*
  * Update and calculate the vector clocks given a send/receive pair on a unbuffered
  * channel.
@@ -36,10 +40,11 @@ func Unbuffered(routSend int, routRecv int, vc map[int]VectorClock) VectorClock 
  * 	id (int): the id of the sender
  * 	size (int): buffer size
  * 	vc (map[int]VectorClock): the current vector clocks
+ *  fifo (bool): true if the channel buffer is assumed to be fifo
  * Returns:
  * 	the vector clock of the send
  */
-func Send(rout int, id int, size int, vc map[int]VectorClock) VectorClock {
+func Send(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorClock {
 	newBufferedVCs(id, size, vc[rout].size)
 
 	count := bufferedVCsCount[id]
@@ -49,6 +54,10 @@ func Send(rout int, id int, size int, vc map[int]VectorClock) VectorClock {
 
 	v := bufferedVCs[id][count].vc
 	vc[rout].Sync(v)
+	if fifo {
+		vc[rout].Sync(lastSend[id])
+		lastSend[id] = vc[rout].Copy()
+	}
 	bufferedVCs[id][count] = bufferedVC{true, vc[rout].Copy()}
 	return vc[rout].Inc(rout).Copy()
 }
@@ -60,17 +69,22 @@ func Send(rout int, id int, size int, vc map[int]VectorClock) VectorClock {
  * 	id (int): the id of the sender
  * 	size (int): buffer size
  * 	vc (map[int]VectorClock): the current vector clocks
+ *  fifo (bool): true if the channel buffer is assumed to be fifo
  * Returns:
  * 	the vector clock of the receive
  */
-func Recv(rout int, id int, size int, vc map[int]VectorClock) VectorClock {
+func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorClock {
 	newBufferedVCs(id, size, vc[rout].size)
 
-	v := bufferedVCs[id][0].vc
 	if !bufferedVCs[id][0].occupied {
 		debug.Log("Read from unoccupied buffer position", debug.ERROR)
 	}
+	v := bufferedVCs[id][0].vc
 	vc[rout].Sync(v)
+	if fifo {
+		vc[rout].Sync(lastRecv[id])
+		lastRecv[id] = vc[rout].Copy()
+	}
 	bufferedVCs[id] = bufferedVCs[id][1:]
 	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, vc[rout].Copy()})
 

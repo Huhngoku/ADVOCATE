@@ -233,12 +233,12 @@ func (ch *traceElementChannel) updateVectorClock() {
 	} else { // buffered channel
 		switch ch.opC {
 		case send:
-			vc.Send(ch.routine, ch.id, ch.qSize, currentVectorClocks)
+			vc.Send(ch.routine, ch.id, ch.qSize, currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
 				vc.RecvC(ch.routine, ch.id, currentVectorClocks)
 			} else {
-				vc.Recv(ch.routine, ch.id, ch.qSize, currentVectorClocks)
+				vc.Recv(ch.routine, ch.id, ch.qSize, currentVectorClocks, fifo)
 			}
 		case close:
 			vc.Close(ch.routine, ch.id, currentVectorClocks)

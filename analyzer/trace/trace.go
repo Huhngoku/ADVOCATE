@@ -9,6 +9,7 @@ var traces map[int][]traceElement = make(map[int][]traceElement)
 var currentVectorClocks map[int]vc.VectorClock = make(map[int]vc.VectorClock)
 var currentIndex map[int]int = make(map[int]int)
 var numberOfRoutines int = 0
+var fifo bool
 
 /*
 * Add an element to the trace
@@ -35,9 +36,13 @@ func SetNumberOfRoutines(n int) {
 
 /*
 * Calculate vector clocks
+* Args:
+*   assume_fifo (bool): True to assume fifo ordering in buffered channels
  */
-func CalculateVectorClocks() {
+func CalculateVectorClocks(assume_fifo bool) {
 	debug.Log("Calculate vector clocks...", debug.INFO)
+
+	fifo = assume_fifo
 
 	for i := 1; i <= numberOfRoutines; i++ {
 		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
