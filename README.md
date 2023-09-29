@@ -1,4 +1,4 @@
-# Analysis of Go programs to automatically detect potential concurrency bugs
+# Analysis of Go programs for the automatic detection of potential concurrency bugs
 
 This program is still under development and may return no or wrong results.
 
