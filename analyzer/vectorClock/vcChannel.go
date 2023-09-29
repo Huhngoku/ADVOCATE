@@ -144,7 +144,7 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
 	if hasSend[id] {
 		happensBefore := GetHappensBefore(closeVC[id], mostRecentSend[id])
 		if happensBefore == Concurrent {
-			found := "Possible concurrent send on closed channel:\n"
+			found := "Possible send on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
 			found += "\tsend: " + mostRecentSendPosition[id]
 			logging.Log(found, logging.RESULT)
