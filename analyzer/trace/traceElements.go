@@ -25,5 +25,5 @@ type traceElement interface {
 *   happensBefore: The relationship between the two trace elements
  */
 func GetHappensBefore(first traceElement, second traceElement) vc.HappensBefore {
-	return vc.GetHappensBefore(first.getVpost(), second.getVpost())
+	return vc.GetHappensBefore(*first.getVpost(), *second.getVpost())
 }

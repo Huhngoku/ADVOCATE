@@ -11,5 +11,6 @@ package vectorClock
  */
 func Fork(oldRout int, newRout int, vc map[int]VectorClock) VectorClock {
 	vc[newRout] = vc[oldRout].Copy()
-	return vc[oldRout].Inc(oldRout).Copy()
+	vc[oldRout] = vc[oldRout].Inc(oldRout)
+	return vc[oldRout].Copy()
 }

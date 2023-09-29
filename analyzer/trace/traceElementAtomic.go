@@ -1,7 +1,7 @@
 package trace
 
 import (
-	"analyzer/debug"
+	"analyzer/logging"
 	vc "analyzer/vectorClock"
 	"errors"
 	"strconv"
@@ -161,6 +161,6 @@ func (at *traceElementAtomic) updateVectorClock() {
 		at.vpost = vc.Swap(at.routine, at.id, currentVectorClocks)
 	default:
 		err := "Unknown operation: " + at.toString()
-		debug.Log(err, debug.ERROR)
+		logging.Log(err, logging.ERROR)
 	}
 }

@@ -27,7 +27,8 @@ func newOSuc(index int, nRout int) {
 func DoSuc(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newOSuc(id, vc[id].size)
 	oSuc[id] = vc[routine]
-	return vc[routine].Inc(routine).Copy()
+	vc[routine] = vc[routine].Inc(routine)
+	return vc[routine].Copy()
 }
 
 /*
@@ -41,6 +42,7 @@ func DoSuc(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func DoFail(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newOSuc(id, vc[id].size)
-	vc[routine].Sync(oSuc[id])
-	return vc[routine].Inc(routine).Copy()
+	vc[routine] = vc[routine].Sync(oSuc[id])
+	vc[routine] = vc[routine].Inc(routine)
+	return vc[routine].Copy()
 }

@@ -40,7 +40,6 @@ func AddTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
-	id_int -= 1 // trace is 1 based, internal is 0 based
 
 	elem := traceElementRoutine{
 		routine: routine,

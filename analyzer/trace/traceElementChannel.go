@@ -5,7 +5,7 @@ import (
 	"math"
 	"strconv"
 
-	"analyzer/debug"
+	"analyzer/logging"
 	vc "analyzer/vectorClock"
 )
 
@@ -214,38 +214,52 @@ var closeOperations = make([]*traceElementChannel, 0)
 func (ch *traceElementChannel) updateVectorClock() {
 	if ch.qSize == 0 { // unbuffered channel
 		switch ch.opC {
-		case send, recv:
+		case send:
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
-				vc.Unbuffered(ch.routine, partner, currentVectorClocks)
+				ch.vpost = vc.Unbuffered(ch.routine, partner, ch.id, ch.pos, currentVectorClocks)
+				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
-					vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+					ch.vpost = vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+				}
+			}
+		case recv: // should never occur, but better save than sorry
+			partner := ch.findUnbufferedPartner()
+			if partner != -1 {
+				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
+				ch.vpost = vc.Unbuffered(partner, ch.routine, ch.id, pos, currentVectorClocks)
+				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
+				// advance index of receive routine, send routine is already advanced
+				increaseIndex(partner)
+			} else {
+				if ch.cl { // recv on closed channel
+					ch.vpost = vc.RecvC(ch.routine, ch.id, currentVectorClocks)
 				}
 			}
 		case close:
-			vc.Close(ch.routine, ch.id, currentVectorClocks)
+			ch.vpost = vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
-			debug.Log(err, debug.ERROR)
+			logging.Log(err, logging.ERROR)
 		}
 	} else { // buffered channel
 		switch ch.opC {
 		case send:
-			vc.Send(ch.routine, ch.id, ch.qSize, currentVectorClocks, fifo)
+			ch.vpost = vc.Send(ch.routine, ch.id, ch.qSize, ch.pos, currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
-				vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+				ch.vpost = vc.RecvC(ch.routine, ch.id, currentVectorClocks)
 			} else {
-				vc.Recv(ch.routine, ch.id, ch.qSize, currentVectorClocks, fifo)
+				ch.vpost = vc.Recv(ch.routine, ch.id, ch.qSize, currentVectorClocks, fifo)
 			}
 		case close:
-			vc.Close(ch.routine, ch.id, currentVectorClocks)
+			ch.vpost = vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
-			debug.Log(err, debug.ERROR)
+			logging.Log(err, logging.ERROR)
 		}
 	}
 }

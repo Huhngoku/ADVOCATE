@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"analyzer/debug"
+	"analyzer/logging"
 	"analyzer/trace"
 )
 
@@ -19,14 +19,14 @@ import (
  *   int: The number of routines in the trace
  */
 func CreateTraceFromFile(file_path string, buffer_size int) int {
-	debug.Log("Create trace from file "+file_path+"...", debug.INFO)
+	logging.Log("Create trace from file "+file_path+"...", logging.INFO)
 	file, err := os.Open(file_path)
 	if err != nil {
-		debug.Log("Error opening file: "+file_path, debug.ERROR)
+		logging.Log("Error opening file: "+file_path, logging.ERROR)
 		panic(err)
 	}
 
-	debug.Log("Count number of routines...", debug.DEBUG)
+	logging.Log("Count number of routines...", logging.DEBUG)
 	numberOfRoutines := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -36,11 +36,11 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 
 	file2, err := os.Open(file_path)
 	if err != nil {
-		debug.Log("Error opening file: "+file_path, debug.ERROR)
+		logging.Log("Error opening file: "+file_path, logging.ERROR)
 		panic(err)
 	}
 
-	debug.Log("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", debug.DEBUG)
+	logging.Log("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", logging.DEBUG)
 
 	scanner = bufio.NewScanner(file2)
 	mb := 1048576 // 1 MB
@@ -53,14 +53,14 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 	}
 
 	if err := scanner.Err(); err != nil {
-		debug.Log("Error reading file line.", debug.ERROR)
+		logging.Log("Error reading file line.", logging.ERROR)
 		if err.Error() != "token too long" {
-			debug.Log("Reader buffer size to small. Increase with -b.", debug.ERROR)
+			logging.Log("Reader buffer size to small. Increase with -b.", logging.ERROR)
 		}
 		panic(err)
 	}
 
-	debug.Log("Trace created", debug.INFO)
+	logging.Log("Trace created", logging.INFO)
 	return numberOfRoutines
 }
 
@@ -72,7 +72,7 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
  *   numberOfRoutines (int): The number of routines in the log file
  */
 func processLine(line string, routine int, numberOfRoutines int) {
-	debug.Log("Read routine "+strconv.Itoa(routine), debug.DEBUG)
+	logging.Log("Read routine "+strconv.Itoa(routine), logging.DEBUG)
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
 		processElement(element, routine, numberOfRoutines)
@@ -88,10 +88,10 @@ func processLine(line string, routine int, numberOfRoutines int) {
  */
 func processElement(element string, routine int, numberOfRoutines int) {
 	if element == "" {
-		debug.Log("Routine "+strconv.Itoa(routine)+" is empty", debug.DEBUG)
+		logging.Log("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
 		return
 	}
-	debug.Log("Read element "+element, debug.DEBUG)
+	logging.Log("Read element "+element, logging.DEBUG)
 	fields := strings.Split(element, ",")
 	var err error = nil
 	switch fields[0] {

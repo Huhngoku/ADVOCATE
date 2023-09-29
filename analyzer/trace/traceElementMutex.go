@@ -5,7 +5,7 @@ import (
 	"math"
 	"strconv"
 
-	"analyzer/debug"
+	"analyzer/logging"
 	vc "analyzer/vectorClock"
 )
 
@@ -220,6 +220,6 @@ func (mu *traceElementMutex) updateVectorClock() {
 		mu.vpost = vc.RUnlock(mu.routine, mu.id, currentVectorClocks)
 	default:
 		err := "Unknown mutex operation: " + mu.toString()
-		debug.Log(err, debug.ERROR)
+		logging.Log(err, logging.ERROR)
 	}
 }

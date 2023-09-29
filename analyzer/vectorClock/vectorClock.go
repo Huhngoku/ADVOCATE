@@ -1,5 +1,7 @@
 package vectorClock
 
+import "fmt"
+
 /*
  * vectorClock is a vector clock
  * Fields:
@@ -26,6 +28,23 @@ func NewVectorClock(size int) VectorClock {
 }
 
 /*
+ * Get a string representation of the vector clock
+ * Returns:
+ *   (string): The string representation of the vector clock
+ */
+func (vc VectorClock) ToString() string {
+	str := "["
+	for i := 0; i < vc.size; i++ {
+		str += fmt.Sprint(vc.clock[i])
+		if i < vc.size-1 {
+			str += ", "
+		}
+	}
+	str += "]"
+	return str
+}
+
+/*
  * Increment the vector clock at the given position
  * Args:
  *   routine (int): The routine to increment
@@ -36,7 +55,7 @@ func (vc VectorClock) Inc(routine int) VectorClock {
 	if vc.clock == nil {
 		vc.clock = make(map[int]int)
 	}
-	vc.clock[routine]++
+	vc.clock[routine-1]++
 	return vc
 }
 
@@ -44,13 +63,20 @@ func (vc VectorClock) Inc(routine int) VectorClock {
  * Update the vector clock with the received vector clock
  * Args:
  *   rec (vectorClock): The received vector clock
+ * Returns:
+ *   (vectorClock): The new vector clock
  */
-func (vc VectorClock) Sync(rec VectorClock) {
+func (vc VectorClock) Sync(rec VectorClock) VectorClock {
+	if vc.clock == nil {
+		vc = NewVectorClock(rec.size)
+	}
 	for i := 0; i < vc.size; i++ {
 		if vc.clock[i] > rec.clock[i] {
 			rec.clock[i] = vc.clock[i]
 		}
 	}
+
+	return rec
 }
 
 /*
@@ -75,7 +101,7 @@ func (vc VectorClock) Copy() VectorClock {
  * Returns:
  *   happensBefore: The happens before relation between the two vector clocks
  */
-func GetHappensBefore(vc1 *VectorClock, vc2 *VectorClock) HappensBefore {
+func GetHappensBefore(vc1 VectorClock, vc2 VectorClock) HappensBefore {
 	if isCause(vc1, vc2) {
 		return Before
 	}
@@ -125,7 +151,7 @@ func GetHappensBefore(vc1 *VectorClock, vc2 *VectorClock) HappensBefore {
  * Returns:
  *   bool: True if vc1 is a cause of vc2, false otherwise
  */
-func isCause(vc1 *VectorClock, vc2 *VectorClock) bool {
+func isCause(vc1 VectorClock, vc2 VectorClock) bool {
 	atLeastOneSmaller := false
 	for i := 0; i < vc1.size; i++ {
 		if vc1.clock[i] > vc2.clock[i] {

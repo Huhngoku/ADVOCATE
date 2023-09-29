@@ -1,7 +1,7 @@
 package trace
 
 import (
-	"analyzer/debug"
+	"analyzer/logging"
 	vc "analyzer/vectorClock"
 	"errors"
 	"math"
@@ -185,6 +185,6 @@ func (wa *traceElementWait) updateVectorClock() {
 		wa.vpost = vc.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:
 		err := "Unknown operation on wait group: " + wa.toString()
-		debug.Log(err, debug.ERROR)
+		logging.Log(err, logging.ERROR)
 	}
 }

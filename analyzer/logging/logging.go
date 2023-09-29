@@ -1,4 +1,4 @@
-package debug
+package logging
 
 import "time"
 
@@ -13,21 +13,24 @@ var blue = "\033[34m"
 type level int
 
 const (
-	ERROR level = 1
-	INFO  level = 2
-	DEBUG level = 3
+	SILENT level = 0
+	RESULT level = 1
+	ERROR  level = 2
+	INFO   level = 3
+	DEBUG  level = 4
 )
 
 /*
 * Print a log message if the log level is sufficiant
-* 1 = errors, 2 = info, 3 = debug
 * Args:
 *   message: message to print
 *   level: level of the message
  */
 func Log(message string, level level) {
 	if int(level) <= levelDebug {
-		if level == ERROR {
+		if level == RESULT {
+			println(message)
+		} else if level == ERROR {
 			println(red + message + reset)
 		} else if level == INFO {
 			println(green + message + reset)
