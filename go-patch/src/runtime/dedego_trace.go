@@ -666,6 +666,7 @@ func DedegoChanPost(index int) {
 	if index == -1 {
 		return
 	}
+
 	elem := currentGoRoutine().getElement(index).(dedegoTraceChannelElement)
 	elem.tPost = GetDedegoCounter()
 	currentGoRoutine().updateElement(index, elem)
@@ -781,8 +782,8 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 		return
 	}
 
-	timer := GetDedegoCounter()
 	elem := currentGoRoutine().getElement(index).(dedegoTraceSelectElement)
+	timer := GetDedegoCounter()
 
 	elem.chosen = chosenIndex
 	elem.tPost = timer

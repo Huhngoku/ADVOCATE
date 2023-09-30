@@ -18,6 +18,9 @@ const (
 	close
 )
 
+var waitingReceive []*traceElementChannel = make([]*traceElementChannel, 0)
+var maxOpId map[int]int = make(map[int]int)
+
 /*
 * traceElementChannel is a trace element for a channel
 * Fields:
@@ -212,6 +215,23 @@ var closeOperations = make([]*traceElementChannel, 0)
  * TODO: implement
  */
 func (ch *traceElementChannel) updateVectorClock() {
+
+	// hold back receive operations, until the send operation is processed
+	for _, elem := range waitingReceive {
+		if elem.oId <= maxOpId[ch.id] {
+			waitingReceive = waitingReceive[1:]
+			elem.updateVectorClock()
+		}
+	}
+	if ch.opC == send {
+		maxOpId[ch.id] = ch.oId
+	} else if ch.opC == recv {
+		if ch.oId > maxOpId[ch.id] {
+			waitingReceive = append(waitingReceive, ch)
+			return
+		}
+	}
+
 	if ch.qSize == 0 { // unbuffered channel
 		switch ch.opC {
 		case send:

@@ -109,7 +109,7 @@ func Send(rout int, id int, size int, pos string,
 func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorClock {
 	newBufferedVCs(id, size, vc[rout].size)
 	if bufferedVCsCount[id] == 0 {
-		logging.Log("Read from empty buffer", logging.ERROR)
+		logging.Log("Read operation on empty buffer position", logging.ERROR)
 	}
 	bufferedVCsCount[id]--
 
