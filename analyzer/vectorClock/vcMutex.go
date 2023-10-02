@@ -28,9 +28,9 @@ func newRel(index int, nRout int) {
  */
 func Lock(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newRel(id, vc[id].size)
+	vc[routine] = vc[routine].Inc(routine)
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Sync(relR[id])
-	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
 
@@ -45,9 +45,9 @@ func Lock(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func Unlock(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newRel(id, vc[id].size)
+	vc[routine] = vc[routine].Inc(routine)
 	relW[id] = vc[routine]
 	relR[id] = vc[routine]
-	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
 
@@ -62,8 +62,8 @@ func Unlock(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newRel(id, vc[id].size)
-	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Inc(routine)
+	vc[routine] = vc[routine].Sync(relW[id])
 	return vc[routine].Copy()
 }
 
@@ -78,7 +78,7 @@ func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func RUnlock(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newRel(id, vc[id].size)
-	relR[id] = relR[id].Sync(vc[routine])
 	vc[routine] = vc[routine].Inc(routine)
+	relR[id] = relR[id].Sync(vc[routine])
 	return vc[routine].Copy()
 }

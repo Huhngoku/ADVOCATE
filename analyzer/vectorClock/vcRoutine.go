@@ -10,7 +10,7 @@ package vectorClock
  *   (VectorClock): The new vector clock of the old routine
  */
 func Fork(oldRout int, newRout int, vc map[int]VectorClock) VectorClock {
-	vc[newRout] = vc[oldRout].Copy()
 	vc[oldRout] = vc[oldRout].Inc(oldRout)
+	vc[newRout] = vc[oldRout].Copy()
 	return vc[oldRout].Copy()
 }

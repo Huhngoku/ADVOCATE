@@ -49,7 +49,7 @@ runtime.InitAtomics(0)
 defer func() {
 	runtime.DisableTrace()
 
-	file_name := "dedego.log"
+	file_name := "tracer.log"
 	os.Remove(file_name)
 	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

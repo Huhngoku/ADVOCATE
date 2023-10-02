@@ -237,6 +237,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case send:
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
+				logging.Log("Update vector clock of channel operation: "+traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 				ch.vpost = vc.Unbuffered(ch.routine, partner, ch.id, ch.pos, currentVectorClocks)
 				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
 				// advance index of receive routine, send routine is already advanced
@@ -249,6 +250,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case recv: // should never occur, but better save than sorry
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
+				logging.Log("Update vector clock of channel operation: "+traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
 				ch.vpost = vc.Unbuffered(partner, ch.routine, ch.id, pos, currentVectorClocks)
 				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()

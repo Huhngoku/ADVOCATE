@@ -10,6 +10,7 @@ var currentVectorClocks map[int]vc.VectorClock = make(map[int]vc.VectorClock)
 var currentIndex map[int]int = make(map[int]int)
 var numberOfRoutines int = 0
 var fifo bool
+var result string
 
 /*
 * Add an element to the trace
@@ -39,7 +40,7 @@ func SetNumberOfRoutines(n int) {
 * Args:
 *   assume_fifo (bool): True to assume fifo ordering in buffered channels
  */
-func CalculateVectorClocks(assume_fifo bool) {
+func RunAnalysis(assume_fifo bool) string {
 	logging.Log("Calculate vector clocks...", logging.INFO)
 
 	fifo = assume_fifo
@@ -83,6 +84,7 @@ func CalculateVectorClocks(assume_fifo bool) {
 	}
 
 	logging.Log("Vector clock calculation completed", logging.INFO)
+	return result
 }
 
 func getNextElement() traceElement {
