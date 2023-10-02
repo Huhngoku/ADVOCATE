@@ -27,8 +27,8 @@ func newWg(index int, nRout int) {
  */
 func Change(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newWg(id, vc[id].size)
-	vc[routine] = vc[routine].Inc(routine)
 	wg[id] = wg[id].Sync(vc[routine])
+	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
 
@@ -44,7 +44,7 @@ func Change(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func Wait(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newWg(id, vc[id].size)
-	vc[routine] = vc[routine].Inc(routine)
 	vc[routine] = vc[routine].Sync(wg[id])
+	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }

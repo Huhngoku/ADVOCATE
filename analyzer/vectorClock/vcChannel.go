@@ -2,6 +2,7 @@ package vectorClock
 
 import (
 	"analyzer/logging"
+	"strconv"
 )
 
 // elements for buffered channel internal vector clock
@@ -42,17 +43,18 @@ var mostRecentSendPosition map[int]string = make(map[int]string)
  * 	the vector clock of the send
  */
 func Unbuffered(routSend int, routRecv int, id int, pos string, vc map[int]VectorClock) VectorClock {
-	vc[routSend] = vc[routSend].Inc(routSend)
-	vc[routRecv] = vc[routRecv].Inc(routRecv)
-
 	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 	vc[routSend] = vc[routRecv].Copy()
 
 	// for detection of send on closed
 	hasSend[id] = true
-	mostRecentSend[id] = mostRecentSend[id].Sync(vc[routSend])
+	mostRecentSend[id] = mostRecentSend[id].Sync(vc[routSend]).Copy()
 	mostRecentSendPosition[id] = pos
 
+	logging.Log("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].ToString(), logging.DEBUG)
+
+	vc[routSend] = vc[routSend].Inc(routSend)
+	vc[routRecv] = vc[routRecv].Inc(routRecv)
 	return vc[routRecv].Copy()
 }
 
@@ -79,7 +81,6 @@ func Send(rout int, id int, size int, pos string,
 	}
 
 	v := bufferedVCs[id][count].vc
-	vc[rout] = vc[rout].Inc(rout)
 	vc[rout] = vc[rout].Sync(v)
 	if fifo {
 		vc[rout] = vc[rout].Sync(lastSend[id])
@@ -92,6 +93,7 @@ func Send(rout int, id int, size int, pos string,
 	mostRecentSend[id] = mostRecentSend[id].Sync(vc[rout])
 	mostRecentSendPosition[id] = pos
 
+	vc[rout] = vc[rout].Inc(rout)
 	return vc[rout].Copy()
 }
 
@@ -114,7 +116,6 @@ func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorC
 	bufferedVCsCount[id]--
 
 	v := bufferedVCs[id][0].vc
-	vc[rout] = vc[rout].Inc(rout)
 	vc[rout] = vc[rout].Sync(v)
 	if fifo {
 		vc[rout] = vc[rout].Sync(lastRecv[id])
@@ -123,6 +124,7 @@ func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorC
 	bufferedVCs[id] = bufferedVCs[id][1:]
 	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, vc[rout].Copy()})
 
+	vc[rout] = vc[rout].Inc(rout)
 	return vc[rout].Copy()
 }
 
@@ -137,11 +139,14 @@ func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorC
  * 	the vector clock of the close
  */
 func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
-	vc[rout] = vc[rout].Inc(rout)
 	closeVC[id] = vc[rout].Copy()
 
 	// check if there is an earlier send, that could happen concurrently to close
 	if hasSend[id] {
+		logging.Log("Check for possible send on closed channel "+
+			strconv.Itoa(id)+" with "+
+			mostRecentSend[id].ToString()+" and "+closeVC[id].ToString(),
+			logging.DEBUG)
 		happensBefore := GetHappensBefore(closeVC[id], mostRecentSend[id])
 		if happensBefore == Concurrent {
 			found := "Possible send on closed channel:\n"
@@ -151,6 +156,7 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
 		}
 	}
 
+	vc[rout] = vc[rout].Inc(rout)
 	return vc[rout].Copy()
 }
 
@@ -164,8 +170,8 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
  * 	the vector clock of the close
  */
 func RecvC(rout int, id int, vc map[int]VectorClock) VectorClock {
-	vc[rout] = vc[rout].Inc(rout)
 	vc[rout] = vc[rout].Sync(closeVC[id])
+	vc[rout] = vc[rout].Inc(rout)
 	return vc[rout].Copy()
 }
 

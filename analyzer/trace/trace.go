@@ -49,6 +49,8 @@ func RunAnalysis(assume_fifo bool) string {
 		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
 	}
 
+	currentVectorClocks[1] = currentVectorClocks[1].Inc(1)
+
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// ignore non executed operations
 		if elem.getTpost() == 0 {

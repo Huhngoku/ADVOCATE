@@ -26,8 +26,8 @@ func newLw(index int, nRout int) {
  */
 func Write(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newLw(id, vc[id].size)
-	vc[routine] = vc[routine].Inc(routine)
 	lw[id] = vc[routine]
+	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
 
@@ -43,8 +43,8 @@ func Write(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func Read(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newLw(id, vc[id].size)
-	vc[routine] = vc[routine].Inc(routine)
 	vc[routine] = vc[routine].Sync(lw[id])
+	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
 
