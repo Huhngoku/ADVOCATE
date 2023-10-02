@@ -212,9 +212,10 @@ The analyzer can take the following command line arguments:
 - -l [file]: path to the log file, default: ./trace.log
 - -d [level]: output level, 0: silent, 1: results, 2: errors, 3: info, 4: debug, default: 2
 - -b [buffer_size]: if the trace file is to big, it can be necessary to increase the size of the reader buffer. The size is given in MB, default: 25
-- -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.  
+- -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
+- -o [file_name]: set the name of the output file. If it is not set, or set to "", no output file will be created.
 
-Assuming the output level is set to 1 or bigger, the program will print found problems to the command line. For the example example we would get the following output:
+Assuming the output level is set to 1 or bigger, the program will print found problems to the command line. For the example we would get the following output (paths shortened for readability):
 ```txt
 Possible send on closed channel:
 	close: .../main.go:56
