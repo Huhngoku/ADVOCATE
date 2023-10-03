@@ -3,6 +3,8 @@ package trace
 import (
 	"analyzer/logging"
 	vc "analyzer/vectorClock"
+	"sort"
+	"strconv"
 )
 
 var traces map[int][]traceElement = make(map[int][]traceElement)
@@ -24,6 +26,35 @@ func addElementToTrace(element traceElement) error {
 	routine := element.getRoutine()
 	traces[routine] = append(traces[routine], element)
 	return nil
+}
+
+/*
+ * Sort the trace by tsort
+ */
+type sortByTPost []traceElement
+
+func (a sortByTPost) Len() int      { return len(a) }
+func (a sortByTPost) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortByTPost) Less(i, j int) bool {
+	return a[i].getTsort() < a[j].getTsort()
+}
+
+/*
+ * Sort a trace by tpost
+ * Args:
+ *   trace ([]traceElement): The trace to sort
+ * Returns:
+ *   ([]traceElement): The sorted trace
+ */
+func sortTrace(trace []traceElement) []traceElement {
+	sort.Sort(sortByTPost(trace))
+	return trace
+}
+
+func Sort() {
+	for routine, trace := range traces {
+		traces[routine] = sortTrace(trace)
+	}
 }
 
 /*
@@ -60,22 +91,28 @@ func RunAnalysis(assume_fifo bool) string {
 
 		switch e := elem.(type) {
 		case *traceElementAtomic:
-			logging.Log("Update vector clock for atomic operation "+e.toString(), logging.DEBUG)
+			logging.Log("Update vector clock for atomic operation "+e.toString()+
+				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementChannel:
-			logging.Log("Update vector clock for channel operation "+e.toString(), logging.DEBUG)
+			logging.Log("Update vector clock for channel operation "+e.toString()+
+				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementMutex:
-			logging.Log("Update vector clock for mutex operation "+e.toString(), logging.DEBUG)
+			logging.Log("Update vector clock for mutex operation "+e.toString()+
+				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementRoutine:
-			logging.Log("Update vector clock for routine operation "+e.toString(), logging.DEBUG)
+			logging.Log("Update vector clock for routine operation "+e.toString()+
+				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementSelect:
-			logging.Log("Update vector clock for select operation "+e.toString(), logging.DEBUG)
+			logging.Log("Update vector clock for select operation "+e.toString()+
+				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementWait:
-			logging.Log("Update vector clock for go operation "+e.toString(), logging.DEBUG)
+			logging.Log("Update vector clock for go operation "+e.toString()+
+				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		}
 
@@ -92,7 +129,7 @@ func RunAnalysis(assume_fifo bool) string {
 func getNextElement() traceElement {
 	// find the local trace, where the element on which currentIndex points to
 	// has the smallest tpost
-	var minTpost int = -1
+	var minTSort int = -1
 	var minRoutine int = -1
 	for routine, trace := range traces {
 		// no more elements in the routine trace
@@ -100,11 +137,11 @@ func getNextElement() traceElement {
 			continue
 		}
 		// ignore non executed operations
-		if trace[currentIndex[routine]].getTpost() == 0 {
+		if trace[currentIndex[routine]].getTsort() == 0 {
 			continue
 		}
-		if minTpost == -1 || trace[currentIndex[routine]].getTpost() < minTpost {
-			minTpost = trace[currentIndex[routine]].getTpost()
+		if minTSort == -1 || trace[currentIndex[routine]].getTsort() < minTSort {
+			minTSort = trace[currentIndex[routine]].getTsort()
 			minRoutine = routine
 		}
 	}

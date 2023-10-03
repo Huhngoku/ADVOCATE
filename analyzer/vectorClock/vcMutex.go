@@ -13,6 +13,8 @@ var relR map[int]VectorClock = make(map[int]VectorClock)
 func newRel(index int, nRout int) {
 	if _, ok := relW[index]; !ok {
 		relW[index] = NewVectorClock(nRout)
+	}
+	if _, ok := relR[index]; !ok {
 		relR[index] = NewVectorClock(nRout)
 	}
 }
@@ -27,7 +29,7 @@ func newRel(index int, nRout int) {
  *   (vectorClock): The new vector clock
  */
 func Lock(routine int, id int, vc map[int]VectorClock) VectorClock {
-	newRel(id, vc[id].size)
+	newRel(id, vc[routine].size)
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Sync(relR[id])
 	vc[routine] = vc[routine].Inc(routine)
@@ -44,9 +46,9 @@ func Lock(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   (vectorClock): The new vector clock
  */
 func Unlock(routine int, id int, vc map[int]VectorClock) VectorClock {
-	newRel(id, vc[id].size)
-	relW[id] = vc[routine]
-	relR[id] = vc[routine]
+	newRel(id, vc[routine].size)
+	relW[id] = vc[routine].Copy()
+	relR[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
@@ -61,7 +63,7 @@ func Unlock(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   (vectorClock): The new vector clock
  */
 func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
-	newRel(id, vc[id].size)
+	newRel(id, vc[routine].size)
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
@@ -77,8 +79,9 @@ func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   (vectorClock): The new vector clock
  */
 func RUnlock(routine int, id int, vc map[int]VectorClock) VectorClock {
-	newRel(id, vc[id].size)
-	relR[id] = relR[id].Sync(vc[routine])
+	newRel(id, vc[routine].size)
+	// relR[id] = relR[id].Sync(vc[routine])
+	relR[id] = vc[routine].Copy() // TODO: is this change correct?
 	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }

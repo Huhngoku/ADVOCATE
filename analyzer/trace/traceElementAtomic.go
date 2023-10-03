@@ -144,7 +144,7 @@ func (at *traceElementAtomic) getVpost() *vc.VectorClock {
  *   string: The simple string representation of the element
  */
 func (at *traceElementAtomic) toString() string {
-	return "A," + strconv.Itoa(at.id) + "," + strconv.Itoa(at.tpost) + "," +
+	return "A," + strconv.Itoa(at.tpost) + "," + strconv.Itoa(at.id) + "," +
 		strconv.Itoa(int(at.opA))
 }
 

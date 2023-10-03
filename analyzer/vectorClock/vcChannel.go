@@ -8,6 +8,7 @@ import (
 // elements for buffered channel internal vector clock
 type bufferedVC struct {
 	occupied bool
+	oId      int
 	vc       VectorClock
 }
 
@@ -63,6 +64,7 @@ func Unbuffered(routSend int, routRecv int, id int, pos string, vc map[int]Vecto
  * Args:
  * 	rout (int): the route of the sender
  * 	id (int): the id of the sender
+ * 	oId (int): the id of the communication
  * 	size (int): buffer size
  *  pos (string): the position of the send in the program
  * 	vc (map[int]VectorClock): the current vector clocks
@@ -70,7 +72,7 @@ func Unbuffered(routSend int, routRecv int, id int, pos string, vc map[int]Vecto
  * Returns:
  * 	the vector clock of the send
  */
-func Send(rout int, id int, size int, pos string,
+func Send(rout int, id int, oId int, size int, pos string,
 	vc map[int]VectorClock, fifo bool) VectorClock {
 	newBufferedVCs(id, size, vc[rout].size)
 
@@ -82,11 +84,13 @@ func Send(rout int, id int, size int, pos string,
 
 	v := bufferedVCs[id][count].vc
 	vc[rout] = vc[rout].Sync(v)
+
 	if fifo {
 		vc[rout] = vc[rout].Sync(lastSend[id])
 		lastSend[id] = vc[rout].Copy()
 	}
-	bufferedVCs[id][count] = bufferedVC{true, vc[rout].Copy()}
+
+	bufferedVCs[id][count] = bufferedVC{true, oId, vc[rout].Copy()}
 
 	// for detection of send on closed
 	hasSend[id] = true
@@ -102,27 +106,32 @@ func Send(rout int, id int, size int, pos string,
  * Args:
  * 	rout (int): the route of the sender
  * 	id (int): the id of the sender
+ * 	oId (int): the id of the communication
  * 	size (int): buffer size
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
  * Returns:
  * 	the vector clock of the receive
  */
-func Recv(rout int, id int, size int, vc map[int]VectorClock, fifo bool) VectorClock {
+func Recv(rout int, id int, oId, size int, vc map[int]VectorClock, fifo bool) VectorClock {
 	newBufferedVCs(id, size, vc[rout].size)
 	if bufferedVCsCount[id] == 0 {
 		logging.Log("Read operation on empty buffer position", logging.ERROR)
 	}
 	bufferedVCsCount[id]--
 
+	if bufferedVCs[id][0].oId != oId {
+		logging.Log("Read operation on wrong buffer position", logging.ERROR)
+	}
 	v := bufferedVCs[id][0].vc
+
 	vc[rout] = vc[rout].Sync(v)
 	if fifo {
 		vc[rout] = vc[rout].Sync(lastRecv[id])
 		lastRecv[id] = vc[rout].Copy()
 	}
 	bufferedVCs[id] = bufferedVCs[id][1:]
-	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, vc[rout].Copy()})
+	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, 0, vc[rout].Copy()})
 
 	vc[rout] = vc[rout].Inc(rout)
 	return vc[rout].Copy()
@@ -188,7 +197,7 @@ func newBufferedVCs(id int, size int, numRout int) {
 		bufferedVCs[id] = make([]bufferedVC, size)
 		for i := 0; i < size; i++ {
 			bufferedVCsCount[id] = 0
-			bufferedVCs[id][i] = bufferedVC{false, NewVectorClock(numRout)}
+			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout)}
 		}
 	}
 }

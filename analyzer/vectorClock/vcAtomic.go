@@ -26,7 +26,7 @@ func newLw(index int, nRout int) {
  */
 func Write(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newLw(id, vc[id].size)
-	lw[id] = vc[routine]
+	lw[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }

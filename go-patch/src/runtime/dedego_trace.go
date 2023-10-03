@@ -43,6 +43,8 @@ type dedegoAtomicMapElem struct {
 
 var dedegoDisabled bool = false
 var dedegoAtomicMap map[uint64]dedegoAtomicMapElem = make(map[uint64]dedegoAtomicMapElem)
+var dedegoAtomicMapToId map[uint64]uint64 = make(map[uint64]uint64)
+var dedegoAtomicMapIdCounter uint64 = 1
 var dedegoAtomicMapLock mutex
 
 /*
@@ -914,8 +916,13 @@ const (
 func (elem dedegoTraceAtomicElement) toString() string {
 	lock(&dedegoAtomicMapLock)
 	mapElement := dedegoAtomicMap[elem.index]
+	if _, ok := dedegoAtomicMapToId[elem.index]; !ok {
+		dedegoAtomicMapToId[elem.index] = dedegoAtomicMapIdCounter
+		dedegoAtomicMapIdCounter++
+	}
+	id := dedegoAtomicMapToId[elem.index]
 	res := "A," + uint64ToString(elem.timer) + "," +
-		uint64ToString(mapElement.addr) + ","
+		uint64ToString(id) + ","
 	switch mapElement.operation {
 	case LoadOp:
 		res += "L"

@@ -1,0 +1,8 @@
+G,1,2;G,2,3;G,3,4;C,4,7,1,R,f,1,2,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,f,2,2,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,f,0,0,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;G,16,8;M,31,36,5,R,L,t,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:109;M,32,34,6,-,L,t,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/sync/rwmutex.go:219;A,33,1,C;A,35,2,A;C,37,37,4,C,f,0,1,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:110;M,38,43,5,R,U,t,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:111;A,39,3,A;M,40,42,6,-,U,t,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/sync/rwmutex.go:325;A,41,4,A
+
+C,8,9,1,S,f,2,2,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/runtime/mgcsweep.go:279
+C,5,6,1,S,f,1,2,/home/erikkassubek/Uni/HiWi/dedego/go-patch/src/runtime/mgcscavenge.go:652
+
+
+M,17,19,5,R,R,t,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:93;A,18,5,A;C,20,21,4,S,f,1,1,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:94;M,22,24,5,R,N,t,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:95;A,23,6,A
+M,25,27,5,R,R,t,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:102;A,26,7,A;M,28,30,5,R,N,t,/home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/exSulzmann/exSulzmann.go:103;A,29,8,A

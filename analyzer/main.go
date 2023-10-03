@@ -21,5 +21,6 @@ func main() {
 	trace.SetNumberOfRoutines(numberOfROutines)
 	trace.RunAnalysis(*fifo)
 
+	logging.PrintNotFound() // print message, if no bug was found
 	logging.Log("Finished analyzis.\nTotal runtime: "+logging.GetRuntime(), logging.INFO)
 }

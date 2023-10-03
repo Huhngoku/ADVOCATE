@@ -1,6 +1,9 @@
 package vectorClock
 
-import "fmt"
+import (
+	"analyzer/logging"
+	"fmt"
+)
 
 /*
  * vectorClock is a vector clock
@@ -21,9 +24,14 @@ type VectorClock struct {
  *   (vectorClock): The new vector clock
  */
 func NewVectorClock(size int) VectorClock {
+	c := make(map[int]int)
+	for i := 1; i <= size; i++ {
+		c[i] = 0
+	}
+
 	return VectorClock{
 		size:  size,
-		clock: make(map[int]int),
+		clock: c,
 	}
 }
 
@@ -34,9 +42,9 @@ func NewVectorClock(size int) VectorClock {
  */
 func (vc VectorClock) ToString() string {
 	str := "["
-	for i := 0; i < vc.size; i++ {
+	for i := 1; i <= vc.size; i++ {
 		str += fmt.Sprint(vc.clock[i])
-		if i < vc.size-1 {
+		if i <= vc.size-1 {
 			str += ", "
 		}
 	}
@@ -55,7 +63,7 @@ func (vc VectorClock) Inc(routine int) VectorClock {
 	if vc.clock == nil {
 		vc.clock = make(map[int]int)
 	}
-	vc.clock[routine-1]++
+	vc.clock[routine]++
 	return vc
 }
 
@@ -70,13 +78,14 @@ func (vc VectorClock) Sync(rec VectorClock) VectorClock {
 	if vc.clock == nil {
 		vc = NewVectorClock(rec.size)
 	}
-	for i := 0; i < vc.size; i++ {
-		if vc.clock[i] > rec.clock[i] {
-			rec.clock[i] = vc.clock[i]
+	copy := rec.Copy()
+	for i := 1; i <= vc.size; i++ {
+		if vc.clock[i] > copy.clock[i] {
+			copy.clock[i] = vc.clock[i]
 		}
 	}
 
-	return rec
+	return copy
 }
 
 /*
@@ -86,7 +95,10 @@ func (vc VectorClock) Sync(rec VectorClock) VectorClock {
  */
 func (vc VectorClock) Copy() VectorClock {
 	newVc := NewVectorClock(vc.size)
-	for i := 0; i < vc.size; i++ {
+	if vc.size == 0 {
+		logging.Log("Copy of empty vector clock", logging.ERROR)
+	}
+	for i := 1; i <= vc.size; i++ {
 		newVc.clock[i] = vc.clock[i]
 	}
 	return newVc
@@ -153,7 +165,7 @@ func GetHappensBefore(vc1 VectorClock, vc2 VectorClock) HappensBefore {
  */
 func isCause(vc1 VectorClock, vc2 VectorClock) bool {
 	atLeastOneSmaller := false
-	for i := 0; i < vc1.size; i++ {
+	for i := 1; i <= vc1.size; i++ {
 		if vc1.clock[i] > vc2.clock[i] {
 			return false
 		} else if vc1.clock[i] < vc2.clock[i] {

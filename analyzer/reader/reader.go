@@ -60,6 +60,8 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 		panic(err)
 	}
 
+	trace.Sort()
+
 	logging.Log("Trace created", logging.INFO)
 	return numberOfRoutines
 }

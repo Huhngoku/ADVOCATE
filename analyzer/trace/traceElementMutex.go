@@ -188,7 +188,7 @@ func (mu *traceElementMutex) getVpost() *vc.VectorClock {
  *   string: The simple string representation of the element
  */
 func (mu *traceElementMutex) toString() string {
-	return "M" + "," + strconv.Itoa(mu.tpre) + "," + strconv.Itoa(mu.tpost) +
+	return "M" + "," + strconv.Itoa(mu.tpre) + "," + strconv.Itoa(mu.tpost) + "," +
 		strconv.Itoa(mu.id) + "," + strconv.FormatBool(mu.rw) + "," +
 		strconv.Itoa(int(mu.opM)) + "," + strconv.FormatBool(mu.suc) + "," +
 		mu.pos

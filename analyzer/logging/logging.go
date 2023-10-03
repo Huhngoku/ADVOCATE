@@ -25,6 +25,7 @@ const (
 
 var output_file *os.File
 var output = false
+var found_bug = false
 
 /*
 * Print a log message if the log level is sufficiant
@@ -49,6 +50,7 @@ func Log(message string, level level) {
 	// print message to terminal
 	if int(level) <= levelDebug {
 		if level == RESULT {
+			found_bug = true
 			println(message)
 		} else if level == ERROR {
 			println(red + message + reset)
@@ -80,6 +82,12 @@ func InitLogging(level int, out string) {
 		output = true
 	}
 
+}
+
+func PrintNotFound() {
+	if !found_bug {
+		Log("No problems found.", RESULT)
+	}
 }
 
 /*
