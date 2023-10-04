@@ -1,3 +1,0 @@
-Possible send on closed channel:
-	close: /home/erik/Uni/HiWi/dedego/examples/sendToClosedChan/ex2/ex2.go:49
-	send: /home/erik/Uni/HiWi/dedego/examples/sendToClosedChan/ex2/ex2.go:44

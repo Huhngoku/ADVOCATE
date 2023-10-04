@@ -6,21 +6,30 @@ import (
 )
 
 var levelDebug int = 0
+var levelResult int = 0
 var start_time = time.Now()
 
 var reset = "\033[0m"
 var red = "\033[31m"
+var orange = "\033[33m"
 var green = "\033[32m"
 var blue = "\033[34m"
 
-type level int
+type debug_level int
 
 const (
-	SILENT level = 0
-	RESULT level = 1
-	ERROR  level = 2
-	INFO   level = 3
-	DEBUG  level = 4
+	SILENT debug_level = iota
+	ERROR
+	INFO
+	DEBUG
+)
+
+type result_level int
+
+const (
+	NONE = iota
+	CRITICAL
+	WARNING
 )
 
 var output_file *os.File
@@ -28,41 +37,45 @@ var output = false
 var found_bug = false
 
 /*
-* Print a log message if the log level is sufficiant
+* Print a debug log message if the log level is sufficiant
 * Args:
 *   message: message to print
 *   level: level of the message
  */
-func Log(message string, level level) {
-	// print result to file
-	if output && level == RESULT {
-		if level == RESULT {
-			if output {
-				_, err2 := output_file.WriteString(message + "\n")
-
-				if err2 != nil {
-					Log(err2.Error(), ERROR)
-				}
-			}
-		}
-	}
-
+func Debug(message string, level debug_level) {
 	// print message to terminal
 	if int(level) <= levelDebug {
-		if level == RESULT {
-			found_bug = true
-			println(message)
-		} else if level == ERROR {
-			println(red + message + reset)
+		if level == ERROR {
+			println(blue + message + reset)
 		} else if level == INFO {
 			println(green + message + reset)
-		} else if level == DEBUG {
-			println(blue + message + reset)
 		} else {
 			println(message)
 		}
 	}
+}
 
+/*
+Print a result message
+Args:
+
+	message: message to print
+	level: level of the message
+*/
+func Result(message string, level result_level) {
+	found_bug = true
+	if output {
+		output_file.WriteString(message + "\n")
+	}
+	if int(level) <= levelResult {
+		if level == CRITICAL {
+			println(red + message + reset)
+		} else if level == WARNING {
+			println(orange + message + reset)
+		} else {
+			println(message)
+		}
+	}
 }
 
 /*
@@ -70,8 +83,10 @@ func Log(message string, level level) {
 * Args:
 *   level: level of the debug
 *   out: path to the output file, no output file if empty
+*   noResult: true if no result should be printed
+*   noWarn: true if no warnings should be printed
  */
-func InitLogging(level int, out string) {
+func InitLogging(level int, out string, noResult bool, noWarn bool) {
 	if level < 0 {
 		level = 0
 	}
@@ -82,11 +97,19 @@ func InitLogging(level int, out string) {
 		output = true
 	}
 
+	if noResult {
+		levelResult = int(NONE)
+	} else if noWarn {
+		levelResult = int(CRITICAL)
+	} else {
+		levelResult = int(WARNING)
+	}
+
 }
 
 func PrintNotFound() {
-	if !found_bug {
-		Log("No problems found.", RESULT)
+	if !found_bug && levelDebug != int(SILENT) && levelResult != int(NONE) {
+		print("No bug found\n")
 	}
 }
 

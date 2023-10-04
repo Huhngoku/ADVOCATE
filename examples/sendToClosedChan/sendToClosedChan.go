@@ -17,6 +17,7 @@ import (
 // NSC = No send on closed due to must-happens before relations
 // FN = False negative
 // FP = False positive
+// TP = True positive
 
 //////////////////////////////////////////////////////////////
 // No send of closed due to (must) happens before relations.
@@ -34,7 +35,6 @@ func n1() {
 
 	<-x
 	close(ch)
-
 }
 
 // Wait group
@@ -83,8 +83,6 @@ RU2 and RU1 sync with L
 If we reorder critical sections,
 we encounter send on closed.
 
-Kann nicht erkannt werden
-
 */
 func n4() {
 	var m sync.RWMutex
@@ -114,7 +112,64 @@ func n4() {
 
 }
 
-const N = 4
+// TP send on closed
+// TP recv on closed
+func n5() {
+	c := make(chan int)
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		<-c
+	}()
+
+	time.Sleep(300 * time.Millisecond) // prevent actual send on closed channel
+	close(c)
+}
+
+// TP send on closed
+// TP recv on closed
+func n6() {
+	c := make(chan int, 1)
+
+	go func() {
+		c <- 1
+		<-c
+	}()
+
+	time.Sleep(300 * time.Millisecond) // prevent actual send on closed channel
+	close(c)
+}
+
+// NSC
+func n7() {
+	c := make(chan int)
+
+	go func() {
+		c <- 1
+	}()
+
+	<-c
+
+	close(c)
+}
+
+// TP recv on closed
+func n8() {
+	c := make(chan int)
+
+	go func() {
+		time.Sleep(300 * time.Millisecond) // force actual recv on closed channel
+		<-c
+	}()
+
+	close(c)
+	time.Sleep(1 * time.Second) // prevent termination before receive
+}
+
+const N = 8
 
 func main() {
 
@@ -149,34 +204,24 @@ func main() {
 		}
 	}()
 
-	ns := [N]func(){n1, n2, n3, n4}
+	ns := [N]func(){n1, n2, n3, n4, n5, n6, n7, n8}
 
 	for i := 0; i < N; i++ {
 		ns[i]()
 	}
 }
 
-/*
-n4
-  1	      2   	  3			[1,0,0][0,0,0][0,0,0]
- G2							[2,0,0][1,1,0][0,0,0]
- G3							[3,0,0][1,1,0][2,0,1]
-        A,5,A               [3,0,0][1,2,0][2,0,1]    LW[5] = [1,1,0]
-        M,5,RL              [3,0,0][1,3,0][2,0,1]
-		C,4,S               [3,0,0][1,4,0][2,0,1]    X[4] = {{t,-,[1,3,0]}}; S[4] = [1,3,0]
-		A,6,A               [3,0,0][1,5,0][2,0,1]    LW[6] = [1,4,0]
-		M,5,RU		        [3,0,0][1,6,0][2,0,1]    RelR[5] = [1,5,0]
-				 A,7,A      [3,0,0][1,6,0][2,0,2]	 LW[7] = [2,0,1]
-				 M,5,RL     [3,0,0][1,6,0][2,0,3]
-				 A,8,A      [3,0,0][1,6,0][2,0,4]	 LW[8] = [2,1,2]
-				 M,5,RU     [3,0,0][1,6,0][2,0,5]	 RelR[5] = [2,5,4]
-A,1,C                       [5,0,0][1,6,0][2,0,5]    LW[1] = [4,0,0]
-M,6,L                       [6,0,0][1,6,0][2,0,5]
-A,2,A                       [7,0,0][1,6,0][2,0,5]    LW[2] = [6,0,0]
-M,5,L                       [8,5,4][1,6,0][2,0,5]
-C,4,C                                                TEST: [8,5,4] > [1,3,0]
-A,3,A
-A,4,A
-M,6,U
-M,5,U
+/* Expected:
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:128
+	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:120
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:128
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:124
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:141
+	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:136
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:141
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:137
 */

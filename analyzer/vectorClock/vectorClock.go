@@ -99,7 +99,7 @@ func (vc VectorClock) Sync(rec VectorClock) VectorClock {
 func (vc VectorClock) Copy() VectorClock {
 	newVc := NewVectorClock(vc.size)
 	if vc.size == 0 {
-		logging.Log("Copy of empty vector clock", logging.ERROR)
+		logging.Debug("Copy of empty vector clock", logging.ERROR)
 	}
 	for i := 1; i <= vc.size; i++ {
 		newVc.clock[i] = vc.clock[i]

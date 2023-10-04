@@ -161,6 +161,6 @@ func (at *traceElementAtomic) updateVectorClock() {
 		at.vpost = vc.Swap(at.routine, at.id, currentVectorClocks)
 	default:
 		err := "Unknown operation: " + at.toString()
-		logging.Log(err, logging.ERROR)
+		logging.Debug(err, logging.ERROR)
 	}
 }

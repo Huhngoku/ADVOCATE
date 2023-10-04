@@ -19,14 +19,14 @@ import (
  *   int: The number of routines in the trace
  */
 func CreateTraceFromFile(file_path string, buffer_size int) int {
-	logging.Log("Create trace from file "+file_path+"...", logging.INFO)
+	logging.Debug("Create trace from file "+file_path+"...", logging.INFO)
 	file, err := os.Open(file_path)
 	if err != nil {
-		logging.Log("Error opening file: "+file_path, logging.ERROR)
+		logging.Debug("Error opening file: "+file_path, logging.ERROR)
 		panic(err)
 	}
 
-	logging.Log("Count number of routines...", logging.DEBUG)
+	logging.Debug("Count number of routines...", logging.DEBUG)
 	numberOfRoutines := 0
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -36,11 +36,11 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 
 	file2, err := os.Open(file_path)
 	if err != nil {
-		logging.Log("Error opening file: "+file_path, logging.ERROR)
+		logging.Debug("Error opening file: "+file_path, logging.ERROR)
 		panic(err)
 	}
 
-	logging.Log("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", logging.DEBUG)
+	logging.Debug("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", logging.DEBUG)
 
 	scanner = bufio.NewScanner(file2)
 	mb := 1048576 // 1 MB
@@ -53,16 +53,16 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 	}
 
 	if err := scanner.Err(); err != nil {
-		logging.Log("Error reading file line.", logging.ERROR)
+		logging.Debug("Error reading file line.", logging.ERROR)
 		if err.Error() != "token too long" {
-			logging.Log("Reader buffer size to small. Increase with -b.", logging.ERROR)
+			logging.Debug("Reader buffer size to small. Increase with -b.", logging.ERROR)
 		}
 		panic(err)
 	}
 
 	trace.Sort()
 
-	logging.Log("Trace created", logging.INFO)
+	logging.Debug("Trace created", logging.INFO)
 	return numberOfRoutines
 }
 
@@ -74,7 +74,7 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
  *   numberOfRoutines (int): The number of routines in the log file
  */
 func processLine(line string, routine int, numberOfRoutines int) {
-	logging.Log("Read routine "+strconv.Itoa(routine), logging.DEBUG)
+	logging.Debug("Read routine "+strconv.Itoa(routine), logging.DEBUG)
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
 		processElement(element, routine, numberOfRoutines)
@@ -90,10 +90,10 @@ func processLine(line string, routine int, numberOfRoutines int) {
  */
 func processElement(element string, routine int, numberOfRoutines int) {
 	if element == "" {
-		logging.Log("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
+		logging.Debug("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
 		return
 	}
-	logging.Log("Read element "+element, logging.DEBUG)
+	logging.Debug("Read element "+element, logging.DEBUG)
 	fields := strings.Split(element, ",")
 	var err error = nil
 	switch fields[0] {

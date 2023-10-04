@@ -1,0 +1,6 @@
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:128
+	send: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:120
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:141
+	send: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:136

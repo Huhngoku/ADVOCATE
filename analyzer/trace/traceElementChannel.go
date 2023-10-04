@@ -203,16 +203,8 @@ func (ch *traceElementChannel) toStringSep(sep string) string {
 		strconv.Itoa(ch.oId) + sep + strconv.Itoa(ch.qSize) + sep + ch.pos
 }
 
-// list to store operations where partner has not jet been found
-var channelOperations = make([]*traceElementChannel, 0)
-
-// list to store close operations, to find operations, that were executed
-// because of a close on a channel
-var closeOperations = make([]*traceElementChannel, 0)
-
 /*
  * Update and calculate the vector clock of the element
- * TODO: implement
  */
 func (ch *traceElementChannel) updateVectorClock() {
 
@@ -226,7 +218,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 	if ch.opC == send {
 		maxOpId[ch.id] = ch.oId
 	} else if ch.opC == recv {
-		if ch.oId > maxOpId[ch.id] {
+		if ch.oId > maxOpId[ch.id] && !ch.cl {
 			waitingReceive = append(waitingReceive, ch)
 			return
 		}
@@ -237,51 +229,73 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case send:
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
-				logging.Log("Update vector clock of channel operation: "+traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
-				ch.vpost = vc.Unbuffered(ch.routine, partner, ch.id, ch.pos, currentVectorClocks)
+				logging.Debug("Update vector clock of channel operation: "+
+					traces[partner][currentIndex[partner]].toString(),
+					logging.DEBUG)
+				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
+				ch.vpost = vc.Unbuffered(ch.routine, partner, ch.id, ch.pos,
+					pos, currentVectorClocks)
 				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
-					ch.vpost = vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+					logging.Debug("Update vector clock of channel operation: "+
+						traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
+					ch.vpost = vc.RecvC(ch.routine, ch.id, ch.pos,
+						currentVectorClocks)
 				}
 			}
 		case recv: // should never occur, but better save than sorry
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
-				logging.Log("Update vector clock of channel operation: "+traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
+				logging.Debug("Update vector clock of channel operation: "+
+					traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
-				ch.vpost = vc.Unbuffered(partner, ch.routine, ch.id, pos, currentVectorClocks)
+				ch.vpost = vc.Unbuffered(partner, ch.routine, ch.id, ch.pos,
+					pos, currentVectorClocks)
 				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
-					ch.vpost = vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+					logging.Debug("Update vector clock of channel operation: "+
+						ch.toString(), logging.DEBUG)
+					ch.vpost = vc.RecvC(ch.routine, ch.id, ch.pos,
+						currentVectorClocks)
 				}
 			}
 		case close:
 			ch.vpost = vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
-			logging.Log(err, logging.ERROR)
+			logging.Debug(err, logging.ERROR)
 		}
 	} else { // buffered channel
 		switch ch.opC {
 		case send:
-			ch.vpost = vc.Send(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos, currentVectorClocks, fifo)
+			logging.Debug("Update vector clock of channel operation: "+
+				ch.toString(), logging.DEBUG)
+			ch.vpost = vc.Send(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
+				currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
-				ch.vpost = vc.RecvC(ch.routine, ch.id, currentVectorClocks)
+				logging.Debug("Update vector clock of channel operation: "+
+					ch.toString(), logging.DEBUG)
+				ch.vpost = vc.RecvC(ch.routine, ch.id, ch.pos, currentVectorClocks)
 			} else {
-				ch.vpost = vc.Recv(ch.routine, ch.id, ch.oId, ch.qSize, currentVectorClocks, fifo)
+				logging.Debug("Update vector clock of channel operation: "+
+					ch.toString(), logging.DEBUG)
+				ch.vpost = vc.Recv(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
+					currentVectorClocks, fifo)
 			}
 		case close:
+			logging.Debug("Update vector clock of channel operation: "+
+				ch.toString(), logging.DEBUG)
 			ch.vpost = vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
-			logging.Log(err, logging.ERROR)
+			logging.Debug(err, logging.ERROR)
 		}
 	}
 }
@@ -303,7 +317,8 @@ func (ch *traceElementChannel) findUnbufferedPartner() int {
 				return routine
 			}
 		case *traceElementSelect:
-			if ch.routine != e.getRoutine() && e.chosenCase.oId == ch.id && e.chosenCase.oId == ch.oId {
+			if ch.routine != e.getRoutine() && e.chosenCase.oId == ch.id &&
+				e.chosenCase.oId == ch.oId {
 				return routine
 			}
 		default:

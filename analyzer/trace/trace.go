@@ -72,7 +72,7 @@ func SetNumberOfRoutines(n int) {
 *   assume_fifo (bool): True to assume fifo ordering in buffered channels
  */
 func RunAnalysis(assume_fifo bool) string {
-	logging.Log("Calculate vector clocks...", logging.INFO)
+	logging.Debug("Calculate vector clocks...", logging.INFO)
 
 	fifo = assume_fifo
 
@@ -85,44 +85,44 @@ func RunAnalysis(assume_fifo bool) string {
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// ignore non executed operations
 		if elem.getTpost() == 0 {
-			logging.Log("Skip vector clock calculation for "+elem.toString(), logging.DEBUG)
+			logging.Debug("Skip vector clock calculation for "+elem.toString(), logging.DEBUG)
 			continue
 		}
 
 		switch e := elem.(type) {
 		case *traceElementAtomic:
-			logging.Log("Update vector clock for atomic operation "+e.toString()+
+			logging.Debug("Update vector clock for atomic operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementChannel:
-			logging.Log("Update vector clock for channel operation "+e.toString()+
+			logging.Debug("Update vector clock for channel operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementMutex:
-			logging.Log("Update vector clock for mutex operation "+e.toString()+
+			logging.Debug("Update vector clock for mutex operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementRoutine:
-			logging.Log("Update vector clock for routine operation "+e.toString()+
+			logging.Debug("Update vector clock for routine operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementSelect:
-			logging.Log("Update vector clock for select operation "+e.toString()+
+			logging.Debug("Update vector clock for select operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *traceElementWait:
-			logging.Log("Update vector clock for go operation "+e.toString()+
+			logging.Debug("Update vector clock for go operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		}
 
 		for i := 1; i <= numberOfRoutines; i++ {
-			logging.Log(currentVectorClocks[i].ToString(), logging.DEBUG)
+			logging.Debug(currentVectorClocks[i].ToString(), logging.DEBUG)
 		}
 
 	}
 
-	logging.Log("Vector clock calculation completed", logging.INFO)
+	logging.Debug("Vector clock calculation completed", logging.INFO)
 	return result
 }
 

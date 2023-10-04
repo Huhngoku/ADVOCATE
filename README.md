@@ -3,7 +3,7 @@
 This program is still under development and may return no or wrong results.
 
 ## What
-We want to analyze concurrent Go programs to automatically find potential concurrency bug. For now we only support the search for potential send on a closed channel, but we plan to expand the use cases in the future. 
+We want to analyze concurrent Go programs to automatically find potential concurrency bug. For now we only support the search for potential send/receive on a closed channel, but we plan to expand the use cases in the future. 
 
 ## Recording
 To analyze the program, we first need
@@ -214,12 +214,19 @@ The analyzer can take the following command line arguments:
 - -b [buffer_size]: if the trace file is to big, it can be necessary to increase the size of the reader buffer. The size is given in MB, default: 25
 - -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
 - -o [file_name]: set the name of the output file. If it is not set, or set to "", no output file will be created.
+- -r: silence all result messages for the terminal
+- -w: silence only warning messages for the terminal
 
 Assuming the output level is set to 1 or bigger, the program will print found problems to the command line. For the example we would get the following output (paths shortened for readability):
 ```txt
 Possible send on closed channel:
 	close: .../main.go:56
 	send: .../main.go:48
+Possible receive on closed channel:
+	close: .../main.go:56
+	recv: .../main.go:42
 ```
+The send can cause a panic of the program, if it occurs. It is therefor an error message (in terminal red).
 
+A receive on a closed channel does not cause a panic, but returns a default value. It can therefor be a desired behavior. For this reason it is only considered a warning (in terminal orange, can be silenced with -w).
 
