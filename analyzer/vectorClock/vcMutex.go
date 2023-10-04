@@ -80,8 +80,7 @@ func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
  */
 func RUnlock(routine int, id int, vc map[int]VectorClock) VectorClock {
 	newRel(id, vc[routine].size)
-	// relR[id] = relR[id].Sync(vc[routine])
-	relR[id] = vc[routine].Copy() // TODO: is this change correct?
+	relR[id] = relR[id].Sync(vc[routine])
 	vc[routine] = vc[routine].Inc(routine)
 	return vc[routine].Copy()
 }
