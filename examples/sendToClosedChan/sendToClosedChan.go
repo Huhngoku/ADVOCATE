@@ -213,15 +213,18 @@ func main() {
 
 /* Expected:
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:128
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:120
+	close: .../sendToClosedChan.go:129
+	send : .../sendToClosedChan.go:121
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:128
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:124
+	close: .../sendToClosedChan.go:129
+	recv : .../sendToClosedChan.go:125
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:141
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:136
+	close: .../sendToClosedChan.go:143
+	send : .../sendToClosedChan.go:138
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:141
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:137
+	close: .../sendToClosedChan.go:143
+	recv : .../sendToClosedChan.go:139
+Receive on closed channel:
+	close: .../sendToClosedChan.go:168
+	recv : .../sendToClosedChan.go:165
 */
