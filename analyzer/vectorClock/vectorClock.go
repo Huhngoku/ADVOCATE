@@ -78,6 +78,9 @@ func (vc VectorClock) Sync(rec VectorClock) VectorClock {
 	if vc.clock == nil {
 		vc = NewVectorClock(rec.size)
 	}
+	if rec.clock == nil {
+		return vc.Copy()
+	}
 	copy := rec.Copy()
 	for i := 1; i <= vc.size; i++ {
 		if vc.clock[i] > copy.clock[i] {

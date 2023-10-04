@@ -147,11 +147,9 @@ func main() {
 		}
 	}()
 
-	// ns := [N]func(){n1, n2, n3, n4}
+	ns := [N]func(){n1, n2, n3, n4}
 
-	// for i := 0; i < N; i++ {
-	// 	ns[i]()
-	// }
-
-	n4()
+	for i := 0; i < N; i++ {
+		ns[i]()
+	}
 }
