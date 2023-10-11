@@ -1,0 +1,6 @@
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1248
+	recv : 
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1381
+	recv : 

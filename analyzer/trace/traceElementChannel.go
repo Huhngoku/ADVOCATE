@@ -194,20 +194,31 @@ func (ch *traceElementChannel) getVpost() *vc.VectorClock {
  *   string: The simple string representation of the element
  */
 func (ch *traceElementChannel) toString() string {
-	return ch.toStringSep(",")
+	return ch.toStringSep(",", true)
 }
 
-func (ch *traceElementChannel) toStringSep(sep string) string {
-	return "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tpost) + sep +
+/*
+ * Get the simple string representation of the element
+ * Args:
+ *   sep (string): The separator between the values
+ *   pos (bool): Whether the position should be included
+ * Returns:
+ *   string: The simple string representation of the element
+ */
+func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
+	res := "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tpost) + sep +
 		strconv.Itoa(ch.id) + sep + strconv.Itoa(int(ch.opC)) + sep +
-		strconv.Itoa(ch.oId) + sep + strconv.Itoa(ch.qSize) + sep + ch.pos
+		strconv.Itoa(ch.oId) + sep + strconv.Itoa(ch.qSize)
+	if pos {
+		res += sep + ch.pos
+	}
+	return res
 }
 
 /*
  * Update and calculate the vector clock of the element
  */
 func (ch *traceElementChannel) updateVectorClock() {
-
 	// hold back receive operations, until the send operation is processed
 	for _, elem := range waitingReceive {
 		if elem.oId <= maxOpId[ch.id] {

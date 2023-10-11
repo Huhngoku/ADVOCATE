@@ -12,7 +12,6 @@ Added files:
 
 Changed files (marked with DEDEGO-CHANGE, außer in .s):
 
-- src/cmd/cgo/internal/test/testx.go
 - src/runtime/proc.go
 - src/runtime/runtime2.go
 - src/runtime/chan.go
@@ -47,3 +46,4 @@ Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST):
 - src/reflect/all_test.go
 - src/os/signal/signal_test.go
 - src/go/internal/gccgoimporter/importer_test.go
+- src/cmd/cgo/internal/test/testx.go

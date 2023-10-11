@@ -125,14 +125,15 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 		}
 
 		elem_case := traceElementChannel{
-			tpre:  c_tpre,
-			tpost: c_tpost,
-			id:    c_id,
-			opC:   c_opC,
-			cl:    c_cl,
-			oId:   c_oId,
-			qSize: c_oSize,
-			sel:   &elem,
+			routine: routine,
+			tpre:    c_tpre,
+			tpost:   c_tpost,
+			id:      c_id,
+			opC:     c_opC,
+			cl:      c_cl,
+			oId:     c_oId,
+			qSize:   c_oSize,
+			sel:     &elem,
 		}
 
 		cases_list = append(cases_list, elem_case)
@@ -219,7 +220,7 @@ func (se *traceElementSelect) toString() string {
 		if i != 0 {
 			res += "~"
 		}
-		res += c.toStringSep(".")
+		res += c.toStringSep(".", false)
 	}
 
 	if se.containsDefault {
@@ -242,5 +243,6 @@ func (se *traceElementSelect) updateVectorClock() {
 	if se.chosenDefault { // no update for return
 		return
 	}
+	println(se.toString())
 	se.chosenCase.updateVectorClock()
 }

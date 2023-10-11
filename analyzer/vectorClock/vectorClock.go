@@ -3,6 +3,8 @@ package vectorClock
 import (
 	"analyzer/logging"
 	"fmt"
+	"runtime"
+	"strconv"
 )
 
 /*
@@ -75,10 +77,16 @@ func (vc VectorClock) Inc(routine int) VectorClock {
  *   (vectorClock): The new vector clock
  */
 func (vc VectorClock) Sync(rec VectorClock) VectorClock {
-	if vc.clock == nil {
+	if vc.size == 0 && rec.size == 0 {
+		_, file, line, _ := runtime.Caller(1)
+		logging.Debug("Sync of empty vector clocks: "+file+":"+strconv.Itoa(line), logging.ERROR)
+	}
+
+	if vc.size == 0 {
 		vc = NewVectorClock(rec.size)
 	}
-	if rec.clock == nil {
+
+	if rec.size == 0 {
 		return vc.Copy()
 	}
 	copy := rec.Copy()
@@ -97,10 +105,11 @@ func (vc VectorClock) Sync(rec VectorClock) VectorClock {
  *   (vectorClock): The copy of the vector clock
  */
 func (vc VectorClock) Copy() VectorClock {
-	newVc := NewVectorClock(vc.size)
 	if vc.size == 0 {
-		logging.Debug("Copy of empty vector clock", logging.ERROR)
+		_, file, line, _ := runtime.Caller(1)
+		logging.Debug("Copy of empty vector clock: "+file+":"+strconv.Itoa(line), logging.ERROR)
 	}
+	newVc := NewVectorClock(vc.size)
 	for i := 1; i <= vc.size; i++ {
 		newVc.clock[i] = vc.clock[i]
 	}
