@@ -37,6 +37,10 @@ func NewVectorClock(size int) VectorClock {
 	}
 }
 
+func (vc VectorClock) GetSize() int {
+	return vc.size
+}
+
 /*
  * Get a string representation of the vector clock
  * Returns:
@@ -108,6 +112,7 @@ func (vc VectorClock) Copy() VectorClock {
 	if vc.size == 0 {
 		_, file, line, _ := runtime.Caller(1)
 		logging.Debug("Copy of empty vector clock: "+file+":"+strconv.Itoa(line), logging.ERROR)
+		panic("")
 	}
 	newVc := NewVectorClock(vc.size)
 	for i := 1; i <= vc.size; i++ {

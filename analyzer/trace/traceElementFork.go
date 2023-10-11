@@ -7,14 +7,14 @@ import (
 )
 
 /*
- * traceElementRoutine is a trace element for a go statement
+ * traceElementFork is a trace element for a go statement
  * Fields:
  *   routine (int): The routine id
  *   tpost (int): The timestamp at the end of the event
  *   vpost (vectoClock): The vector clock at the end of the event
  *   id (int): The id of the new go statement
  */
-type traceElementRoutine struct {
+type traceElementFork struct {
 	routine int
 	tpost   int
 	vpost   vc.VectorClock
@@ -29,7 +29,7 @@ type traceElementRoutine struct {
  *   tpost (string): The timestamp at the end of the event
  *   id (string): The id of the new routine
  */
-func AddTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
+func AddTraceElementFork(routine int, numberOfRoutines int, tpost string,
 	id string) error {
 	tpost_int, err := strconv.Atoi(tpost)
 	if err != nil {
@@ -41,7 +41,7 @@ func AddTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
 		return errors.New("id is not an integer")
 	}
 
-	elem := traceElementRoutine{
+	elem := traceElementFork{
 		routine: routine,
 		tpost:   tpost_int,
 		vpost:   vc.NewVectorClock(numberOfRoutines),
@@ -54,7 +54,7 @@ func AddTraceElementRoutine(routine int, numberOfRoutines int, tpost string,
  * Returns:
  *   int: The routine of the element
  */
-func (ro *traceElementRoutine) getRoutine() int {
+func (ro *traceElementFork) getRoutine() int {
 	return ro.routine
 }
 
@@ -63,7 +63,7 @@ func (ro *traceElementRoutine) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (ro *traceElementRoutine) getTpre() int {
+func (ro *traceElementFork) getTpre() int {
 	return ro.tpost
 }
 
@@ -72,7 +72,7 @@ func (ro *traceElementRoutine) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (ro *traceElementRoutine) getTpost() int {
+func (ro *traceElementFork) getTpost() int {
 	return ro.tpost
 }
 
@@ -81,7 +81,7 @@ func (ro *traceElementRoutine) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (ro *traceElementRoutine) getTsort() int {
+func (ro *traceElementFork) getTsort() int {
 	return ro.tpost
 }
 
@@ -100,7 +100,7 @@ func (ro *traceElementRoutine) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the end of the event
  */
-func (ro *traceElementRoutine) getVpost() *vc.VectorClock {
+func (ro *traceElementFork) getVpost() *vc.VectorClock {
 	return &ro.vpost
 }
 
@@ -109,7 +109,7 @@ func (ro *traceElementRoutine) getVpost() *vc.VectorClock {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ro *traceElementRoutine) toString() string {
+func (ro *traceElementFork) toString() string {
 	return "G" + "," + strconv.Itoa(ro.tpost) + "," + strconv.Itoa(ro.id)
 }
 
@@ -117,6 +117,6 @@ func (ro *traceElementRoutine) toString() string {
  * Update and calculate the vector clock of the element
  * TODO: implement
  */
-func (ro *traceElementRoutine) updateVectorClock() {
+func (ro *traceElementFork) updateVectorClock() {
 	ro.vpost = vc.Fork(ro.routine, ro.id, currentVectorClocks)
 }

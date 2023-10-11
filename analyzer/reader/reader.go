@@ -29,10 +29,13 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 	logging.Debug("Count number of routines...", logging.DEBUG)
 	numberOfRoutines := 0
 	scanner := bufio.NewScanner(file)
+	mb := 1048576 // 1 MB
+	scanner.Buffer(make([]byte, 0, buffer_size*mb), buffer_size*mb)
 	for scanner.Scan() {
 		numberOfRoutines++
 	}
 	file.Close()
+	logging.Debug("Number of routines: "+strconv.Itoa(numberOfRoutines), logging.INFO)
 
 	file2, err := os.Open(file_path)
 	if err != nil {
@@ -43,7 +46,6 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 	logging.Debug("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", logging.DEBUG)
 
 	scanner = bufio.NewScanner(file2)
-	mb := 1048576 // 1 MB
 	scanner.Buffer(make([]byte, 0, buffer_size*mb), buffer_size*mb)
 	routine := 0
 	for scanner.Scan() {
@@ -93,7 +95,6 @@ func processElement(element string, routine int, numberOfRoutines int) {
 		logging.Debug("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
 		return
 	}
-	logging.Debug("Read element "+element, logging.DEBUG)
 	fields := strings.Split(element, ",")
 	var err error = nil
 	switch fields[0] {
@@ -106,7 +107,7 @@ func processElement(element string, routine int, numberOfRoutines int) {
 		err = trace.AddTraceElementMutex(routine, numberOfRoutines, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7])
 	case "G":
-		err = trace.AddTraceElementRoutine(routine, numberOfRoutines, fields[1], fields[2])
+		err = trace.AddTraceElementFork(routine, numberOfRoutines, fields[1], fields[2])
 	case "S":
 		err = trace.AddTraceElementSelect(routine, numberOfRoutines, fields[1], fields[2], fields[3],
 			fields[4], fields[5])

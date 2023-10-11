@@ -102,7 +102,7 @@ func RunAnalysis(assume_fifo bool) string {
 			logging.Debug("Update vector clock for mutex operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()
-		case *traceElementRoutine:
+		case *traceElementFork:
 			logging.Debug("Update vector clock for routine operation "+e.toString()+
 				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
 			e.updateVectorClock()

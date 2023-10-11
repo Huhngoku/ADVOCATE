@@ -19,8 +19,8 @@ func main() {
 
 	flag.Parse()
 	logging.InitLogging(*level, *out, *noResult, *noWarning)
-	numberOfROutines := reader.CreateTraceFromFile(*file_path, *buffer_size)
-	trace.SetNumberOfRoutines(numberOfROutines)
+	numberOfRoutines := reader.CreateTraceFromFile(*file_path, *buffer_size)
+	trace.SetNumberOfRoutines(numberOfRoutines)
 	trace.RunAnalysis(*fifo)
 
 	logging.PrintNotFound() // print message, if no bug was found

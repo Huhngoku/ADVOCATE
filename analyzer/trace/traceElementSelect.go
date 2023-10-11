@@ -243,6 +243,5 @@ func (se *traceElementSelect) updateVectorClock() {
 	if se.chosenDefault { // no update for return
 		return
 	}
-	println(se.toString())
 	se.chosenCase.updateVectorClock()
 }
