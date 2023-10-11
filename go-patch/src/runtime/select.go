@@ -492,7 +492,9 @@ rclose:
 	// read at end of closed channel
 	selunlock(scases, lockorder)
 	recvOK = false
+	// DEDEGO-CHANGE-START
 	dedegoRClose = true
+	// DEDEGO-CHANGE-END
 	if cas.elem != nil {
 		typedmemclr(c.elemtype, cas.elem)
 	}

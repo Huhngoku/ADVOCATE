@@ -564,6 +564,8 @@ func (elem dedegoTraceChannelElement) toStringSep(sep string, showPos bool) stri
 		res += "R"
 	case opChanClose:
 		res += "C"
+	default:
+		panic("Unknown channel operation" + intToString(int(elem.op)))
 	}
 
 	if elem.closed {
@@ -718,15 +720,19 @@ func (elem dedegoTraceSelectElement) toString() string {
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
 
-	for i, ca := range elem.cases {
-		if i != 0 {
-			res += "~"
+	notNil := 0
+	for _, ca := range elem.cases {
+		if ca.tPre != 0 { // ignore nil cases
+			if notNil != 0 {
+				res += "~"
+			}
+			res += ca.toStringSep(".", false)
+			notNil++
 		}
-		res += ca.toStringSep(".", false)
 	}
 
 	if elem.defa {
-		if len(elem.cases) != 0 {
+		if notNil != 0 {
 			res += "~"
 		}
 		if elem.defaSel {
@@ -760,8 +766,11 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
 	_, file, line, _ := Caller(2)
 
 	for i, ca := range *cases {
-		caseElements[i] = dedegoTraceChannelElement{id: ca.c.id,
-			qSize: uint32(ca.c.dataqsiz), tPre: timer}
+		if ca.c != nil { // ignore nil cases
+			caseElements[i] = dedegoTraceChannelElement{id: ca.c.id,
+				op:    opChanRecv,
+				qSize: uint32(ca.c.dataqsiz), tPre: timer}
+		}
 	}
 
 	elem := dedegoTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
@@ -808,8 +817,6 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 			send = true
 		} else if elem.cases[chosenIndex].op == opChanRecv {
 			send = false
-		} else {
-			panic("DedegoSelectPostNonDefault called on non sending channel op")
 		}
 		// set oId
 		if send {

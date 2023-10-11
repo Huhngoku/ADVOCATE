@@ -784,6 +784,14 @@ func chanparkcommit(gp *g, chanLock unsafe.Pointer) bool {
 //	}
 func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	// DEDEGO-CHANGE-START
+	// if c is nil, the select acts like as if there is only the default case.
+	// It therefor does not need to be recorded.
+	// It the return is nesseserry, because otherwise the following lock
+	// would try to lock a mutex which is a member of a nil element.
+	// This would lead to a SIGSEGV
+	if c == nil {
+		return false
+	}
 	dedegoIndex := DedegoSelectPreOneNonDef(c, true)
 	res := chansend(c, elem, false, getcallerpc())
 	lock(&c.numberSendMutex)
@@ -811,13 +819,17 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 //	}
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	// DEDEGO-CHANGE-START
+	// see selectnbsend
+	if c == nil {
+		return false, false
+	}
 	dedegoIndex := DedegoSelectPreOneNonDef(c, false)
 	res, recv := chanrecv(c, elem, false)
 	lock(&c.numberRecvMutex)
 	defer unlock(&c.numberRecvMutex)
 	DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberRecv)
-	return res, recv
 	// DEDEGO-CHANGE-END
+	return res, recv
 }
 
 //go:linkname reflect_chansend reflect.chansend0
