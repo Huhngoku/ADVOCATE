@@ -134,6 +134,7 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 			oId:     c_oId,
 			qSize:   c_oSize,
 			sel:     &elem,
+			pos:     pos,
 		}
 
 		cases_list = append(cases_list, elem_case)
