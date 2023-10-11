@@ -140,38 +140,6 @@ func GetHappensBefore(vc1 VectorClock, vc2 VectorClock) HappensBefore {
 	return Concurrent
 }
 
-// func GetHappensBefore(pre1 *VectorClock, post1 *VectorClock,
-// 	pre2 *VectorClock, post2 *VectorClock) HappensBefore {
-// 	isCausePre1 := isCause(pre1, pre2)
-// 	isCausePre2 := isCause(pre2, pre1)
-
-// 	isCausePre := None
-// 	if isCausePre1 {
-// 		isCausePre = Before
-// 	} else if isCausePre2 {
-// 		isCausePre = After
-// 	} else {
-// 		return Concurrent
-// 	}
-
-// 	isCausePost1 := isCause(post1, post2)
-// 	isCausePost2 := isCause(post2, post1)
-
-// 	isCausePost := None
-// 	if isCausePost1 {
-// 		isCausePost = Before
-// 	} else if isCausePost2 {
-// 		isCausePost = After
-// 	} else {
-// 		return Concurrent
-// 	}
-
-// 	if isCausePre == isCausePost {
-// 		return isCausePre
-// 	}
-// 	return Concurrent
-// }
-
 /*
  * Check if vc1 is a cause of vc2
  * Args:

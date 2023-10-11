@@ -116,10 +116,6 @@ func RunAnalysis(assume_fifo bool) string {
 			e.updateVectorClock()
 		}
 
-		for i := 1; i <= numberOfRoutines; i++ {
-			logging.Debug(currentVectorClocks[i].ToString(), logging.DEBUG)
-		}
-
 	}
 
 	logging.Debug("Analysis completed", logging.INFO)

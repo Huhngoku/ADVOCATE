@@ -2,6 +2,7 @@ package logging
 
 import (
 	"os"
+	"strings"
 	"time"
 )
 
@@ -32,9 +33,12 @@ const (
 	WARNING
 )
 
-var output_file *os.File
+var output_file string
 var output = false
 var found_bug = false
+var no_sum = false
+var resultsWarning []string
+var resultCritical []string
 
 /*
 * Print a debug log message if the log level is sufficiant
@@ -64,8 +68,10 @@ Args:
 */
 func Result(message string, level result_level) {
 	found_bug = true
-	if output {
-		output_file.WriteString(message + "\n")
+	if level == WARNING {
+		resultsWarning = append(resultsWarning, message)
+	} else if level == CRITICAL {
+		resultCritical = append(resultCritical, message)
 	}
 	if int(level) <= levelResult {
 		if level == CRITICAL {
@@ -85,31 +91,78 @@ func Result(message string, level result_level) {
 *   out: path to the output file, no output file if empty
 *   noResult: true if no result should be printed
 *   noWarn: true if no warnings should be printed
+*   NoSum: true if no summary should be printed
  */
-func InitLogging(level int, out string, noResult bool, noWarn bool) {
+func InitLogging(level int, out string, result bool, noSum bool) {
 	if level < 0 {
 		level = 0
 	}
 	levelDebug = level
 
 	if out != "" {
-		output_file, _ = os.Create(out)
+		output_file = out
 		output = true
 	}
 
-	if noResult {
-		levelResult = int(NONE)
-	} else if noWarn {
-		levelResult = int(CRITICAL)
-	} else {
+	if result {
 		levelResult = int(WARNING)
+	} else {
+		levelResult = int(NONE)
 	}
 
+	no_sum = noSum
 }
 
-func PrintNotFound() {
-	if !found_bug && levelDebug != int(SILENT) && levelResult != int(NONE) {
-		print("No bug found\n")
+/*
+* Disable the output to a file
+ */
+func DisableOutput() {
+	output = false
+}
+
+func PrintSummary() {
+	res := "==================== Summary ====================\n\n"
+	found := false
+	if len(resultCritical) > 0 {
+		found = true
+		res += "-------------------- Critical -------------------\n"
+		for _, result := range resultCritical {
+			res += red + result + reset + "\n"
+		}
+	}
+	if len(resultsWarning) > 0 {
+		found = true
+		res += "-------------------- Warning --------------------\n"
+		for _, result := range resultsWarning {
+			res += orange + result + reset + "\n"
+		}
+	}
+	if !found {
+		res += red + "No bugs found" + reset + "\n"
+	}
+	res += "\n=================================================\n"
+	res += "Total runtime: " + GetRuntime() + "\n"
+	res += "=================================================\n"
+
+	if !no_sum {
+		print("\n\n")
+		println(res)
+	}
+
+	if output {
+		res = strings.ReplaceAll(res, red, "")
+		res = strings.ReplaceAll(res, orange, "")
+		res = strings.ReplaceAll(res, reset, "")
+
+		file, err := os.OpenFile(output_file, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		if _, err := file.WriteString(res); err != nil {
+			panic(err)
+		}
 	}
 }
 

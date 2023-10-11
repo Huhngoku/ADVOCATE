@@ -214,17 +214,29 @@ The analyzer can take the following command line arguments:
 - -b [buffer_size]: if the trace file is to big, it can be necessary to increase the size of the reader buffer. The size is given in MB, default: 25
 - -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
 - -o [file_name]: set the name of the output file. If it is not set, or set to "", no output file will be created.
-- -r: silence all result messages for the terminal
-- -w: silence only warning messages for the terminal
+- -r: show the result immediately when found (default false)
+- -s: do not show the summary at the end
 
-Assuming the output level is set to 1 or bigger, the program will print found problems to the command line. For the example we would get the following output (paths shortened for readability):
+If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
+```
+./analyzer -f -l "trace.log" -o "result.log"
+```
+it will create the following result, show it in the terminal and print it into 
+an `result.log` file: 
 ```txt
+==================== Summary ====================
+
+-------------------- Critical -------------------
 Possible send on closed channel:
 	close: .../main.go:56
 	send: .../main.go:48
+-------------------- Warning --------------------
 Possible receive on closed channel:
 	close: .../main.go:56
 	recv: .../main.go:42
+=================================================
+Total runtime: Total runtime: 5.464833ms
+=================================================
 ```
 The send can cause a panic of the program, if it occurs. It is therefor an error message (in terminal red).
 

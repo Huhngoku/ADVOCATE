@@ -1,0 +1,24 @@
+==================== Summary ====================
+
+-------------------- Critical -------------------
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:129
+	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:121
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:143
+	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:138
+-------------------- Warning --------------------
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:129
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:125
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:143
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:139
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:168
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/sendToClosedChan.go:165
+
+=================================================
+Total runtime: 2.305399ms
+=================================================
+
