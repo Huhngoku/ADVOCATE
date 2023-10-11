@@ -72,7 +72,7 @@ func SetNumberOfRoutines(n int) {
 *   assume_fifo (bool): True to assume fifo ordering in buffered channels
  */
 func RunAnalysis(assume_fifo bool) string {
-	logging.Debug("Calculate vector clocks...", logging.INFO)
+	logging.Debug("Analyze the trace...", logging.INFO)
 
 	fifo = assume_fifo
 
@@ -122,7 +122,7 @@ func RunAnalysis(assume_fifo bool) string {
 
 	}
 
-	logging.Debug("Vector clock calculation completed", logging.INFO)
+	logging.Debug("Analysis completed", logging.INFO)
 	return result
 }
 

@@ -21,8 +21,6 @@ const (
 * Fields:
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
-*   vpre (vectorClock): The vector clock at the start of the event
-*   vpost (vectorClock): The vector clock at the end of the event
 *   id (int): The id of the wait group
 *   opW (opW): The operation on the wait group
 *   delta (int): The delta of the wait group
@@ -33,13 +31,11 @@ type traceElementWait struct {
 	routine int
 	tpre    int
 	tpost   int
-	// vpre    vc.VectorClock
-	vpost vc.VectorClock
-	id    int
-	opW   opW
-	delta int
-	val   int
-	pos   string
+	id      int
+	opW     opW
+	delta   int
+	val     int
+	pos     string
 }
 
 /*
@@ -94,13 +90,11 @@ func AddTraceElementWait(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		// vpre:    vc.NewVectorClock(numberOfRoutines),
-		vpost: vc.NewVectorClock(numberOfRoutines),
-		id:    id_int,
-		opW:   opW_op,
-		delta: delta_int,
-		val:   val_int,
-		pos:   pos}
+		id:      id_int,
+		opW:     opW_op,
+		delta:   delta_int,
+		val:     val_int,
+		pos:     pos}
 
 	return addElementToTrace(&elem)
 }
@@ -133,24 +127,6 @@ func (wa *traceElementWait) getTpost() int {
 }
 
 /*
- * Get the vector clock at the begin of the event
- * Returns:
- *   vectorClock: The vector clock at the begin of the event
- */
-// func (wa *traceElementWait) getVpre() *vc.VectorClock {
-// 	return &wa.vpre
-// }
-
-/*
- * Get the vector clock at the end of the event
- * Returns:
- *   vectorClock: The vector clock at the end of the event
- */
-func (wa *traceElementWait) getVpost() *vc.VectorClock {
-	return &wa.vpost
-}
-
-/*
  * Get the timer, that is used for the sorting of the trace
  * Returns:
  *   int: The timer of the element
@@ -180,9 +156,9 @@ func (wa *traceElementWait) toString() string {
 func (wa *traceElementWait) updateVectorClock() {
 	switch wa.opW {
 	case ChangeOp:
-		wa.vpost = vc.Change(wa.routine, wa.id, currentVectorClocks)
+		vc.Change(wa.routine, wa.id, currentVectorClocks)
 	case WaitOp:
-		wa.vpost = vc.Wait(wa.routine, wa.id, currentVectorClocks)
+		vc.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:
 		err := "Unknown operation on wait group: " + wa.toString()
 		logging.Debug(err, logging.ERROR)

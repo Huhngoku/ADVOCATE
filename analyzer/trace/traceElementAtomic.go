@@ -23,14 +23,12 @@ const (
  * Fields:
  *   routine (int): The routine id
  *   tpost (int): The timestamp of the event
- *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the atomic variable
  *   operation (int, enum): The operation on the atomic variable
  */
 type traceElementAtomic struct {
 	routine int
 	tpost   int
-	vpost   vc.VectorClock
 	id      int
 	opA     opAtomic
 }
@@ -75,7 +73,6 @@ func AddTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
 	elem := traceElementAtomic{
 		routine: routine,
 		tpost:   tpost_int,
-		vpost:   vc.NewVectorClock(numberOfRoutines),
 		id:      id_int,
 		opA:     opA_int,
 	}
@@ -120,25 +117,6 @@ func (at *traceElementAtomic) getTsort() int {
 }
 
 /*
- * Get the vector clock at the begin of the event. It is equal to the vector clock
- * at the end of the event.
- * Returns:
- *   vectorClock: The vector clock at the begin of the event
- */
-// func (at *traceElementAtomic) getVpre() *vc.VectorClock {
-// 	return &at.vpost
-// }
-
-/*
- * Get the vector clock at the end of the event
- * Returns:
- *   vectorClock: The vector clock at the end of the event
- */
-func (at *traceElementAtomic) getVpost() *vc.VectorClock {
-	return &at.vpost
-}
-
-/*
  * Get the simple string representation of the element.
  * Returns:
  *   string: The simple string representation of the element
@@ -154,11 +132,11 @@ func (at *traceElementAtomic) toString() string {
 func (at *traceElementAtomic) updateVectorClock() {
 	switch at.opA {
 	case LoadOp:
-		at.vpost = vc.Read(at.routine, at.id, currentVectorClocks)
+		vc.Read(at.routine, at.id, currentVectorClocks)
 	case StoreOp, AddOp:
-		at.vpost = vc.Write(at.routine, at.id, currentVectorClocks)
+		vc.Write(at.routine, at.id, currentVectorClocks)
 	case SwapOp, CompSwapOp:
-		at.vpost = vc.Swap(at.routine, at.id, currentVectorClocks)
+		vc.Swap(at.routine, at.id, currentVectorClocks)
 	default:
 		err := "Unknown operation: " + at.toString()
 		logging.Debug(err, logging.ERROR)

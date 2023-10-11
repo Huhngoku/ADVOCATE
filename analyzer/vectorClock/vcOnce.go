@@ -21,14 +21,11 @@ func newOSuc(index int, nRout int) {
  *   routine (int): The routine id
  *   id (int): The id of the atomic variable
  *   vc (map[int]VectorClock): The current vector clocks
- * Returns:
- *   (vectorClock): The new vector clock
  */
-func DoSuc(routine int, id int, vc map[int]VectorClock) VectorClock {
+func DoSuc(routine int, id int, vc map[int]VectorClock) {
 	newOSuc(id, vc[id].size)
 	oSuc[id] = vc[routine]
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }
 
 /*
@@ -37,12 +34,9 @@ func DoSuc(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   routine (int): The routine id
  *   id (int): The id of the atomic variable
  *   vc (map[int]VectorClock): The current vector clocks
- * Returns:
- *   (vectorClock): The new vector clock
  */
-func DoFail(routine int, id int, vc map[int]VectorClock) VectorClock {
+func DoFail(routine int, id int, vc map[int]VectorClock) {
 	newOSuc(id, vc[id].size)
 	vc[routine] = vc[routine].Sync(oSuc[id])
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }

@@ -1,7 +1,6 @@
 package trace
 
 import (
-	vc "analyzer/vectorClock"
 	"errors"
 	"math"
 	"strconv"
@@ -14,7 +13,6 @@ import (
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
- *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the select statement
  *   cases ([]traceElementSelectCase): The cases of the select statement
  *   containsDefault (bool): Whether the select statement contains a default case
@@ -23,11 +21,9 @@ import (
  *   pos (string): The position of the select statement in the code
  */
 type traceElementSelect struct {
-	routine int
-	tpre    int
-	tpost   int
-	// vpre            vc.VectorClock
-	vpost           vc.VectorClock
+	routine         int
+	tpre            int
+	tpost           int
 	id              int
 	cases           []traceElementChannel
 	chosenCase      traceElementChannel
@@ -68,10 +64,8 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		// vpre:    vc.NewVectorClock(numberOfRoutines),
-		vpost: vc.NewVectorClock(numberOfRoutines),
-		id:    id_int,
-		pos:   pos,
+		id:      id_int,
+		pos:     pos,
 	}
 
 	cs := strings.Split(cases, "~")
@@ -188,24 +182,6 @@ func (se *traceElementSelect) getTsort() int {
 		return math.MaxInt
 	}
 	return se.tpost
-}
-
-/*
- * Get the vector clock at the begin of the event
- * Returns:
- *   vectorClock: The vector clock at the begin of the event
- */
-// func (se *traceElementSelect) getVpre() *vc.VectorClock {
-// 	return &se.vpre
-// }
-
-/*
- * Get the vector clock at the end of the event
- * Returns:
- *   vectorClock: The vector clock at the end of the event
- */
-func (se *traceElementSelect) getVpost() *vc.VectorClock {
-	return &se.vpost
 }
 
 /*

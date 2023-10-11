@@ -27,8 +27,6 @@ var maxOpId map[int]int = make(map[int]int)
 *   routine (int): The routine id
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
-*   vpre (vectorClock): The vector clock at the start of the event
-*   vpost (vectorClock): The vector clock at the end of the event
 *   id (int): The id of the channel
 *   opC (int, enum): The operation on the channel
 *   exec (int, enum): The execution status of the operation
@@ -43,8 +41,6 @@ type traceElementChannel struct {
 	routine int
 	tpre    int
 	tpost   int
-	vpre    vc.VectorClock
-	vpost   vc.VectorClock
 	id      int
 	opC     opChannel
 	cl      bool
@@ -117,14 +113,12 @@ func AddTraceElementChannel(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		// vpre:    vc.NewVectorClock(numberOfRoutines),
-		vpost: vc.NewVectorClock(numberOfRoutines),
-		id:    id_int,
-		opC:   opC_int,
-		cl:    cl_bool,
-		oId:   oId_int,
-		qSize: qSize_int,
-		pos:   pos,
+		id:      id_int,
+		opC:     opC_int,
+		cl:      cl_bool,
+		oId:     oId_int,
+		qSize:   qSize_int,
+		pos:     pos,
 	}
 
 	return addElementToTrace(&elem)
@@ -178,15 +172,6 @@ func (ch *traceElementChannel) getTsort() int {
 // func (ch *traceElementChannel) getVpre() *vc.VectorClock {
 // 	return &ch.vpre
 // }
-
-/*
- * Get the vector clock at the end of the event
- * Returns:
- *   vectorClock: The vector clock at the end of the event
- */
-func (ch *traceElementChannel) getVpost() *vc.VectorClock {
-	return &ch.vpost
-}
 
 /*
  * Get the simple string representation of the element
@@ -244,16 +229,15 @@ func (ch *traceElementChannel) updateVectorClock() {
 					traces[partner][currentIndex[partner]].toString(),
 					logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
-				ch.vpost = vc.Unbuffered(ch.routine, partner, ch.id, ch.pos,
+				vc.Unbuffered(ch.routine, partner, ch.id, ch.pos,
 					pos, currentVectorClocks)
-				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
 						traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
-					ch.vpost = vc.RecvC(ch.routine, ch.id, ch.pos,
+					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				}
 			}
@@ -263,21 +247,20 @@ func (ch *traceElementChannel) updateVectorClock() {
 				logging.Debug("Update vector clock of channel operation: "+
 					traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
-				ch.vpost = vc.Unbuffered(partner, ch.routine, ch.id, ch.pos,
+				vc.Unbuffered(partner, ch.routine, ch.id, ch.pos,
 					pos, currentVectorClocks)
-				traces[partner][currentIndex[partner]].(*traceElementChannel).vpost = ch.vpost.Copy()
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.toString(), logging.DEBUG)
-					ch.vpost = vc.RecvC(ch.routine, ch.id, ch.pos,
+					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				}
 			}
 		case close:
-			ch.vpost = vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
+			vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
 			logging.Debug(err, logging.ERROR)
@@ -287,23 +270,23 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case send:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.toString(), logging.DEBUG)
-			ch.vpost = vc.Send(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
+			vc.Send(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
 				currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.toString(), logging.DEBUG)
-				ch.vpost = vc.RecvC(ch.routine, ch.id, ch.pos, currentVectorClocks)
+				vc.RecvC(ch.routine, ch.id, ch.pos, currentVectorClocks)
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.toString(), logging.DEBUG)
-				ch.vpost = vc.Recv(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
+				vc.Recv(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
 					currentVectorClocks, fifo)
 			}
 		case close:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.toString(), logging.DEBUG)
-			ch.vpost = vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
+			vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
 			logging.Debug(err, logging.ERROR)

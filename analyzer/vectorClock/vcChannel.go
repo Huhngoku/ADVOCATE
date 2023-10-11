@@ -47,10 +47,8 @@ var mostRecentReceivePosition map[int]string = make(map[int]string)
  * 	pos_send (string): the position of the send in the program
  * 	pos_recv (string): the position of the receive in the program
  * 	vc (map[int]VectorClock): the current vector clocks
- * Returns:
- * 	the vector clock of the send
  */
-func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv string, vc map[int]VectorClock) VectorClock {
+func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv string, vc map[int]VectorClock) {
 	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 	vc[routSend] = vc[routRecv].Copy()
 
@@ -68,7 +66,6 @@ func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv st
 
 	vc[routSend] = vc[routSend].Inc(routSend)
 	vc[routRecv] = vc[routRecv].Inc(routRecv)
-	return vc[routRecv].Copy()
 }
 
 /*
@@ -81,11 +78,9 @@ func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv st
  *  pos (string): the position of the send in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
- * Returns:
- * 	the vector clock of the send
  */
 func Send(rout int, id int, oId int, size int, pos string,
-	vc map[int]VectorClock, fifo bool) VectorClock {
+	vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
 
 	count := bufferedVCsCount[id]
@@ -110,7 +105,6 @@ func Send(rout int, id int, oId int, size int, pos string,
 	mostRecentSendPosition[id] = pos
 
 	vc[rout] = vc[rout].Inc(rout)
-	return vc[rout].Copy()
 }
 
 /*
@@ -123,10 +117,8 @@ func Send(rout int, id int, oId int, size int, pos string,
  *  pos (string): the position of the send in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
- * Returns:
- * 	the vector clock of the receive
  */
-func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, fifo bool) VectorClock {
+func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
 	if bufferedVCsCount[id] == 0 {
 		logging.Debug("Read operation on empty buffer position", logging.ERROR)
@@ -152,7 +144,6 @@ func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, f
 	mostRecentReceivePosition[id] = pos
 
 	vc[rout] = vc[rout].Inc(rout)
-	return vc[rout].Copy()
 }
 
 /*
@@ -162,10 +153,8 @@ func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, f
  * 	id (int): the id of the sender
  * 	pos (string): the position of the close in the program
  * 	vc (map[int]VectorClock): the current vector clocks
- * Returns:
- * 	the vector clock of the close
  */
-func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
+func Close(rout int, id int, pos string, vc map[int]VectorClock) {
 	closeVC[id] = vc[rout].Copy()
 	closePos[id] = pos
 
@@ -199,7 +188,6 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
 	}
 
 	vc[rout] = vc[rout].Inc(rout)
-	return vc[rout].Copy()
 }
 
 /*
@@ -209,10 +197,8 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
  * 	id (int): the id of the sender
  * 	pos (string): the position of the close in the program
  * 	vc (map[int]VectorClock): the current vector clocks
- * Returns:
- * 	the vector clock of the close
  */
-func RecvC(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
+func RecvC(rout int, id int, pos string, vc map[int]VectorClock) {
 	found := "Receive on closed channel:\n"
 	found += "\tclose: " + closePos[id] + "\n"
 	found += "\trecv : " + pos
@@ -220,7 +206,6 @@ func RecvC(rout int, id int, pos string, vc map[int]VectorClock) VectorClock {
 
 	vc[rout] = vc[rout].Sync(closeVC[id])
 	vc[rout] = vc[rout].Inc(rout)
-	return vc[rout].Copy()
 }
 
 /*

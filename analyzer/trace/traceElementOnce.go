@@ -14,8 +14,6 @@ import (
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
  *   tpost (int): The timestamp at the end of the event
- *   vpre (vectorClock): The vector clock at the start of the event
- *   vpost (vectorClock): The vector clock at the end of the event
  *   id (int): The id of the mutex
  *   suc (bool): Whether the operation was successful
  *   pos (string): The position of the mutex operation in the code
@@ -24,11 +22,9 @@ type traceElementOnce struct {
 	routine int
 	tpre    int
 	tpost   int
-	// vpre    vc.VectorClock
-	vpost vc.VectorClock
-	id    int
-	suc   bool
-	pos   string
+	id      int
+	suc     bool
+	pos     string
 }
 
 /*
@@ -68,11 +64,9 @@ func AddTraceElementOnce(routine int, numberOfRoutines int, tpre string,
 		routine: routine,
 		tpre:    tpre_int,
 		tpost:   tpost_int,
-		// vpre:    vc.NewVectorClock(numberOfRoutines),
-		vpost: vc.NewVectorClock(numberOfRoutines),
-		id:    id_int,
-		suc:   suc_bool,
-		pos:   pos}
+		id:      id_int,
+		suc:     suc_bool,
+		pos:     pos}
 
 	return addElementToTrace(&elem)
 }
@@ -118,24 +112,6 @@ func (on *traceElementOnce) getTsort() int {
 }
 
 /*
- * Get the vector clock at the begin of the event
- * Returns:
- *   vectorClock: The vector clock at the begin of the event
- */
-// func (mu *traceElementMutex) getVpre() *vc.VectorClock {
-// 	return &mu.vpre
-// }
-
-/*
- * Get the vector clock at the end of the event
- * Returns:
- *   vectorClock: The vector clock at the end of the event
- */
-func (on *traceElementOnce) getVpost() *vc.VectorClock {
-	return &on.vpost
-}
-
-/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
@@ -151,8 +127,8 @@ func (on *traceElementOnce) toString() string {
  */
 func (on *traceElementOnce) updateVectorClock() {
 	if on.suc {
-		on.vpost = vc.DoSuc(on.routine, on.id, currentVectorClocks)
+		vc.DoSuc(on.routine, on.id, currentVectorClocks)
 	} else {
-		on.vpost = vc.DoFail(on.routine, on.id, currentVectorClocks)
+		vc.DoFail(on.routine, on.id, currentVectorClocks)
 	}
 }

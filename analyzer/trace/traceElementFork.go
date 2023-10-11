@@ -11,13 +11,11 @@ import (
  * Fields:
  *   routine (int): The routine id
  *   tpost (int): The timestamp at the end of the event
- *   vpost (vectoClock): The vector clock at the end of the event
  *   id (int): The id of the new go statement
  */
 type traceElementFork struct {
 	routine int
 	tpost   int
-	vpost   vc.VectorClock
 	id      int
 }
 
@@ -44,7 +42,6 @@ func AddTraceElementFork(routine int, numberOfRoutines int, tpost string,
 	elem := traceElementFork{
 		routine: routine,
 		tpost:   tpost_int,
-		vpost:   vc.NewVectorClock(numberOfRoutines),
 		id:      id_int}
 	return addElementToTrace(&elem)
 }
@@ -86,25 +83,6 @@ func (ro *traceElementFork) getTsort() int {
 }
 
 /*
- * Get the vector clock at the begin of the event. It is equal to the vector clock
- * at the end of the event.
- * Returns:
- *   vectorClock: The vector clock at the begin of the event
- */
-// func (ro *traceElementRoutine) getVpre() *vc.VectorClock {
-// 	return &ro.vpost
-// }
-
-/*
- * Get the vector clock at the end of the event
- * Returns:
- *   vectorClock: The vector clock at the end of the event
- */
-func (ro *traceElementFork) getVpost() *vc.VectorClock {
-	return &ro.vpost
-}
-
-/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
@@ -118,5 +96,5 @@ func (ro *traceElementFork) toString() string {
  * TODO: implement
  */
 func (ro *traceElementFork) updateVectorClock() {
-	ro.vpost = vc.Fork(ro.routine, ro.id, currentVectorClocks)
+	vc.Fork(ro.routine, ro.id, currentVectorClocks)
 }

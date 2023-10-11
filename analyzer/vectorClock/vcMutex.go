@@ -25,15 +25,12 @@ func newRel(index int, nRout int) {
  *   routine (int): The routine id
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
- * Returns:
- *   (vectorClock): The new vector clock
  */
-func Lock(routine int, id int, vc map[int]VectorClock) VectorClock {
+func Lock(routine int, id int, vc map[int]VectorClock) {
 	newRel(id, vc[routine].size)
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Sync(relR[id])
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }
 
 /*
@@ -42,15 +39,12 @@ func Lock(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   routine (int): The routine id
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
- * Returns:
- *   (vectorClock): The new vector clock
  */
-func Unlock(routine int, id int, vc map[int]VectorClock) VectorClock {
+func Unlock(routine int, id int, vc map[int]VectorClock) {
 	newRel(id, vc[routine].size)
 	relW[id] = vc[routine].Copy()
 	relR[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }
 
 /*
@@ -62,11 +56,10 @@ func Unlock(routine int, id int, vc map[int]VectorClock) VectorClock {
  * Returns:
  *   (vectorClock): The new vector clock
  */
-func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
+func RLock(routine int, id int, vc map[int]VectorClock) {
 	newRel(id, vc[routine].size)
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }
 
 /*
@@ -75,12 +68,9 @@ func RLock(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   routine (int): The routine id
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
- * Returns:
- *   (vectorClock): The new vector clock
  */
-func RUnlock(routine int, id int, vc map[int]VectorClock) VectorClock {
+func RUnlock(routine int, id int, vc map[int]VectorClock) {
 	newRel(id, vc[routine].size)
 	relR[id] = relR[id].Sync(vc[routine])
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }

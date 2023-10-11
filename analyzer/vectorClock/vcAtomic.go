@@ -21,14 +21,11 @@ func newLw(index int, nRout int) {
  *   routine (int): The routine id
  *   id (int): The id of the atomic variable
  *   vc (*map[int]VectorClock): The vector clocks
- * Returns:
- *   (VectorClock): The vector clock for the read
  */
-func Write(routine int, id int, vc map[int]VectorClock) VectorClock {
+func Write(routine int, id int, vc map[int]VectorClock) {
 	newLw(id, vc[id].size)
 	lw[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }
 
 /*
@@ -38,14 +35,11 @@ func Write(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   id (int): The id of the atomic variable
  *   numberOfRoutines (int): The number of routines in the trace
  *   vc (map[int]VectorClock): The vector clocks
- * Returns:
- *   (VectorClock): The vector clock for the read
  */
-func Read(routine int, id int, vc map[int]VectorClock) VectorClock {
+func Read(routine int, id int, vc map[int]VectorClock) {
 	newLw(id, vc[id].size)
 	vc[routine] = vc[routine].Sync(lw[id])
 	vc[routine] = vc[routine].Inc(routine)
-	return vc[routine].Copy()
 }
 
 /*
@@ -56,10 +50,8 @@ func Read(routine int, id int, vc map[int]VectorClock) VectorClock {
  *   id (int): The id of the atomic variable
  *   numberOfRoutines (int): The number of routines in the trace
  *   cv (map[int]VectorClock): The vector clocks
- * Returns:
- *   (VectorClock): The vector clock for the read
  */
-func Swap(routine int, id int, cv map[int]VectorClock) VectorClock {
-	_ = Read(routine, id, cv)
-	return Write(routine, id, cv).Copy()
+func Swap(routine int, id int, cv map[int]VectorClock) {
+	Read(routine, id, cv)
+	Write(routine, id, cv)
 }
