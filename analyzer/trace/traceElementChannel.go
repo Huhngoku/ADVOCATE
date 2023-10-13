@@ -235,8 +235,6 @@ func (ch *traceElementChannel) updateVectorClock() {
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
-					logging.Debug("Update vector clock of channel operation: "+
-						traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				}

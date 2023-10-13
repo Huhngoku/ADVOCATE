@@ -1,0 +1,46 @@
+==================== Summary ====================
+
+-------------------- Warning --------------------
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/fd_unix.go:105
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/fd_unix.go:118
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/transport.go:1389
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/fd_unix.go:105
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/fd_unix.go:118
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/crypto/internal/randutil/randutil.go:28
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/crypto/internal/randutil/randutil.go:31
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:931
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:904
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/transport.go:1389
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:9374
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:8312
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:9760
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:8477
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:8609
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:9619
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:9374
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:8312
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:9760
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:8477
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:8609
+	recv : /home/erikkassubek/Uni/HiWi/dedego/go-patch/src/net/http/h2_bundle.go:9619
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/Other/examples/gocrawl/crawler.go:307
+	recv : /home/erikkassubek/Uni/HiWi/Other/examples/gocrawl/worker.go:66
+
+=================================================
+Total runtime: 40.629211ms
+=================================================

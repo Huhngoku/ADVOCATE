@@ -169,7 +169,41 @@ func n8() {
 	time.Sleep(1 * time.Second) // prevent termination before receive
 }
 
-const N = 8
+// TP send on closed
+// TP recv on closed
+func n9() {
+	c := make(chan struct{}, 1)
+	d := make(chan struct{}, 1)
+
+	go func() {
+		time.Sleep(300 * time.Millisecond) // prevent actual send on closed channel
+		close(c)
+		close(d)
+	}()
+
+	go func() {
+		select {
+		case c <- struct{}{}:
+			print(1)
+		default:
+			print(2)
+		}
+
+		select {
+		case <-d:
+			print(3)
+		default:
+			print(4)
+		}
+	}()
+
+	d <- struct{}{}
+	<-c
+
+	time.Sleep(1 * time.Second) // prevent termination before receive
+}
+
+const N = 9
 
 func main() {
 
@@ -178,7 +212,7 @@ func main() {
 	defer func() {
 		runtime.DisableTrace()
 
-		file_name := "trace.log"
+		file_name := "constructed.log"
 		os.Remove(file_name)
 		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -204,7 +238,7 @@ func main() {
 		}
 	}()
 
-	ns := [N]func(){n1, n2, n3, n4, n5, n6, n7, n8}
+	ns := [N]func(){n1, n2, n3, n4, n5, n6, n7, n8, n9}
 
 	for i := 0; i < N; i++ {
 		ns[i]()

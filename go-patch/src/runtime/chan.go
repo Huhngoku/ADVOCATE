@@ -792,11 +792,11 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	if c == nil {
 		return false
 	}
-	dedegoIndex := DedegoSelectPreOneNonDef(c, true)
+	// dedegoIndex := DedegoSelectPreOneNonDef(c, true)
 	res := chansend(c, elem, false, getcallerpc())
 	lock(&c.numberSendMutex)
 	defer unlock(&c.numberSendMutex)
-	DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberSend)
+	// DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberSend)
 	return res
 	// DEDEGO-CHANGE-END
 }
@@ -823,11 +823,11 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	if c == nil {
 		return false, false
 	}
-	dedegoIndex := DedegoSelectPreOneNonDef(c, false)
+	// dedegoIndex := DedegoSelectPreOneNonDef(c, false)
 	res, recv := chanrecv(c, elem, false)
 	lock(&c.numberRecvMutex)
 	defer unlock(&c.numberRecvMutex)
-	DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberRecv)
+	// DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberRecv)
 	// DEDEGO-CHANGE-END
 	return res, recv
 }

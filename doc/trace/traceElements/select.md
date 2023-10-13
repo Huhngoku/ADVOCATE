@@ -31,6 +31,9 @@ element in the cases list. If the default value was chosen it is capitalized (`D
 - [pos]: The last field show the position in the code, where the select is implemented. It consists of the file and line number separated by a colon (:). It the select only contains one case, the line number is 
 equal to the line of this case.
 
+A select statement is only recorded as such, if it contains at least two non-default cases. Otherwise the Go compiler rewrites it 
+internally as a normal channel operation and is therefore recorded as such. A select case with one non-default and a default case is 
+only recorded, if the non-default case was chosen. 
 
 ## Example
 The following is an example containing two select statements, one with and one without a select:

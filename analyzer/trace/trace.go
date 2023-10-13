@@ -31,11 +31,11 @@ func addElementToTrace(element traceElement) error {
 /*
  * Sort the trace by tsort
  */
-type sortByTPost []traceElement
+type sortByTSort []traceElement
 
-func (a sortByTPost) Len() int      { return len(a) }
-func (a sortByTPost) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-func (a sortByTPost) Less(i, j int) bool {
+func (a sortByTSort) Len() int      { return len(a) }
+func (a sortByTSort) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a sortByTSort) Less(i, j int) bool {
 	return a[i].getTsort() < a[j].getTsort()
 }
 
@@ -47,7 +47,7 @@ func (a sortByTPost) Less(i, j int) bool {
  *   ([]traceElement): The sorted trace
  */
 func sortTrace(trace []traceElement) []traceElement {
-	sort.Sort(sortByTPost(trace))
+	sort.Sort(sortByTSort(trace))
 	return trace
 }
 
