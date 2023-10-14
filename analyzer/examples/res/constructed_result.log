@@ -8,11 +8,11 @@ Possible send on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
 	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:138
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:180
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:186
-Possible send on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:200
+	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:187
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:182
+	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:197
 -------------------- Warning --------------------
 Possible receive on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
@@ -24,12 +24,18 @@ Receive on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:168
 	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:165
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:180
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:201
-Possible receive on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:193
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:198
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:182
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:192
 
 =================================================
-Total runtime: 7.254097ms
+Total runtime: 5.183533ms
+=================================================
+:215
+	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:210
+
+=================================================
+Total runtime: 7.276785ms
 =================================================
