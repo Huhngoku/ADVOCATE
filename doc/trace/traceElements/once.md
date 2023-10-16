@@ -49,8 +49,8 @@ func doprint2() {
 If we ignore all internal operations we get the following trace:
 ```txt
 G,1,2;G,2,3;
-O,5,6,4,f,/home/erikkassubek/Uni/HiWi/dedego/go-patch/bin/main.go:12;
-O,3,4,4,t,/home/erikkassubek/Uni/HiWi/dedego/go-patch/bin/main.go:18;
+O,5,6,4,f,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/bin/main.go:12;
+O,3,4,4,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/bin/main.go:18;
 ```
 
 ## Implementation

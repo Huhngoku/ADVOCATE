@@ -786,7 +786,7 @@ func (t *tester) registerTests() {
 		t.registerCgoTests(cgoHeading)
 	}
 
-	// DEDEGO-REMOVE_TEST-START
+	// COBUFI-REMOVE_TEST-START
 	/*
 		if goos != "android" && !t.iOS() {
 			// Only start multiple test dir shards on builders,
@@ -813,19 +813,19 @@ func (t *tester) registerTests() {
 				}
 			}
 	*/
-	// DEDEGO-REMOVE_TEST-END
+	// COBUFI-REMOVE_TEST-END
 	// Only run the API check on fast development platforms.
 	// Every platform checks the API on every GOOS/GOARCH/CGO_ENABLED combination anyway,
 	// so we really only need to run this check once anywhere to get adequate coverage.
 	// To help developers avoid trybot-only failures, we try to run on typical developer machines
 	// which is darwin,linux,windows/amd64 and darwin/arm64.
-	// DEDEGO-REMOVE_TEST-START
+	// COBUFI-REMOVE_TEST-START
 	/*
 		if goos == "darwin" || ((goos == "linux" || goos == "windows") && goarch == "amd64") {
 			t.registerTest("API check", &goTest{variant: "check", pkg: "cmd/api", timeout: 5 * time.Minute, testFlags: []string{"-check"}})
 		}
 	*/
-	// DEDEGO-REMOVE_TEST-END
+	// COBUFI-REMOVE_TEST-END
 }
 
 // addTest adds an arbitrary test callback to the test list.

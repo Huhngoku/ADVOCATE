@@ -6,7 +6,7 @@ To analyze a program we have to record the relevant operations. Which operations
 
 To record this trace, we use a modified version of the Go runtime and standard library, that includes functionality to record these elements. The modified version can be found in the `go-patch` directory. We have to build the new compiler and runtime. This can be done my navigating into `go-patch/src` and running the `all.bash` or `all.bat` file. Potentially failing tests can be ignored. This will create a `go-patch/bin` directory containing a `./go` file. This file can be used like the normal `go` command to build or run programs (e.g. `./go build` or `./go run main.go`). T make it work we also have to change the `GOROOT` environment variable to point to the new runtime by running e.g.
 ```bash
-export GOROOT=$HOME/dedego/go-patch/
+export GOROOT=$HOME/CoBuFi-Go/go-patch/
 ```
 
 ## Recording
@@ -20,7 +20,7 @@ defer func() {
 	runtime.DisableTrace()
 
     // write the trace to a file
-	file_name := "dedego.log"  // name of the trace file
+	file_name := "trace.log"  // name of the trace file
 	os.Remove(file_name)
 	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -30,12 +30,12 @@ defer func() {
 
 	numRout := runtime.GetNumberOfRoutines()
 	for i := 1; i <= numRout; i++ {
-		dedegoChan := make(chan string)
+		cobufiChan := make(chan string)
 		go func() {
-			runtime.TraceToStringByIdChannel(i, dedegoChan)
-			close(dedegoChan)
+			runtime.TraceToStringByIdChannel(i, cobufiChan)
+			close(cobufiChan)
 		}()
-		for trace := range dedegoChan {
+		for trace := range cobufiChan {
 			if _, err := file.WriteString(trace); err != nil {
 				panic(err)
 			}
@@ -50,7 +50,7 @@ defer func() {
 
 It has to be included before any other code. It is also necessary to import the `runtime`,`io/ioutil` and `os` libraries. Warning: Many auto complete tools import the `std/runtime` instead of the `runtime` library. With this, the recording will not work. 
 
-We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace file will be automatically created as soon as the program execution finishes. It will be created as `dedego.log`.
+We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace file will be automatically created as soon as the program execution finishes. It will be created as `trace.log`.
 
 ## Known problems
 

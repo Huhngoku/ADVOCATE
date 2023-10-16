@@ -7,7 +7,7 @@
 
 package build
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 
 import (
@@ -810,4 +810,4 @@ wantLoop:
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END

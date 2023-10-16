@@ -1,6 +1,6 @@
 package atomic
 
-// DEDEGO-FILE-START
+// COBUFI-FILE-START
 
 import (
 	"unsafe"
@@ -142,4 +142,4 @@ func DedegoAtomicPtr(addr unsafe.Pointer) {
 	}
 }
 
-// DEDEGO-FILE-END
+// COBUFI-FILE-END

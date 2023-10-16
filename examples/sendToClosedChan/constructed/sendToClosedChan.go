@@ -222,12 +222,12 @@ func main() {
 
 		numRout := runtime.GetNumberOfRoutines()
 		for i := 1; i <= numRout; i++ {
-			dedegoChan := make(chan string)
+			cobufiChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, dedegoChan)
-				close(dedegoChan)
+				runtime.TraceToStringByIdChannel(i, cobufiChan)
+				close(cobufiChan)
 			}()
-			for trace := range dedegoChan {
+			for trace := range cobufiChan {
 				if _, err := file.WriteString(trace); err != nil {
 					panic(err)
 				}

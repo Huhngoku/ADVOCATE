@@ -113,5 +113,5 @@ The second function call records the success of the operation. This includes
 the counter at the end of the operation ([tpost]), the information that the 
 operation finished ([exec]) and the success of try lock operations ([suc]).\
 The implementation of those function calls can be found in 
-`go-patch/src/runtime/dedego_trace.go` in the functions `DedegoMutexLockPre`, 
+`go-patch/src/runtime/cobufi_trace.go` in the functions `DedegoMutexLockPre`, 
 `DedegoMutexLockTry`, `DedegoUnlockPre`, `DedegoPost` and `DedegoPostTry`.

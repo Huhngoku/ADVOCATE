@@ -181,7 +181,7 @@ var (
 	sink         string
 )
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestGetByStringAllocs(t *testing.T) {
 	allocs := int(testing.AllocsPerRun(100, func() {
@@ -192,7 +192,7 @@ func TestGetByStringAllocs(t *testing.T) {
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 func BenchmarkGetByString(b *testing.B) {
 	b.ReportAllocs()

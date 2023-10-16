@@ -2,39 +2,39 @@
 
 -------------------- Critical -------------------
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:121
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:121
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:138
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:138
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:187
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:187
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:182
-	send : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:197
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:182
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:197
 -------------------- Warning --------------------
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:125
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:125
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:139
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:139
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:168
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:165
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:168
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:165
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:198
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:198
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:182
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:192
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:182
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:192
 
 =================================================
 Total runtime: 5.183533ms
 =================================================
 :215
-	recv : /home/erikkassubek/Uni/HiWi/dedego/examples/sendToClosedChan/constructed/sendToClosedChan.go:210
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:210
 
 =================================================
 Total runtime: 7.276785ms

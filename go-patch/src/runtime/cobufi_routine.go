@@ -1,8 +1,8 @@
-// DEDEGO-FILE_START
+// COBUFI-FILE_START
 
 package runtime
 
-var DedegoRoutines map[uint64]*[]dedegoTraceElement
+var DedegoRoutines map[uint64]*[]cobufiTraceElement
 var DedegoRoutinesLock *mutex
 
 var projectPath string
@@ -10,20 +10,20 @@ var projectPath string
 type DedegoRoutine struct {
 	id    uint64
 	G     *g
-	Trace []dedegoTraceElement
+	Trace []cobufiTraceElement
 	lock  *mutex
 }
 
 /*
- * Create a new dedego routine
+ * Create a new cobufi routine
  * Params:
  * 	g: the g struct of the routine
  * Return:
- * 	the new dedego routine
+ * 	the new cobufi routine
  */
 func newDedegoRoutine(g *g) *DedegoRoutine {
 	routine := &DedegoRoutine{id: GetDedegoRoutineId(), G: g,
-		Trace: make([]dedegoTraceElement, 0),
+		Trace: make([]cobufiTraceElement, 0),
 		lock:  &mutex{}}
 
 	if DedegoRoutinesLock == nil {
@@ -34,7 +34,7 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
 	defer unlock(DedegoRoutinesLock)
 
 	if DedegoRoutines == nil {
-		DedegoRoutines = make(map[uint64]*[]dedegoTraceElement)
+		DedegoRoutines = make(map[uint64]*[]cobufiTraceElement)
 	}
 
 	DedegoRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
@@ -49,9 +49,9 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * Return:
  * 	the index of the element in the trace
  */
-func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
+func (gi *DedegoRoutine) addToTrace(elem cobufiTraceElement) int {
 	// do nothing if tracer disabled
-	if dedegoDisabled {
+	if cobufiDisabled {
 		return -1
 	}
 	// never needed in actual code, without it the compiler tests fail
@@ -61,13 +61,13 @@ func (gi *DedegoRoutine) addToTrace(elem dedegoTraceElement) int {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	if gi.Trace == nil {
-		gi.Trace = make([]dedegoTraceElement, 0)
+		gi.Trace = make([]cobufiTraceElement, 0)
 	}
 	gi.Trace = append(gi.Trace, elem)
 	return len(gi.Trace) - 1
 }
 
-func (gi *DedegoRoutine) getElement(index int) dedegoTraceElement {
+func (gi *DedegoRoutine) getElement(index int) cobufiTraceElement {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	return gi.Trace[index]
@@ -79,8 +79,8 @@ func (gi *DedegoRoutine) getElement(index int) dedegoTraceElement {
  * 	index: the index of the element to update
  * 	elem: the new element
  */
-func (gi *DedegoRoutine) updateElement(index int, elem dedegoTraceElement) {
-	if dedegoDisabled {
+func (gi *DedegoRoutine) updateElement(index int, elem cobufiTraceElement) {
+	if cobufiDisabled {
 		return
 	}
 
@@ -122,4 +122,4 @@ func GetRoutineId() uint64 {
 	return currentGoRoutine().id
 }
 
-// DEDEGO-FILE-END
+// COBUFI-FILE-END

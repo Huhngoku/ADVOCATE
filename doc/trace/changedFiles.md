@@ -5,12 +5,12 @@ added or changed.
 
 Added files:
 
-- src/runtime/dedego_routine.go
-- src/runtime/dedego_trace.go
-- src/runtime/dedego_util.go
-- src/runtime/internal/atomic/dedego_atomic.go
+- src/runtime/cobufi_routine.go
+- src/runtime/cobufi_trace.go
+- src/runtime/cobufi_util.go
+- src/runtime/internal/atomic/cobufi_atomic.go
 
-Changed files (marked with DEDEGO-CHANGE, außer in .s):
+Changed files (marked with COBUFI-CHANGE, außer in .s):
 
 - src/runtime/proc.go
 - src/runtime/runtime2.go
@@ -24,7 +24,7 @@ Changed files (marked with DEDEGO-CHANGE, außer in .s):
 - src/sync/waitgroup.go
 - src/sync/once.go
 
-Disabled Tests (files contain disabled tests, marked with DEDEGO-REMOVE_TEST): 
+Disabled Tests (files contain disabled tests, marked with COBUFI-REMOVE_TEST): 
 
 - src/cmd/cgo/internal/test/cgo_test.go
 - src/cmd/dist/test.go

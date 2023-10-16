@@ -801,7 +801,7 @@ func TestCloneFuncFields(t *testing.T) {
 	}
 }
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestCloneNonFuncFields(t *testing.T) {
 	var c1 Config
@@ -866,7 +866,7 @@ func TestCloneNonFuncFields(t *testing.T) {
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 func TestCloneNilConfig(t *testing.T) {
 	var config *Config

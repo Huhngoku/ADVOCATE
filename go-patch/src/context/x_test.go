@@ -324,7 +324,7 @@ func TestAllocs(t *testing.T) {
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 func TestSimultaneousCancels(t *testing.T) {
 	root, cancel := WithCancel(Background())

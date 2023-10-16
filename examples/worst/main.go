@@ -15,7 +15,7 @@ func main() {
 	defer func() {
 		runtime.DisableTrace()
 
-		file_name := "dedego.log"
+		file_name := "trace.log"
 		os.Remove(file_name)
 		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -24,12 +24,12 @@ func main() {
 
 		numRout := runtime.GetNumberOfRoutines()
 		for i := 0; i <= numRout; i++ {
-			dedegoChan := make(chan string)
+			cobufiChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, dedegoChan)
-				close(dedegoChan)
+				runtime.TraceToStringByIdChannel(i, cobufiChan)
+				close(cobufiChan)
 			}()
-			for trace := range dedegoChan {
+			for trace := range cobufiChan {
 				if _, err := file.WriteString(trace); err != nil {
 					panic(err)
 				}

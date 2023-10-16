@@ -99,7 +99,7 @@ var importerTests = [...]importerTest{
 	{pkgpath: "notinheap", name: "S", want: "type S struct{}"},
 }
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 func TestGoxImporter(t *testing.T) {
 	testenv.MustHaveExec(t)
 	initmap := make(map[*types.Package]InitData)
@@ -110,7 +110,7 @@ func TestGoxImporter(t *testing.T) {
 	}
 }
 
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 // gccgoPath returns a path to gccgo if it is present (either in
 // path or specified via GCCGO environment variable), or an

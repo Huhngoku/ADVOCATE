@@ -38,7 +38,7 @@ This executable can be used as your new go environment e.g. with
 
 It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
 ```
-export GOROOT=$HOME/dedego/go-patch/
+export GOROOT=$HOME/CoBuFiGo/go-patch/
 ```
 
 To create a trace, add
@@ -59,12 +59,12 @@ defer func() {
 
 	numRout := runtime.GetNumberOfRoutines()
 	for i := 1; i <= numRout; i++ {
-		dedegoChan := make(chan string)
+		cobufiChan := make(chan string)
 		go func() {
-			runtime.TraceToStringByIdChannel(i, dedegoChan)
-			close(dedegoChan)
+			runtime.TraceToStringByIdChannel(i, cobufiChan)
+			close(cobufiChan)
 		}()
-		for trace := range dedegoChan {
+		for trace := range cobufiChan {
 			if _, err := file.WriteString(trace); err != nil {
 				panic(err)
 			}
@@ -149,12 +149,12 @@ func main() {
 
 		numRout := runtime.GetNumberOfRoutines()
 		for i := 1; i <= numRout; i++ {
-			dedegoChan := make(chan string)
+			cobufiChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, dedegoChan)
-				close(dedegoChan)
+				runtime.TraceToStringByIdChannel(i, cobufiChan)
+				close(cobufiChan)
 			}()
-			for trace := range dedegoChan {
+			for trace := range cobufiChan {
 				if _, err := file.WriteString(trace); err != nil {
 					panic(err)
 				}

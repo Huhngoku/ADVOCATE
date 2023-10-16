@@ -1,4 +1,4 @@
-// DEDEGO-FILE-START
+// COBUFI-FILE-START
 
 package runtime
 
@@ -31,21 +31,21 @@ const (
 	none
 )
 
-type dedegoTraceElement interface {
+type cobufiTraceElement interface {
 	isDedegoTraceElement()
 	toString() string
 }
 
-type dedegoAtomicMapElem struct {
+type cobufiAtomicMapElem struct {
 	addr      uint64
 	operation int
 }
 
-var dedegoDisabled bool = false
-var dedegoAtomicMap map[uint64]dedegoAtomicMapElem = make(map[uint64]dedegoAtomicMapElem)
-var dedegoAtomicMapToId map[uint64]uint64 = make(map[uint64]uint64)
-var dedegoAtomicMapIdCounter uint64 = 1
-var dedegoAtomicMapLock mutex
+var cobufiDisabled bool = false
+var cobufiAtomicMap map[uint64]cobufiAtomicMapElem = make(map[uint64]cobufiAtomicMapElem)
+var cobufiAtomicMapToId map[uint64]uint64 = make(map[uint64]uint64)
+var cobufiAtomicMapIdCounter uint64 = 1
+var cobufiAtomicMapLock mutex
 
 /*
  * Return a string representation of the trace
@@ -71,7 +71,7 @@ func CurrentTraceToString() string {
  * Return:
  * 	string representation of the trace
  */
-func traceToString(trace *[]dedegoTraceElement) string {
+func traceToString(trace *[]cobufiTraceElement) string {
 	res := ""
 	for i, elem := range *trace {
 		if i != 0 {
@@ -89,7 +89,7 @@ func traceToString(trace *[]dedegoTraceElement) string {
  * Return:
  * 	index of the element in the trace
  */
-func insertIntoTrace(elem dedegoTraceElement) int {
+func insertIntoTrace(elem cobufiTraceElement) int {
 	return currentGoRoutine().addToTrace(elem)
 }
 
@@ -200,33 +200,33 @@ func InitAtomics(size int) {
 	at.DedegoAtomicLink(c)
 	go func() {
 		for atomic := range c {
-			lock(&dedegoAtomicMapLock)
-			dedegoAtomicMap[atomic.Index] = dedegoAtomicMapElem{
+			lock(&cobufiAtomicMapLock)
+			cobufiAtomicMap[atomic.Index] = cobufiAtomicMapElem{
 				addr:      atomic.Addr,
 				operation: atomic.Operation,
 			}
-			unlock(&dedegoAtomicMapLock)
+			unlock(&cobufiAtomicMapLock)
 		}
 	}()
 
-	dedegoDisabled = false
+	cobufiDisabled = false
 }
 
 /* Disable the collection of the trace */
 func DisableTrace() {
 	at.DedegoAtomicUnlink()
-	dedegoDisabled = true
+	cobufiDisabled = true
 }
 
 // ============================= Routine ===========================
 
 // type to save in the trace for routines
-type dedegoTraceSpawnElement struct {
+type cobufiTraceSpawnElement struct {
 	id    uint64 // id of the routine
 	timer uint64 // global timer
 }
 
-func (elem dedegoTraceSpawnElement) isDedegoTraceElement() {}
+func (elem cobufiTraceSpawnElement) isDedegoTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -234,7 +234,7 @@ func (elem dedegoTraceSpawnElement) isDedegoTraceElement() {}
  * 	string representation of the element "G,'id'"
  *    'id' (number): id of the routine
  */
-func (elem dedegoTraceSpawnElement) toString() string {
+func (elem cobufiTraceSpawnElement) toString() string {
 	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id)
 }
 
@@ -245,13 +245,13 @@ func (elem dedegoTraceSpawnElement) toString() string {
  */
 func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
 	timer := GetDedegoCounter()
-	callerRoutine.addToTrace(dedegoTraceSpawnElement{id: newId, timer: timer})
+	callerRoutine.addToTrace(cobufiTraceSpawnElement{id: newId, timer: timer})
 }
 
 // ============================= Mutex =============================
 
 // type to save in the trace for mutexe
-type dedegoTraceMutexElement struct {
+type cobufiTraceMutexElement struct {
 	id    uint64    // id of the mutex
 	op    operation // operation
 	rw    bool      // true if it is a rwmutex
@@ -262,7 +262,7 @@ type dedegoTraceMutexElement struct {
 	tPost uint64    // global timer at end of operation
 }
 
-func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
+func (elem cobufiTraceMutexElement) isDedegoTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -276,7 +276,7 @@ func (elem dedegoTraceMutexElement) isDedegoTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem dedegoTraceMutexElement) toString() string {
+func (elem cobufiTraceMutexElement) toString() string {
 	res := "M,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -327,7 +327,7 @@ func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
 	}
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
-	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -348,7 +348,7 @@ func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
 	}
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
-	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, file: file,
+	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -369,7 +369,7 @@ func DedegoUnlockPre(id uint64, rw bool, r bool) int {
 	}
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
-	elem := dedegoTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 }
@@ -395,10 +395,10 @@ func DedegoPost(index int) {
 	timer := GetDedegoCounter()
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
-	case dedegoTraceMutexElement:
+	case cobufiTraceMutexElement:
 		elem.tPost = timer
 		currentGoRoutine().updateElement(index, elem)
-	case dedegoTraceWaitGroupElement:
+	case cobufiTraceWaitGroupElement:
 		elem.tPost = timer
 		currentGoRoutine().updateElement(index, elem)
 
@@ -420,7 +420,7 @@ func DedegoPostTry(index int, suc bool) {
 	}
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
-	case dedegoTraceMutexElement:
+	case cobufiTraceMutexElement:
 		elem.suc = suc
 		elem.tPost = GetDedegoCounter()
 		currentGoRoutine().updateElement(index, elem)
@@ -431,7 +431,7 @@ func DedegoPostTry(index int, suc bool) {
 
 // ============================= WaitGroup ===========================
 
-type dedegoTraceWaitGroupElement struct {
+type cobufiTraceWaitGroupElement struct {
 	id    uint64    // id of the waitgroup
 	op    operation // operation
 	delta int       // delta of the waitgroup
@@ -442,7 +442,7 @@ type dedegoTraceWaitGroupElement struct {
 	tPost uint64    // global timer
 }
 
-func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
+func (elem cobufiTraceWaitGroupElement) isDedegoTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -457,7 +457,7 @@ func (elem dedegoTraceWaitGroupElement) isDedegoTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem dedegoTraceWaitGroupElement) toString() string {
+func (elem cobufiTraceWaitGroupElement) toString() string {
 	res := "W,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -491,7 +491,7 @@ func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
 		_, file, line, _ = Caller(3)
 	}
 	timer := GetDedegoCounter()
-	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
+	elem := cobufiTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
 		val: val, file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 
@@ -507,14 +507,14 @@ func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
 func DedegoWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
-	elem := dedegoTraceWaitGroupElement{id: id, op: opWgWait, file: file,
+	elem := cobufiTraceWaitGroupElement{id: id, op: opWgWait, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
 // ============================= Channel =============================
 
-type dedegoTraceChannelElement struct {
+type cobufiTraceChannelElement struct {
 	id     uint64    // id of the channel
 	op     operation // operation
 	qSize  uint32    // size of the channel, 0 for unbuffered
@@ -526,7 +526,7 @@ type dedegoTraceChannelElement struct {
 	closed bool      // true if the channel operation was finished, because the channel was closed at another routine
 }
 
-func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
+func (elem cobufiTraceChannelElement) isDedegoTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -540,7 +540,7 @@ func (elem dedegoTraceChannelElement) isDedegoTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem dedegoTraceChannelElement) toString() string {
+func (elem cobufiTraceChannelElement) toString() string {
 	return elem.toStringSep(",", true)
 }
 
@@ -552,7 +552,7 @@ func (elem dedegoTraceChannelElement) toString() string {
 * Return:
 * 	string representation of the element
  */
-func (elem dedegoTraceChannelElement) toStringSep(sep string, showPos bool) string {
+func (elem cobufiTraceChannelElement) toStringSep(sep string, showPos bool) string {
 	res := "C" + sep
 	res += uint64ToString(elem.tPre) + sep + uint64ToString(elem.tPost) + sep
 	res += uint64ToString(elem.id) + sep
@@ -592,19 +592,19 @@ func (elem dedegoTraceChannelElement) toStringSep(sep string, showPos bool) stri
  * Return:
  * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
-var dedegoCounterAtomic uint64
+var cobufiCounterAtomic uint64
 
 func DedegoChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
-	if isSuffix(file, "dedego_atomic.go") {
-		dedegoCounterAtomic += 1
-		DedegoAtomic(dedegoCounterAtomic)
+	if isSuffix(file, "cobufi_atomic.go") {
+		cobufiCounterAtomic += 1
+		DedegoAtomic(cobufiCounterAtomic)
 		// they are not recorded in the trace
 		return -1
 	}
 	timer := GetDedegoCounter()
-	elem := dedegoTraceChannelElement{id: id, op: opChanSend, opId: opId,
+	elem := cobufiTraceChannelElement{id: id, op: opChanSend, opId: opId,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -636,12 +636,12 @@ func isSuffix(s, suffix string) bool {
 func DedegoChanRecvPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
-	if isSuffix(file, "dedego_trace.go") {
+	if isSuffix(file, "cobufi_trace.go") {
 		return -1
 	}
 
 	timer := GetDedegoCounter()
-	elem := dedegoTraceChannelElement{id: id, op: opChanRecv, opId: opId,
+	elem := cobufiTraceChannelElement{id: id, op: opChanRecv, opId: opId,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -656,7 +656,7 @@ func DedegoChanRecvPre(id uint64, opId uint64, qSize uint) int {
 func DedegoChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
-	elem := dedegoTraceChannelElement{id: id, op: opChanClose, file: file,
+	elem := cobufiTraceChannelElement{id: id, op: opChanClose, file: file,
 		line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -671,7 +671,7 @@ func DedegoChanPost(index int) {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(dedegoTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(cobufiTraceChannelElement)
 	elem.tPost = GetDedegoCounter()
 	currentGoRoutine().updateElement(index, elem)
 }
@@ -680,18 +680,18 @@ func DedegoChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().getElement(index).(dedegoTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(cobufiTraceChannelElement)
 	elem.closed = true
 	currentGoRoutine().updateElement(index, elem)
 }
 
 // ============================= Select ==============================
 
-type dedegoTraceSelectElement struct {
+type cobufiTraceSelectElement struct {
 	tPre    uint64                      // global timer before the operation
 	tPost   uint64                      // global timer after the operation
 	id      uint64                      // id of the select
-	cases   []dedegoTraceChannelElement // cases of the select
+	cases   []cobufiTraceChannelElement // cases of the select
 	chosen  int                         // index of the chosen case in cases (0 indexed, -1 for default)
 	nsend   int                         // number of send cases
 	defa    bool                        // set true if a default case exists
@@ -700,7 +700,7 @@ type dedegoTraceSelectElement struct {
 	line    int                         // line where the operation was called
 }
 
-func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
+func (elem cobufiTraceSelectElement) isDedegoTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -715,7 +715,7 @@ func (elem dedegoTraceSelectElement) isDedegoTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem dedegoTraceSelectElement) toString() string {
+func (elem cobufiTraceSelectElement) toString() string {
 	res := "S,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -762,18 +762,18 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
 	}
 
 	id := GetDedegoObjectId()
-	caseElements := make([]dedegoTraceChannelElement, len(*cases))
+	caseElements := make([]cobufiTraceChannelElement, len(*cases))
 	_, file, line, _ := Caller(2)
 
 	for i, ca := range *cases {
 		if ca.c != nil { // ignore nil cases
-			caseElements[i] = dedegoTraceChannelElement{id: ca.c.id,
+			caseElements[i] = cobufiTraceChannelElement{id: ca.c.id,
 				op:    opChanRecv,
 				qSize: uint32(ca.c.dataqsiz), tPre: timer}
 		}
 	}
 
-	elem := dedegoTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
+	elem := cobufiTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
 		defa: !block, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -793,7 +793,7 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(dedegoTraceSelectElement)
+	elem := currentGoRoutine().getElement(index).(cobufiTraceSelectElement)
 	timer := GetDedegoCounter()
 
 	elem.chosen = chosenIndex
@@ -854,8 +854,8 @@ func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
 		opChan = opChanSend
 	}
 
-	caseElements := make([]dedegoTraceChannelElement, 1)
-	caseElements[0] = dedegoTraceChannelElement{id: c.id,
+	caseElements := make([]cobufiTraceChannelElement, 1)
+	caseElements[0] = cobufiTraceChannelElement{id: c.id,
 		qSize: uint32(c.dataqsiz), tPre: timer, op: opChan}
 
 	nSend := 0
@@ -864,7 +864,7 @@ func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
 	}
 
 	_, file, line, _ := Caller(2)
-	elem := dedegoTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
+	elem := cobufiTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
 		defa: true, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -881,7 +881,7 @@ func DedegoSelectPostOneNonDef(index int, res bool, oId uint64) {
 	}
 
 	timer := GetDedegoCounter()
-	elem := currentGoRoutine().getElement(index).(dedegoTraceSelectElement)
+	elem := currentGoRoutine().getElement(index).(cobufiTraceSelectElement)
 
 	if res {
 		elem.chosen = 0
@@ -897,13 +897,13 @@ func DedegoSelectPostOneNonDef(index int, res bool, oId uint64) {
 }
 
 // ============================= Atomic ================================
-type dedegoTraceAtomicElement struct {
+type cobufiTraceAtomicElement struct {
 	timer     uint64 // global timer
-	index     uint64 // index of the atomic event in dedegoAtomicMap
+	index     uint64 // index of the atomic event in cobufiAtomicMap
 	operation int    // type of operation
 }
 
-func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
+func (elem cobufiTraceAtomicElement) isDedegoTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -911,7 +911,7 @@ func (elem dedegoTraceAtomicElement) isDedegoTraceElement() {}
  * 	string representation of the element "A,'addr'"
  *    'addr' (number): address of the atomic variable
  */
-// enum for atomic operation, must be the same as in dedego_atomic.go
+// enum for atomic operation, must be the same as in cobufi_atomic.go
 const (
 	LoadOp = iota
 	StoreOp
@@ -920,14 +920,14 @@ const (
 	CompSwapOp
 )
 
-func (elem dedegoTraceAtomicElement) toString() string {
-	lock(&dedegoAtomicMapLock)
-	mapElement := dedegoAtomicMap[elem.index]
-	if _, ok := dedegoAtomicMapToId[elem.index]; !ok {
-		dedegoAtomicMapToId[elem.index] = dedegoAtomicMapIdCounter
-		dedegoAtomicMapIdCounter++
+func (elem cobufiTraceAtomicElement) toString() string {
+	lock(&cobufiAtomicMapLock)
+	mapElement := cobufiAtomicMap[elem.index]
+	if _, ok := cobufiAtomicMapToId[elem.index]; !ok {
+		cobufiAtomicMapToId[elem.index] = cobufiAtomicMapIdCounter
+		cobufiAtomicMapIdCounter++
 	}
-	id := dedegoAtomicMapToId[elem.index]
+	id := cobufiAtomicMapToId[elem.index]
 	res := "A," + uint64ToString(elem.timer) + "," +
 		uint64ToString(id) + ","
 	switch mapElement.operation {
@@ -944,18 +944,18 @@ func (elem dedegoTraceAtomicElement) toString() string {
 	default:
 		res += "U"
 	}
-	unlock(&dedegoAtomicMapLock)
+	unlock(&cobufiAtomicMapLock)
 	return res
 }
 
 func DedegoAtomic(index uint64) {
 	timer := GetDedegoCounter()
-	elem := dedegoTraceAtomicElement{index: index, timer: timer}
+	elem := cobufiTraceAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)
 }
 
 // ======================= Once ============================
-type dedegoOnceElement struct {
+type cobufiOnceElement struct {
 	tpre  uint64 // global timer at the beginning of the execution
 	tpost uint64 // global timer at the end of the execution
 	id    uint64 // id of the once
@@ -964,7 +964,7 @@ type dedegoOnceElement struct {
 	line  int    // line where the operation was called
 }
 
-func (elem dedegoOnceElement) isDedegoTraceElement() {}
+func (elem cobufiOnceElement) isDedegoTraceElement() {}
 
 /*
  * Return a string representation of the element
@@ -977,7 +977,7 @@ func (elem dedegoOnceElement) isDedegoTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (string): line where the operation was called
  */
-func (elem dedegoOnceElement) toString() string {
+func (elem cobufiOnceElement) toString() string {
 	res := "O,"
 	res += uint64ToString(elem.tpre) + ","
 	res += uint64ToString(elem.tpost) + ","
@@ -994,7 +994,7 @@ func (elem dedegoOnceElement) toString() string {
 func DedegoOncePre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
-	elem := dedegoOnceElement{id: id, tpre: timer, file: file, line: line}
+	elem := cobufiOnceElement{id: id, tpre: timer, file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -1003,11 +1003,11 @@ func DedegoOncePost(index int, suc bool) {
 		return
 	}
 	timer := GetDedegoCounter()
-	elem := currentGoRoutine().getElement(index).(dedegoOnceElement)
+	elem := currentGoRoutine().getElement(index).(cobufiOnceElement)
 	elem.tpost = timer
 	elem.suc = suc
 
 	currentGoRoutine().updateElement(index, elem)
 }
 
-// DEDEGO-FILE-END
+// COBUFI-FILE-END

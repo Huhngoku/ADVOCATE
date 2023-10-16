@@ -4436,12 +4436,12 @@ func newproc(fn *funcval) {
 	systemstack(func() {
 		newg := newproc1(fn, gp, pc)
 
-		// DEDEGO-CHANGE-STAR
+		// COBUFI-CHANGE-STAR
 		newg.goInfo = newDedegoRoutine(newg)
 		if gp != nil && gp.goInfo != nil {
 			DedegoSpawn(gp.goInfo, newg.goInfo.id)
 		}
-		// DEDEGO-CHANGE-END
+		// COBUFI-CHANGE-END
 
 		pp := getg().m.p.ptr()
 		runqput(pp, newg, true)

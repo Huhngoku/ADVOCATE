@@ -137,7 +137,7 @@ func TestTextHandlerPreformatted(t *testing.T) {
 	}
 }
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestTextHandlerAlloc(t *testing.T) {
 	testenv.SkipIfOptimizationOff(t)
@@ -153,7 +153,7 @@ func TestTextHandlerAlloc(t *testing.T) {
 	wantAllocs(t, 0, func() { h.Handle(context.Background(), r) })
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 func TestNeedsQuoting(t *testing.T) {
 	for _, test := range []struct {

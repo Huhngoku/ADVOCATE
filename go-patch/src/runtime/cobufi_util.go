@@ -1,4 +1,4 @@
-// DEDEGO-FILE-START
+// COBUFI-FILE-START
 
 package runtime
 
@@ -89,13 +89,13 @@ func intToString(n int) string {
 	}
 }
 
-var dedegoCurrentRoutineId uint64
-var dedegoCurrentObjectId uint64
-var dedegoGlobalCounter uint64
+var cobufiCurrentRoutineId uint64
+var cobufiCurrentObjectId uint64
+var cobufiGlobalCounter uint64
 
-var dedegoCurrentRoutineIdMutex mutex
-var dedegoCurrentObjectIdMutex mutex
-var dedegoGlobalCounterMutex mutex
+var cobufiCurrentRoutineIdMutex mutex
+var cobufiCurrentObjectIdMutex mutex
+var cobufiGlobalCounterMutex mutex
 
 /*
  * Get a new id for a routine
@@ -103,10 +103,10 @@ var dedegoGlobalCounterMutex mutex
  * 	new id
  */
 func GetDedegoRoutineId() uint64 {
-	lock(&dedegoCurrentRoutineIdMutex)
-	defer unlock(&dedegoCurrentRoutineIdMutex)
-	dedegoCurrentRoutineId += 1
-	return dedegoCurrentRoutineId
+	lock(&cobufiCurrentRoutineIdMutex)
+	defer unlock(&cobufiCurrentRoutineIdMutex)
+	cobufiCurrentRoutineId += 1
+	return cobufiCurrentRoutineId
 }
 
 /*
@@ -115,10 +115,10 @@ func GetDedegoRoutineId() uint64 {
  * 	new id
  */
 func GetDedegoObjectId() uint64 {
-	lock(&dedegoCurrentObjectIdMutex)
-	defer unlock(&dedegoCurrentObjectIdMutex)
-	dedegoCurrentObjectId += 1
-	return dedegoCurrentObjectId
+	lock(&cobufiCurrentObjectIdMutex)
+	defer unlock(&cobufiCurrentObjectIdMutex)
+	cobufiCurrentObjectId += 1
+	return cobufiCurrentObjectId
 }
 
 /*
@@ -127,10 +127,10 @@ func GetDedegoObjectId() uint64 {
  * 	new counter value
  */
 func GetDedegoCounter() uint64 {
-	lock(&dedegoGlobalCounterMutex)
-	defer unlock(&dedegoGlobalCounterMutex)
-	dedegoGlobalCounter += 1
-	return dedegoGlobalCounter
+	lock(&cobufiGlobalCounterMutex)
+	defer unlock(&cobufiGlobalCounterMutex)
+	cobufiGlobalCounter += 1
+	return cobufiGlobalCounter
 }
 
-// DEDEGO-FILE-END
+// COBUFI-FILE-END

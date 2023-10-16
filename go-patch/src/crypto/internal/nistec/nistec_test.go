@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestAllocations(t *testing.T) {
 	testenv.SkipIfOptimizationOff(t)
@@ -97,7 +97,7 @@ func TestAllocations(t *testing.T) {
 	})
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 type nistPoint[T any] interface {
 	Bytes() []byte

@@ -15,9 +15,10 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
-	/* DEDEGO-REMOVE_TEST-START
+
+	/* COBUFI-REMOVE_TEST-START
 	"runtime/trace"
-	DEDEGO-REMOVE_TEST-END */
+	COBUFI-REMOVE_TEST-END */
 	"strconv"
 	"strings"
 	"sync"
@@ -876,7 +877,7 @@ func TestNotifyContextStringer(t *testing.T) {
 	}
 }
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 // #44193 test signal handling while stopping and starting the world.
 func TestSignalTrace(t *testing.T) {
@@ -919,4 +920,4 @@ func TestSignalTrace(t *testing.T) {
 	<-done
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END

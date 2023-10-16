@@ -1838,7 +1838,7 @@ var (
 	sinkUDPAddr     = &net.UDPAddr{IP: make(net.IP, 0, 16)}
 )
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestNoAllocs(t *testing.T) {
 	// Wrappers that panic on error, to prove that our alloc-free
@@ -1940,7 +1940,7 @@ func TestNoAllocs(t *testing.T) {
 	test("Prefix.Masked", func() { sinkPrefix = MustParsePrefix("1.2.3.4/16").Masked() })
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 func TestAddrStringAllocs(t *testing.T) {
 	tests := []struct {

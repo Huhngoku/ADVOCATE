@@ -13,10 +13,11 @@ import (
 	"io"
 	rtrace "runtime/trace"
 	"strings"
-	/* DEDEGO-REMOVE_TEST-START
+
+	/* COBUFI-REMOVE_TEST-START
 	"sync"
 	"time"
-	DEDEGO-REMOVE_TEST-END */
+	COBUFI-REMOVE_TEST-END */
 	"testing"
 )
 
@@ -239,7 +240,7 @@ func TestFoo(t *testing.T) {
 
 }
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestDirectSemaphoreHandoff(t *testing.T) {
 	prog0 := func() {
@@ -272,4 +273,4 @@ func TestDirectSemaphoreHandoff(t *testing.T) {
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END

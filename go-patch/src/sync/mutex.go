@@ -12,9 +12,9 @@ package sync
 
 import (
 	"internal/race"
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	"runtime"
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 	"sync/atomic"
 	"unsafe"
 )
@@ -37,9 +37,9 @@ func fatal(string)
 type Mutex struct {
 	state int32
 	sema  uint32
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	id uint64 // id for the mutex
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 }
 
 // A Locker represents an object that can be locked and unlocked.
@@ -85,7 +85,7 @@ const (
 // If the lock is already in use, the calling goroutine
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -97,11 +97,11 @@ func (m *Mutex) Lock() {
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
 	// DedegoPost is called, if the mutex was locked successfully.
 	// In this case, the Lock event in the trace is updated to include
-	// this information. dedegoIndex is used for DedegoPost to find the
+	// this information. cobufiIndex is used for DedegoPost to find the
 	// pre event.
-	dedegoIndex := runtime.DedegoMutexLockPre(m.id, false, false)
-	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-CHANGE-END
+	cobufiIndex := runtime.DedegoMutexLockPre(m.id, false, false)
+	defer runtime.DedegoPost(cobufiIndex)
+	// COBUFI-CHANGE-END
 
 	// Fast path: grab unlocked mutex.
 	if atomic.CompareAndSwapInt32(&m.state, 0, mutexLocked) {
@@ -120,7 +120,7 @@ func (m *Mutex) Lock() {
 // and use of TryLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -130,12 +130,12 @@ func (m *Mutex) TryLock() bool {
 	}
 
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
-	// dedegoIndex is used for DedegoPostTry to find the pre event.
-	dedegoIndex := runtime.DedegoMutexLockTry(m.id, false, false)
-	// DEDEGO-CHANGE-END
+	// cobufiIndex is used for DedegoPostTry to find the pre event.
+	cobufiIndex := runtime.DedegoMutexLockTry(m.id, false, false)
+	// COBUFI-CHANGE-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
-		runtime.DedegoPostTry(dedegoIndex, false)
+		runtime.DedegoPostTry(cobufiIndex, false)
 		return false
 	}
 
@@ -143,22 +143,22 @@ func (m *Mutex) TryLock() bool {
 	// running now and can try to grab the mutex before that
 	// goroutine wakes up.
 	if !atomic.CompareAndSwapInt32(&m.state, old, old|mutexLocked) {
-		// DEDEGO-CHANGE-START
+		// COBUFI-CHANGE-START
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
-		runtime.DedegoPostTry(dedegoIndex, false)
-		// DEDEGO-CHANGE-END
+		runtime.DedegoPostTry(cobufiIndex, false)
+		// COBUFI-CHANGE-END
 		return false
 	}
 
 	if race.Enabled {
 		race.Acquire(unsafe.Pointer(m))
 	}
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// If the mutex was locked successfully, DedegoPostTry is called
 	// to update the trace.
-	runtime.DedegoPostTry(dedegoIndex, true)
-	// DEDEGO-CHANGE-END
+	runtime.DedegoPostTry(cobufiIndex, true)
+	// COBUFI-CHANGE-END
 	return true
 }
 
@@ -258,7 +258,7 @@ func (m *Mutex) lockSlow() {
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not
@@ -268,9 +268,9 @@ func (m *Mutex) Unlock() {
 	// rw mutex.
 	// Here the post is seperatly recorded to easy the implementation for
 	// the rw mutexes.
-	dedegoIndex := runtime.DedegoUnlockPre(m.id, false, false)
-	defer runtime.DedegoPost(dedegoIndex)
-	// DEDEGO-CHANGE-END
+	cobufiIndex := runtime.DedegoUnlockPre(m.id, false, false)
+	defer runtime.DedegoPost(cobufiIndex)
+	// COBUFI-CHANGE-END
 
 	if race.Enabled {
 		_ = m.state

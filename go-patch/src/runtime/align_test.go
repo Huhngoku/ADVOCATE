@@ -12,7 +12,7 @@ import (
 	"go/types"
 	"strings"
 	"testing"
-	// DEDEGO-REMOVE_TEST-START
+	// COBUFI-REMOVE_TEST-START
 	/*
 		"go/importer"
 		"go/parser"
@@ -20,10 +20,10 @@ import (
 		"os"
 		"regexp"
 		"runtime"
-	*/// DEDEGO-REMOVE_TEST-END
+	*/// COBUFI-REMOVE_TEST-END
 )
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 // Check that 64-bit fields on which we apply atomic operations
 // are aligned to 8 bytes. This can be a problem on 32-bit systems.
@@ -102,7 +102,7 @@ func TestAtomicAlignment(t *testing.T) {
 	ast.Walk(&v, pkg)
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 type Visitor struct {
 	fset    *token.FileSet

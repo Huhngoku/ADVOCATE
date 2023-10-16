@@ -51,13 +51,13 @@ type hchan struct {
 	// with stack shrinking.
 	lock mutex
 
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	id              uint64 // id of the channel
 	numberSend      uint64 // number of completed send operations
 	numberSendMutex mutex  // mutex for numberSend
 	numberRecv      uint64 // number of completed recv operations
 	numberRecvMutex mutex  // mutex for numberRecv
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 }
 
 type waitq struct {
@@ -120,10 +120,10 @@ func makechan(t *chantype, size int) *hchan {
 	c.elemtype = elem
 	c.dataqsiz = uint(size)
 
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// get and save a new id for the channel
 	c.id = GetDedegoObjectId()
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 
 	lockInit(&c.lock, lockRankHchan)
 
@@ -216,23 +216,23 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	lock(&c.lock)
 
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// this block is called if a send is made on a channel
 	// it increases the number of sends on the channel, which is used to
-	// identify the communication partner in the dedego analysis
+	// identify the communication partner in the cobufi analysis
 	// After that a channel send event is created in the trace to show,
 	// that the channel tried to send.
 	// The current function 'chansend' only returns, if the send was successful,
 	// meaning the channel either directly communicated with a receive or wrote
 	// into the channel buffer. Therefor, the send event is modified to include
 	// the post information by DedeGoChanPost, if 'chansend' returns.
-	// dedegoIndex is used to connect the post event to the correct
+	// cobufiIndex is used to connect the post event to the correct
 	// pre envent in the trace.
 	lock(&c.numberSendMutex)
 	c.numberSend++
 	unlock(&c.numberSendMutex)
-	dedegoIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz)
-	// DEDEGO-CHANGE-END
+	cobufiIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz)
+	// COBUFI-CHANGE-END
 
 	if c.closed != 0 {
 		unlock(&c.lock)
@@ -242,18 +242,18 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if sg := c.recvq.dequeue(); sg != nil {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
-		// DEDEGO-CHANGE-START
-		DedegoChanPost(dedegoIndex)
-		// DEDEGO-CHANGE-END
+		// COBUFI-CHANGE-START
+		DedegoChanPost(cobufiIndex)
+		// COBUFI-CHANGE-END
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
 		return true
 	}
 
 	if c.qcount < c.dataqsiz {
 		// Space is available in the channel buffer. Enqueue the element to send.
-		// DEDEGO-CHANGE-START
-		DedegoChanPost(dedegoIndex)
-		// DEDEGO-CHANGE-END
+		// COBUFI-CHANGE-START
+		DedegoChanPost(cobufiIndex)
+		// COBUFI-CHANGE-END
 		qp := chanbuf(c, c.sendx)
 		if raceenabled {
 			racenotify(c, c.sendx, nil)
@@ -270,9 +270,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	}
 
 	if !block {
-		// DEDEGO-CHANGE-START
-		DedegoChanPost(dedegoIndex)
-		// DEDEGO-CHANGE-END
+		// COBUFI-CHANGE-START
+		DedegoChanPost(cobufiIndex)
+		// COBUFI-CHANGE-END
 		unlock(&c.lock)
 		return false
 	}
@@ -299,10 +299,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// changes and when we set gp.activeStackChans is not safe for
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
-	// DEDEGO-NOTE-START
+	// COBUFI-NOTE-START
 	// gopark blocks the routine if no communication partner is available
 	// and the has no free buffe.
-	// DEDEGO-NOTE-END
+	// COBUFI-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanSend, traceBlockChanSend, 2)
 	// Ensure the value being sent is kept alive until the
 	// receiver copies it out. The sudog has a pointer to the
@@ -321,15 +321,15 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if mysg.releasetime > 0 {
 		blockevent(mysg.releasetime-t0, 2)
 	}
-	// DEDEGO-CHANGE-START
-	DedegoChanPost(dedegoIndex)
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-START
+	DedegoChanPost(cobufiIndex)
+	// COBUFI-CHANGE-END
 	mysg.c = nil
 	releaseSudog(mysg)
 	if closed {
-		// DEDEGO-CHANGE-START
-		DedegoChanPostCausedByClose(dedegoIndex)
-		// DEDEGO-CHANGE-END
+		// COBUFI-CHANGE-START
+		DedegoChanPostCausedByClose(cobufiIndex)
+		// COBUFI-CHANGE-END
 		if c.closed == 0 {
 			throw("chansend: spurious wakeup")
 		}
@@ -414,11 +414,11 @@ func closechan(c *hchan) {
 
 	lock(&c.lock)
 
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	DedegoChanClose(c.id, c.dataqsiz)
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 
 	if c.closed != 0 {
 		unlock(&c.lock)
@@ -570,24 +570,24 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 	lock(&c.lock)
 
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// this block is called if a receive is made on a channel.
 	// It increases the number of receives on the channel, which is used to
-	// identify the communication partner in the dedego analysis.
+	// identify the communication partner in the cobufi analysis.
 	// After that a channel receive event is created in the trace to show,
 	// that the channel tried to receive.
 	// The current function 'chanrecv' only returns, if the receive was successful,
 	// meaning the channel either communicated with a send or read from the
 	// channel buffer. Therefor, the recive event is modified to include the
 	// post information by DedeGoChanPost, if 'chansend' returns.
-	// dedegoIndex is used to connect the post event to the correct
+	// cobufiIndex is used to connect the post event to the correct
 	// pre envent in the trace.
 	lock(&c.numberRecvMutex)
 	c.numberRecv++
 	unlock(&c.numberRecvMutex)
-	dedegoIndex := DedegoChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
-	defer DedegoChanPost(dedegoIndex)
-	// DEDEGO-CHANGE-END
+	cobufiIndex := DedegoChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+	defer DedegoChanPost(cobufiIndex)
+	// COBUFI-CHANGE-END
 
 	if c.closed != 0 {
 		if c.qcount == 0 {
@@ -598,9 +598,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			if ep != nil {
 				typedmemclr(c.elemtype, ep)
 			}
-			// DEDEGO-CHANGE-START
-			DedegoChanPostCausedByClose(dedegoIndex)
-			// DEDEGO-CHANGE-END
+			// COBUFI-CHANGE-START
+			DedegoChanPostCausedByClose(cobufiIndex)
+			// COBUFI-CHANGE-END
 			return true, false
 		}
 		// The channel has been closed, but the channel's buffer have data.
@@ -663,10 +663,10 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
 
-	// DEDEGO-NOTE-START
+	// COBUFI-NOTE-START
 	// gopark blocks the routine if no communication partner is available
 	// and the has no free buffe.
-	// DEDEGO-NOTE-END
+	// COBUFI-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceBlockChanRecv, 2)
 
 	// someone woke us up
@@ -679,11 +679,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		blockevent(mysg.releasetime-t0, 2)
 	}
 	success := mysg.success
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	if !success {
-		DedegoChanPostCausedByClose(dedegoIndex)
+		DedegoChanPostCausedByClose(cobufiIndex)
 	}
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 	gp.param = nil
 	mysg.c = nil
 	releaseSudog(mysg)
@@ -783,7 +783,7 @@ func chanparkcommit(gp *g, chanLock unsafe.Pointer) bool {
 //		... bar
 //	}
 func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// if c is nil, the select acts like as if there is only the default case.
 	// It therefor does not need to be recorded.
 	// It the return is nesseserry, because otherwise the following lock
@@ -792,13 +792,13 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	if c == nil {
 		return false
 	}
-	// dedegoIndex := DedegoSelectPreOneNonDef(c, true)
+	// cobufiIndex := DedegoSelectPreOneNonDef(c, true)
 	res := chansend(c, elem, false, getcallerpc())
 	lock(&c.numberSendMutex)
 	defer unlock(&c.numberSendMutex)
-	// DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberSend)
+	// DedegoSelectPostOneNonDef(cobufiIndex, res, c.numberSend)
 	return res
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 }
 
 // compiler implements
@@ -818,17 +818,17 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 //		... bar
 //	}
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// see selectnbsend
 	if c == nil {
 		return false, false
 	}
-	// dedegoIndex := DedegoSelectPreOneNonDef(c, false)
+	// cobufiIndex := DedegoSelectPreOneNonDef(c, false)
 	res, recv := chanrecv(c, elem, false)
 	lock(&c.numberRecvMutex)
 	defer unlock(&c.numberRecvMutex)
-	// DedegoSelectPostOneNonDef(dedegoIndex, res, c.numberRecv)
-	// DEDEGO-CHANGE-END
+	// DedegoSelectPostOneNonDef(cobufiIndex, res, c.numberRecv)
+	// COBUFI-CHANGE-END
 	return res, recv
 }
 

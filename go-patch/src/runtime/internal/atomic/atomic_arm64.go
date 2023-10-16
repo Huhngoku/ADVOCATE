@@ -36,41 +36,41 @@ func Xchguintptr(ptr *uintptr, new uintptr) uintptr
 //go:noescape
 func Load(ptr *uint32) uint32
 
-// DEDEGO-CHANGE-START
+// COBUFI-CHANGE-START
 //
 //go:noescape
 func LoadDedego(ptr *uint32) uint32
 
-// DEDEGO-CHANGE-END
+// COBUFI-CHANGE-END
 
 //go:noescape
 func Load8(ptr *uint8) uint8
 
-// DEDEGO-CHANGE-START
+// COBUFI-CHANGE-START
 //
 //go:noescape
 func Load8Dedego(ptr *uint64) uint64
 
-// DEDEGO-CHANGE-END
+// COBUFI-CHANGE-END
 
 //go:noescape
 func Load64(ptr *uint64) uint64
 
-// DEDEGO-CHANGE-START
+// COBUFI-CHANGE-START
 //
 //go:noescape
 func Load64Dedego(ptr *uint64) uint64
 
-// DEDEGO-CHANGE-END
+// COBUFI-CHANGE-END
 
 // NO go:noescape annotation; *ptr escapes if result escapes (#31525)
 func Loadp(ptr unsafe.Pointer) unsafe.Pointer
 
-// DEDEGO-CHANGE-START
+// COBUFI-CHANGE-START
 // NO go:noescape annotation; *ptr escapes if result escapes (#31525)
 func LoadpDedego(ptr unsafe.Pointer) unsafe.Pointer
 
-// DEDEGO-CHANGE-END
+// COBUFI-CHANGE-END
 
 //go:noescape
 func LoadAcq(addr *uint32) uint32

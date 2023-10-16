@@ -511,12 +511,12 @@ type g struct {
 	// determines how this corresponds to scan work debt.
 	gcAssistBytes int64
 
-	// DEDEGO-CHANGE-START
+	// COBUFI-CHANGE-START
 	// For each routine a g is automaticcaly created. In this g the goInfo
 	// element is added to store the information about the routine.
 	// This includes the Id and the trace of the routine.
 	goInfo *DedegoRoutine
-	// DEDEGO-CHANGE-END
+	// COBUFI-CHANGE-END
 }
 
 // gTrackingPeriod is the number of transitions out of _Grunning between

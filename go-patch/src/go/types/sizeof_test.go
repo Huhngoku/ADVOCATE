@@ -4,7 +4,7 @@
 
 package types
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 import (
 	"reflect"
@@ -63,4 +63,4 @@ func TestSizeof(t *testing.T) {
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END

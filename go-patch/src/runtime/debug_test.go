@@ -237,7 +237,7 @@ func debugCallUnsafePointWorker(gpp **runtime.G, ready, stop *uint32) {
 	}
 }
 
-// DEDEGO-REMOVE_TEST-START
+// COBUFI-REMOVE_TEST-START
 /*
 func TestDebugCallUnsafePoint(t *testing.T) {
 	skipUnderDebugger(t)
@@ -268,7 +268,7 @@ func TestDebugCallUnsafePoint(t *testing.T) {
 	}
 }
 */
-// DEDEGO-REMOVE_TEST-END
+// COBUFI-REMOVE_TEST-END
 
 func TestDebugCallPanic(t *testing.T) {
 	skipUnderDebugger(t)
