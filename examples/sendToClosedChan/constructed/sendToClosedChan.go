@@ -14,17 +14,17 @@ import (
 	"time"
 )
 
-// NSC = No send on closed due to must-happens before relations
 // FN = False negative
 // FP = False positive
+// TN = True negative
 // TP = True positive
 
 //////////////////////////////////////////////////////////////
 // No send of closed due to (must) happens before relations.
 
 // Synchronous channel.
-// NSC.
-func n1() {
+// TN.
+func n01() {
 	x := make(chan int)
 	ch := make(chan int, 1)
 
@@ -39,7 +39,7 @@ func n1() {
 
 // Wait group
 // NSC.
-func n2() {
+func n02() {
 	ch := make(chan int, 1)
 	var g sync.WaitGroup
 
@@ -56,8 +56,8 @@ func n2() {
 }
 
 // Once
-// NSC.
-func n3() {
+// TN
+func n03() {
 	var once sync.Once
 	ch := make(chan int, 1)
 	setup := func() {
@@ -84,7 +84,7 @@ If we reorder critical sections,
 we encounter send on closed.
 
 */
-func n4() {
+func n04() {
 	var m sync.RWMutex
 	ch := make(chan int, 1)
 
@@ -114,7 +114,7 @@ func n4() {
 
 // TP send on closed
 // TP recv on closed
-func n5() {
+func n05() {
 	c := make(chan int)
 
 	go func() {
@@ -131,7 +131,7 @@ func n5() {
 
 // TP send on closed
 // TP recv on closed
-func n6() {
+func n06() {
 	c := make(chan int, 1)
 
 	go func() {
@@ -143,8 +143,8 @@ func n6() {
 	close(c)
 }
 
-// NSC
-func n7() {
+// TN
+func n07() {
 	c := make(chan int)
 
 	go func() {
@@ -157,7 +157,7 @@ func n7() {
 }
 
 // TP recv on closed
-func n8() {
+func n08() {
 	c := make(chan int)
 
 	go func() {
@@ -171,7 +171,7 @@ func n8() {
 
 // TP send on closed
 // TP recv on closed
-func n9() {
+func n09() {
 	c := make(chan struct{}, 1)
 	d := make(chan struct{}, 1)
 
@@ -184,16 +184,12 @@ func n9() {
 	go func() {
 		select {
 		case c <- struct{}{}:
-			print(1)
 		default:
-			print(2)
 		}
 
 		select {
 		case <-d:
-			print(3)
 		default:
-			print(4)
 		}
 	}()
 
@@ -203,7 +199,71 @@ func n9() {
 	time.Sleep(1 * time.Second) // prevent termination before receive
 }
 
-const N = 9
+// FN
+func n10() {
+	c := make(chan struct{}, 0)
+
+	go func() {
+		time.Sleep(200 * time.Millisecond) // prevent actual send on closed channel
+		close(c)
+	}()
+
+	go func() {
+		select {
+		case c <- struct{}{}:
+		default:
+		}
+	}()
+
+	time.Sleep(300 * time.Millisecond) // make sure, that the default values are taken
+}
+
+// TN: no send to closed channel because of once
+func n11() {
+	c := make(chan int, 1)
+
+	once := sync.Once{}
+
+	go func() {
+		once.Do(func() {
+			c <- 1
+		})
+	}()
+
+	go func() {
+		once.Do(func() {
+			close(c)
+		})
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+// FN: potential send to closed channel not recorded because of once
+func n12() {
+	c := make(chan int, 1)
+
+	once := sync.Once{}
+
+	close(c)
+
+	go func() {
+		time.Sleep(100 * time.Millisecond) // prevent actual send on closed channel
+		once.Do(func() {
+			c <- 1
+		})
+	}()
+
+	go func() {
+		once.Do(func() {
+			// do nothing
+		})
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+const N = 12
 
 func main() {
 
@@ -238,7 +298,7 @@ func main() {
 		}
 	}()
 
-	ns := [N]func(){n1, n2, n3, n4, n5, n6, n7, n8, n9}
+	ns := [N]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12}
 
 	for i := 0; i < N; i++ {
 		ns[i]()
