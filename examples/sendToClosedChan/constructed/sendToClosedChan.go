@@ -245,20 +245,32 @@ func main() {
 	}
 }
 
-/* Expected:
+-------------------- Critical -------------------
 Possible send on closed channel:
 	close: .../sendToClosedChan.go:129
 	send : .../sendToClosedChan.go:121
-Possible receive on closed channel:
-	close: .../sendToClosedChan.go:129
-	recv : .../sendToClosedChan.go:125
 Possible send on closed channel:
 	close: .../sendToClosedChan.go:143
 	send : .../sendToClosedChan.go:138
+Possible send on closed channel:
+	close: .../sendToClosedChan.go:181
+	send : .../sendToClosedChan.go:187
+Possible send on closed channel:
+	close: .../sendToClosedChan.go:182
+	send : .../sendToClosedChan.go:197
+-------------------- Warning --------------------
+Possible receive on closed channel:
+	close: .../sendToClosedChan.go:129
+	recv : .../sendToClosedChan.go:125
 Possible receive on closed channel:
 	close: .../sendToClosedChan.go:143
 	recv : .../sendToClosedChan.go:139
 Receive on closed channel:
 	close: .../sendToClosedChan.go:168
 	recv : .../sendToClosedChan.go:165
-*/
+Possible receive on closed channel:
+	close: .../sendToClosedChan.go:181
+	recv : .../sendToClosedChan.go:198
+Possible receive on closed channel:
+	close: .../sendToClosedChan.go:182
+	recv : .../sendToClosedChan.go:192

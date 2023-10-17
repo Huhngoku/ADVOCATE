@@ -314,6 +314,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if mysg != gp.waiting {
 		throw("G waiting list is corrupted")
 	}
+	// COBUFI-CHANGE-START
+	DedegoChanPost(cobufiIndex)
+	// COBUFI-CHANGE-END
 	gp.waiting = nil
 	gp.activeStackChans = false
 	closed := !mysg.success
@@ -321,9 +324,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if mysg.releasetime > 0 {
 		blockevent(mysg.releasetime-t0, 2)
 	}
-	// COBUFI-CHANGE-START
-	DedegoChanPost(cobufiIndex)
-	// COBUFI-CHANGE-END
 	mysg.c = nil
 	releaseSudog(mysg)
 	if closed {

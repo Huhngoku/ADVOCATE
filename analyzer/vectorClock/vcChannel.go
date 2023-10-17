@@ -27,6 +27,12 @@ var closePos map[int]string = make(map[int]string)
 var lastSend map[int]VectorClock = make(map[int]VectorClock)
 var lastRecv map[int]VectorClock = make(map[int]VectorClock)
 
+// last send and receive for each routine and each channel
+var lastSendRoutine map[int]map[int]VectorClock = make(map[int]map[int]VectorClock)
+var lastSendRoutinePos map[int]map[int]string = make(map[int]map[int]string)
+var lastRecvRoutine map[int]map[int]VectorClock = make(map[int]map[int]VectorClock)
+var lastRecvRoutinePos map[int]map[int]string = make(map[int]map[int]string)
+
 // most recent send, used for detection of send on closed
 var hasSend map[int]bool = make(map[int]bool)
 var mostRecentSend map[int]VectorClock = make(map[int]VectorClock)
@@ -49,6 +55,9 @@ var mostRecentReceivePosition map[int]string = make(map[int]string)
  * 	vc (map[int]VectorClock): the current vector clocks
  */
 func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv string, vc map[int]VectorClock) {
+	checkForConcurrentSend(routSend, id, pos_send, vc)
+	checkForConcurrentRecv(routRecv, id, pos_recv, vc)
+
 	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 	vc[routSend] = vc[routRecv].Copy()
 
@@ -88,6 +97,7 @@ func Send(rout int, id int, oId int, size int, pos string,
 	if count > size || bufferedVCs[id][count].occupied {
 		logging.Debug("Write to occupied buffer position or to big count", logging.ERROR)
 	}
+	checkForConcurrentSend(rout, id, pos, vc)
 
 	v := bufferedVCs[id][count].vc
 	vc[rout] = vc[rout].Sync(v)
@@ -120,6 +130,9 @@ func Send(rout int, id int, oId int, size int, pos string,
  */
 func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
+
+	checkForConcurrentRecv(rout, id, pos, vc)
+
 	if bufferedVCsCount[id] == 0 {
 		logging.Debug("Read operation on empty buffer position", logging.ERROR)
 	}
@@ -158,34 +171,7 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) {
 	closeVC[id] = vc[rout].Copy()
 	closePos[id] = pos
 
-	// check if there is an earlier send, that could happen concurrently to close
-	if hasSend[id] {
-		logging.Debug("Check for possible send on closed channel "+
-			strconv.Itoa(id)+" with "+
-			mostRecentSend[id].ToString()+" and "+closeVC[id].ToString(),
-			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeVC[id], mostRecentSend[id])
-		if happensBefore == Concurrent {
-			found := "Possible send on closed channel:\n"
-			found += "\tclose: " + pos + "\n"
-			found += "\tsend : " + mostRecentSendPosition[id]
-			logging.Result(found, logging.CRITICAL)
-		}
-	}
-	// check if there is an earlier receive, that could happen concurrently to close
-	if hasReceived[id] {
-		logging.Debug("Check for possible receive on closed channel "+
-			strconv.Itoa(id)+" with "+
-			mostRecentReceive[id].ToString()+" and "+closeVC[id].ToString(),
-			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeVC[id], mostRecentReceive[id])
-		if happensBefore == Concurrent || happensBefore == Before {
-			found := "Possible receive on closed channel:\n"
-			found += "\tclose: " + pos + "\n"
-			found += "\trecv : " + mostRecentReceivePosition[id]
-			logging.Result(found, logging.WARNING)
-		}
-	}
+	CheckForPotentialCommunicationOnClosedChannel(id, pos)
 
 	vc[rout] = vc[rout].Inc(rout)
 }
@@ -222,6 +208,104 @@ func newBufferedVCs(id int, size int, numRout int) {
 		for i := 0; i < size; i++ {
 			bufferedVCsCount[id] = 0
 			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout)}
+		}
+	}
+}
+
+/*
+Check if a send or receive on a closed channel is possible
+It it is possible, print a warning or error
+Args:
+
+	id (int): the id of the channel
+	pos (string): the position of the close in the program
+*/
+func CheckForPotentialCommunicationOnClosedChannel(id int, pos string) {
+	// check if there is an earlier send, that could happen concurrently to close
+	if hasSend[id] {
+		logging.Debug("Check for possible send on closed channel "+
+			strconv.Itoa(id)+" with "+
+			mostRecentSend[id].ToString()+" and "+closeVC[id].ToString(),
+			logging.DEBUG)
+		happensBefore := GetHappensBefore(closeVC[id], mostRecentSend[id])
+		if happensBefore == Concurrent {
+			found := "Possible send on closed channel:\n"
+			found += "\tclose: " + pos + "\n"
+			found += "\tsend : " + mostRecentSendPosition[id]
+			logging.Result(found, logging.CRITICAL)
+		}
+	}
+	// check if there is an earlier receive, that could happen concurrently to close
+	if hasReceived[id] {
+		logging.Debug("Check for possible receive on closed channel "+
+			strconv.Itoa(id)+" with "+
+			mostRecentReceive[id].ToString()+" and "+closeVC[id].ToString(),
+			logging.DEBUG)
+		happensBefore := GetHappensBefore(closeVC[id], mostRecentReceive[id])
+		if happensBefore == Concurrent || happensBefore == Before {
+			found := "Possible receive on closed channel:\n"
+			found += "\tclose: " + pos + "\n"
+			found += "\trecv : " + mostRecentReceivePosition[id]
+			logging.Result(found, logging.WARNING)
+		}
+	}
+
+}
+
+func checkForConcurrentSend(routine int, id int, pos string, vc map[int]VectorClock) {
+	if _, ok := lastSendRoutine[routine]; !ok {
+		lastSendRoutine[routine] = make(map[int]VectorClock)
+		lastSendRoutinePos[routine] = make(map[int]string)
+	}
+
+	lastSendRoutine[routine][id] = vc[routine].Copy()
+	lastSendRoutinePos[routine][id] = pos
+
+	for r, elem := range lastSendRoutine {
+		if r == routine {
+			continue
+		}
+
+		if elem[id].clock == nil {
+			continue
+		}
+
+		happensBefore := GetHappensBefore(elem[id], vc[routine])
+		if happensBefore == Concurrent {
+			found := "Found concurrent Send on same channel:\n"
+			found += "\tsend: " + pos + "\n"
+			found += "\tsend : " + lastSendRoutinePos[r][id]
+			logging.Result(found, logging.WARNING)
+		}
+	}
+}
+
+func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorClock) {
+	if _, ok := lastRecvRoutine[routine]; !ok {
+		lastRecvRoutine[routine] = make(map[int]VectorClock)
+		lastRecvRoutinePos[routine] = make(map[int]string)
+	}
+
+	lastRecvRoutine[routine][id] = vc[routine].Copy()
+	lastRecvRoutinePos[routine][id] = pos
+
+	for r, elem := range lastRecvRoutine {
+		// logging.Debug(lastRecvRoutinePos[r][id]+" "+pos, logging.ERROR)
+		// logging.Debug(elem[id].ToString()+" "+vc[routine].ToString(), logging.ERROR)
+		if r == routine {
+			continue
+		}
+
+		if elem[id].clock == nil {
+			continue
+		}
+
+		happensBefore := GetHappensBefore(elem[id], vc[routine])
+		if happensBefore == Concurrent {
+			found := "Found concurrent Recv on same channel:\n"
+			found += "\trecv: " + pos + "\n"
+			found += "\trecv : " + lastRecvRoutinePos[r][id]
+			logging.Result(found, logging.CRITICAL)
 		}
 	}
 }

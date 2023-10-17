@@ -1,0 +1,11 @@
+==================== Summary ====================
+
+-------------------- Warning --------------------
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/Other/examples/pgzip/gunzip.go:395
+	recv : /home/erikkassubek/Uni/HiWi/Other/examples/pgzip/gunzip.go:345
+
+=================================================
+Total runtime: 2m26.390104697s
+=================================================
+===

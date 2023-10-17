@@ -211,12 +211,15 @@ func (ch *traceElementChannel) updateVectorClock() {
 			elem.updateVectorClock()
 		}
 	}
-	if ch.opC == send {
-		maxOpId[ch.id] = ch.oId
-	} else if ch.opC == recv {
-		if ch.oId > maxOpId[ch.id] && !ch.cl {
-			waitingReceive = append(waitingReceive, ch)
-			return
+	if ch.qSize != 0 {
+		if ch.opC == send {
+			maxOpId[ch.id] = ch.oId
+		} else if ch.opC == recv {
+			logging.Debug("Holding back", logging.INFO)
+			if ch.oId > maxOpId[ch.id] && !ch.cl {
+				waitingReceive = append(waitingReceive, ch)
+				return
+			}
 		}
 	}
 
@@ -235,18 +238,22 @@ func (ch *traceElementChannel) updateVectorClock() {
 				increaseIndex(partner)
 			} else {
 				if ch.cl { // recv on closed channel
+					logging.Debug("Update vector clock of channel operation: "+
+						ch.toString(), logging.DEBUG)
 					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
+				} else {
+					logging.Debug("Could not find partner for "+ch.pos, logging.ERROR)
 				}
 			}
-		case recv: // should never occur, but better save than sorry
+		case recv: // should not occur, but better save than sorry
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
 				logging.Debug("Update vector clock of channel operation: "+
 					traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
-				vc.Unbuffered(partner, ch.routine, ch.id, ch.pos,
-					pos, currentVectorClocks)
+				vc.Unbuffered(partner, ch.routine, ch.id, pos,
+					ch.pos, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
@@ -255,6 +262,8 @@ func (ch *traceElementChannel) updateVectorClock() {
 						ch.toString(), logging.DEBUG)
 					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
+				} else {
+					logging.Debug("Could not find partner for "+ch.pos, logging.ERROR)
 				}
 			}
 		case close:
@@ -302,14 +311,17 @@ func (ch *traceElementChannel) findUnbufferedPartner() int {
 		if currentIndex[routine] == -1 {
 			continue
 		}
+		if routine == ch.routine {
+			continue
+		}
 		elem := trace[currentIndex[routine]]
 		switch e := elem.(type) {
 		case *traceElementChannel:
-			if ch.routine != e.getRoutine() && e.id == ch.id && e.oId == ch.oId {
+			if e.id == ch.id && e.oId == ch.oId {
 				return routine
 			}
 		case *traceElementSelect:
-			if ch.routine != e.getRoutine() && e.chosenCase.oId == ch.id &&
+			if e.chosenCase.oId == ch.id &&
 				e.chosenCase.oId == ch.oId {
 				return routine
 			}

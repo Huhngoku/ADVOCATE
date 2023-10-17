@@ -1,0 +1,10 @@
+==================== Summary ====================
+
+-------------------- Warning --------------------
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_5863/serving5865.go:17
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_5863/serving5865.go:29
+
+=================================================
+Total runtime: 21.168981ms
+=================================================
