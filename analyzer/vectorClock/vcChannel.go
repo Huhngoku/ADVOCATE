@@ -27,9 +27,7 @@ var closePos map[int]string = make(map[int]string)
 var lastSend map[int]VectorClock = make(map[int]VectorClock)
 var lastRecv map[int]VectorClock = make(map[int]VectorClock)
 
-// last send and receive for each routine and each channel
-var lastSendRoutine map[int]map[int]VectorClock = make(map[int]map[int]VectorClock)
-var lastSendRoutinePos map[int]map[int]string = make(map[int]map[int]string)
+// last receive for each routine and each channel
 var lastRecvRoutine map[int]map[int]VectorClock = make(map[int]map[int]VectorClock)
 var lastRecvRoutinePos map[int]map[int]string = make(map[int]map[int]string)
 
@@ -55,7 +53,6 @@ var mostRecentReceivePosition map[int]string = make(map[int]string)
  * 	vc (map[int]VectorClock): the current vector clocks
  */
 func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv string, vc map[int]VectorClock) {
-	checkForConcurrentSend(routSend, id, pos_send, vc)
 	checkForConcurrentRecv(routRecv, id, pos_recv, vc)
 
 	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
@@ -97,7 +94,6 @@ func Send(rout int, id int, oId int, size int, pos string,
 	if count > size || bufferedVCs[id][count].occupied {
 		logging.Debug("Write to occupied buffer position or to big count", logging.ERROR)
 	}
-	checkForConcurrentSend(rout, id, pos, vc)
 
 	v := bufferedVCs[id][count].vc
 	vc[rout] = vc[rout].Sync(v)
@@ -250,34 +246,6 @@ func CheckForPotentialCommunicationOnClosedChannel(id int, pos string) {
 		}
 	}
 
-}
-
-func checkForConcurrentSend(routine int, id int, pos string, vc map[int]VectorClock) {
-	if _, ok := lastSendRoutine[routine]; !ok {
-		lastSendRoutine[routine] = make(map[int]VectorClock)
-		lastSendRoutinePos[routine] = make(map[int]string)
-	}
-
-	lastSendRoutine[routine][id] = vc[routine].Copy()
-	lastSendRoutinePos[routine][id] = pos
-
-	for r, elem := range lastSendRoutine {
-		if r == routine {
-			continue
-		}
-
-		if elem[id].clock == nil {
-			continue
-		}
-
-		happensBefore := GetHappensBefore(elem[id], vc[routine])
-		if happensBefore == Concurrent {
-			found := "Found concurrent Send on same channel:\n"
-			found += "\tsend: " + pos + "\n"
-			found += "\tsend : " + lastSendRoutinePos[r][id]
-			logging.Result(found, logging.WARNING)
-		}
-	}
 }
 
 func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorClock) {
