@@ -38,7 +38,7 @@ func n01() {
 }
 
 // Wait group
-// NSC.
+// TN
 func n02() {
 	ch := make(chan int, 1)
 	var g sync.WaitGroup
@@ -218,8 +218,35 @@ func n10() {
 	time.Sleep(300 * time.Millisecond) // make sure, that the default values are taken
 }
 
-// TN: no send to closed channel because of once
+// TP
 func n11() {
+	c := make(chan struct{}, 0)
+
+	go func() {
+		time.Sleep(200 * time.Millisecond) // prevent actual send on closed channel
+		close(c)
+	}()
+
+	go func() {
+		select {
+		case c <- struct{}{}:
+		default:
+		}
+	}()
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-c:
+		default:
+		}
+	}()
+
+	time.Sleep(300 * time.Millisecond) // make sure, that the default values are taken
+}
+
+// TN: no send to closed channel because of once
+func n12() {
 	c := make(chan int, 1)
 
 	once := sync.Once{}
@@ -240,7 +267,7 @@ func n11() {
 }
 
 // FN: potential send to closed channel not recorded because of once
-func n12() {
+func n13() {
 	c := make(chan int, 1)
 
 	once := sync.Once{}
@@ -263,7 +290,153 @@ func n12() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-const N = 12
+// TP: potential send to closed channel recorded with once
+func n14() {
+	c := make(chan int, 1)
+
+	once := sync.Once{}
+
+	go func() {
+		once.Do(func() {
+			c <- 1
+		})
+	}()
+
+	go func() {
+		time.Sleep(100 * time.Millisecond) // prevent actual send on closed channel
+		once.Do(func() {
+			// do nothing
+		})
+	}()
+
+	time.Sleep(200 * time.Millisecond)
+	close(c)
+}
+
+// TN: no send possible
+func n15() {
+	c := make(chan int, 0)
+	m := sync.Mutex{}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		t := m.TryLock()
+		if t {
+			c <- 1
+			m.Unlock()
+		}
+	}()
+
+	go func() {
+		t := m.TryLock()
+		if t {
+			<-c
+			m.Unlock()
+		}
+	}()
+
+	time.Sleep(300 * time.Millisecond)
+	close(c)
+}
+
+// TP
+func n16() {
+	c := make(chan int, 0)
+	m := sync.Mutex{}
+
+	go func() {
+		t := m.TryLock()
+		if t {
+			c <- 1
+			m.Unlock()
+		}
+	}()
+
+	go func() {
+		<-c
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	close(c)
+}
+
+// FN
+func n17() {
+	c := make(chan int, 0)
+	m := sync.Mutex{}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		t := m.TryLock()
+		if t {
+			c <- 1
+			<-c
+			m.Unlock()
+		}
+	}()
+
+	m.Lock()
+	time.Sleep(300 * time.Millisecond)
+	close(c)
+	m.Unlock()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+// TP
+func n18() {
+	ch := make(chan int, 1)
+	var g sync.WaitGroup
+
+	g.Add(1)
+
+	func() {
+		g.Done()
+		ch <- 1
+	}()
+
+	g.Wait()
+	time.Sleep(100 * time.Millisecond)
+	close(ch)
+}
+
+// FN
+func n19() {
+	ch := make(chan int, 1)
+	m := sync.Mutex{}
+
+	go func() {
+		m.Lock()
+		ch <- 1
+		time.Sleep(100 * time.Millisecond)
+		m.Unlock()
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	if m.TryLock() {
+		close(ch)
+		m.Unlock()
+	}
+	time.Sleep(200 * time.Millisecond)
+}
+
+// TP
+func n20() {
+	ch := make(chan int, 2)
+
+	f := func() {
+		ch <- 1
+	}
+
+	go func() {
+		f()
+	}()
+
+	time.Sleep(200 * time.Millisecond)
+	close(ch)
+}
+
+const N = 20
 
 func main() {
 
@@ -298,39 +471,66 @@ func main() {
 		}
 	}()
 
-	ns := [N]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12}
+	ns := [N]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12,
+		n13, n14, n15, n16, n17, n18, n19, n20}
 
 	for i := 0; i < N; i++ {
 		ns[i]()
 	}
 }
 
+/*
+==================== Summary ====================
+
 -------------------- Critical -------------------
 Possible send on closed channel:
-	close: .../sendToClosedChan.go:129
-	send : .../sendToClosedChan.go:121
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:121
 Possible send on closed channel:
-	close: .../sendToClosedChan.go:143
-	send : .../sendToClosedChan.go:138
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:138
 Possible send on closed channel:
-	close: .../sendToClosedChan.go:181
-	send : .../sendToClosedChan.go:187
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:180
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:186
 Possible send on closed channel:
-	close: .../sendToClosedChan.go:182
-	send : .../sendToClosedChan.go:197
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:196
+Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:313
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:301
+Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:360
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:350
+Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:436
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:428
 -------------------- Warning --------------------
+Found concurrent Send on same channel:
+	send: /home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcsweep.go:279
+	send : /home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcscavenge.go:652
 Possible receive on closed channel:
-	close: .../sendToClosedChan.go:129
-	recv : .../sendToClosedChan.go:125
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:129
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:125
 Possible receive on closed channel:
-	close: .../sendToClosedChan.go:143
-	recv : .../sendToClosedChan.go:139
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:143
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:139
 Receive on closed channel:
-	close: .../sendToClosedChan.go:168
-	recv : .../sendToClosedChan.go:165
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:168
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:165
 Possible receive on closed channel:
-	close: .../sendToClosedChan.go:181
-	recv : .../sendToClosedChan.go:198
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:180
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:197
 Possible receive on closed channel:
-	close: .../sendToClosedChan.go:182
-	recv : .../sendToClosedChan.go:192
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:191
+Receive on closed channel:
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:339
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:333
+Possible receive on closed channel:
+	close: /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:360
+	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:356
+
+=================================================
+Total runtime: 9.958979ms
+=================================================
+*/
