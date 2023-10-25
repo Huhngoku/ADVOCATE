@@ -1,15 +1,11 @@
 package runtime
 
-import (
-	"runtime"
-	"time"
-)
-
 type ReplayOperation int
 
 const (
 	channelSend ReplayOperation = iota
 	channelRecv
+	channelClose
 
 	mutexLock
 	mutexUnlock
@@ -70,6 +66,8 @@ func ImportTrace(trace []string) {
 					op = channelSend
 				case "R":
 					op = channelRecv
+				case "C":
+					op = channelClose
 				default:
 					panic("Unknown channel operation")
 				}
@@ -141,11 +139,16 @@ func WaitForReplay(op ReplayOperation, skip int) {
 	if !replayEnabled {
 		return
 	}
-	_, file, line, _ := runtime.Caller(skip)
+	_, file, line, _ := Caller(skip)
+	println(file, line)
 	next := getNextReplayElement()
 	for {
 		if next.op != op || next.file != file || next.line != line {
-			time.Sleep(10 * time.Millisecond)
+			// TODO: very stupid sleep, find a better solution,
+			// TODO: problem is that both the sleep and syscall packages cannot be used (cyclic import)
+			for i := 0; i < 100000; i++ {
+				_ = i
+			}
 			continue
 		}
 		break
