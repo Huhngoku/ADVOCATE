@@ -71,7 +71,6 @@ Let's create the trace for the following program:
 package main
 
 import (
-	"sync/atomic"
 	"time"
 )
 
@@ -97,9 +96,8 @@ After adding the preamble, we get
 package main
 
 import (
-	"os"
 	"runtime"
-	"sync/atomic"
+	"cobufi"
 	"time"
 )
 
