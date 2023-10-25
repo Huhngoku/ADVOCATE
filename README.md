@@ -44,44 +44,15 @@ export GOROOT=$HOME/CoBuFiGo/go-patch/
 To create a trace, add
 
 ```go
-runtime.InitAtomics(0)
-
-defer func() {
-	runtime.DisableTrace()
-
-	file_name := "tracer.log"
-	os.Remove(file_name)
-	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	numRout := runtime.GetNumberOfRoutines()
-	for i := 1; i <= numRout; i++ {
-		cobufiChan := make(chan string)
-		go func() {
-			runtime.TraceToStringByIdChannel(i, cobufiChan)
-			close(cobufiChan)
-		}()
-		for trace := range cobufiChan {
-			if _, err := file.WriteString(trace); err != nil {
-				panic(err)
-			}
-		}
-		if _, err := file.WriteString("\n"); err != nil {
-			panic(err)
-		}
-	}
-}()
+runtime.InitCobufi(0)
+defer cobufi.CreateTrace("trace_name.log")
 ```
 
 at the beginning of the main function.
 Also include the following imports 
 ```go
 runtime
-io/ioutil
-os
+cobufi
 ```
 
 Autocompletion often includes "std/runtime" instead of "runtime". Make sure to include the correct one.
@@ -100,7 +71,6 @@ Let's create the trace for the following program:
 package main
 
 import (
-	"sync/atomic"
 	"time"
 )
 
@@ -126,44 +96,15 @@ After adding the preamble, we get
 package main
 
 import (
-	"os"
 	"runtime"
-	"sync/atomic"
+	"cobufi"
 	"time"
 )
 
 func main() {
 	// ======= Preamble Start =======
-	runtime.InitAtomics(0)
-
-	defer func() {
-		runtime.DisableTrace()
-
-		file_name := "trace.log"
-		os.Remove(file_name)
-		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		numRout := runtime.GetNumberOfRoutines()
-		for i := 1; i <= numRout; i++ {
-			cobufiChan := make(chan string)
-			go func() {
-				runtime.TraceToStringByIdChannel(i, cobufiChan)
-				close(cobufiChan)
-			}()
-			for trace := range cobufiChan {
-				if _, err := file.WriteString(trace); err != nil {
-					panic(err)
-				}
-			}
-			if _, err := file.WriteString("\n"); err != nil {
-				panic(err)
-			}
-		}
-	}()
+	runtime.InitCobufi(0)
+	defer cobufi.CreateTrace("trace_name.log")
 	// ======= Preamble End =======
 
 	c := make(chan int, 0)
