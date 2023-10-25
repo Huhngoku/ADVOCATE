@@ -8,7 +8,7 @@ import "fmt"
 */
 
 import (
-	"os"
+	"cobufi"
 	"runtime"
 	"sync"
 	"time"
@@ -440,36 +440,37 @@ const N = 20
 
 func main() {
 
-	runtime.InitAtomics(0)
+	runtime.InitCobufi(0)
+	defer cobufi.CreateTrace("constructedTest.log")
 
-	defer func() {
-		runtime.DisableTrace()
+	// defer func() {
+	// 	runtime.DisableTrace()
 
-		file_name := "constructed.log"
-		os.Remove(file_name)
-		file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
+	// 	file_name := "constructed.log"
+	// 	os.Remove(file_name)
+	// 	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	defer file.Close()
 
-		numRout := runtime.GetNumberOfRoutines()
-		for i := 1; i <= numRout; i++ {
-			cobufiChan := make(chan string)
-			go func() {
-				runtime.TraceToStringByIdChannel(i, cobufiChan)
-				close(cobufiChan)
-			}()
-			for trace := range cobufiChan {
-				if _, err := file.WriteString(trace); err != nil {
-					panic(err)
-				}
-			}
-			if _, err := file.WriteString("\n"); err != nil {
-				panic(err)
-			}
-		}
-	}()
+	// 	numRout := runtime.GetNumberOfRoutines()
+	// 	for i := 1; i <= numRout; i++ {
+	// 		cobufiChan := make(chan string)
+	// 		go func() {
+	// 			runtime.TraceToStringByIdChannel(i, cobufiChan)
+	// 			close(cobufiChan)
+	// 		}()
+	// 		for trace := range cobufiChan {
+	// 			if _, err := file.WriteString(trace); err != nil {
+	// 				panic(err)
+	// 			}
+	// 		}
+	// 		if _, err := file.WriteString("\n"); err != nil {
+	// 			panic(err)
+	// 		}
+	// 	}
+	// }()
 
 	ns := [N]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12,
 		n13, n14, n15, n16, n17, n18, n19, n20}

@@ -9,6 +9,7 @@ Added files:
 - src/runtime/cobufi_trace.go
 - src/runtime/cobufi_util.go
 - src/runtime/internal/atomic/cobufi_atomic.go
+- src/cobufi/cobufi.go
 
 Changed files (marked with COBUFI-CHANGE, außer in .s):
 

@@ -193,7 +193,7 @@ func GetNumberOfRoutines() int {
 }
 
 /* Enable the collection of the trace */
-func InitAtomics(size int) {
+func InitCobufi(size int) {
 	// link runtime with atomic via channel to receive information about
 	// atomic events
 	c := make(chan at.AtomicElem, size)

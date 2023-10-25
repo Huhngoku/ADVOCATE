@@ -189,6 +189,11 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		racereadpc(c.raceaddr(), callerpc, abi.FuncPCABIInternal(chansend))
 	}
 
+	// COBUFI-CHANGE-START
+	// wait until the replay has reached the current point
+	// WaitForReplay(channelSend, 2)
+	// COBUFI-CHANGE-END
+
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
 	//
 	// After observing that the channel is not closed, we observe that the channel is
@@ -417,6 +422,7 @@ func closechan(c *hchan) {
 	// COBUFI-CHANGE-START
 	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
+	// WaitForReplay(channelClose, 2)
 	DedegoChanClose(c.id, c.dataqsiz)
 	// COBUFI-CHANGE-END
 
@@ -529,6 +535,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		gopark(nil, nil, waitReasonChanReceiveNilChan, traceBlockForever, 2)
 		throw("unreachable")
 	}
+
+	// COBUFI-CHANGE-START
+	// wait until the replay has reached the current point
+	// WaitForReplay(channelRecv, 2)
+	// COBUFI-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
 	if !block && empty(c) {
