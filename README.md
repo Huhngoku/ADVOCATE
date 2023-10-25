@@ -31,10 +31,12 @@ The recording of atomic operations is only tested with `amd64`. For `arm64` an u
 The go-patch folder contains a modified version of the go runtime.
 With this modified version it is possible to save a trace of the program.
 
-To build the new runtime, run the 'make.bash' or 'make.bat' file in the 'src'
-directory. This will create a 'bin' directory containing a 'go' executable.
+To build the new runtime, run the `make.bash` or `make.bat` file in the `src`
+directory. This will create a `bin` directory containing a `go` executable.
 This executable can be used as your new go environment e.g. with
 `./go run main.go` or `./go build`.
+
+WARNING: It can currently happen, that `make.bash` command result in a `fatal error: runtime: releaseSudog with non-nil gp.param`. It can normally be fixed by just running `make.bash` again. I'm working on fixing it.
 
 It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
 ```
