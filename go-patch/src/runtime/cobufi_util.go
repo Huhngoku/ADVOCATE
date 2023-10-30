@@ -133,4 +133,39 @@ func GetDedegoCounter() uint64 {
 	return cobufiGlobalCounter
 }
 
+/*
+ * Split a string by the seperator
+ */
+func splitString(line string, sep string) []string {
+	var result []string
+	start := 0
+	for i := 0; i < len(line); i++ {
+		if line[i] == sep[0] {
+			result = append(result, line[start:i])
+			start = i + 1
+		}
+	}
+	result = append(result, line[start:])
+	return result
+}
+
+/*
+ * Convert a string to an integer
+ * Works only with positive integers
+ */
+func stringToInt(s string) int {
+	var result int
+	sign := 1
+	for i := 0; i < len(s); i++ {
+		if s[i] == '-' && i == 0 {
+			sign = -1
+		} else if s[i] >= '0' && s[i] <= '9' {
+			result = result*10 + int(s[i]-'0')
+		} else {
+			panic("Invalid input")
+		}
+	}
+	return result * sign
+}
+
 // COBUFI-FILE-END

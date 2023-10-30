@@ -123,6 +123,12 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		print("select: cas0=", cas0, "\n")
 	}
 
+	// COBUFI-CHANGE-START
+	enabled, elem := WaitForReplay(CobufiReplaySelect, 2)
+	if enabled && !elem.Suc {
+		BlockForever()
+	}
+
 	// NOTE: In order to maintain a lean stack size, the number of scases
 	// is capped at 65536.
 	cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))

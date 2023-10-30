@@ -243,7 +243,7 @@ func (elem cobufiTraceSpawnElement) toString() string {
  * Args:
  * 	id: id of the routine
  */
-func DedegoSpawn(callerRoutine *DedegoRoutine, newId uint64) {
+func CobufiSpawn(callerRoutine *DedegoRoutine, newId uint64) {
 	timer := GetDedegoCounter()
 	callerRoutine.addToTrace(cobufiTraceSpawnElement{id: newId, timer: timer})
 }

@@ -67,6 +67,10 @@ func (o *Once) Do(f func()) {
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
 	// COBUFI-CHANGE-START
+	activated, elem := runtime.WaitForReplay(runtime.CobufiReplayOnce, 2)
+	if activated && !elem.Suc {
+		return
+	}
 	if o.id == 0 {
 		o.id = runtime.GetDedegoObjectId()
 	}

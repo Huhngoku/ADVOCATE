@@ -69,6 +69,7 @@ const rwmutexMaxReaders = 1 << 30
 // documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
 	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayRWMutexRLock, 2)
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -107,6 +108,15 @@ func (rw *RWMutex) RLock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryRLock() bool {
 	// COBUFI-CHANGE-START
+	enabled, elem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryRLock, 2)
+	if enabled {
+		if elem.Blocked {
+			runtime.BlockForever()
+		}
+		if !elem.Suc {
+			return false
+		}
+	}
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -133,6 +143,9 @@ func (rw *RWMutex) TryRLock() bool {
 			// If the mutex was not locked successfully, DedegoPostTry is called
 			// to update the trace.
 			runtime.DedegoPostTry(cobufiIndex, false)
+			if enabled && !elem.Suc {
+				println("Error: Non-Successfull Mutex was locked successfully")
+			}
 			// COBUFI-CHANGE-END
 			return false
 		}
@@ -157,6 +170,7 @@ func (rw *RWMutex) TryRLock() bool {
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
 	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayRWMutexRUnlock, 2)
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	cobufiIndex := runtime.DedegoUnlockPre(rw.id, true, true)
@@ -194,6 +208,7 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
 	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayRWMutexLock, 2)
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -237,6 +252,15 @@ func (rw *RWMutex) Lock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryLock() bool {
 	// COBUFI-CHANGE-START
+	enabled, elem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryLock, 2)
+	if enabled {
+		if elem.Blocked {
+			runtime.BlockForever()
+		}
+		if !elem.Suc {
+			return false
+		}
+	}
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -260,6 +284,9 @@ func (rw *RWMutex) TryLock() bool {
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
 		runtime.DedegoPostTry(cobufiIndex, false)
+		if enabled && !elem.Suc {
+			println("Error: Non-Successfull Mutex was locked successfully")
+		}
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -272,6 +299,9 @@ func (rw *RWMutex) TryLock() bool {
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
 		runtime.DedegoPostTry(cobufiIndex, false)
+		if enabled && !elem.Suc {
+			println("Error: Non-Successfull Mutex was locked successfully")
+		}
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -297,6 +327,7 @@ func (rw *RWMutex) TryLock() bool {
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
 	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayRWMutexUnlock, 2)
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not

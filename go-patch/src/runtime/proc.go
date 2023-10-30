@@ -4439,7 +4439,7 @@ func newproc(fn *funcval) {
 		// COBUFI-CHANGE-STAR
 		newg.goInfo = newDedegoRoutine(newg)
 		if gp != nil && gp.goInfo != nil {
-			DedegoSpawn(gp.goInfo, newg.goInfo.id)
+			CobufiSpawn(gp.goInfo, newg.goInfo.id)
 		}
 		// COBUFI-CHANGE-END
 

@@ -49,6 +49,11 @@ type WaitGroup struct {
 // new Add calls must happen after all previous Wait calls have returned.
 // See the WaitGroup example.
 func (wg *WaitGroup) Add(delta int) {
+	skip := 3
+	if delta > 0 {
+		skip = 2
+	}
+	runtime.WaitForReplay(runtime.CobufiReplayWaitgroupAddDone, skip)
 	if race.Enabled {
 		if delta < 0 {
 			// Synchronize decrements with Wait.
@@ -116,9 +121,14 @@ func (wg *WaitGroup) Done() {
 
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
+	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayWaitgroupWait, 2)
+	// COBUFI-CHANGE-END
+
 	if race.Enabled {
 		race.Disable()
 	}
+
 	// COBUFI-CHANGE-START
 	// Waitgroups don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a wg

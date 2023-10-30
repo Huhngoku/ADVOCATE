@@ -86,6 +86,7 @@ const (
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
 	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayMutexLock, 2)
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -121,6 +122,15 @@ func (m *Mutex) Lock() {
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
 	// COBUFI-CHANGE-START
+	enabled, elem := runtime.WaitForReplay(runtime.CobufiReplayMutexTryLock, 2)
+	if enabled {
+		if !elem.Blocked {
+			runtime.BlockForever()
+		}
+		if !elem.Suc {
+			return false
+		}
+	}
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -135,7 +145,12 @@ func (m *Mutex) TryLock() bool {
 	// COBUFI-CHANGE-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
+		// COBUFI-CHANGE-START
 		runtime.DedegoPostTry(cobufiIndex, false)
+		if enabled && !elem.Suc {
+			println("Error: Non-Successfull Mutex was locked successfully")
+		}
+		// COBUFI-CHANGE-END
 		return false
 	}
 
@@ -147,6 +162,9 @@ func (m *Mutex) TryLock() bool {
 		// If the mutex was not locked successfully, DedegoPostTry is called
 		// to update the trace.
 		runtime.DedegoPostTry(cobufiIndex, false)
+		if enabled && !elem.Suc {
+			println("Error: Non-Successfull Mutex was locked successfully")
+		}
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -259,6 +277,7 @@ func (m *Mutex) lockSlow() {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
 	// COBUFI-CHANGE-START
+	runtime.WaitForReplay(runtime.CobufiReplayMutexUnlock, 2)
 	// DedegoUnlockPre is used to record the unlocking of a mutex.
 	// DedegoPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not

@@ -191,7 +191,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
-	// WaitForReplay(channelSend, 2)
+	WaitForReplay(CobufiReplayChannelSend, 2)
 	// COBUFI-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
@@ -422,7 +422,7 @@ func closechan(c *hchan) {
 	// COBUFI-CHANGE-START
 	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
-	// WaitForReplay(channelClose, 2)
+	WaitForReplay(CobufiReplayChannelClose, 2)
 	DedegoChanClose(c.id, c.dataqsiz)
 	// COBUFI-CHANGE-END
 
@@ -538,7 +538,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
-	// WaitForReplay(channelRecv, 2)
+	WaitForReplay(CobufiReplayChannelRecv, 2)
 	// COBUFI-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
