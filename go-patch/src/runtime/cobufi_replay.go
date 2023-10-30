@@ -31,6 +31,7 @@ const (
  * The replay data structure.
  * The replay data structure is used to store the trace of the program.
  * op: identifier of the operation
+ * time: time (tpre) of the operation
  * file: file in which the operation is executed
  * line: line number of the operation
  * blocked: true if the operation is blocked (never finised, tpost=0), false otherwise
@@ -42,132 +43,23 @@ const (
  */
 type ReplayElement struct {
 	Op      ReplayOperation
+	Time    int
 	File    string
 	Line    int
 	Blocked bool
 	Suc     bool
 }
 
-type replay []ReplayElement
+type CobufiReplayTrace []ReplayElement
 
 var replayEnabled bool = false
 var replayLock mutex
 var replayIndex int = 0
 
-var replayData replay = make(replay, 0)
+var replayData CobufiReplayTrace = make(CobufiReplayTrace, 0)
 
-/*
- * Import the trace.
- * The function creates the replay data structure, that is used to replay the trace.
- * We only store the information that is needed to replay the trace.
- * This includes operations on
- *  - spawn
- * 	- channels
- * 	- mutexes
- * 	- once
- * 	- waitgroups
- * 	- select
- * For now we ignore atomic operations.
- * We only record the relevant information for each operation.
- */
-func ImportTrace(trace []string) {
-	for _, line := range trace {
-		elems := splitString(line, ";")
-		for _, elem := range elems {
-			var op ReplayOperation
-			var file string
-			var line int
-			var blocked bool = false
-			var suc bool = true
-			fields := splitString(elem, ",")
-			switch fields[0] {
-			case "C":
-				switch fields[4] {
-				case "S":
-					op = CobufiReplayChannelSend
-				case "R":
-					op = CobufiReplayChannelRecv
-				case "C":
-					op = CobufiReplayChannelClose
-				default:
-					panic("Unknown channel operation")
-				}
-				if fields[2] == "0" {
-					blocked = true
-				}
-				pos := splitString(fields[8], ":")
-				file = pos[0]
-				line = stringToInt(pos[1])
-			case "M":
-				switch fields[5] {
-				case "L":
-					op = CobufiReplayMutexLock
-				case "U":
-					op = CobufiReplayMutexUnlock
-				case "T":
-					op = CobufiReplayMutexTryLock
-				case "R":
-					op = CobufiReplayRWMutexRLock
-				case "N":
-					op = CobufiReplayRWMutexRUnlock
-				case "Y":
-					op = CobufiReplayRWMutexTryRLock
-				default:
-					panic("Unknown mutex operation")
-				}
-				if fields[2] == "0" {
-					blocked = true
-				}
-				if fields[6] == "f" {
-					suc = false
-				}
-				pos := splitString(fields[7], ":")
-				file = pos[0]
-				line = stringToInt(pos[1])
-			case "O":
-				if fields[2] == "0" {
-					blocked = true
-				}
-				if fields[6] == "f" {
-					suc = false
-				}
-				pos := splitString(fields[5], ":")
-				file = pos[0]
-				line = stringToInt(pos[1])
-			case "W":
-				switch fields[4] {
-				case "W":
-					op = CobufiReplayWaitgroupWait
-				case "A":
-					op = CobufiReplayWaitgroupAddDone
-				default:
-					panic("Unknown waitgroup operation")
-				}
-				if fields[2] == "0" {
-					blocked = true
-				}
-				pos := splitString(fields[7], ":")
-				file = pos[0]
-				line = stringToInt(pos[1])
-			case "S": // TODO: get correct select case
-				// cases := splitString(fields[4], "~")
-				// if cases[len(cases)-1] == "D" {
-				// 	op = selectDef
-				// } else {
-				// 	op = selectCase
-				// }
-				op = CobufiReplaySelect
-				if fields[2] == "0" {
-					blocked = true
-				}
-				pos := splitString(fields[5], ":")
-				file = pos[0]
-				line = stringToInt(pos[1])
-			}
-			replayData = append(replayData, ReplayElement{
-				Op: op, File: file, Line: line, Blocked: blocked, Suc: suc})
-		}
-	}
+func EnableReplay(trace CobufiReplayTrace) {
+	replayData = trace
 	replayEnabled = true
 }
 
