@@ -594,7 +594,7 @@ func (elem cobufiTraceChannelElement) toStringSep(sep string, showPos bool) stri
  */
 var cobufiCounterAtomic uint64
 
-func DedegoChanSendPre(id uint64, opId uint64, qSize uint) int {
+func CobufiChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "cobufi_atomic.go") {
@@ -633,7 +633,7 @@ func isSuffix(s, suffix string) bool {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoChanRecvPre(id uint64, opId uint64, qSize uint) int {
+func CobufiChanRecvPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
 	if isSuffix(file, "cobufi_trace.go") {
@@ -653,7 +653,7 @@ func DedegoChanRecvPre(id uint64, opId uint64, qSize uint) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoChanClose(id uint64, qSize uint) int {
+func CobufiChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
 	timer := GetDedegoCounter()
 	elem := cobufiTraceChannelElement{id: id, op: opChanClose, file: file,
@@ -666,7 +666,7 @@ func DedegoChanClose(id uint64, qSize uint) int {
  * Args:
  * 	index: index of the operation in the trace
  */
-func DedegoChanPost(index int) {
+func CobufiChanPost(index int) {
 	if index == -1 {
 		return
 	}
@@ -676,7 +676,7 @@ func DedegoChanPost(index int) {
 	currentGoRoutine().updateElement(index, elem)
 }
 
-func DedegoChanPostCausedByClose(index int) {
+func CobufiChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}

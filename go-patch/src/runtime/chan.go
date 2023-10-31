@@ -57,6 +57,7 @@ type hchan struct {
 	numberSendMutex mutex  // mutex for numberSend
 	numberRecv      uint64 // number of completed recv operations
 	numberRecvMutex mutex  // mutex for numberRecv
+	cobufiIgnore    bool   // if true, the channel is ignored by tracing and replay
 	// COBUFI-CHANGE-END
 }
 
@@ -77,6 +78,16 @@ func makechan64(t *chantype, size int64) *hchan {
 
 	return makechan(t, int(size))
 }
+
+// COBUFI-CHANGE-START
+// create a channel that is ignored by the tracing and replay
+func makeChanIgnored(t *chantype, size int) *hchan {
+	c := makechan(t, size)
+	c.cobufiIgnore = true
+	return c
+}
+
+// COBUFI-CHANGE-END
 
 func makechan(t *chantype, size int) *hchan {
 	elem := t.Elem
@@ -122,7 +133,9 @@ func makechan(t *chantype, size int) *hchan {
 
 	// COBUFI-CHANGE-START
 	// get and save a new id for the channel
-	c.id = GetDedegoObjectId()
+	if !c.cobufiIgnore {
+		c.id = GetDedegoObjectId()
+	}
 	// COBUFI-CHANGE-END
 
 	lockInit(&c.lock, lockRankHchan)
@@ -191,7 +204,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
-	WaitForReplay(CobufiReplayChannelSend, 2)
+	if !c.cobufiIgnore {
+		WaitForReplay(CobufiReplayChannelSend, 2)
+	}
 	// COBUFI-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
@@ -233,10 +248,13 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// the post information by DedeGoChanPost, if 'chansend' returns.
 	// cobufiIndex is used to connect the post event to the correct
 	// pre envent in the trace.
-	lock(&c.numberSendMutex)
-	c.numberSend++
-	unlock(&c.numberSendMutex)
-	cobufiIndex := DedegoChanSendPre(c.id, c.numberSend, c.dataqsiz)
+	var cobufiIndex int
+	if !c.cobufiIgnore {
+		lock(&c.numberSendMutex)
+		c.numberSend++
+		unlock(&c.numberSendMutex)
+		cobufiIndex = CobufiChanSendPre(c.id, c.numberSend, c.dataqsiz)
+	}
 	// COBUFI-CHANGE-END
 
 	if c.closed != 0 {
@@ -248,7 +266,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
 		// COBUFI-CHANGE-START
-		DedegoChanPost(cobufiIndex)
+		if !c.cobufiIgnore {
+			CobufiChanPost(cobufiIndex)
+		}
 		// COBUFI-CHANGE-END
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
 		return true
@@ -257,7 +277,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if c.qcount < c.dataqsiz {
 		// Space is available in the channel buffer. Enqueue the element to send.
 		// COBUFI-CHANGE-START
-		DedegoChanPost(cobufiIndex)
+		if !c.cobufiIgnore {
+			CobufiChanPost(cobufiIndex)
+		}
 		// COBUFI-CHANGE-END
 		qp := chanbuf(c, c.sendx)
 		if raceenabled {
@@ -276,7 +298,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	if !block {
 		// COBUFI-CHANGE-START
-		DedegoChanPost(cobufiIndex)
+		if !c.cobufiIgnore {
+			CobufiChanPost(cobufiIndex)
+		}
 		// COBUFI-CHANGE-END
 		unlock(&c.lock)
 		return false
@@ -320,7 +344,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		throw("G waiting list is corrupted")
 	}
 	// COBUFI-CHANGE-START
-	DedegoChanPost(cobufiIndex)
+	if !c.cobufiIgnore {
+		CobufiChanPost(cobufiIndex)
+	}
 	// COBUFI-CHANGE-END
 	gp.waiting = nil
 	gp.activeStackChans = false
@@ -333,7 +359,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	releaseSudog(mysg)
 	if closed {
 		// COBUFI-CHANGE-START
-		DedegoChanPostCausedByClose(cobufiIndex)
+		if !c.cobufiIgnore {
+			CobufiChanPostCausedByClose(cobufiIndex)
+		}
 		// COBUFI-CHANGE-END
 		if c.closed == 0 {
 			throw("chansend: spurious wakeup")
@@ -422,8 +450,10 @@ func closechan(c *hchan) {
 	// COBUFI-CHANGE-START
 	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
-	WaitForReplay(CobufiReplayChannelClose, 2)
-	DedegoChanClose(c.id, c.dataqsiz)
+	if !c.cobufiIgnore {
+		WaitForReplay(CobufiReplayChannelClose, 2)
+		CobufiChanClose(c.id, c.dataqsiz)
+	}
 	// COBUFI-CHANGE-END
 
 	if c.closed != 0 {
@@ -538,7 +568,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
-	WaitForReplay(CobufiReplayChannelRecv, 2)
+	if !c.cobufiIgnore {
+		WaitForReplay(CobufiReplayChannelRecv, 2)
+	}
 	// COBUFI-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
@@ -593,11 +625,14 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// post information by DedeGoChanPost, if 'chansend' returns.
 	// cobufiIndex is used to connect the post event to the correct
 	// pre envent in the trace.
-	lock(&c.numberRecvMutex)
-	c.numberRecv++
-	unlock(&c.numberRecvMutex)
-	cobufiIndex := DedegoChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
-	defer DedegoChanPost(cobufiIndex)
+	var cobufiIndex int
+	if !c.cobufiIgnore {
+		lock(&c.numberRecvMutex)
+		c.numberRecv++
+		unlock(&c.numberRecvMutex)
+		cobufiIndex = CobufiChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+		defer CobufiChanPost(cobufiIndex)
+	}
 	// COBUFI-CHANGE-END
 
 	if c.closed != 0 {
@@ -610,7 +645,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 				typedmemclr(c.elemtype, ep)
 			}
 			// COBUFI-CHANGE-START
-			DedegoChanPostCausedByClose(cobufiIndex)
+			if !c.cobufiIgnore {
+				CobufiChanPostCausedByClose(cobufiIndex)
+			}
 			// COBUFI-CHANGE-END
 			return true, false
 		}
@@ -691,8 +728,8 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	}
 	success := mysg.success
 	// COBUFI-CHANGE-START
-	if !success {
-		DedegoChanPostCausedByClose(cobufiIndex)
+	if !success && !c.cobufiIgnore {
+		CobufiChanPostCausedByClose(cobufiIndex)
 	}
 	// COBUFI-CHANGE-END
 	gp.param = nil
@@ -800,15 +837,19 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	// It the return is nesseserry, because otherwise the following lock
 	// would try to lock a mutex which is a member of a nil element.
 	// This would lead to a SIGSEGV
-	if c == nil {
-		return false
+	if !c.cobufiIgnore {
+		if c == nil {
+			return false
+		}
+		// cobufiIndex := DedegoSelectPreOneNonDef(c, true)
+		res := chansend(c, elem, false, getcallerpc())
+		lock(&c.numberSendMutex)
+		defer unlock(&c.numberSendMutex)
+		// DedegoSelectPostOneNonDef(cobufiIndex, res, c.numberSend)
+		return res
+	} else {
+		return chansend(c, elem, false, getcallerpc())
 	}
-	// cobufiIndex := DedegoSelectPreOneNonDef(c, true)
-	res := chansend(c, elem, false, getcallerpc())
-	lock(&c.numberSendMutex)
-	defer unlock(&c.numberSendMutex)
-	// DedegoSelectPostOneNonDef(cobufiIndex, res, c.numberSend)
-	return res
 	// COBUFI-CHANGE-END
 }
 
@@ -831,16 +872,20 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	// COBUFI-CHANGE-START
 	// see selectnbsend
-	if c == nil {
-		return false, false
+	if !c.cobufiIgnore {
+		if c == nil {
+			return false, false
+		}
+		// cobufiIndex := DedegoSelectPreOneNonDef(c, false)
+		res, recv := chanrecv(c, elem, false)
+		lock(&c.numberRecvMutex)
+		defer unlock(&c.numberRecvMutex)
+		// DedegoSelectPostOneNonDef(cobufiIndex, res, c.numberRecv)
+		return res, recv
+	} else {
+		return chanrecv(c, elem, false)
 	}
-	// cobufiIndex := DedegoSelectPreOneNonDef(c, false)
-	res, recv := chanrecv(c, elem, false)
-	lock(&c.numberRecvMutex)
-	defer unlock(&c.numberRecvMutex)
-	// DedegoSelectPostOneNonDef(cobufiIndex, res, c.numberRecv)
 	// COBUFI-CHANGE-END
-	return res, recv
 }
 
 //go:linkname reflect_chansend reflect.chansend0
