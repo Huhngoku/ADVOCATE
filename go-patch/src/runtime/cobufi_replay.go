@@ -78,13 +78,12 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 		return false, nil
 	}
 
+	_, file, line, _ := Caller(skip)
 	c := make(chan ReplayElement, 1<<16)
-
 	go func() {
-		_, file, line, _ := Caller(skip)
 		for {
 			next := getNextReplayElement()
-			println(next.Op, next.File, next.Line)
+			println(next.Op, op, next.File, ",", file, ",", next.Line, ",", line)
 			if next.Op != op || next.File != file || next.Line != line {
 				// TODO: very stupid sleep, find a better solution,
 				// TODO: problem is that both the sleep and syscall packages cannot be used (cyclic import)
@@ -94,6 +93,7 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 				continue
 			}
 			c <- next
+			panic("Found: " + next.File)
 			lock(&replayLock)
 			replayIndex++
 			unlock(&replayLock)
