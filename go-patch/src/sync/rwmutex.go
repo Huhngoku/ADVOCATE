@@ -69,7 +69,18 @@ const rwmutexMaxReaders = 1 << 30
 // documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
 	// COBUFI-CHANGE-START
-	runtime.WaitForReplay(runtime.CobufiReplayRWMutexRLock, 2)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexRLock, 2)
+	if enabled {
+		elem := <-waitChan
+		if elem.Blocked {
+			if rw.id == 0 {
+				rw.id = runtime.GetDedegoObjectId()
+			}
+			_ = runtime.DedegoMutexLockPre(rw.id, true, true)
+			runtime.BlockForever()
+		}
+	}
+
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -79,12 +90,12 @@ func (rw *RWMutex) RLock() {
 	}
 
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
-	// DedegoPost is called, if the mutex was locked successfully.
+	// CobufiPost is called, if the mutex was locked successfully.
 	// In this case, the Lock event in the trace is updated to include
-	// this information. cobufiIndex is used for DedegoPost to find the
+	// this information. cobufiIndex is used for CobufiPost to find the
 	// pre event.
 	cobufiIndex := runtime.DedegoMutexLockPre(rw.id, true, true)
-	defer runtime.DedegoPost(cobufiIndex)
+	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {
@@ -108,12 +119,22 @@ func (rw *RWMutex) RLock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryRLock() bool {
 	// COBUFI-CHANGE-START
-	enabled, elem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryRLock, 2)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryRLock, 2)
 	if enabled {
+		elem := <-waitChan
 		if elem.Blocked {
+			if rw.id == 0 {
+				rw.id = runtime.GetDedegoObjectId()
+			}
+			_ = runtime.CobufiMutexLockTry(rw.id, true, true)
 			runtime.BlockForever()
 		}
 		if !elem.Suc {
+			if rw.id == 0 {
+				rw.id = runtime.GetDedegoObjectId()
+			}
+			cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, true)
+			runtime.CobufiPostTry(cobufiIndex, false)
 			return false
 		}
 	}
@@ -125,8 +146,8 @@ func (rw *RWMutex) TryRLock() bool {
 		rw.id = runtime.GetDedegoObjectId()
 	}
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
-	// cobufiIndex is used for DedegoPostTry to find the pre event.
-	cobufiIndex := runtime.DedegoMutexLockTry(rw.id, true, true)
+	// cobufiIndex is used for CobufiPostTry to find the pre event.
+	cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, true)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {
@@ -140,12 +161,9 @@ func (rw *RWMutex) TryRLock() bool {
 				race.Enable()
 			}
 			// COBUFI-CHANGE-START
-			// If the mutex was not locked successfully, DedegoPostTry is called
+			// If the mutex was not locked successfully, CobufiPostTry is called
 			// to update the trace.
-			runtime.DedegoPostTry(cobufiIndex, false)
-			if enabled && !elem.Suc {
-				println("Error: Non-Successfull Mutex was locked successfully")
-			}
+			runtime.CobufiPostTry(cobufiIndex, false)
 			// COBUFI-CHANGE-END
 			return false
 		}
@@ -155,9 +173,9 @@ func (rw *RWMutex) TryRLock() bool {
 				race.Acquire(unsafe.Pointer(&rw.readerSem))
 			}
 			// COBUFI-CHANGE-START
-			// If the mutex was locked successfully, DedegoPostTry is called
+			// If the mutex was locked successfully, CobufiPostTry is called
 			// to update the trace.
-			runtime.DedegoPostTry(cobufiIndex, true)
+			runtime.CobufiPostTry(cobufiIndex, true)
 			// COBUFI-CHANGE-END
 			return true
 		}
@@ -170,11 +188,19 @@ func (rw *RWMutex) TryRLock() bool {
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
 	// COBUFI-CHANGE-START
-	runtime.WaitForReplay(runtime.CobufiReplayRWMutexRUnlock, 2)
-	// DedegoUnlockPre is used to record the unlocking of a mutex.
-	// DedegoPost records the successful unlocking of a mutex.
-	cobufiIndex := runtime.DedegoUnlockPre(rw.id, true, true)
-	defer runtime.DedegoPost(cobufiIndex)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexRUnlock, 2)
+	if enabled {
+		elem := <-waitChan
+		if elem.Blocked {
+			_ = runtime.CobufiUnlockPre(rw.id, true, true)
+			runtime.BlockForever()
+		}
+	}
+
+	// CobufiUnlockPre is used to record the unlocking of a mutex.
+	// CobufiPost records the successful unlocking of a mutex.
+	cobufiIndex := runtime.CobufiUnlockPre(rw.id, true, true)
+	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {
@@ -208,7 +234,17 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
 	// COBUFI-CHANGE-START
-	runtime.WaitForReplay(runtime.CobufiReplayRWMutexLock, 2)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexLock, 2)
+	if enabled {
+		elem := <-waitChan
+		if elem.Blocked {
+			if rw.id == 0 {
+				rw.id = runtime.GetDedegoObjectId()
+			}
+			_ = runtime.DedegoMutexLockPre(rw.id, true, false)
+			runtime.BlockForever()
+		}
+	}
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -218,12 +254,12 @@ func (rw *RWMutex) Lock() {
 	}
 
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
-	// DedegoPost is called, if the mutex was locked successfully.
+	// CobufiPost is called, if the mutex was locked successfully.
 	// In this case, the Lock event in the trace is updated to include
-	// this information. cobufiIndex is used for DedegoPost to find the
+	// this information. cobufiIndex is used for CobufiPost to find the
 	// pre event.
 	cobufiIndex := runtime.DedegoMutexLockPre(rw.id, true, false)
-	defer runtime.DedegoPost(cobufiIndex)
+	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {
@@ -252,12 +288,21 @@ func (rw *RWMutex) Lock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryLock() bool {
 	// COBUFI-CHANGE-START
-	enabled, elem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryLock, 2)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryLock, 2)
 	if enabled {
+		elem := <-waitChan
 		if elem.Blocked {
+			if rw.id == 0 {
+				rw.id = runtime.GetDedegoObjectId()
+			}
+			// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+			// cobufiIndex is used for CobufiPostTry to find the pre event.
+			_ = runtime.CobufiMutexLockTry(rw.id, true, false)
 			runtime.BlockForever()
 		}
 		if !elem.Suc {
+			cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, false)
+			runtime.CobufiPostTry(cobufiIndex, false)
 			return false
 		}
 	}
@@ -269,8 +314,8 @@ func (rw *RWMutex) TryLock() bool {
 		rw.id = runtime.GetDedegoObjectId()
 	}
 	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
-	// cobufiIndex is used for DedegoPostTry to find the pre event.
-	cobufiIndex := runtime.DedegoMutexLockTry(rw.id, true, false)
+	// cobufiIndex is used for CobufiPostTry to find the pre event.
+	cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, false)
 	// COBUFI-CHANGE-END
 	if race.Enabled {
 		_ = rw.w.state
@@ -281,12 +326,9 @@ func (rw *RWMutex) TryLock() bool {
 			race.Enable()
 		}
 		// COBUFI-CHANGE-START
-		// If the mutex was not locked successfully, DedegoPostTry is called
+		// If the mutex was not locked successfully, CobufiPostTry is called
 		// to update the trace.
-		runtime.DedegoPostTry(cobufiIndex, false)
-		if enabled && !elem.Suc {
-			println("Error: Non-Successfull Mutex was locked successfully")
-		}
+		runtime.CobufiPostTry(cobufiIndex, false)
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -296,12 +338,9 @@ func (rw *RWMutex) TryLock() bool {
 			race.Enable()
 		}
 		// COBUFI-CHANGE-START
-		// If the mutex was not locked successfully, DedegoPostTry is called
+		// If the mutex was not locked successfully, CobufiPostTry is called
 		// to update the trace.
-		runtime.DedegoPostTry(cobufiIndex, false)
-		if enabled && !elem.Suc {
-			println("Error: Non-Successfull Mutex was locked successfully")
-		}
+		runtime.CobufiPostTry(cobufiIndex, false)
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -311,9 +350,9 @@ func (rw *RWMutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(&rw.writerSem))
 	}
 	// COBUFI-CHANGE-START
-	// If the mutex was locked successfully, DedegoPostTry is called
+	// If the mutex was locked successfully, CobufiPostTry is called
 	// to update the trace.
-	runtime.DedegoPostTry(cobufiIndex, true)
+	runtime.CobufiPostTry(cobufiIndex, true)
 	// COBUFI-CHANGE-END
 
 	return true
@@ -327,13 +366,16 @@ func (rw *RWMutex) TryLock() bool {
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
 	// COBUFI-CHANGE-START
-	runtime.WaitForReplay(runtime.CobufiReplayRWMutexUnlock, 2)
-	// DedegoUnlockPre is used to record the unlocking of a mutex.
-	// DedegoPost records the successful unlocking of a mutex.
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexUnlock, 2)
+	if enabled {
+		<-waitChan
+	}
+	// CobufiUnlockPre is used to record the unlocking of a mutex.
+	// CobufiPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not
 	// strictly necessary to record the post for the unlocking of a mutex.
-	cobufiIndex := runtime.DedegoUnlockPre(rw.id, true, false)
-	defer runtime.DedegoPost(cobufiIndex)
+	cobufiIndex := runtime.CobufiUnlockPre(rw.id, true, false)
+	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {

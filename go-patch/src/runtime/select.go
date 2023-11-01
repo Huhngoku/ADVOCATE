@@ -124,9 +124,18 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	// COBUFI-CHANGE-START
-	enabled, elem := WaitForReplay(CobufiReplaySelect, 2)
-	if enabled && !elem.Suc {
-		BlockForever()
+	enabled, waitChan := WaitForReplay(CobufiReplaySelect, 2)
+	if enabled {
+		elem := <-waitChan
+		if elem.Blocked {
+			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
+			_ = (*[1 << 17]uint16)(unsafe.Pointer(order0))
+
+			ncases := nsends + nrecvs
+			scases := cas1[:ncases:ncases]
+			_ = DedegoSelectPre(&scases, nsends, block)
+			BlockForever()
+		}
 	}
 
 	// NOTE: In order to maintain a lean stack size, the number of scases

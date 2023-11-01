@@ -49,11 +49,16 @@ type WaitGroup struct {
 // new Add calls must happen after all previous Wait calls have returned.
 // See the WaitGroup example.
 func (wg *WaitGroup) Add(delta int) {
+	// COBUFI-CHANGE-START
 	skip := 3
 	if delta > 0 {
 		skip = 2
 	}
-	runtime.WaitForReplay(runtime.CobufiReplayWaitgroupAddDone, skip)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayWaitgroupAddDone, skip)
+	if enabled {
+		<-waitChan
+	}
+	// COBUFI-CHANGE-END
 	if race.Enabled {
 		if delta < 0 {
 			// Synchronize decrements with Wait.
@@ -122,7 +127,17 @@ func (wg *WaitGroup) Done() {
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
 	// COBUFI-CHANGE-START
-	runtime.WaitForReplay(runtime.CobufiReplayWaitgroupWait, 2)
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayWaitgroupWait, 2)
+	if enabled {
+		elem := <-waitChan
+		if elem.Blocked {
+			if wg.id == 0 {
+				wg.id = runtime.GetDedegoObjectId()
+			}
+			_ = runtime.DedegoWaitGroupWaitPre(wg.id)
+			runtime.BlockForever()
+		}
+	}
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {
@@ -143,7 +158,7 @@ func (wg *WaitGroup) Wait() {
 	// blocks the routine and it is nessesary to record the successful
 	// finish of the wait with a post.
 	cobufiIndex := runtime.DedegoWaitGroupWaitPre(wg.id)
-	defer runtime.DedegoPost(cobufiIndex)
+	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 	for {
 		state := wg.state.Load()

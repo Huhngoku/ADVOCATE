@@ -67,10 +67,27 @@ func (o *Once) Do(f func()) {
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
 	// COBUFI-CHANGE-START
-	activated, elem := runtime.WaitForReplay(runtime.CobufiReplayOnce, 2)
-	if activated && !elem.Suc {
-		return
+	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayOnce, 2)
+	if enabled {
+		elem := <-waitChan
+		if elem.Blocked {
+			if o.id == 0 {
+				o.id = runtime.GetDedegoObjectId()
+			}
+			_ = runtime.DedegoOncePre(o.id)
+			runtime.BlockForever()
+		}
+
+		if !elem.Suc {
+			if o.id == 0 {
+				o.id = runtime.GetDedegoObjectId()
+			}
+			index := runtime.DedegoOncePre(o.id)
+			runtime.DedegoOncePost(index, false)
+			return
+		}
 	}
+	// COBUFI-CHANGE-END
 	if o.id == 0 {
 		o.id = runtime.GetDedegoObjectId()
 	}

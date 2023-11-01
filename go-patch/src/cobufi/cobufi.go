@@ -68,8 +68,14 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 
 	for scanner.Scan() {
 		l := scanner.Text()
+		if l == "" {
+			continue
+		}
 		elems := strings.Split(l, ";")
 		for _, elem := range elems {
+			if elem == "" {
+				continue
+			}
 			var op runtime.ReplayOperation
 			var file string
 			var line int
@@ -161,8 +167,10 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				file = pos[0]
 				line, _ = strconv.Atoi(pos[1])
 			}
-			replayData = append(replayData, runtime.ReplayElement{
-				Op: op, Time: time, File: file, Line: line, Blocked: blocked, Suc: suc})
+			if op != runtime.CobufiNone {
+				replayData = append(replayData, runtime.ReplayElement{
+					Op: op, Time: time, File: file, Line: line, Blocked: blocked, Suc: suc})
+			}
 		}
 	}
 

@@ -3,7 +3,8 @@ package runtime
 type ReplayOperation int
 
 const (
-	CobufiReplaySpawn ReplayOperation = iota
+	CobufiNone ReplayOperation = iota
+	CobufiReplaySpawn
 
 	CobufiReplayChannelSend
 	CobufiReplayChannelRecv
@@ -70,30 +71,37 @@ func EnableReplay(trace CobufiReplayTrace) {
  * 	skip: number of stack frames to skip
  * Return:
  * 	bool: true if trace replay is enabled, false otherwise
- * 	replayElement, the corresponding replayElement
+ * 	chan ReplayElement: channel to receive the next replay element
  */
-func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
+func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 	if !replayEnabled {
-		return false, ReplayElement{}
+		return false, nil
 	}
-	_, file, line, _ := Caller(skip)
-	println(file, line)
-	next := getNextReplayElement()
-	for {
-		if next.Op != op || next.File != file || next.Line != line {
-			// TODO: very stupid sleep, find a better solution,
-			// TODO: problem is that both the sleep and syscall packages cannot be used (cyclic import)
-			for i := 0; i < 100000; i++ {
-				_ = i
+
+	c := make(chan ReplayElement, 1<<16)
+
+	go func() {
+		_, file, line, _ := Caller(skip)
+		for {
+			next := getNextReplayElement()
+			println(next.Op, next.File, next.Line)
+			if next.Op != op || next.File != file || next.Line != line {
+				// TODO: very stupid sleep, find a better solution,
+				// TODO: problem is that both the sleep and syscall packages cannot be used (cyclic import)
+				for i := 0; i < 100000; i++ {
+					_ = i
+				}
+				continue
 			}
-			continue
+			c <- next
+			lock(&replayLock)
+			replayIndex++
+			unlock(&replayLock)
+			return
 		}
-		break
-	}
-	lock(&replayLock)
-	defer unlock(&replayLock)
-	replayIndex++
-	return true, next
+	}()
+
+	return true, c
 }
 
 func BlockForever() {

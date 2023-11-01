@@ -79,18 +79,14 @@ func makechan64(t *chantype, size int64) *hchan {
 	return makechan(t, int(size))
 }
 
-// COBUFI-CHANGE-START
-// create a channel that is ignored by the tracing and replay
-func makeChanIgnored(t *chantype, size int) *hchan {
-	c := makechan(t, size)
-	c.cobufiIgnore = true
-	return c
-}
-
-// COBUFI-CHANGE-END
-
 func makechan(t *chantype, size int) *hchan {
 	elem := t.Elem
+
+	// COBUFI-CHANGE-START
+	if elem.Size_ == 1<<16 {
+		throw("makechan: has worked")
+	}
+	// COBUFI-CHANGE-END
 
 	// compiler checks this but be safe.
 	if elem.Size_ >= 1<<16 {
@@ -133,6 +129,7 @@ func makechan(t *chantype, size int) *hchan {
 
 	// COBUFI-CHANGE-START
 	// get and save a new id for the channel
+	// c.cobufiIgnore = cobufiIgnored
 	if !c.cobufiIgnore {
 		c.id = GetDedegoObjectId()
 	}
@@ -145,6 +142,13 @@ func makechan(t *chantype, size int) *hchan {
 	}
 	return c
 }
+
+// COBUFI-CHANGE-START
+func (c *hchan) SetCobufiIgnore() {
+	c.cobufiIgnore = true
+}
+
+// COBUFI-CHANGE-END
 
 // chanbuf(c, i) is pointer to the i'th slot in the buffer.
 func chanbuf(c *hchan, i uint) unsafe.Pointer {
@@ -205,7 +209,19 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
 	if !c.cobufiIgnore {
-		WaitForReplay(CobufiReplayChannelSend, 2)
+		enabled, waitChan := WaitForReplay(CobufiReplayChannelSend, 2)
+		if enabled {
+			elem := <-waitChan
+			if elem.Blocked {
+				lock(&c.numberSendMutex)
+				c.numberSend++
+				unlock(&c.numberSendMutex)
+				_ = CobufiChanSendPre(c.id, c.numberSend, c.dataqsiz)
+				BlockForever()
+			}
+
+		}
+
 	}
 	// COBUFI-CHANGE-END
 
@@ -451,7 +467,10 @@ func closechan(c *hchan) {
 	// DedegoChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	if !c.cobufiIgnore {
-		WaitForReplay(CobufiReplayChannelClose, 2)
+		enabled, waitChan := WaitForReplay(CobufiReplayChannelClose, 2)
+		if enabled {
+			<-waitChan
+		}
 		CobufiChanClose(c.id, c.dataqsiz)
 	}
 	// COBUFI-CHANGE-END
@@ -569,7 +588,17 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
 	if !c.cobufiIgnore {
-		WaitForReplay(CobufiReplayChannelRecv, 2)
+		enabled, waitChan := WaitForReplay(CobufiReplayChannelRecv, 2)
+		if enabled {
+			elem := <-waitChan
+			if elem.Blocked {
+				lock(&c.numberRecvMutex)
+				c.numberRecv++
+				unlock(&c.numberRecvMutex)
+				_ = CobufiChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+				BlockForever()
+			}
+		}
 	}
 	// COBUFI-CHANGE-END
 

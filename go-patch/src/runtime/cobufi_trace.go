@@ -341,7 +341,7 @@ func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
+func CobufiMutexLockTry(id uint64, rw bool, r bool) int {
 	op := opMutTryLock
 	if r {
 		op = opMutRTryLock
@@ -362,7 +362,7 @@ func DedegoMutexLockTry(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoUnlockPre(id uint64, rw bool, r bool) int {
+func CobufiUnlockPre(id uint64, rw bool, r bool) int {
 	op := opMutUnlock
 	if r {
 		op = opMutRUnlock
@@ -375,13 +375,13 @@ func DedegoUnlockPre(id uint64, rw bool, r bool) int {
 }
 
 /*
- * Add the end counter to an operation of the trace. For try use DedegoPostTry.
+ * Add the end counter to an operation of the trace. For try use CobufiPostTry.
  *   Also used for wait group
  * Args:
  * 	index: index of the operation in the trace
  * 	c: number of the send
  */
-func DedegoPost(index int) {
+func CobufiPost(index int) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -403,7 +403,7 @@ func DedegoPost(index int) {
 		currentGoRoutine().updateElement(index, elem)
 
 	default:
-		panic("DedegoPost called on non mutex, waitgroup or channel")
+		panic("CobufiPost called on non mutex, waitgroup or channel")
 	}
 }
 
@@ -413,7 +413,7 @@ func DedegoPost(index int) {
  * 	index: index of the operation in the trace
  * 	suc: true if the try was successful, false otherwise
  */
-func DedegoPostTry(index int, suc bool) {
+func CobufiPostTry(index int, suc bool) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -425,7 +425,7 @@ func DedegoPostTry(index int, suc bool) {
 		elem.tPost = GetDedegoCounter()
 		currentGoRoutine().updateElement(index, elem)
 	default:
-		panic("DedegoPostTry called on non mutex")
+		panic("CobufiPostTry called on non mutex")
 	}
 }
 
