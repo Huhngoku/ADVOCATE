@@ -59,9 +59,26 @@ var replayIndex int = 0
 
 var replayData CobufiReplayTrace = make(CobufiReplayTrace, 0)
 
+func (t CobufiReplayTrace) Print() {
+	for _, e := range t {
+		println(e.Op, e.Time, e.File, e.Line, e.Blocked, e.Suc)
+	}
+}
+
 func EnableReplay(trace CobufiReplayTrace) {
 	replayData = trace
 	replayEnabled = true
+}
+
+func WaitForReplayFinish() {
+	for {
+		lock(&replayLock)
+		if replayIndex >= len(replayData) {
+			unlock(&replayLock)
+			break
+		}
+		unlock(&replayLock)
+	}
 }
 
 /*
@@ -80,20 +97,15 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 
 	_, file, line, _ := Caller(skip)
 	c := make(chan ReplayElement, 1<<16)
+
 	go func() {
 		for {
 			next := getNextReplayElement()
-			println(next.Op, op, next.File, ",", file, ",", next.Line, ",", line)
 			if next.Op != op || next.File != file || next.Line != line {
-				// TODO: very stupid sleep, find a better solution,
-				// TODO: problem is that both the sleep and syscall packages cannot be used (cyclic import)
-				for i := 0; i < 100000; i++ {
-					_ = i
-				}
+				// TODO: sleep here to not waste CPU
 				continue
 			}
 			c <- next
-			panic("Found: " + next.File)
 			lock(&replayLock)
 			replayIndex++
 			unlock(&replayLock)

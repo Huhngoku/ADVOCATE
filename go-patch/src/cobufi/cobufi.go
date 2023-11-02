@@ -177,6 +177,10 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
+	// remove the first 5 elements from the trace. They are part of the go init
+	// and are therefore always called, before the program starts.
+	// Because we enable the replay in the program, we must ignore them.
+	replayData = replayData[5:]
 	return replayData
 }
 

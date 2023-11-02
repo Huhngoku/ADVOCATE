@@ -1,0 +1,11 @@
+G,1,2;G,2,3;G,3,4;C,4,9,1,R,f,1,2,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,f,2,2,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,f,0,0,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;G,16,8;G,17,9;G,18,10;G,19,11
+
+C,5,6,1,S,f,1,2,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcsweep.go:279
+C,7,8,1,S,f,2,2,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcscavenge.go:652
+
+
+M,26,28,4,-,L,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:27;A,27,1,C;M,29,31,4,-,U,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:29;A,30,2,A
+M,38,40,4,-,L,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:33;A,39,3,C;M,41,43,4,-,U,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:35;A,42,4,A
+M,44,46,4,-,L,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:39;A,45,5,C;M,47,49,4,-,U,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:41;A,48,6,A
+M,32,34,4,-,L,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:45;A,33,7,C;M,35,37,4,-,U,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:47;A,36,8,A
+M,20,22,4,-,L,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:51;A,21,9,C;M,23,25,4,-,U,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/replay/ex1/main.go:53;A,24,10,A

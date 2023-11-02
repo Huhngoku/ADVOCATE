@@ -83,8 +83,10 @@ func makechan(t *chantype, size int) *hchan {
 	elem := t.Elem
 
 	// COBUFI-CHANGE-START
-	if elem.Size_ == 1<<16 {
-		throw("makechan: has worked")
+	cobufiIgnored := false
+	if size == 1<<16 {
+		cobufiIgnored = true
+		size = 0
 	}
 	// COBUFI-CHANGE-END
 
@@ -129,7 +131,7 @@ func makechan(t *chantype, size int) *hchan {
 
 	// COBUFI-CHANGE-START
 	// get and save a new id for the channel
-	// c.cobufiIgnore = cobufiIgnored
+	c.cobufiIgnore = cobufiIgnored
 	if !c.cobufiIgnore {
 		c.id = GetDedegoObjectId()
 	}
