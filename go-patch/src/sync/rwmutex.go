@@ -53,7 +53,7 @@ const rwmutexMaxReaders = 1 << 30
 // - Unlock  -> Lock:  readerSem
 // - Unlock  -> RLock: readerSem
 // - RUnlock -> Lock:  writerSem
-//GetDedegoObjectId
+//GetCobufiObjectId
 // The methods below temporarily disable handling of race synchronization
 // events in order to provide the more precise model above to the race
 // detector.
@@ -74,9 +74,9 @@ func (rw *RWMutex) RLock() {
 		elem := <-waitChan
 		if elem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetDedegoObjectId()
+				rw.id = runtime.GetCobufiObjectId()
 			}
-			_ = runtime.DedegoMutexLockPre(rw.id, true, true)
+			_ = runtime.CobufiMutexLockPre(rw.id, true, true)
 			runtime.BlockForever()
 		}
 	}
@@ -86,15 +86,15 @@ func (rw *RWMutex) RLock() {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoObjectId()
+		rw.id = runtime.GetCobufiObjectId()
 	}
 
-	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+	// CobufiMutexLockPre records, that a routine tries to lock a mutex.
 	// CobufiPost is called, if the mutex was locked successfully.
 	// In this case, the Lock event in the trace is updated to include
 	// this information. cobufiIndex is used for CobufiPost to find the
 	// pre event.
-	cobufiIndex := runtime.DedegoMutexLockPre(rw.id, true, true)
+	cobufiIndex := runtime.CobufiMutexLockPre(rw.id, true, true)
 	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 
@@ -124,14 +124,14 @@ func (rw *RWMutex) TryRLock() bool {
 		elem := <-waitChan
 		if elem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetDedegoObjectId()
+				rw.id = runtime.GetCobufiObjectId()
 			}
 			_ = runtime.CobufiMutexLockTry(rw.id, true, true)
 			runtime.BlockForever()
 		}
 		if !elem.Suc {
 			if rw.id == 0 {
-				rw.id = runtime.GetDedegoObjectId()
+				rw.id = runtime.GetCobufiObjectId()
 			}
 			cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, true)
 			runtime.CobufiPostTry(cobufiIndex, false)
@@ -143,9 +143,9 @@ func (rw *RWMutex) TryRLock() bool {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoObjectId()
+		rw.id = runtime.GetCobufiObjectId()
 	}
-	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+	// CobufiMutexLockPre records, that a routine tries to lock a mutex.
 	// cobufiIndex is used for CobufiPostTry to find the pre event.
 	cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, true)
 	// COBUFI-CHANGE-END
@@ -239,9 +239,9 @@ func (rw *RWMutex) Lock() {
 		elem := <-waitChan
 		if elem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetDedegoObjectId()
+				rw.id = runtime.GetCobufiObjectId()
 			}
-			_ = runtime.DedegoMutexLockPre(rw.id, true, false)
+			_ = runtime.CobufiMutexLockPre(rw.id, true, false)
 			runtime.BlockForever()
 		}
 	}
@@ -250,15 +250,15 @@ func (rw *RWMutex) Lock() {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoObjectId()
+		rw.id = runtime.GetCobufiObjectId()
 	}
 
-	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+	// CobufiMutexLockPre records, that a routine tries to lock a mutex.
 	// CobufiPost is called, if the mutex was locked successfully.
 	// In this case, the Lock event in the trace is updated to include
 	// this information. cobufiIndex is used for CobufiPost to find the
 	// pre event.
-	cobufiIndex := runtime.DedegoMutexLockPre(rw.id, true, false)
+	cobufiIndex := runtime.CobufiMutexLockPre(rw.id, true, false)
 	defer runtime.CobufiPost(cobufiIndex)
 	// COBUFI-CHANGE-END
 
@@ -293,9 +293,9 @@ func (rw *RWMutex) TryLock() bool {
 		elem := <-waitChan
 		if elem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetDedegoObjectId()
+				rw.id = runtime.GetCobufiObjectId()
 			}
-			// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+			// CobufiMutexLockPre records, that a routine tries to lock a mutex.
 			// cobufiIndex is used for CobufiPostTry to find the pre event.
 			_ = runtime.CobufiMutexLockTry(rw.id, true, false)
 			runtime.BlockForever()
@@ -311,9 +311,9 @@ func (rw *RWMutex) TryLock() bool {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetDedegoObjectId()
+		rw.id = runtime.GetCobufiObjectId()
 	}
-	// DedegoMutexLockPre records, that a routine tries to lock a mutex.
+	// CobufiMutexLockPre records, that a routine tries to lock a mutex.
 	// cobufiIndex is used for CobufiPostTry to find the pre event.
 	cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, false)
 	// COBUFI-CHANGE-END

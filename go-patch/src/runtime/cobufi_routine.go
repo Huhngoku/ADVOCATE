@@ -2,12 +2,12 @@
 
 package runtime
 
-var DedegoRoutines map[uint64]*[]cobufiTraceElement
-var DedegoRoutinesLock *mutex
+var CobufiRoutines map[uint64]*[]cobufiTraceElement
+var CobufiRoutinesLock *mutex
 
 var projectPath string
 
-type DedegoRoutine struct {
+type CobufiRoutine struct {
 	id    uint64
 	G     *g
 	Trace []cobufiTraceElement
@@ -21,23 +21,23 @@ type DedegoRoutine struct {
  * Return:
  * 	the new cobufi routine
  */
-func newDedegoRoutine(g *g) *DedegoRoutine {
-	routine := &DedegoRoutine{id: GetDedegoRoutineId(), G: g,
+func newCobufiRoutine(g *g) *CobufiRoutine {
+	routine := &CobufiRoutine{id: GetCobufiRoutineId(), G: g,
 		Trace: make([]cobufiTraceElement, 0),
 		lock:  &mutex{}}
 
-	if DedegoRoutinesLock == nil {
-		DedegoRoutinesLock = &mutex{}
+	if CobufiRoutinesLock == nil {
+		CobufiRoutinesLock = &mutex{}
 	}
 
-	lock(DedegoRoutinesLock)
-	defer unlock(DedegoRoutinesLock)
+	lock(CobufiRoutinesLock)
+	defer unlock(CobufiRoutinesLock)
 
-	if DedegoRoutines == nil {
-		DedegoRoutines = make(map[uint64]*[]cobufiTraceElement)
+	if CobufiRoutines == nil {
+		CobufiRoutines = make(map[uint64]*[]cobufiTraceElement)
 	}
 
-	DedegoRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
+	CobufiRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
 
 	return routine
 }
@@ -49,7 +49,7 @@ func newDedegoRoutine(g *g) *DedegoRoutine {
  * Return:
  * 	the index of the element in the trace
  */
-func (gi *DedegoRoutine) addToTrace(elem cobufiTraceElement) int {
+func (gi *CobufiRoutine) addToTrace(elem cobufiTraceElement) int {
 	// do nothing if tracer disabled
 	if cobufiDisabled {
 		return -1
@@ -67,7 +67,7 @@ func (gi *DedegoRoutine) addToTrace(elem cobufiTraceElement) int {
 	return len(gi.Trace) - 1
 }
 
-func (gi *DedegoRoutine) getElement(index int) cobufiTraceElement {
+func (gi *CobufiRoutine) getElement(index int) cobufiTraceElement {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	return gi.Trace[index]
@@ -79,7 +79,7 @@ func (gi *DedegoRoutine) getElement(index int) cobufiTraceElement {
  * 	index: the index of the element to update
  * 	elem: the new element
  */
-func (gi *DedegoRoutine) updateElement(index int, elem cobufiTraceElement) {
+func (gi *CobufiRoutine) updateElement(index int, elem cobufiTraceElement) {
 	if cobufiDisabled {
 		return
 	}
@@ -106,7 +106,7 @@ func (gi *DedegoRoutine) updateElement(index int, elem cobufiTraceElement) {
  * Return:
  * 	the current routine
  */
-func currentGoRoutine() *DedegoRoutine {
+func currentGoRoutine() *CobufiRoutine {
 	return getg().goInfo
 }
 

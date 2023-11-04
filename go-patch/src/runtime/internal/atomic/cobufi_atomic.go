@@ -24,18 +24,18 @@ type AtomicElem struct {
 	Operation int
 }
 
-func DedegoAtomicLink(c chan<- AtomicElem) {
+func CobufiAtomicLink(c chan<- AtomicElem) {
 	com = c
 	linked = true
 }
 
-func DedegoAtomicUnlink() {
+func CobufiAtomicUnlink() {
 	com = nil
 	linked = false
 }
 
 //go:nosplit
-func DedegoAtomic64Load(addr *uint64) {
+func CobufiAtomic64Load(addr *uint64) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -44,7 +44,7 @@ func DedegoAtomic64Load(addr *uint64) {
 }
 
 //go:nosplit
-func DedegoAtomic64Store(addr *uint64) {
+func CobufiAtomic64Store(addr *uint64) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -53,7 +53,7 @@ func DedegoAtomic64Store(addr *uint64) {
 }
 
 //go:nosplit
-func DedegoAtomic64Add(addr *uint64) {
+func CobufiAtomic64Add(addr *uint64) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -62,7 +62,7 @@ func DedegoAtomic64Add(addr *uint64) {
 }
 
 //go:nosplit
-func DedegoAtomic64Swap(addr *uint64) {
+func CobufiAtomic64Swap(addr *uint64) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -71,7 +71,7 @@ func DedegoAtomic64Swap(addr *uint64) {
 }
 
 //go:nosplit
-func DedegoAtomic64CompSwap(addr *uint64) {
+func CobufiAtomic64CompSwap(addr *uint64) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -80,7 +80,7 @@ func DedegoAtomic64CompSwap(addr *uint64) {
 }
 
 //go:nosplit
-func DedegoAtomic32Load(addr *uint32) {
+func CobufiAtomic32Load(addr *uint32) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -89,7 +89,7 @@ func DedegoAtomic32Load(addr *uint32) {
 }
 
 //go:nosplit
-func DedegoAtomic32Store(addr *uint32) {
+func CobufiAtomic32Store(addr *uint32) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -98,7 +98,7 @@ func DedegoAtomic32Store(addr *uint32) {
 }
 
 //go:nosplit
-func DedegoAtomic32Add(addr *uint32) {
+func CobufiAtomic32Add(addr *uint32) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -107,7 +107,7 @@ func DedegoAtomic32Add(addr *uint32) {
 }
 
 //go:nosplit
-func DedegoAtomic32Swap(addr *uint32) {
+func CobufiAtomic32Swap(addr *uint32) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -116,7 +116,7 @@ func DedegoAtomic32Swap(addr *uint32) {
 }
 
 //go:nosplit
-func DedegoAtomic32CompSwap(addr *uint32) {
+func CobufiAtomic32CompSwap(addr *uint32) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -125,7 +125,7 @@ func DedegoAtomic32CompSwap(addr *uint32) {
 }
 
 //go:nosplit
-func DedegoAtomicUIntPtr(addr *uintptr) {
+func CobufiAtomicUIntPtr(addr *uintptr) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -134,7 +134,7 @@ func DedegoAtomicUIntPtr(addr *uintptr) {
 }
 
 //go:nosplit
-func DedegoAtomicPtr(addr unsafe.Pointer) {
+func CobufiAtomicPtr(addr unsafe.Pointer) {
 	if linked {
 		counter += 1
 		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(addr)),

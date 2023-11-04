@@ -102,7 +102,7 @@ var cobufiGlobalCounterMutex mutex
  * Return:
  * 	new id
  */
-func GetDedegoRoutineId() uint64 {
+func GetCobufiRoutineId() uint64 {
 	lock(&cobufiCurrentRoutineIdMutex)
 	defer unlock(&cobufiCurrentRoutineIdMutex)
 	cobufiCurrentRoutineId += 1
@@ -114,7 +114,7 @@ func GetDedegoRoutineId() uint64 {
  * Return:
  * 	new id
  */
-func GetDedegoObjectId() uint64 {
+func GetCobufiObjectId() uint64 {
 	lock(&cobufiCurrentObjectIdMutex)
 	defer unlock(&cobufiCurrentObjectIdMutex)
 	cobufiCurrentObjectId += 1
@@ -126,7 +126,7 @@ func GetDedegoObjectId() uint64 {
  * Return:
  * 	new counter value
  */
-func GetDedegoCounter() uint64 {
+func GetCobufiCounter() uint64 {
 	lock(&cobufiGlobalCounterMutex)
 	defer unlock(&cobufiGlobalCounterMutex)
 	cobufiGlobalCounter += 1

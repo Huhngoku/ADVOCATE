@@ -32,7 +32,7 @@ const (
 )
 
 type cobufiTraceElement interface {
-	isDedegoTraceElement()
+	isCobufiTraceElement()
 	toString() string
 }
 
@@ -110,9 +110,9 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringById(id uint64) (string, bool) {
-	lock(DedegoRoutinesLock)
-	defer unlock(DedegoRoutinesLock)
-	if trace, ok := DedegoRoutines[id]; ok {
+	lock(CobufiRoutinesLock)
+	defer unlock(CobufiRoutinesLock)
+	if trace, ok := CobufiRoutines[id]; ok {
 		return traceToString(trace), true
 	}
 	return "", false
@@ -128,10 +128,10 @@ func TraceToStringById(id uint64) (string, bool) {
  *  atomic: it true, the atomic trace is returned
  */
 func TraceToStringByIdChannel(id int, c chan<- string) {
-	// lock(DedegoRoutinesLock)
-	// defer unlock(DedegoRoutinesLock)
+	// lock(CobufiRoutinesLock)
+	// defer unlock(CobufiRoutinesLock)
 
-	if trace, ok := DedegoRoutines[uint64(id)]; ok {
+	if trace, ok := CobufiRoutines[uint64(id)]; ok {
 		res := ""
 		for i, elem := range *trace {
 			if i != 0 {
@@ -159,12 +159,12 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 func AllTracesToString() string {
 	// write warning if projectPath is empty
 	res := ""
-	lock(DedegoRoutinesLock)
-	defer unlock(DedegoRoutinesLock)
+	lock(CobufiRoutinesLock)
+	defer unlock(CobufiRoutinesLock)
 
-	for i := 1; i <= len(DedegoRoutines); i++ {
+	for i := 1; i <= len(CobufiRoutines); i++ {
 		res += ""
-		trace := DedegoRoutines[uint64(i)]
+		trace := CobufiRoutines[uint64(i)]
 		if trace == nil {
 			panic("Trace is nil")
 		}
@@ -187,9 +187,9 @@ func PrintAllTraces() {
  *	number of routines in the trace
  */
 func GetNumberOfRoutines() int {
-	lock(DedegoRoutinesLock)
-	defer unlock(DedegoRoutinesLock)
-	return len(DedegoRoutines)
+	lock(CobufiRoutinesLock)
+	defer unlock(CobufiRoutinesLock)
+	return len(CobufiRoutines)
 }
 
 /* Enable the collection of the trace */
@@ -197,7 +197,7 @@ func InitCobufi(size int) {
 	// link runtime with atomic via channel to receive information about
 	// atomic events
 	c := make(chan at.AtomicElem, size)
-	at.DedegoAtomicLink(c)
+	at.CobufiAtomicLink(c)
 	go func() {
 		for atomic := range c {
 			lock(&cobufiAtomicMapLock)
@@ -214,7 +214,7 @@ func InitCobufi(size int) {
 
 /* Disable the collection of the trace */
 func DisableTrace() {
-	at.DedegoAtomicUnlink()
+	at.CobufiAtomicUnlink()
 	cobufiDisabled = true
 }
 
@@ -226,7 +226,7 @@ type cobufiTraceSpawnElement struct {
 	timer uint64 // global timer
 }
 
-func (elem cobufiTraceSpawnElement) isDedegoTraceElement() {}
+func (elem cobufiTraceSpawnElement) isCobufiTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -243,8 +243,8 @@ func (elem cobufiTraceSpawnElement) toString() string {
  * Args:
  * 	id: id of the routine
  */
-func CobufiSpawn(callerRoutine *DedegoRoutine, newId uint64) {
-	timer := GetDedegoCounter()
+func CobufiSpawn(callerRoutine *CobufiRoutine, newId uint64) {
+	timer := GetCobufiCounter()
 	callerRoutine.addToTrace(cobufiTraceSpawnElement{id: newId, timer: timer})
 }
 
@@ -262,7 +262,7 @@ type cobufiTraceMutexElement struct {
 	tPost uint64    // global timer at end of operation
 }
 
-func (elem cobufiTraceMutexElement) isDedegoTraceElement() {}
+func (elem cobufiTraceMutexElement) isCobufiTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -320,13 +320,13 @@ func (elem cobufiTraceMutexElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoMutexLockPre(id uint64, rw bool, r bool) int {
+func CobufiMutexLockPre(id uint64, rw bool, r bool) int {
 	op := opMutLock
 	if r {
 		op = opMutRLock
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
@@ -347,7 +347,7 @@ func CobufiMutexLockTry(id uint64, rw bool, r bool) int {
 		op = opMutRTryLock
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
@@ -368,7 +368,7 @@ func CobufiUnlockPre(id uint64, rw bool, r bool) int {
 		op = opMutRUnlock
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
@@ -392,7 +392,7 @@ func CobufiPost(index int) {
 		return
 	}
 
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
 	case cobufiTraceMutexElement:
@@ -422,7 +422,7 @@ func CobufiPostTry(index int, suc bool) {
 	switch elem := currentGoRoutine().getElement(index).(type) {
 	case cobufiTraceMutexElement:
 		elem.suc = suc
-		elem.tPost = GetDedegoCounter()
+		elem.tPost = GetCobufiCounter()
 		currentGoRoutine().updateElement(index, elem)
 	default:
 		panic("CobufiPostTry called on non mutex")
@@ -442,7 +442,7 @@ type cobufiTraceWaitGroupElement struct {
 	tPost uint64    // global timer
 }
 
-func (elem cobufiTraceWaitGroupElement) isDedegoTraceElement() {}
+func (elem cobufiTraceWaitGroupElement) isCobufiTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -482,7 +482,7 @@ func (elem cobufiTraceWaitGroupElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
+func CobufiWaitGroupAdd(id uint64, delta int, val int32) int {
 	var file string
 	var line int
 	if delta > 0 {
@@ -490,7 +490,7 @@ func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
 	} else {
 		_, file, line, _ = Caller(3)
 	}
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
 		val: val, file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
@@ -504,9 +504,9 @@ func DedegoWaitGroupAdd(id uint64, delta int, val int32) int {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoWaitGroupWaitPre(id uint64) int {
+func CobufiWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceWaitGroupElement{id: id, op: opWgWait, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
@@ -526,7 +526,7 @@ type cobufiTraceChannelElement struct {
 	closed bool      // true if the channel operation was finished, because the channel was closed at another routine
 }
 
-func (elem cobufiTraceChannelElement) isDedegoTraceElement() {}
+func (elem cobufiTraceChannelElement) isCobufiTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -599,11 +599,11 @@ func CobufiChanSendPre(id uint64, opId uint64, qSize uint) int {
 	// internal channels to record atomic operations
 	if isSuffix(file, "cobufi_atomic.go") {
 		cobufiCounterAtomic += 1
-		DedegoAtomic(cobufiCounterAtomic)
+		CobufiAtomic(cobufiCounterAtomic)
 		// they are not recorded in the trace
 		return -1
 	}
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceChannelElement{id: id, op: opChanSend, opId: opId,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
@@ -640,7 +640,7 @@ func CobufiChanRecvPre(id uint64, opId uint64, qSize uint) int {
 		return -1
 	}
 
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceChannelElement{id: id, op: opChanRecv, opId: opId,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
@@ -655,7 +655,7 @@ func CobufiChanRecvPre(id uint64, opId uint64, qSize uint) int {
  */
 func CobufiChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiTraceChannelElement{id: id, op: opChanClose, file: file,
 		line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
@@ -672,7 +672,7 @@ func CobufiChanPost(index int) {
 	}
 
 	elem := currentGoRoutine().getElement(index).(cobufiTraceChannelElement)
-	elem.tPost = GetDedegoCounter()
+	elem.tPost = GetCobufiCounter()
 	currentGoRoutine().updateElement(index, elem)
 }
 
@@ -700,7 +700,7 @@ type cobufiTraceSelectElement struct {
 	line    int                         // line where the operation was called
 }
 
-func (elem cobufiTraceSelectElement) isDedegoTraceElement() {}
+func (elem cobufiTraceSelectElement) isCobufiTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -755,13 +755,13 @@ func (elem cobufiTraceSelectElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
-	timer := GetDedegoCounter()
+func CobufiSelectPre(cases *[]scase, nsends int, block bool) int {
+	timer := GetCobufiCounter()
 	if cases == nil {
 		return -1
 	}
 
-	id := GetDedegoObjectId()
+	id := GetCobufiObjectId()
 	caseElements := make([]cobufiTraceChannelElement, len(*cases))
 	_, file, line, _ := Caller(2)
 
@@ -787,14 +787,14 @@ func DedegoSelectPre(cases *[]scase, nsends int, block bool) int {
  * 	lockOrder: order of the locks
  * 	rClosed: true if the channel was closed at another routine
  */
-func DedegoSelectPost(index int, c *hchan, chosenIndex int,
+func CobufiSelectPost(index int, c *hchan, chosenIndex int,
 	lockOrder []uint16, rClosed bool) {
 	if index == -1 || c == nil {
 		return
 	}
 
 	elem := currentGoRoutine().getElement(index).(cobufiTraceSelectElement)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 
 	elem.chosen = chosenIndex
 	elem.tPost = timer
@@ -841,13 +841,13 @@ func DedegoSelectPost(index int, c *hchan, chosenIndex int,
 * Return:
 * 	index of the operation in the trace
  */
-func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
+func CobufiSelectPreOneNonDef(c *hchan, send bool) int {
 	if c == nil {
 		return -1
 	}
 
-	id := GetDedegoObjectId()
-	timer := GetDedegoCounter()
+	id := GetCobufiObjectId()
+	timer := GetCobufiCounter()
 
 	opChan := opChanRecv
 	if send {
@@ -875,12 +875,12 @@ func DedegoSelectPreOneNonDef(c *hchan, send bool) int {
  * 	index: index of the operation in the trace
  * 	res: 0 for the non-default case, -1 for the default case
  */
-func DedegoSelectPostOneNonDef(index int, res bool, oId uint64) {
+func CobufiSelectPostOneNonDef(index int, res bool, oId uint64) {
 	if index == -1 {
 		return
 	}
 
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := currentGoRoutine().getElement(index).(cobufiTraceSelectElement)
 
 	if res {
@@ -903,7 +903,7 @@ type cobufiTraceAtomicElement struct {
 	operation int    // type of operation
 }
 
-func (elem cobufiTraceAtomicElement) isDedegoTraceElement() {}
+func (elem cobufiTraceAtomicElement) isCobufiTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -948,8 +948,8 @@ func (elem cobufiTraceAtomicElement) toString() string {
 	return res
 }
 
-func DedegoAtomic(index uint64) {
-	timer := GetDedegoCounter()
+func CobufiAtomic(index uint64) {
+	timer := GetCobufiCounter()
 	elem := cobufiTraceAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)
 }
@@ -964,7 +964,7 @@ type cobufiOnceElement struct {
 	line  int    // line where the operation was called
 }
 
-func (elem cobufiOnceElement) isDedegoTraceElement() {}
+func (elem cobufiOnceElement) isCobufiTraceElement() {}
 
 /*
  * Return a string representation of the element
@@ -991,18 +991,18 @@ func (elem cobufiOnceElement) toString() string {
 	return res
 }
 
-func DedegoOncePre(id uint64) int {
+func CobufiOncePre(id uint64) int {
 	_, file, line, _ := Caller(2)
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := cobufiOnceElement{id: id, tpre: timer, file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
-func DedegoOncePost(index int, suc bool) {
+func CobufiOncePost(index int, suc bool) {
 	if index == -1 {
 		return
 	}
-	timer := GetDedegoCounter()
+	timer := GetCobufiCounter()
 	elem := currentGoRoutine().getElement(index).(cobufiOnceElement)
 	elem.tpost = timer
 	elem.suc = suc

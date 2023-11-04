@@ -49,6 +49,8 @@ type ReplayElement struct {
 	Line    int
 	Blocked bool
 	Suc     bool
+	PFile   string
+	PLine   int
 }
 
 type CobufiReplayTrace []ReplayElement

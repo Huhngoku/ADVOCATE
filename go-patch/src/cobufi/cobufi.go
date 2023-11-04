@@ -64,6 +64,8 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 
 	replayData := make(runtime.CobufiReplayTrace, 0)
 
+	chanWithoutPartner := make(map[string]int)
+
 	scanner := bufio.NewScanner(file)
 
 	for scanner.Scan() {
@@ -79,6 +81,8 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 			var op runtime.ReplayOperation
 			var file string
 			var line int
+			var pFile string
+			var pLine int
 			var blocked bool = false
 			var suc bool = true
 			fields := strings.Split(elem, ",")
@@ -101,6 +105,13 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				pos := strings.Split(fields[8], ":")
 				file = pos[0]
 				line, _ = strconv.Atoi(pos[1])
+				if op == runtime.CobufiReplayChannelSend || op == runtime.CobufiReplayChannelRecv {
+					index := findReplayPartner(file, line, len(replayData), chanWithoutPartner)
+					pFile = replayData[index].File
+					pLine = replayData[index].Line
+					replayData[index].PFile = file
+					replayData[index].PLine = line
+				}
 			case "M":
 				switch fields[5] {
 				case "L":
@@ -169,7 +180,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 			}
 			if op != runtime.CobufiNone {
 				replayData = append(replayData, runtime.ReplayElement{
-					Op: op, Time: time, File: file, Line: line, Blocked: blocked, Suc: suc})
+					Op: op, Time: time, File: file, Line: line, Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine})
 			}
 		}
 	}
@@ -182,6 +193,17 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	// Because we enable the replay in the program, we must ignore them.
 	replayData = replayData[5:]
 	return replayData
+}
+
+func findReplayPartner(file string, line int, index int, chanWithoutPartner map[string]int) int {
+	posString := file + ":" + strconv.Itoa(line)
+	if index, ok := chanWithoutPartner[posString]; ok {
+		delete(chanWithoutPartner, posString)
+		return index
+	} else {
+		chanWithoutPartner[posString] = index
+		return -1
+	}
 }
 
 func sortReplayDataByTime(replayData runtime.CobufiReplayTrace) runtime.CobufiReplayTrace {

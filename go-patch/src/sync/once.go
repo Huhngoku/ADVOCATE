@@ -72,26 +72,26 @@ func (o *Once) Do(f func()) {
 		elem := <-waitChan
 		if elem.Blocked {
 			if o.id == 0 {
-				o.id = runtime.GetDedegoObjectId()
+				o.id = runtime.GetCobufiObjectId()
 			}
-			_ = runtime.DedegoOncePre(o.id)
+			_ = runtime.CobufiOncePre(o.id)
 			runtime.BlockForever()
 		}
 
 		if !elem.Suc {
 			if o.id == 0 {
-				o.id = runtime.GetDedegoObjectId()
+				o.id = runtime.GetCobufiObjectId()
 			}
-			index := runtime.DedegoOncePre(o.id)
-			runtime.DedegoOncePost(index, false)
+			index := runtime.CobufiOncePre(o.id)
+			runtime.CobufiOncePost(index, false)
 			return
 		}
 	}
 	// COBUFI-CHANGE-END
 	if o.id == 0 {
-		o.id = runtime.GetDedegoObjectId()
+		o.id = runtime.GetCobufiObjectId()
 	}
-	index := runtime.DedegoOncePre(o.id)
+	index := runtime.CobufiOncePre(o.id)
 	res := false
 	// COBUFI-CHANGE-END
 
@@ -102,7 +102,7 @@ func (o *Once) Do(f func()) {
 		// COBUFI-CHANGE-END
 	}
 	// COBUFI-CHANGE-START
-	runtime.DedegoOncePost(index, res)
+	runtime.CobufiOncePost(index, res)
 	// COBUFI-CHANGE-END
 }
 

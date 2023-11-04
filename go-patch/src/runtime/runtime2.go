@@ -386,6 +386,11 @@ type sudog struct {
 	waitlink *sudog // g.waiting list or semaRoot
 	waittail *sudog // semaRoot
 	c        *hchan // channel
+
+	// COBUFI-CHANGE-START
+	pFile string
+	pLine int
+	// COBUFI-CHANGE-END
 }
 
 type libcall struct {
@@ -515,7 +520,7 @@ type g struct {
 	// For each routine a g is automaticcaly created. In this g the goInfo
 	// element is added to store the information about the routine.
 	// This includes the Id and the trace of the routine.
-	goInfo *DedegoRoutine
+	goInfo *CobufiRoutine
 	// COBUFI-CHANGE-END
 }
 

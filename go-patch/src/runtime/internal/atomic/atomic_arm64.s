@@ -59,10 +59,10 @@ TEXT ·Load(SB),NOSPLIT,$0-12
 
 // COBUFI-CHANGE-START
 // uint32 ·Load(uint32 volatile* addr)
-TEXT ·LoadDedego(SB),NOSPLIT,$0-12
+TEXT ·LoadCobufi(SB),NOSPLIT,$0-12
 	MOVD	ptr+0(FP), R0
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic32Load(SB)
+	BL	·CobufiAtomic32Load(SB)
 	// COBUFI-CHANGE-END
 	LDARW	(R0), R0
 	MOVW	R0, ret+8(FP)
@@ -78,10 +78,10 @@ TEXT ·Load8(SB),NOSPLIT,$0-9
 
 // COBUFI-CHANGE-START
 // uint8 ·Load8(uint8 volatile* addr)
-TEXT ·Load8Dedego(SB),NOSPLIT,$0-9
+TEXT ·Load8Cobufi(SB),NOSPLIT,$0-9
 	MOVD	ptr+0(FP), R0
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic32Load(SB)
+	BL	·CobufiAtomic32Load(SB)
 	// COBUFI-CHANGE-END
 	LDARB	(R0), R0
 	MOVB	R0, ret+8(FP)
@@ -97,10 +97,10 @@ TEXT ·Load64(SB),NOSPLIT,$0-16
 
 // COBUFI-CHANGE-START
 // uint64 ·Load64(uint64 volatile* addr)
-TEXT ·Load64Dedego(SB),NOSPLIT,$0-16
+TEXT ·Load64Cobufi(SB),NOSPLIT,$0-16
 	MOVD	ptr+0(FP), R0
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic64Load(SB)
+	BL	·CobufiAtomic64Load(SB)
 	// COBUFI-CHANGE-END
 	LDAR	(R0), R0
 	MOVD	R0, ret+8(FP)
@@ -116,10 +116,10 @@ TEXT ·Loadp(SB),NOSPLIT,$0-16
 
 // COBUFI-CHANGE-START
 // void *·Loadp(void *volatile *addr)
-TEXT ·LoadpDedego(SB),NOSPLIT,$0-16
+TEXT ·LoadpCobufi(SB),NOSPLIT,$0-16
 	MOVD	ptr+0(FP), R0
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomicPtr(SB)
+	BL	·CobufiAtomicPtr(SB)
 	// COBUFI-CHANGE-END
 	LDAR	(R0), R0
 	MOVD	R0, ret+8(FP)
@@ -154,7 +154,7 @@ TEXT ·Store(SB), NOSPLIT, $0-12
 	MOVD	ptr+0(FP), R0
 	MOVW	val+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic32Store
+	BL	·CobufiAtomic32Store
 	// COBUFI-CHANGE-END
 	STLRW	R1, (R0)
 	RET
@@ -163,7 +163,7 @@ TEXT ·Store8(SB), NOSPLIT, $0-9
 	MOVD	ptr+0(FP), R0
 	MOVB	val+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic32Store
+	BL	·CobufiAtomic32Store
 	// COBUFI-CHANGE-END
 	STLRB	R1, (R0)
 	RET
@@ -172,7 +172,7 @@ TEXT ·Store64(SB), NOSPLIT, $0-16
 	MOVD	ptr+0(FP), R0
 	MOVD	val+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic64Store
+	BL	·CobufiAtomic64Store
 	// COBUFI-CHANGE-END
 	STLR	R1, (R0)
 	RET
@@ -186,7 +186,7 @@ TEXT ·Xchg(SB), NOSPLIT, $0-20
 	MOVD	ptr+0(FP), R0
 	MOVW	new+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic32CompSwap(SB)
+	BL	·CobufiAtomic32CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
 	CBZ 	R4, load_store_loop
@@ -209,7 +209,7 @@ TEXT ·Xchg64(SB), NOSPLIT, $0-24
 	MOVD	ptr+0(FP), R0
 	MOVD	new+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic64CompSwap(SB)
+	BL	·CobufiAtomic64CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
 	CBZ 	R4, load_store_loop
@@ -235,7 +235,7 @@ TEXT ·Cas(SB), NOSPLIT, $0-17
 	MOVW	old+8(FP), R1
 	MOVW	new+12(FP), R2
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic32CompSwap(SB)
+	BL	·CobufiAtomic32CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
 	CBZ 	R4, load_store_loop
@@ -269,7 +269,7 @@ TEXT ·Cas64(SB), NOSPLIT, $0-25
 	MOVD	old+8(FP), R1
 	MOVD	new+16(FP), R2
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic64CompSwap(SB)
+	BL	·CobufiAtomic64CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
 	CBZ 	R4, load_store_loop
@@ -298,7 +298,7 @@ TEXT ·Xadd(SB), NOSPLIT, $0-20
 	MOVD	ptr+0(FP), R0
 	MOVW	delta+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic64CompSwap(SB)
+	BL	·CobufiAtomic64CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
 	CBZ 	R4, load_store_loop
@@ -322,7 +322,7 @@ TEXT ·Xadd64(SB), NOSPLIT, $0-24
 	MOVD	ptr+0(FP), R0
 	MOVD	delta+8(FP), R1
 	// COBUFI-CHANGE-START
-	BL	·DedegoAtomic64CompSwap(SB)
+	BL	·CobufiAtomic64CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVBU	internal∕cpu·ARM64+const_offsetARM64HasATOMICS(SB), R4
 	CBZ 	R4, load_store_loop

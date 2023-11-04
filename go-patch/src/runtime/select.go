@@ -133,7 +133,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 			ncases := nsends + nrecvs
 			scases := cas1[:ncases:ncases]
-			_ = DedegoSelectPre(&scases, nsends, block)
+			_ = CobufiSelectPre(&scases, nsends, block)
 			BlockForever()
 		}
 	}
@@ -151,11 +151,11 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 	// COBUFI-CHANGE-START
 	// This block is called, if the code runs a select statement.
-	// DedegoSelectPre records the state of the select case, meaning which
+	// CobufiSelectPre records the state of the select case, meaning which
 	// cases exists (channel / direction) and weather a default statement is present.
 	// Here the first lock order is set. This is only needed if the select
 	// is never executed.
-	cobufiIndex := DedegoSelectPre(&scases, nsends, block)
+	cobufiIndex := CobufiSelectPre(&scases, nsends, block)
 	cobufiRClose := false // case was chosen, because channel was closed
 	// COBUFI-CHANGE-END
 
@@ -278,7 +278,10 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		c = cas.c
 
 		if casi >= nsends {
-			sg = c.sendq.dequeue()
+			// COBUFI-CHANGE-START
+			// TODO: (cobufi) replace nil with the replay element
+			sg = c.sendq.dequeue(nil)
+			// COBUFI-CHANGE-END
 			if sg != nil {
 				goto recv
 			}
@@ -295,7 +298,10 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			if c.closed != 0 {
 				goto sclose
 			}
-			sg = c.recvq.dequeue()
+			// COBUFI-CHANGE-START
+			// TODO: (cobufi) replace nil with the replay element
+			sg = c.recvq.dequeue(nil)
+			// COBUFI-CHANGE-END
 			if sg != nil {
 				goto send
 			}
@@ -541,7 +547,7 @@ retc:
 	}
 
 	// COBUFI-CHANGE-START
-	DedegoSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
 	// COBUFI-CHANGE-END
 
 	return casi, recvOK
@@ -551,7 +557,7 @@ sclose:
 	selunlock(scases, lockorder)
 	// COBUFI-CHANGE-START
 	cobufiRClose = true
-	DedegoSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
 	// COBUFI-CHANGE-END
 	panic(plainError("send on closed channel"))
 }

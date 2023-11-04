@@ -10,9 +10,9 @@ import "unsafe"
 //
 //go:linkname Load
 // COBUFI-CHANGE-START
-//go:linkname LoadDedego
-//go:linkname Load64Dedego
-//go:linkname LoadpDedego
+//go:linkname LoadCobufi
+//go:linkname Load64Cobufi
+//go:linkname LoadpCobufi
 // COBUFI-CHANGE-END
 //go:linkname Loadp
 //go:linkname Load64
@@ -27,8 +27,8 @@ func Load(ptr *uint32) uint32 {
 //
 //go:nosplit
 //go:noinline
-func LoadDedego(ptr *uint32) uint32 {
-	DedegoAtomic32Load(ptr)
+func LoadCobufi(ptr *uint32) uint32 {
+	CobufiAtomic32Load(ptr)
 	return *ptr
 }
 
@@ -44,8 +44,8 @@ func Loadp(ptr unsafe.Pointer) unsafe.Pointer {
 //
 //go:nosplit
 //go:noinline
-func LoadpDedego(ptr unsafe.Pointer) unsafe.Pointer {
-	DedegoAtomicPtr(ptr)
+func LoadpCobufi(ptr unsafe.Pointer) unsafe.Pointer {
+	CobufiAtomicPtr(ptr)
 	return *(*unsafe.Pointer)(ptr)
 }
 
@@ -61,8 +61,8 @@ func Load64(ptr *uint64) uint64 {
 //
 //go:nosplit
 //go:noinline
-func Load64Dedego(ptr *uint64) uint64 {
-	DedegoAtomic64Load(ptr)
+func Load64Cobufi(ptr *uint64) uint64 {
+	CobufiAtomic64Load(ptr)
 	return *ptr
 }
 
