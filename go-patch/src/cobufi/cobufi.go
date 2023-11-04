@@ -106,11 +106,13 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				file = pos[0]
 				line, _ = strconv.Atoi(pos[1])
 				if op == runtime.CobufiReplayChannelSend || op == runtime.CobufiReplayChannelRecv {
-					index := findReplayPartner(file, line, len(replayData), chanWithoutPartner)
-					pFile = replayData[index].File
-					pLine = replayData[index].Line
-					replayData[index].PFile = file
-					replayData[index].PLine = line
+					index := findReplayPartner(fields[3], fields[6], len(replayData), chanWithoutPartner)
+					if index != -1 {
+						pFile = replayData[index].File
+						pLine = replayData[index].Line
+						replayData[index].PFile = file
+						replayData[index].PLine = line
+					}
 				}
 			case "M":
 				switch fields[5] {
@@ -163,7 +165,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				pos := strings.Split(fields[7], ":")
 				file = pos[0]
 				line, _ = strconv.Atoi(pos[1])
-			case "S": // TODO: get correct select case
+			case "S": // TODO: (cobufi) get correct select case
 				// cases := splitString(fields[4], "~")
 				// if cases[len(cases)-1] == "D" {
 				// 	op = selectDef
@@ -195,17 +197,29 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	return replayData
 }
 
-func findReplayPartner(file string, line int, index int, chanWithoutPartner map[string]int) int {
-	posString := file + ":" + strconv.Itoa(line)
-	if index, ok := chanWithoutPartner[posString]; ok {
-		delete(chanWithoutPartner, posString)
+/*
+ * Find the partner of a channel operation.
+ * The partner is the operation that is executed on the other side of the channel.
+ * The partner is identified by the channel id and the operation id.
+ * The index is the index of the operation in the replay data structure.
+ * The function returns the index of the partner operation.
+ * If the partner operation is not found, the function returns -1.
+ */
+func findReplayPartner(cId string, oId string, index int, chanWithoutPartner map[string]int) int {
+	opString := cId + ":" + oId
+	if index, ok := chanWithoutPartner[opString]; ok {
+		delete(chanWithoutPartner, opString)
 		return index
 	} else {
-		chanWithoutPartner[posString] = index
+		chanWithoutPartner[opString] = index
 		return -1
 	}
 }
 
+/*
+ * Sort the replay data structure by time.
+ * The function returns the sorted replay data structure.
+ */
 func sortReplayDataByTime(replayData runtime.CobufiReplayTrace) runtime.CobufiReplayTrace {
 	sort.Slice(replayData, func(i, j int) bool {
 		return replayData[i].Time < replayData[j].Time
