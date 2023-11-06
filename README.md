@@ -199,7 +199,7 @@ The implementation of the trace replay is not finished yet. The following is a s
 - correct channel partner
 	- Communication partner of (most) channel operations are identical to the partners in the trace. For selects this cannot be guarantied yet.
 
-## How
+### How
 To start the replay, add the following header at the beginning of the 
 main function:
 
