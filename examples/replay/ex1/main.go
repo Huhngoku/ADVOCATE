@@ -3,7 +3,6 @@ package main
 import (
 	"cobufi"
 	"runtime"
-	"sync"
 	"time"
 )
 
@@ -21,37 +20,68 @@ func main() {
 		defer runtime.WaitForReplayFinish()
 	}
 
-	m := sync.Mutex{}
+	c := make(chan int)
+	d := make(chan int)
 
 	go func() {
-		m.Lock()
-		println(1)
-		m.Unlock()
+		<-c
+		println("a1")
+	}()
+	go func() {
+		<-c
+		println("a2")
+	}()
+	go func() {
+		<-c
+		println("a3")
+	}()
+	go func() {
+		<-c
+		println("a4")
+	}()
+	go func() {
+		<-c
+		println("a5")
+	}()
+	go func() {
+		<-c
+		println("a6")
 	}()
 
-	go func() {
-		m.Lock()
-		println(2)
-		m.Unlock()
-	}()
+	c <- 1
+	c <- 1
+	c <- 1
+
+	time.Sleep(1 * time.Second)
 
 	go func() {
-		m.Lock()
-		println(3)
-		m.Unlock()
+		d <- 1
+		println("b1")
+	}()
+	go func() {
+		d <- 1
+		println("b2")
+	}()
+	go func() {
+		d <- 1
+		println("b3")
+	}()
+	go func() {
+		d <- 1
+		println("b4")
+	}()
+	go func() {
+		d <- 1
+		println("b5")
+	}()
+	go func() {
+		d <- 1
+		println("b6")
 	}()
 
-	go func() {
-		m.Lock()
-		println(4)
-		m.Unlock()
-	}()
-
-	go func() {
-		m.Lock()
-		println(5)
-		m.Unlock()
-	}()
+	<-d
+	<-d
+	<-d
 
 	time.Sleep(1 * time.Second)
 }

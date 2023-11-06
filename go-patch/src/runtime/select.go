@@ -279,8 +279,8 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 		if casi >= nsends {
 			// COBUFI-CHANGE-START
-			// TODO: (cobufi) replace nil with the replay element
-			sg = c.sendq.dequeue(nil)
+			// TODO: (cobufi) replace ReplayElement{} with the replay element
+			sg = c.sendq.dequeue(ReplayElement{})
 			// COBUFI-CHANGE-END
 			if sg != nil {
 				goto recv
@@ -299,8 +299,8 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 				goto sclose
 			}
 			// COBUFI-CHANGE-START
-			// TODO: (cobufi) replace nil with the replay element
-			sg = c.recvq.dequeue(nil)
+			// TODO: (cobufi) replace ReplayElement{} with the replay element
+			sg = c.recvq.dequeue(ReplayElement{})
 			// COBUFI-CHANGE-END
 			if sg != nil {
 				goto send

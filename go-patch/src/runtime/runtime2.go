@@ -388,8 +388,9 @@ type sudog struct {
 	c        *hchan // channel
 
 	// COBUFI-CHANGE-START
-	pFile string
-	pLine int
+	replayEnabled bool
+	pFile         string
+	pLine         int
 	// COBUFI-CHANGE-END
 }
 

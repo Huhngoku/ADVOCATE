@@ -212,7 +212,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	if !c.cobufiIgnore {
-		enabled, waitChan := WaitForReplay(CobufiReplayChannelSend, 2)
+		enabled, waitChan := WaitForReplay(CobufiReplayChannelSend, 3)
 		if enabled {
 			replayElem = <-waitChan
 			if replayElem.Blocked {
@@ -222,9 +222,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 				_ = CobufiChanSendPre(c.id, c.numberSend, c.dataqsiz)
 				BlockForever()
 			}
-
 		}
-
 	}
 	// COBUFI-CHANGE-END
 
@@ -281,7 +279,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		panic(plainError("send on closed channel"))
 	}
 
-	if sg := c.recvq.dequeue(&replayElem); sg != nil {
+	if sg := c.recvq.dequeue(replayElem); sg != nil {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
 		// COBUFI-CHANGE-START
@@ -341,8 +339,11 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	mysg.c = c
 	// COBUFI-CHANGE-START
 	// save partner file and line in sudog
-	mysg.pFile = replayElem.PFile
-	mysg.pLine = replayElem.PLine
+	if replayEnabled && !c.cobufiIgnore {
+		mysg.replayEnabled = true
+		mysg.pFile = replayElem.PFile
+		mysg.pLine = replayElem.PLine
+	}
 	// COBUFI-CHANGE-END
 	gp.waiting = mysg
 	gp.param = nil
@@ -500,7 +501,7 @@ func closechan(c *hchan) {
 
 	// release all readers
 	for {
-		sg := c.recvq.dequeue(nil)
+		sg := c.recvq.dequeue(ReplayElement{})
 		if sg == nil {
 			break
 		}
@@ -522,7 +523,7 @@ func closechan(c *hchan) {
 
 	// release all writers (they will panic)
 	for {
-		sg := c.sendq.dequeue(nil)
+		sg := c.sendq.dequeue(ReplayElement{})
 		if sg == nil {
 			break
 		}
@@ -597,7 +598,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	if !c.cobufiIgnore {
-		enabled, waitChan := WaitForReplay(CobufiReplayChannelRecv, 2)
+		enabled, waitChan := WaitForReplay(CobufiReplayChannelRecv, 3)
 		if enabled {
 			replayElem = <-waitChan
 			if replayElem.Blocked {
@@ -692,7 +693,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		// The channel has been closed, but the channel's buffer have data.
 	} else {
 		// Just found waiting sender with not closed.
-		if sg := c.sendq.dequeue(&replayElem); sg != nil {
+		if sg := c.sendq.dequeue(replayElem); sg != nil {
 			// Found a waiting sender. If buffer is size 0, receive value
 			// directly from sender. Otherwise, receive from head of queue
 			// and add sender's value to the tail of the queue (both map to
@@ -743,8 +744,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	mysg.c = c
 	// COBUFI-CHANGE-START
 	// save partner file and line in sudog
-	mysg.pFile = replayElem.PFile
-	mysg.pLine = replayElem.PLine
+	if replayEnabled && !c.cobufiIgnore {
+		mysg.replayEnabled = true
+		mysg.pFile = replayElem.PFile
+		mysg.pLine = replayElem.PLine
+	}
 	// COBUFI-CHANGE-END
 	gp.param = nil
 	c.recvq.enqueue(mysg)
@@ -985,7 +989,7 @@ func (q *waitq) enqueue(sgp *sudog) {
 }
 
 // COBUFI-CHANGE-START
-func (q *waitq) dequeue(rElem *ReplayElement) *sudog {
+func (q *waitq) dequeue(rElem ReplayElement) *sudog {
 	// COBUFI-CHANGE-END
 	for {
 		sgp := q.first
@@ -994,9 +998,11 @@ func (q *waitq) dequeue(rElem *ReplayElement) *sudog {
 		}
 		// COBUFI-CHANGE-START
 		// if the channel partner is not correct, the goroutine is not woken up
-		if rElem != nil && !sgp.c.cobufiIgnore {
-			if sgp.pFile != rElem.File || sgp.pLine != rElem.Line {
-				return nil
+		if replayEnabled && !sgp.replayEnabled {
+			if !(rElem.File == "") && !sgp.c.cobufiIgnore {
+				if sgp.pFile != rElem.File || sgp.pLine != rElem.Line {
+					return nil
+				}
 			}
 		}
 		// COBUFI-CHANE-END
