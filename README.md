@@ -3,7 +3,9 @@
 This program is still under development and may return no or wrong results.
 
 ## What
-We want to analyze concurrent Go programs to automatically find potential concurrency bug. For now we only support the search for potential send/receive on a closed channel, but we plan to expand the use cases in the future. 
+We want to analyze concurrent Go programs to automatically find potential concurrency bug. For now we only support the search for potential send/receive on a closed channel, but we plan to expand the use cases in the future.
+
+We also implement a trace replay mechanism, to replay a trace as recorded
 
 ## Recording
 To analyze the program, we first need
@@ -185,3 +187,34 @@ The send can cause a panic of the program, if it occurs. It is therefor an error
 
 A receive on a closed channel does not cause a panic, but returns a default value. It can therefor be a desired behavior. For this reason it is only considered a warning (in terminal orange, can be silenced with -w).
 
+## Trace Replay
+The trace replay reruns a given program as given in the recorded trace. Please be aware, 
+that only the recorded elements are considered for the trace replay. This means, that 
+the order of non-recorded operations between two or more routines can still very. 
+
+The implementation of the trace replay is not finished yet. The following is a short overview over the current state.
+- order enforcement for most elements.
+	- The operations are started in same global order as in the recorded trace. 
+	- This is not yet implemented for the spawn of new routines and atomic operations
+- correct channel partner
+	- Communication partner of (most) channel operations are identical to the partners in the trace. For selects this cannot be guarantied yet.
+
+## How
+To start the replay, add the following header at the beginning of the 
+main function:
+
+```go
+trace := cobufi.ReadTrace("trace.log")
+runtime.EnableReplay(trace)
+defer runtime.WaitForReplayFinish()
+```
+
+`"trace.log"` must be replaced with the path to the trace file. Also include the following imports:
+```go
+"cobufi"
+"runtime"
+```
+Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
+
+### Warning:
+Do not change the program code between trace recording and replay. The identification of the operations is based on the file names and lines, where the operations occur. If they get changed, the program will most likely block without terminating. If you need to change the program, you must either rerun the trace recording or change the effected trace elements.
