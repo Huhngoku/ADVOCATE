@@ -22,6 +22,7 @@ func main() {
 
 	c := make(chan int)
 	d := make(chan int)
+	e := make(chan int)
 
 	go func() {
 		<-c
@@ -84,4 +85,19 @@ func main() {
 	<-d
 
 	time.Sleep(1 * time.Second)
+
+	go func() {
+		select {
+		case <-e:
+			println("c1")
+		case <-e:
+			println("c2")
+		case <-e:
+			println("c3")
+		default:
+			println("c4")
+		}
+	}()
+
+	e <- 1
 }
