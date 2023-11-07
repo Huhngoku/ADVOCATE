@@ -166,13 +166,12 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				file = pos[0]
 				line, _ = strconv.Atoi(pos[1])
 			case "S": // TODO: (cobufi) get correct select case
-				// cases := splitString(fields[4], "~")
-				// if cases[len(cases)-1] == "D" {
-				// 	op = selectDef
-				// } else {
-				// 	op = selectCase
-				// }
-				op = runtime.CobufiReplaySelect
+				cases := strings.Split(fields[4], "~")
+				if cases[len(cases)-1] == "D" {
+					op = runtime.CobufiReplaySelectDefault
+				} else {
+					op = runtime.CobufiReplaySelectCase
+				}
 				if fields[2] == "0" {
 					blocked = true
 				}

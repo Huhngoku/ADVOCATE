@@ -1,0 +1,9 @@
+G,1,2;G,2,3;G,3,4;C,4,9,1,R,f,1,2,/home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,f,2,2,/home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,f,0,0,/home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;G,16,8;G,17,9
+
+C,7,8,1,S,f,2,2,/home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcsweep.go:279
+C,5,6,1,S,f,1,2,/home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcscavenge.go:652
+
+
+S,20,22,7,C.20.0.4.S.f.0.0~C.20.0.5.R.f.0.0~D,/home/erik/Uni/HiWi/CoBuFi-Go/examples/replay/ex2/main.go:27
+S,21,23,8,C.21.0.4.S.f.0.0~C.21.0.5.R.f.0.0~D,/home/erik/Uni/HiWi/CoBuFi-Go/examples/replay/ex2/main.go:38
+S,18,19,6,C.18.0.4.S.f.0.0~C.18.0.5.R.f.0.0~D,/home/erik/Uni/HiWi/CoBuFi-Go/examples/replay/ex2/main.go:49

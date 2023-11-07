@@ -125,9 +125,10 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 	// COBUFI-CHANGE-START
 	enabled, waitChan := WaitForReplay(CobufiReplaySelect, 2)
+	var replayElem ReplayElement
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		replayElem := <-waitChan
+		if replayElem.Blocked {
 			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
 			_ = (*[1 << 17]uint16)(unsafe.Pointer(order0))
 
@@ -137,6 +138,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			BlockForever()
 		}
 	}
+	// COBUFI-CHANGE-END
 
 	// NOTE: In order to maintain a lean stack size, the number of scases
 	// is capped at 65536.
@@ -272,6 +274,15 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	var caseReleaseTime int64 = -1
 	var recvOK bool
 
+	// COBUFI-CHANGE-START
+	// if a default was selected in the trace, also select the defautl
+	if replayElem.Op == CobufiReplaySelectDefault {
+		selunlock(scases, lockorder)
+		casi = -1
+		goto retc
+	}
+	// COBUFI-CHANGE-END
+
 	for _, casei := range pollorder {
 		casi = int(casei)
 		cas = &scases[casi]
@@ -279,8 +290,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 		if casi >= nsends {
 			// COBUFI-CHANGE-START
-			// TODO: (cobufi) replace ReplayElement{} with the replay element
-			sg = c.sendq.dequeue(ReplayElement{})
+			sg = c.sendq.dequeue(replayElem)
 			// COBUFI-CHANGE-END
 			if sg != nil {
 				goto recv
@@ -299,8 +309,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 				goto sclose
 			}
 			// COBUFI-CHANGE-START
-			// TODO: (cobufi) replace ReplayElement{} with the replay element
-			sg = c.recvq.dequeue(ReplayElement{})
+			sg = c.recvq.dequeue(replayElem)
 			// COBUFI-CHANGE-END
 			if sg != nil {
 				goto send
@@ -341,6 +350,14 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		// Construct waiting list in lock order.
 		*nextp = sg
 		nextp = &sg.waitlink
+
+		// COBUFI-CHANGE-START
+		if replayEnabled && !c.cobufiIgnore {
+			sg.replayEnabled = true
+			sg.pFile = replayElem.PFile
+			sg.pLine = replayElem.PLine
+		}
+		// COBUFI-CHANGE-END
 
 		if casi < nsends {
 			c.sendq.enqueue(sg)

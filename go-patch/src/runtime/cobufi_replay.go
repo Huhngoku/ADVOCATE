@@ -26,6 +26,8 @@ const (
 	CobufiReplayWaitgroupWait
 
 	CobufiReplaySelect
+	CobufiReplaySelectCase
+	CobufiReplaySelectDefault
 )
 
 /*
@@ -103,7 +105,8 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 	go func() {
 		for {
 			next := getNextReplayElement()
-			if next.Op != op || next.File != file || next.Line != line {
+			if (next.Op != op && !correctSelect(next.Op, op)) ||
+				next.File != file || next.Line != line {
 				// TODO: sleep here to not waste CPU
 				continue
 			}
@@ -118,6 +121,18 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 	return true, c
 }
 
+func correctSelect(next ReplayOperation, op ReplayOperation) bool {
+	if op != CobufiReplaySelect {
+		return false
+	}
+
+	if next != CobufiReplaySelectCase && next != CobufiReplaySelectDefault {
+		return false
+	}
+
+	return true
+}
+
 func BlockForever() {
 	gopark(nil, nil, waitReasonZero, traceEvNone, 1)
 }
@@ -129,5 +144,8 @@ func BlockForever() {
 func getNextReplayElement() ReplayElement {
 	lock(&replayLock)
 	defer unlock(&replayLock)
+	if replayIndex >= len(replayData) {
+		panic("Unknown Operation in Replay. The Program was most likely altered between recording and replay.")
+	}
 	return replayData[replayIndex]
 }
