@@ -275,11 +275,13 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	var recvOK bool
 
 	// COBUFI-CHANGE-START
-	// if a default was selected in the trace, also select the defautl
-	if replayElem.Op == CobufiReplaySelectDefault {
-		selunlock(scases, lockorder)
-		casi = -1
-		goto retc
+	// if a default was selected in the trace, also select the default
+	if enabled {
+		if replayElem.Op == CobufiReplaySelectDefault {
+			selunlock(scases, lockorder)
+			casi = -1
+			goto retc
+		}
 	}
 	// COBUFI-CHANGE-END
 
