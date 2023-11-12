@@ -38,12 +38,10 @@
 ==================== Summary ====================\
 \
 -------------------- Warning --------------------\
-Found concurrent Send on same channel:\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;send: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcscavenge.go:652\
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcsweep.go:279\
 Receive on closed channel:\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close: /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1214\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv : /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1420\
 Receive on closed channel:\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close: /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1347\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv : /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1420\
+=================================================\

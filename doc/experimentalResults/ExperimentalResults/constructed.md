@@ -81,3 +81,4 @@ Receive on closed channel:\
 Possible receive on closed channel:\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:360\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:356\
+=================================================\

@@ -50,3 +50,4 @@ Receive on closed channel:\
 Receive on closed channel:\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2744\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2417\
+=================================================\

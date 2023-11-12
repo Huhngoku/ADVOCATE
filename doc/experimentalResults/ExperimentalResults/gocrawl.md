@@ -64,5 +64,3 @@ Receive on closed channel:\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv : /home/erikkassubek/Uni/HiWi/Other/examples/gocrawl/worker.go:66\
 \
 =================================================\
-Total runtime: 39.916288ms\
-=================================================\

@@ -48,3 +48,4 @@ Possible receive on closed channel:\
 Receive on closed channel:\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;close: /home/erikkassubek/Uni/HiWi/Other/examples/serving3068/main.go:51\
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;recv : /home/erikkassubek/Uni/HiWi/Other/examples/serving3068/main.go:31\
+=================================================\
