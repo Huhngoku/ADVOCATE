@@ -884,7 +884,7 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	// It the return is nesseserry, because otherwise the following lock
 	// would try to lock a mutex which is a member of a nil element.
 	// This would lead to a SIGSEGV
-	if !c.cobufiIgnore {
+	if c != nil && !c.cobufiIgnore {
 		if c == nil {
 			return false
 		}
@@ -894,9 +894,9 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 		defer unlock(&c.numberSendMutex)
 		// CobufiSelectPostOneNonDef(cobufiIndex, res, c.numberSend)
 		return res
-	} else {
-		return chansend(c, elem, false, getcallerpc())
 	}
+	return chansend(c, elem, false, getcallerpc())
+
 	// COBUFI-CHANGE-END
 }
 
@@ -919,7 +919,7 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	// COBUFI-CHANGE-START
 	// see selectnbsend
-	if !c.cobufiIgnore {
+	if c != nil && !c.cobufiIgnore {
 		if c == nil {
 			return false, false
 		}
@@ -929,9 +929,10 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 		defer unlock(&c.numberRecvMutex)
 		// CobufiSelectPostOneNonDef(cobufiIndex, res, c.numberRecv)
 		return res, recv
-	} else {
-		return chanrecv(c, elem, false)
 	}
+
+	return chanrecv(c, elem, false)
+
 	// COBUFI-CHANGE-END
 }
 

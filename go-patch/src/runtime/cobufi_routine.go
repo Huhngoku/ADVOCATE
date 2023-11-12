@@ -3,7 +3,7 @@
 package runtime
 
 var CobufiRoutines map[uint64]*[]cobufiTraceElement
-var CobufiRoutinesLock *mutex
+var CobufiRoutinesLock mutex = mutex{}
 
 var projectPath string
 
@@ -26,12 +26,8 @@ func newCobufiRoutine(g *g) *CobufiRoutine {
 		Trace: make([]cobufiTraceElement, 0),
 		lock:  &mutex{}}
 
-	if CobufiRoutinesLock == nil {
-		CobufiRoutinesLock = &mutex{}
-	}
-
-	lock(CobufiRoutinesLock)
-	defer unlock(CobufiRoutinesLock)
+	lock(&CobufiRoutinesLock)
+	defer unlock(&CobufiRoutinesLock)
 
 	if CobufiRoutines == nil {
 		CobufiRoutines = make(map[uint64]*[]cobufiTraceElement)

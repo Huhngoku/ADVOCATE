@@ -110,8 +110,8 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringById(id uint64) (string, bool) {
-	lock(CobufiRoutinesLock)
-	defer unlock(CobufiRoutinesLock)
+	lock(&CobufiRoutinesLock)
+	defer unlock(&CobufiRoutinesLock)
 	if trace, ok := CobufiRoutines[id]; ok {
 		return traceToString(trace), true
 	}
@@ -128,8 +128,8 @@ func TraceToStringById(id uint64) (string, bool) {
  *  atomic: it true, the atomic trace is returned
  */
 func TraceToStringByIdChannel(id int, c chan<- string) {
-	// lock(CobufiRoutinesLock)
-	// defer unlock(CobufiRoutinesLock)
+	// lock(&CobufiRoutinesLock)
+	// defer unlock(&CobufiRoutinesLock)
 
 	if trace, ok := CobufiRoutines[uint64(id)]; ok {
 		res := ""
@@ -159,8 +159,8 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 func AllTracesToString() string {
 	// write warning if projectPath is empty
 	res := ""
-	lock(CobufiRoutinesLock)
-	defer unlock(CobufiRoutinesLock)
+	lock(&CobufiRoutinesLock)
+	defer unlock(&CobufiRoutinesLock)
 
 	for i := 1; i <= len(CobufiRoutines); i++ {
 		res += ""
@@ -187,8 +187,8 @@ func PrintAllTraces() {
  *	number of routines in the trace
  */
 func GetNumberOfRoutines() int {
-	lock(CobufiRoutinesLock)
-	defer unlock(CobufiRoutinesLock)
+	lock(&CobufiRoutinesLock)
+	defer unlock(&CobufiRoutinesLock)
 	return len(CobufiRoutines)
 }
 
