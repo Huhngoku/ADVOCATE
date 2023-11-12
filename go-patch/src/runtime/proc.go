@@ -4437,10 +4437,10 @@ func newproc(fn *funcval) {
 		newg := newproc1(fn, gp, pc)
 
 		// COBUFI-CHANGE-STAR
-		// newg.goInfo = newCobufiRoutine(newg)
-		// if gp != nil && gp.goInfo != nil {
-		// 	CobufiSpawn(gp.goInfo, newg.goInfo.id)
-		// }
+		newg.goInfo = newCobufiRoutine(newg)
+		if gp != nil && gp.goInfo != nil {
+			CobufiSpawn(gp.goInfo, newg.goInfo.id)
+		}
 		// COBUFI-CHANGE-END
 
 		pp := getg().m.p.ptr()

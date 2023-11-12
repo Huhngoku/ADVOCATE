@@ -131,6 +131,10 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 			pos:     pos,
 		}
 
+		if elem.tpost == 6218 {
+			println("case:", elem_case.tpost)
+		}
+
 		cases_list = append(cases_list, elem_case)
 		if elem_case.tpost != 0 {
 			elem.chosenCase = elem_case
@@ -217,7 +221,7 @@ func (se *traceElementSelect) toString() string {
  * was just a normal channel operation. For the default, we do not update the vc.
  */
 func (se *traceElementSelect) updateVectorClock() {
-	if se.chosenDefault { // no update for return
+	if se.chosenDefault { // no update for default
 		return
 	}
 	se.chosenCase.updateVectorClock()

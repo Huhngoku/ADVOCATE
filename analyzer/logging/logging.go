@@ -69,9 +69,13 @@ Args:
 func Result(message string, level result_level) {
 	found_bug = true
 	if level == WARNING {
-		resultsWarning = append(resultsWarning, message)
+		if !contains(resultsWarning, message) {
+			resultsWarning = append(resultsWarning, message)
+		}
 	} else if level == CRITICAL {
-		resultCritical = append(resultCritical, message)
+		if !contains(resultCritical, message) {
+			resultCritical = append(resultCritical, message)
+		}
 	}
 	if int(level) <= levelResult {
 		if level == CRITICAL {
@@ -171,4 +175,19 @@ func PrintSummary() {
  */
 func GetRuntime() string {
 	return time.Since(start_time).String()
+}
+
+/*
+* Check if a slice contains an element
+* Args:
+*   s: slice to check
+*   e: element to check
+ */
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

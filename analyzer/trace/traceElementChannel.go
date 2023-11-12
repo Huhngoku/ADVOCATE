@@ -243,7 +243,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				} else {
-					logging.Debug("Could not find partner for "+ch.pos, logging.ERROR)
+					logging.Debug("Could not find partner for "+ch.pos, logging.INFO)
 				}
 			}
 		case recv: // should not occur, but better save than sorry
@@ -263,7 +263,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 					vc.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				} else {
-					logging.Debug("Could not find partner for "+ch.pos, logging.ERROR)
+					logging.Debug("Could not find partner for "+ch.pos, logging.INFO)
 				}
 			}
 		case close:

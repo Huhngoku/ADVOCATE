@@ -280,6 +280,9 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		if replayElem.Op == CobufiReplaySelectDefault {
 			selunlock(scases, lockorder)
 			casi = -1
+			// COBUFI-CHANGE-START
+			CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+			// COBUFI-CHANGE-END
 			goto retc
 		}
 	}
@@ -325,6 +328,9 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	if !block {
 		selunlock(scases, lockorder)
 		casi = -1
+		// COBUFI-CHANGE-START
+		CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+		// COBUFI-CHANGE-END
 		goto retc
 	}
 
@@ -467,6 +473,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	selunlock(scases, lockorder)
 	// COBUFI-CHANGE-START
 	cobufiRClose = !caseSuccess
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
 	// COBUFI-CHANGE-END
 	goto retc
 
@@ -496,9 +503,15 @@ bufrecv:
 	}
 	c.qcount--
 	selunlock(scases, lockorder)
+	// COBUFI-CHANGE-START
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+	// COBUFI-CHANGE-END
 	goto retc
 
 bufsend:
+	// COBUFI-CHANGE-START
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+	// COBUFI-CHANGE-END
 	// can send to buffer
 	if raceenabled {
 		racenotify(c, c.sendx, nil)
@@ -522,6 +535,9 @@ bufsend:
 recv:
 	// can receive from sleeping sender (sg)
 	recv(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
+	// COBUFI-CHANGE-START
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+	// COBUFI-CHANGE-END
 	if debugSelect {
 		print("syncrecv: cas0=", cas0, " c=", c, "\n")
 	}
@@ -534,6 +550,7 @@ rclose:
 	recvOK = false
 	// COBUFI-CHANGE-START
 	cobufiRClose = true
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
 	// COBUFI-CHANGE-END
 	if cas.elem != nil {
 		typedmemclr(c.elemtype, cas.elem)
@@ -554,6 +571,9 @@ send:
 	if asanenabled {
 		asanread(cas.elem, c.elemtype.Size_)
 	}
+	// COBUFI-CHANGE-START
+	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
+	// COBUFI-CHANGE-END
 	send(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
 	if debugSelect {
 		print("syncsend: cas0=", cas0, " c=", c, "\n")
@@ -564,10 +584,6 @@ retc:
 	if caseReleaseTime > 0 {
 		blockevent(caseReleaseTime-t0, 1)
 	}
-
-	// COBUFI-CHANGE-START
-	CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
-	// COBUFI-CHANGE-END
 
 	return casi, recvOK
 

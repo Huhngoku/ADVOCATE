@@ -79,18 +79,18 @@ func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv st
  * Args:
  * 	rout (int): the route of the sender
  * 	id (int): the id of the sender
- * 	oId (int): the id of the communication
+ * 	oID (int): the id of the communication
  * 	size (int): buffer size
  *  pos (string): the position of the send in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
  */
-func Send(rout int, id int, oId int, size int, pos string,
+func Send(rout int, id int, oID int, size int, pos string,
 	vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
 
 	count := bufferedVCsCount[id]
-	bufferedVCsCount[id]++
+
 	if count > size || bufferedVCs[id][count].occupied {
 		logging.Debug("Write to occupied buffer position or to big count", logging.ERROR)
 	}
@@ -103,7 +103,9 @@ func Send(rout int, id int, oId int, size int, pos string,
 		lastSend[id] = vc[rout].Copy()
 	}
 
-	bufferedVCs[id][count] = bufferedVC{true, oId, vc[rout].Copy()}
+	bufferedVCs[id][count] = bufferedVC{true, oID, vc[rout].Copy()}
+
+	bufferedVCsCount[id]++
 
 	// for detection of send on closed
 	hasSend[id] = true
@@ -124,7 +126,7 @@ func Send(rout int, id int, oId int, size int, pos string,
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
  */
-func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, fifo bool) {
+func Recv(rout int, id int, oID, size int, pos string, vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
 
 	// checkForConcurrentRecv(rout, id, pos, vc)
@@ -134,7 +136,7 @@ func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, f
 	}
 	bufferedVCsCount[id]--
 
-	if bufferedVCs[id][0].oId != oId {
+	if bufferedVCs[id][0].oId != oID {
 		logging.Debug("Read operation on wrong buffer position", logging.ERROR)
 	}
 	v := bufferedVCs[id][0].vc
@@ -144,6 +146,7 @@ func Recv(rout int, id int, oId, size int, pos string, vc map[int]VectorClock, f
 		vc[rout] = vc[rout].Sync(lastRecv[id])
 		lastRecv[id] = vc[rout].Copy()
 	}
+
 	bufferedVCs[id] = bufferedVCs[id][1:]
 	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, 0, vc[rout].Copy()})
 
