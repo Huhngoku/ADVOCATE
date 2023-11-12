@@ -41,10 +41,10 @@ type cobufiAtomicMapElem struct {
 	operation int
 }
 
-var cobufiDisabled bool = false
-var cobufiAtomicMap map[uint64]cobufiAtomicMapElem = make(map[uint64]cobufiAtomicMapElem)
-var cobufiAtomicMapToId map[uint64]uint64 = make(map[uint64]uint64)
-var cobufiAtomicMapIdCounter uint64 = 1
+var cobufiDisabled = false
+var cobufiAtomicMap = make(map[uint64]cobufiAtomicMapElem)
+var cobufiAtomicMapToID = make(map[uint64]uint64)
+var cobufiAtomicMapIDCounter uint64 = 1
 var cobufiAtomicMapLock mutex
 
 /*
@@ -923,11 +923,12 @@ const (
 func (elem cobufiTraceAtomicElement) toString() string {
 	lock(&cobufiAtomicMapLock)
 	mapElement := cobufiAtomicMap[elem.index]
-	if _, ok := cobufiAtomicMapToId[elem.index]; !ok {
-		cobufiAtomicMapToId[elem.index] = cobufiAtomicMapIdCounter
-		cobufiAtomicMapIdCounter++
+	if _, ok := cobufiAtomicMapToID[mapElement.addr]; !ok {
+		cobufiAtomicMapToID[mapElement.addr] = cobufiAtomicMapIDCounter
+		cobufiAtomicMapIDCounter++
 	}
-	id := cobufiAtomicMapToId[elem.index]
+	id := cobufiAtomicMapToID[mapElement.addr]
+
 	res := "A," + uint64ToString(elem.timer) + "," +
 		uint64ToString(id) + ","
 	switch mapElement.operation {

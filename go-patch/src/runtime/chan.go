@@ -998,6 +998,9 @@ func (q *waitq) dequeue(rElem ReplayElement) *sudog {
 		}
 		// COBUFI-CHANGE-START
 		// if the channel partner is not correct, the goroutine is not woken up
+		// TODO: durch die ganze Queue durchgehen, ob partner vorhanden, um
+		// zu verhindern, das Umordnung zu Block führt
+		// TODO: oder ganz raus schmeißen, wenn nicht notwendig
 		if replayEnabled && !sgp.replayEnabled {
 			if !(rElem.File == "") && !sgp.c.cobufiIgnore {
 				if sgp.pFile != rElem.File || sgp.pLine != rElem.Line {
