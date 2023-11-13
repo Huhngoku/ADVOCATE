@@ -19,6 +19,8 @@ import (
 // TN = True negative
 // TP = True positive
 
+// =========== Send / Received to/from closed channel ===========
+
 //////////////////////////////////////////////////////////////
 // No send of closed due to (must) happens before relations.
 
@@ -436,17 +438,55 @@ func n20() {
 	close(ch)
 }
 
-const N = 20
+// ============== Concurrent recv on same channel ==============
+
+// TP
+func n21() {
+	x := make(chan int)
+
+	go func() {
+		<-x
+	}()
+
+	go func() {
+		<-x
+	}()
+
+	x <- 1
+	x <- 1
+
+	time.Sleep(300 * time.Millisecond)
+}
+
+// TN
+func n22() {
+	x := make(chan int)
+
+	go func() {
+		x <- 1
+	}()
+
+	go func() {
+		x <- 1
+	}()
+
+	<-x
+	<-x
+
+	time.Sleep(300 * time.Millisecond)
+}
+
+const n = 22
 
 func main() {
 
 	runtime.InitCobufi(0)
 	defer cobufi.CreateTrace("constructed.log")
 
-	ns := [N]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12,
-		n13, n14, n15, n16, n17, n18, n19, n20}
+	ns := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12,
+		n13, n14, n15, n16, n17, n18, n19, n20, n21, n22}
 
-	for i := 0; i < N; i++ {
+	for i := 0; i < n; i++ {
 		ns[i]()
 	}
 }

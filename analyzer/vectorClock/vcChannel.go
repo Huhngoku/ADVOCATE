@@ -53,7 +53,7 @@ var mostRecentReceivePosition map[int]string = make(map[int]string)
  * 	vc (map[int]VectorClock): the current vector clocks
  */
 func Unbuffered(routSend int, routRecv int, id int, pos_send string, pos_recv string, vc map[int]VectorClock) {
-	// checkForConcurrentRecv(routRecv, id, pos_recv, vc)
+	checkForConcurrentRecv(routRecv, id, pos_recv, vc)
 
 	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 	vc[routSend] = vc[routRecv].Copy()
@@ -129,7 +129,7 @@ func Send(rout int, id int, oID int, size int, pos string,
 func Recv(rout int, id int, oID, size int, pos string, vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
 
-	// checkForConcurrentRecv(rout, id, pos, vc)
+	checkForConcurrentRecv(rout, id, pos, vc)
 
 	if bufferedVCsCount[id] == 0 {
 		logging.Debug("Read operation on empty buffer position", logging.ERROR)
@@ -261,8 +261,6 @@ func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorCl
 	lastRecvRoutinePos[routine][id] = pos
 
 	for r, elem := range lastRecvRoutine {
-		// logging.Debug(lastRecvRoutinePos[r][id]+" "+pos, logging.ERROR)
-		// logging.Debug(elem[id].ToString()+" "+vc[routine].ToString(), logging.ERROR)
 		if r == routine {
 			continue
 		}
