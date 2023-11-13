@@ -37,44 +37,43 @@ type traceElementAtomic struct {
  * Create a new atomic trace element
  * Args:
  *   routine (int): The routine id
- *   numberOfRoutines (int): The number of routines in the trace
  *   tpost (string): The timestamp of the event
  *   id (string): The id of the atomic variable
  *   operation (string): The operation on the atomic variable
  */
-func AddTraceElementAtomic(routine int, numberOfRoutines int, tpost string,
+func AddTraceElementAtomic(routine int, tpost string,
 	id string, operation string) error {
-	tpost_int, err := strconv.Atoi(tpost)
+	tPostInt, err := strconv.Atoi(tpost)
 	if err != nil {
 		return errors.New("tpost is not an integer")
 	}
 
-	id_int, err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.New("tpost is not an integer")
 	}
 
-	var opA_int opAtomic = 0
+	var opAInt opAtomic
 	switch operation {
 	case "L":
-		opA_int = LoadOp
+		opAInt = LoadOp
 	case "S":
-		opA_int = StoreOp
+		opAInt = StoreOp
 	case "A":
-		opA_int = AddOp
+		opAInt = AddOp
 	case "W":
-		opA_int = SwapOp
+		opAInt = SwapOp
 	case "C":
-		opA_int = CompSwapOp
+		opAInt = CompSwapOp
 	default:
 		return errors.New("operation is not a valid operation")
 	}
 
 	elem := traceElementAtomic{
 		routine: routine,
-		tpost:   tpost_int,
-		id:      id_int,
-		opA:     opA_int,
+		tpost:   tPostInt,
+		id:      idInt,
+		opA:     opAInt,
 	}
 
 	return addElementToTrace(&elem)

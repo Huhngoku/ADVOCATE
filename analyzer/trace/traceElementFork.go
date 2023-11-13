@@ -7,42 +7,44 @@ import (
 )
 
 /*
- * traceElementFork is a trace element for a go statement
- * Fields:
- *   routine (int): The routine id
- *   tpost (int): The timestamp at the end of the event
- *   id (int): The id of the new go statement
+* traceElementFork is a trace element for a go statement
+* Fields:
+*   routine (int): The routine id
+*   tpost (int): The timestamp at the end of the event
+*   id (int): The id of the new go statement
+*  pos (string): The position of the trace element in the file
  */
 type traceElementFork struct {
 	routine int
-	tpost   int
+	tPost   int
 	id      int
+	pos     string
 }
 
 /*
  * Create a new go statement trace element
  * Args:
  *   routine (int): The routine id
- *   numberOfRoutines (int): The number of routines in the trace
- *   tpost (string): The timestamp at the end of the event
+ *   tPost (string): The timestamp at the end of the event
  *   id (string): The id of the new routine
+ *   pos (string): The position of the trace element in the file
  */
-func AddTraceElementFork(routine int, numberOfRoutines int, tpost string,
-	id string) error {
-	tpost_int, err := strconv.Atoi(tpost)
+func AddTraceElementFork(routine int, tPost string, id string, pos string) error {
+	tPostInt, err := strconv.Atoi(tPost)
 	if err != nil {
 		return errors.New("tpre is not an integer")
 	}
 
-	id_int, err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
 
 	elem := traceElementFork{
 		routine: routine,
-		tpost:   tpost_int,
-		id:      id_int}
+		tPost:   tPostInt,
+		id:      idInt,
+		pos:     pos}
 	return addElementToTrace(&elem)
 }
 
@@ -61,7 +63,7 @@ func (ro *traceElementFork) getRoutine() int {
  *   int: The tpre of the element
  */
 func (ro *traceElementFork) getTpre() int {
-	return ro.tpost
+	return ro.tPost
 }
 
 /*
@@ -70,7 +72,7 @@ func (ro *traceElementFork) getTpre() int {
  *   int: The tpost of the element
  */
 func (ro *traceElementFork) getTpost() int {
-	return ro.tpost
+	return ro.tPost
 }
 
 /*
@@ -79,7 +81,7 @@ func (ro *traceElementFork) getTpost() int {
  *   int: The timer of the element
  */
 func (ro *traceElementFork) getTsort() int {
-	return ro.tpost
+	return ro.tPost
 }
 
 /*
@@ -88,7 +90,7 @@ func (ro *traceElementFork) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (ro *traceElementFork) toString() string {
-	return "G" + "," + strconv.Itoa(ro.tpost) + "," + strconv.Itoa(ro.id)
+	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id)
 }
 
 /*

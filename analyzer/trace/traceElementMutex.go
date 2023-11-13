@@ -36,8 +36,8 @@ const (
  */
 type traceElementMutex struct {
 	routine int
-	tpre    int
-	tpost   int
+	tPre    int
+	tPost   int
 	id      int
 	rw      bool
 	opM     opMutex
@@ -50,69 +50,68 @@ type traceElementMutex struct {
  * Create a new mutex trace element
  * Args:
  *   routine (int): The routine id
- *   numberOfRoutines (int): The number of routines in the trace
- *   tpre (string): The timestamp at the start of the event
- *   tpost (string): The timestamp at the end of the event
+ *   tPre (string): The timestamp at the start of the event
+ *   tPost (string): The timestamp at the end of the event
  *   id (string): The id of the mutex
  *   rw (string): Whether the mutex is a read-write mutex
  *   opM (string): The operation on the mutex
  *   suc (string): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
  */
-func AddTraceElementMutex(routine int, numberOfRoutines int, tpre string,
-	tpost string, id string, rw string, opM string, suc string,
+func AddTraceElementMutex(routine int, tPre string,
+	tPost string, id string, rw string, opM string, suc string,
 	pos string) error {
-	tpre_int, err := strconv.Atoi(tpre)
+	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
 	}
 
-	tpost_int, err := strconv.Atoi(tpost)
+	tPostInt, err := strconv.Atoi(tPost)
 	if err != nil {
 		return errors.New("tpost is not an integer")
 	}
 
-	id_int, err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
 
-	rw_bool := false
+	rwBool := false
 	if rw == "R" {
-		rw_bool = true
+		rwBool = true
 	}
 
-	var opM_int opMutex = 0
+	var opMInt opMutex
 	switch opM {
 	case "L":
-		opM_int = LockOp
+		opMInt = LockOp
 	case "R":
-		opM_int = RLockOp
+		opMInt = RLockOp
 	case "T":
-		opM_int = TryLockOp
+		opMInt = TryLockOp
 	case "Y":
-		opM_int = TryRLockOp
+		opMInt = TryRLockOp
 	case "U":
-		opM_int = UnlockOp
+		opMInt = UnlockOp
 	case "N":
-		opM_int = RUnlockOp
+		opMInt = RUnlockOp
 	default:
 		return errors.New("opM is not a valid operation")
 	}
 
-	suc_bool, err := strconv.ParseBool(suc)
+	sucBool, err := strconv.ParseBool(suc)
 	if err != nil {
 		return errors.New("suc is not a boolean")
 	}
 
 	elem := traceElementMutex{
 		routine: routine,
-		tpre:    tpre_int,
-		tpost:   tpost_int,
-		id:      id_int,
-		rw:      rw_bool,
-		opM:     opM_int,
-		suc:     suc_bool,
+		tPre:    tPreInt,
+		tPost:   tPostInt,
+		id:      idInt,
+		rw:      rwBool,
+		opM:     opMInt,
+		suc:     sucBool,
 		pos:     pos}
 
 	return addElementToTrace(&elem)
@@ -133,7 +132,7 @@ func (mu *traceElementMutex) getRoutine() int {
  *   int: The tpre of the element
  */
 func (mu *traceElementMutex) getTpre() int {
-	return mu.tpre
+	return mu.tPre
 }
 
 /*
@@ -142,7 +141,7 @@ func (mu *traceElementMutex) getTpre() int {
  *   int: The tpost of the element
  */
 func (mu *traceElementMutex) getTpost() int {
-	return mu.tpost
+	return mu.tPost
 }
 
 /*
@@ -151,11 +150,11 @@ func (mu *traceElementMutex) getTpost() int {
  *   int: The timer of the element
  */
 func (mu *traceElementMutex) getTsort() int {
-	if mu.tpost == 0 {
+	if mu.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return mu.tpost
+	return mu.tPost
 }
 
 /*
@@ -164,7 +163,7 @@ func (mu *traceElementMutex) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (mu *traceElementMutex) toString() string {
-	return "M" + "," + strconv.Itoa(mu.tpre) + "," + strconv.Itoa(mu.tpost) + "," +
+	return "M" + "," + strconv.Itoa(mu.tPre) + "," + strconv.Itoa(mu.tPost) + "," +
 		strconv.Itoa(mu.id) + "," + strconv.FormatBool(mu.rw) + "," +
 		strconv.Itoa(int(mu.opM)) + "," + strconv.FormatBool(mu.suc) + "," +
 		mu.pos

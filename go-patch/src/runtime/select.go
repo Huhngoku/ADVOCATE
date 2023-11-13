@@ -124,10 +124,10 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	// COBUFI-CHANGE-START
-	enabled, waitChan := WaitForReplay(CobufiReplaySelect, 2)
+	replayEnabled, waitChan := WaitForReplay(CobufiReplaySelect, 2)
 	var replayElem ReplayElement
-	if enabled {
-		replayElem := <-waitChan
+	if replayEnabled {
+		replayElem = <-waitChan
 		if replayElem.Blocked {
 			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
 			_ = (*[1 << 17]uint16)(unsafe.Pointer(order0))
@@ -276,7 +276,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 	// COBUFI-CHANGE-START
 	// if a default was selected in the trace, also select the default
-	if enabled {
+	if replayEnabled {
 		if replayElem.Op == CobufiReplaySelectDefault {
 			selunlock(scases, lockorder)
 			casi = -1
@@ -292,6 +292,17 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		casi = int(casei)
 		cas = &scases[casi]
 		c = cas.c
+
+		// COBUFI-CHANGE-START
+		// if replayEnabled {
+		// 	if replayEnabled {
+		// 		if casi != replayElem.SelIndex {
+		// 			continue
+		// 		}
+		// 		println("Casi1", casi, replayElem.SelIndex)
+		// 	}
+		// }
+		// COBUFI-CHANGE-END
 
 		if casi >= nsends {
 			// COBUFI-CHANGE-START
@@ -344,6 +355,16 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		casi = int(casei)
 		cas = &scases[casi]
 		c = cas.c
+
+		// COBUFI-CHANGE-START
+		// if replayEnabled {
+		// 	if casi != replayElem.SelIndex {
+		// 		continue
+		// 	}
+		// 	println("Casi2", casi, replayElem.SelIndex)
+		// }
+		// COBUFI-CHANGE-END
+
 		sg := acquireSudog()
 		sg.g = gp
 		sg.isSelect = true
@@ -407,6 +428,15 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	gp.waiting = nil
 
 	for _, casei := range lockorder {
+		// COBUFI-CHANGE-START
+		// if replayEnabled {
+		// 	if int(casei) != replayElem.SelIndex {
+		// 		continue
+		// 	}
+		// 	println("Casi3", casi, replayElem.SelIndex)
+		// }
+		// COBUFI-CHANGE-END
+
 		k = &scases[casei]
 		if sg == sglist {
 			// sg has already been dequeued by the G that woke us up.

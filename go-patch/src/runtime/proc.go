@@ -4439,7 +4439,15 @@ func newproc(fn *funcval) {
 		// COBUFI-CHANGE-STAR
 		newg.goInfo = newCobufiRoutine(newg)
 		if gp != nil && gp.goInfo != nil {
-			CobufiSpawn(gp.goInfo, newg.goInfo.id)
+
+			f := findfunc(pc)
+			tracepc := pc
+			if pc > f.entry() {
+				tracepc -= sys.PCQuantum
+			}
+			file, line := funcline(f, tracepc)
+			CobufiSpawn(gp.goInfo, newg.goInfo.id, file, line)
+
 		}
 		// COBUFI-CHANGE-END
 

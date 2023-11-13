@@ -43,16 +43,20 @@ const (
  * 			for other operations always true
  *     - for once: true if the once was chosen (was the first), false otherwise
  *     - for others: always true
+ * PFile: file of the partner (mainly for channel/select)
+ * PLine: line of the partner (mainly for channel/select)
+ * SelIndex: index of the select case (only for select, otherwise)
  */
 type ReplayElement struct {
-	Op      ReplayOperation
-	Time    int
-	File    string
-	Line    int
-	Blocked bool
-	Suc     bool
-	PFile   string
-	PLine   int
+	Op       ReplayOperation
+	Time     int
+	File     string
+	Line     int
+	Blocked  bool
+	Suc      bool
+	PFile    string
+	PLine    int
+	SelIndex int
 }
 
 type CobufiReplayTrace []ReplayElement
@@ -105,11 +109,14 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
 	go func() {
 		for {
 			next := getNextReplayElement()
+			// print("Replay: ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
 				// TODO: sleep here to not waste CPU
 				continue
 			}
+
 			c <- next
 			lock(&replayLock)
 			replayIndex++

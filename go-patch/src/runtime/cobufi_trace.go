@@ -224,6 +224,8 @@ func DisableTrace() {
 type cobufiTraceSpawnElement struct {
 	id    uint64 // id of the routine
 	timer uint64 // global timer
+	file  string // file where the routine was created
+	line  int32  // line where the routine was created
 }
 
 func (elem cobufiTraceSpawnElement) isCobufiTraceElement() {}
@@ -235,17 +237,21 @@ func (elem cobufiTraceSpawnElement) isCobufiTraceElement() {}
  *    'id' (number): id of the routine
  */
 func (elem cobufiTraceSpawnElement) toString() string {
-	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id)
+	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + int32ToString(elem.line)
 }
 
 /*
  * Add a routine spawn to the trace
  * Args:
- * 	id: id of the routine
+ * 	callerRoutine: routine that created the new routine
+ * 	newID: id of the new routine
+ * 	file: file where the routine was created
+ * 	line: line where the routine was created
  */
-func CobufiSpawn(callerRoutine *CobufiRoutine, newId uint64) {
+func CobufiSpawn(callerRoutine *CobufiRoutine, newID uint64, file string, line int32) {
 	timer := GetCobufiCounter()
-	callerRoutine.addToTrace(cobufiTraceSpawnElement{id: newId, timer: timer})
+	callerRoutine.addToTrace(cobufiTraceSpawnElement{id: newID, timer: timer,
+		file: file, line: line})
 }
 
 // ============================= Mutex =============================
@@ -721,7 +727,7 @@ func (elem cobufiTraceSelectElement) toString() string {
 	res += uint64ToString(elem.id) + ","
 
 	notNil := 0
-	for _, ca := range elem.cases {
+	for _, ca := range elem.cases { // cases
 		if ca.tPre != 0 { // ignore nil cases
 			if notNil != 0 {
 				res += "~"
@@ -731,7 +737,7 @@ func (elem cobufiTraceSelectElement) toString() string {
 		}
 	}
 
-	if elem.defa {
+	if elem.defa { // default
 		if notNil != 0 {
 			res += "~"
 		}
@@ -741,6 +747,8 @@ func (elem cobufiTraceSelectElement) toString() string {
 			res += "d"
 		}
 	}
+
+	res += "," + intToString(elem.chosen) // case index
 
 	res += "," + elem.file + ":" + intToString(elem.line)
 	return res

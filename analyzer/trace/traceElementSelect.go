@@ -15,6 +15,7 @@ import (
  *   tpost (int): The timestamp at the end of the event
  *   id (int): The id of the select statement
  *   cases ([]traceElementSelectCase): The cases of the select statement
+ *   chosenIndex (int): The internal index of chosen case
  *   containsDefault (bool): Whether the select statement contains a default case
  *   chosenCase (traceElementSelectCase): The chosen case, nil if default case chosen
  *   chosenDefault (bool): if the default case was chosen
@@ -27,6 +28,7 @@ type traceElementSelect struct {
 	id              int
 	cases           []traceElementChannel
 	chosenCase      traceElementChannel
+	chosenIndex     int
 	containsDefault bool
 	chosenDefault   bool
 	pos             string
@@ -36,40 +38,40 @@ type traceElementSelect struct {
  * Add a new select statement trace element
  * Args:
  *   routine (int): The routine id
- *   numberOfRoutines (int): The number of routines in the trace
- *   tpre (string): The timestamp at the start of the event
- *   tpost (string): The timestamp at the end of the event
+ *   tPre (string): The timestamp at the start of the event
+ *   tPost (string): The timestamp at the end of the event
  *   id (string): The id of the select statement
  *   cases (string): The cases of the select statement
+ *   index (string): The internal index of chosen case
  *   pos (string): The position of the select statement in the code
  */
-func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
-	tpost string, id string, cases string, pos string) error {
-	tpre_int, err := strconv.Atoi(tpre)
+func AddTraceElementSelect(routine int, tPre string,
+	tPost string, id string, cases string, index string, pos string) error {
+	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
 	}
 
-	tpost_int, err := strconv.Atoi(tpost)
+	tPostInt, err := strconv.Atoi(tPost)
 	if err != nil {
 		return errors.New("tpost is not an integer")
 	}
 
-	id_int, err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
 
 	elem := traceElementSelect{
 		routine: routine,
-		tpre:    tpre_int,
-		tpost:   tpost_int,
-		id:      id_int,
+		tpre:    tPreInt,
+		tpost:   tPostInt,
+		id:      idInt,
 		pos:     pos,
 	}
 
 	cs := strings.Split(cases, "~")
-	cases_list := make([]traceElementChannel, 0)
+	casesList := make([]traceElementChannel, 0)
 	containsDefault := false
 	chosenDefault := false
 	for _, c := range cs {
@@ -84,66 +86,66 @@ func AddTraceElementSelect(routine int, numberOfRoutines int, tpre string,
 		}
 
 		// read channel operation
-		case_list := strings.Split(c, ".")
-		c_tpre, err := strconv.Atoi(case_list[1])
+		caseList := strings.Split(c, ".")
+		cTPre, err := strconv.Atoi(caseList[1])
 		if err != nil {
 			return errors.New("c_tpre is not an integer")
 		}
-		c_tpost, err := strconv.Atoi(case_list[2])
+		cTPost, err := strconv.Atoi(caseList[2])
 		if err != nil {
 			return errors.New("c_tpost is not an integer")
 		}
-		c_id, err := strconv.Atoi(case_list[3])
+		cID, err := strconv.Atoi(caseList[3])
 		if err != nil {
 			return errors.New("c_id is not an integer")
 		}
-		var c_opC opChannel = send
-		if case_list[4] == "R" {
-			c_opC = recv
-		} else if case_list[4] == "C" {
+		var cOpC = send
+		if caseList[4] == "R" {
+			cOpC = recv
+		} else if caseList[4] == "C" {
 			panic("Close in select case list")
 		}
 
-		c_cl, err := strconv.ParseBool(case_list[5])
+		cCl, err := strconv.ParseBool(caseList[5])
 		if err != nil {
 			return errors.New("c_cr is not a boolean")
 		}
 
-		c_oId, err := strconv.Atoi(case_list[6])
+		cOID, err := strconv.Atoi(caseList[6])
 		if err != nil {
 			return errors.New("c_oId is not an integer")
 		}
-		c_oSize, err := strconv.Atoi(case_list[7])
+		cOSize, err := strconv.Atoi(caseList[7])
 		if err != nil {
 			return errors.New("c_oSize is not an integer")
 		}
 
-		elem_case := traceElementChannel{
+		elemCase := traceElementChannel{
 			routine: routine,
-			tpre:    c_tpre,
-			tpost:   c_tpost,
-			id:      c_id,
-			opC:     c_opC,
-			cl:      c_cl,
-			oId:     c_oId,
-			qSize:   c_oSize,
+			tpre:    cTPre,
+			tpost:   cTPost,
+			id:      cID,
+			opC:     cOpC,
+			cl:      cCl,
+			oID:     cOID,
+			qSize:   cOSize,
 			sel:     &elem,
 			pos:     pos,
 		}
 
-		if elem.tpost == 6218 {
-			println("case:", elem_case.tpost)
-		}
-
-		cases_list = append(cases_list, elem_case)
-		if elem_case.tpost != 0 {
-			elem.chosenCase = elem_case
+		casesList = append(casesList, elemCase)
+		if elemCase.tpost != 0 {
+			elem.chosenCase = elemCase
 		}
 	}
 
+	elem.chosenIndex, err = strconv.Atoi(index)
+	if err != nil {
+		return errors.New("index is not an integer")
+	}
 	elem.containsDefault = containsDefault
 	elem.chosenDefault = chosenDefault
-	elem.cases = cases_list
+	elem.cases = casesList
 
 	return addElementToTrace(&elem)
 }

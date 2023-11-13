@@ -42,7 +42,6 @@ type traceElementWait struct {
  * Create a new wait group trace element
  * Args:
  *   routine (int): The routine id
- *   numberOfRoutines (int): The number of routines in the trace
  *   tpre (string): The timestamp at the start of the event
  *   tpost (string): The timestamp at the end of the event
  *   id (string): The id of the wait group
@@ -51,7 +50,7 @@ type traceElementWait struct {
  *   val (string): The value of the wait group
  *   pos (string): The position of the wait group in the code
  */
-func AddTraceElementWait(routine int, numberOfRoutines int, tpre string,
+func AddTraceElementWait(routine int, tpre string,
 	tpost string, id string, opW string, delta string, val string,
 	pos string) error {
 	tpre_int, err := strconv.Atoi(tpre)

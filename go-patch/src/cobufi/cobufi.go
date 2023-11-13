@@ -83,8 +83,9 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 			var line int
 			var pFile string
 			var pLine int
-			var blocked bool = false
-			var suc bool = true
+			var blocked = false
+			var suc = true
+			var selIndex int
 			fields := strings.Split(elem, ",")
 			time, _ := strconv.Atoi(fields[1])
 			switch fields[0] {
@@ -175,13 +176,16 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				if fields[2] == "0" {
 					blocked = true
 				}
-				pos := strings.Split(fields[5], ":")
+				selIndex, _ = strconv.Atoi(fields[5])
+				pos := strings.Split(fields[6], ":")
 				file = pos[0]
 				line, _ = strconv.Atoi(pos[1])
 			}
 			if op != runtime.CobufiNone {
 				replayData = append(replayData, runtime.ReplayElement{
-					Op: op, Time: time, File: file, Line: line, Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine})
+					Op: op, Time: time, File: file, Line: line,
+					Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
+					SelIndex: selIndex})
 			}
 		}
 	}

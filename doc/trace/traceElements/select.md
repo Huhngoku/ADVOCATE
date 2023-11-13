@@ -9,7 +9,7 @@ Select statements with only one case are not recorded as select statements. If t
 ## Trace element
 The basic form of the trace element is 
 ```
-S,[tpre],[tpost],[id],[cases],[pos]
+S,[tpre],[tpost],[id],[cases],[ind],[pos]
 ```
 where `S` identifies the element as a select element.
 The other fields are set as follows:
@@ -28,6 +28,7 @@ element also includes the operation id `oId`, to connect the sending and
 receiving operations. If the 
 select contains a default case, it is denoted with a single `d` as the last 
 element in the cases list. If the default value was chosen it is capitalized (`D`).
+- [ind]: The internal index of the chosen case. Used for replay.
 - [pos]: The last field show the position in the code, where the select is implemented. It consists of the file and line number separated by a colon (:). It the select only contains one case, the line number is 
 equal to the line of this case.
 

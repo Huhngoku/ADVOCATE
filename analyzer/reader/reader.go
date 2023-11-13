@@ -1,3 +1,6 @@
+/*
+Package reader provides functions for reading and processing log files.
+*/
 package reader
 
 import (
@@ -13,16 +16,16 @@ import (
 /*
  * Read and build the trace from a file
  * Args:
- *   file_path (string): The path to the log file
- *   buffer_size (int): The size of the buffer for the scanner
+ *   filePath (string): The path to the log file
+ *   bufferSize (int): The size of the buffer for the scanner
  * Returns:
  *   int: The number of routines in the trace
  */
-func CreateTraceFromFile(file_path string, buffer_size int) int {
-	logging.Debug("Create trace from file "+file_path+"...", logging.INFO)
-	file, err := os.Open(file_path)
+func CreateTraceFromFile(filePath string, bufferSize int) int {
+	logging.Debug("Create trace from file "+filePath+"...", logging.INFO)
+	file, err := os.Open(filePath)
 	if err != nil {
-		logging.Debug("Error opening file: "+file_path, logging.ERROR)
+		logging.Debug("Error opening file: "+filePath, logging.ERROR)
 		panic(err)
 	}
 
@@ -30,28 +33,28 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
 	numberOfRoutines := 0
 	scanner := bufio.NewScanner(file)
 	mb := 1048576 // 1 MB
-	scanner.Buffer(make([]byte, 0, buffer_size*mb), buffer_size*mb)
+	scanner.Buffer(make([]byte, 0, bufferSize*mb), bufferSize*mb)
 	for scanner.Scan() {
 		numberOfRoutines++
 	}
 	file.Close()
 	logging.Debug("Number of routines: "+strconv.Itoa(numberOfRoutines), logging.INFO)
 
-	file2, err := os.Open(file_path)
+	file2, err := os.Open(filePath)
 	if err != nil {
-		logging.Debug("Error opening file: "+file_path, logging.ERROR)
+		logging.Debug("Error opening file: "+filePath, logging.ERROR)
 		panic(err)
 	}
 
 	logging.Debug("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", logging.DEBUG)
 
 	scanner = bufio.NewScanner(file2)
-	scanner.Buffer(make([]byte, 0, buffer_size*mb), buffer_size*mb)
+	scanner.Buffer(make([]byte, 0, bufferSize*mb), bufferSize*mb)
 	routine := 0
 	for scanner.Scan() {
 		routine++
 		line := scanner.Text()
-		processLine(line, routine, numberOfRoutines)
+		processLine(line, routine)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -73,13 +76,12 @@ func CreateTraceFromFile(file_path string, buffer_size int) int {
  * Args:
  *   line (string): The line to process
  *   routine (int): The routine id, equal to the line number
- *   numberOfRoutines (int): The number of routines in the log file
  */
-func processLine(line string, routine int, numberOfRoutines int) {
+func processLine(line string, routine int) {
 	logging.Debug("Read routine "+strconv.Itoa(routine), logging.DEBUG)
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
-		processElement(element, routine, numberOfRoutines)
+		processElement(element, routine)
 	}
 }
 
@@ -88,34 +90,33 @@ func processLine(line string, routine int, numberOfRoutines int) {
  * Args:
  *   element (string): The element to process
  *   routine (int): The routine id, equal to the line number
- *   numberOfRoutines (int): The number of routines in the log file
  */
-func processElement(element string, routine int, numberOfRoutines int) {
+func processElement(element string, routine int) {
 	if element == "" {
 		logging.Debug("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
 		return
 	}
 	fields := strings.Split(element, ",")
-	var err error = nil
+	var err error
 	switch fields[0] {
 	case "A":
-		err = trace.AddTraceElementAtomic(routine, numberOfRoutines, fields[1], fields[2], fields[3])
+		err = trace.AddTraceElementAtomic(routine, fields[1], fields[2], fields[3])
 	case "C":
-		err = trace.AddTraceElementChannel(routine, numberOfRoutines, fields[1], fields[2],
+		err = trace.AddTraceElementChannel(routine, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7], fields[8])
 	case "M":
-		err = trace.AddTraceElementMutex(routine, numberOfRoutines, fields[1], fields[2],
+		err = trace.AddTraceElementMutex(routine, fields[1], fields[2],
 			fields[3], fields[4], fields[5], fields[6], fields[7])
 	case "G":
-		err = trace.AddTraceElementFork(routine, numberOfRoutines, fields[1], fields[2])
+		err = trace.AddTraceElementFork(routine, fields[1], fields[2], fields[3])
 	case "S":
-		err = trace.AddTraceElementSelect(routine, numberOfRoutines, fields[1], fields[2], fields[3],
-			fields[4], fields[5])
+		err = trace.AddTraceElementSelect(routine, fields[1], fields[2], fields[3],
+			fields[4], fields[5], fields[6])
 	case "W":
-		err = trace.AddTraceElementWait(routine, numberOfRoutines, fields[1], fields[2], fields[3],
+		err = trace.AddTraceElementWait(routine, fields[1], fields[2], fields[3],
 			fields[4], fields[5], fields[6], fields[7])
 	case "O":
-		err = trace.AddTraceElementOnce(routine, numberOfRoutines, fields[1], fields[2], fields[3],
+		err = trace.AddTraceElementOnce(routine, fields[1], fields[2], fields[3],
 			fields[4], fields[5])
 	default:
 		panic("Unknown element type in: " + element)

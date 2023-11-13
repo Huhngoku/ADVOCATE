@@ -20,8 +20,8 @@ import (
  */
 type traceElementOnce struct {
 	routine int
-	tpre    int
-	tpost   int
+	tPre    int
+	tPost   int
 	id      int
 	suc     bool
 	pos     string
@@ -31,41 +31,40 @@ type traceElementOnce struct {
  * Create a new mutex trace element
  * Args:
  *   routine (int): The routine id
- *   numberOfRoutines (int): The number of routines in the trace
- *   tpre (string): The timestamp at the start of the event
- *   tpost (string): The timestamp at the end of the event
+ *   tPre (string): The timestamp at the start of the event
+ *   tPost (string): The timestamp at the end of the event
  *   id (string): The id of the mutex
  *   suc (string): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
  */
-func AddTraceElementOnce(routine int, numberOfRoutines int, tpre string,
-	tpost string, id string, suc string, pos string) error {
-	tpre_int, err := strconv.Atoi(tpre)
+func AddTraceElementOnce(routine int, tPre string,
+	tPost string, id string, suc string, pos string) error {
+	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
 	}
 
-	tpost_int, err := strconv.Atoi(tpost)
+	tPostInt, err := strconv.Atoi(tPost)
 	if err != nil {
 		return errors.New("tpost is not an integer")
 	}
 
-	id_int, err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
 
-	suc_bool, err := strconv.ParseBool(suc)
+	sucBool, err := strconv.ParseBool(suc)
 	if err != nil {
 		return errors.New("suc is not a boolean")
 	}
 
 	elem := traceElementOnce{
 		routine: routine,
-		tpre:    tpre_int,
-		tpost:   tpost_int,
-		id:      id_int,
-		suc:     suc_bool,
+		tPre:    tPreInt,
+		tPost:   tPostInt,
+		id:      idInt,
+		suc:     sucBool,
 		pos:     pos}
 
 	return addElementToTrace(&elem)
@@ -86,7 +85,7 @@ func (on *traceElementOnce) getRoutine() int {
  *   int: The tpre of the element
  */
 func (on *traceElementOnce) getTpre() int {
-	return on.tpre
+	return on.tPre
 }
 
 /*
@@ -95,7 +94,7 @@ func (on *traceElementOnce) getTpre() int {
  *   int: The tpost of the element
  */
 func (on *traceElementOnce) getTpost() int {
-	return on.tpost
+	return on.tPost
 }
 
 /*
@@ -104,11 +103,11 @@ func (on *traceElementOnce) getTpost() int {
  *   int: The timer of the element
  */
 func (on *traceElementOnce) getTsort() int {
-	if on.tpost == 0 {
+	if on.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return on.tpost
+	return on.tPost
 }
 
 /*
@@ -117,7 +116,7 @@ func (on *traceElementOnce) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (on *traceElementOnce) toString() string {
-	return "O" + "," + strconv.Itoa(on.tpre) + "," + strconv.Itoa(on.tpost) +
+	return "O" + "," + strconv.Itoa(on.tPre) + "," + strconv.Itoa(on.tPost) +
 		strconv.Itoa(on.id) + "," + strconv.FormatBool(on.suc) + "," +
 		on.pos
 }

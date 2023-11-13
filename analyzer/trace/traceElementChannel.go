@@ -18,8 +18,8 @@ const (
 	close
 )
 
-var waitingReceive []*traceElementChannel = make([]*traceElementChannel, 0)
-var maxOpId map[int]int = make(map[int]int)
+var waitingReceive = make([]*traceElementChannel, 0)
+var maxOpID = make(map[int]int)
 
 /*
 * traceElementChannel is a trace element for a channel
@@ -44,7 +44,7 @@ type traceElementChannel struct {
 	id      int
 	opC     opChannel
 	cl      bool
-	oId     int
+	oID     int
 	qSize   int
 	pos     string
 	sel     *traceElementSelect
@@ -55,8 +55,8 @@ type traceElementChannel struct {
 * Args:
 *   routine (int): The routine id
 *   numberOfRoutines (int): The number of routines in the trace
-*   tpre (string): The timestamp at the start of the event
-*   tpost (string): The timestamp at the end of the event
+*   tPre (string): The timestamp at the start of the event
+*   tPost (string): The timestamp at the end of the event
 *   id (string): The id of the channel
 *   opC (string): The operation on the channel
 *   cl (string): Whether the channel was finished because it was closed
@@ -64,60 +64,60 @@ type traceElementChannel struct {
 *   qSize (string): The size of the channel queue
 *   pos (string): The position of the channel operation in the code
  */
-func AddTraceElementChannel(routine int, numberOfRoutines int, tpre string,
-	tpost string, id string, opC string, cl string, oId string, qSize string,
+func AddTraceElementChannel(routine int, tPre string,
+	tPost string, id string, opC string, cl string, oID string, qSize string,
 	pos string) error {
-	tpre_int, err := strconv.Atoi(tpre)
+	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
 	}
 
-	tpost_int, err := strconv.Atoi(tpost)
+	tPostInt, err := strconv.Atoi(tPost)
 	if err != nil {
 		return errors.New("tpost is not an integer")
 	}
 
-	id_int, err := strconv.Atoi(id)
+	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
 
-	var opC_int opChannel = 0
+	var opCInt opChannel
 	switch opC {
 	case "S":
-		opC_int = send
+		opCInt = send
 	case "R":
-		opC_int = recv
+		opCInt = recv
 	case "C":
-		opC_int = close
+		opCInt = close
 	default:
 		return errors.New("opC is not a valid value")
 	}
 
-	cl_bool, err := strconv.ParseBool(cl)
+	clBool, err := strconv.ParseBool(cl)
 	if err != nil {
 		return errors.New("suc is not a boolean")
 	}
 
-	oId_int, err := strconv.Atoi(oId)
+	oIDInt, err := strconv.Atoi(oID)
 	if err != nil {
 		return errors.New("oId is not an integer")
 	}
 
-	qSize_int, err := strconv.Atoi(qSize)
+	qSizeInt, err := strconv.Atoi(qSize)
 	if err != nil {
 		return errors.New("qSize is not an integer")
 	}
 
 	elem := traceElementChannel{
 		routine: routine,
-		tpre:    tpre_int,
-		tpost:   tpost_int,
-		id:      id_int,
-		opC:     opC_int,
-		cl:      cl_bool,
-		oId:     oId_int,
-		qSize:   qSize_int,
+		tpre:    tPreInt,
+		tpost:   tPostInt,
+		id:      idInt,
+		opC:     opCInt,
+		cl:      clBool,
+		oID:     oIDInt,
+		qSize:   qSizeInt,
 		pos:     pos,
 	}
 
@@ -193,7 +193,7 @@ func (ch *traceElementChannel) toString() string {
 func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
 	res := "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tpost) + sep +
 		strconv.Itoa(ch.id) + sep + strconv.Itoa(int(ch.opC)) + sep +
-		strconv.Itoa(ch.oId) + sep + strconv.Itoa(ch.qSize)
+		strconv.Itoa(ch.oID) + sep + strconv.Itoa(ch.qSize)
 	if pos {
 		res += sep + ch.pos
 	}
@@ -206,17 +206,17 @@ func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
 func (ch *traceElementChannel) updateVectorClock() {
 	// hold back receive operations, until the send operation is processed
 	for _, elem := range waitingReceive {
-		if elem.oId <= maxOpId[ch.id] {
+		if elem.oID <= maxOpID[ch.id] {
 			waitingReceive = waitingReceive[1:]
 			elem.updateVectorClock()
 		}
 	}
 	if ch.qSize != 0 {
 		if ch.opC == send {
-			maxOpId[ch.id] = ch.oId
+			maxOpID[ch.id] = ch.oID
 		} else if ch.opC == recv {
 			logging.Debug("Holding back", logging.INFO)
-			if ch.oId > maxOpId[ch.id] && !ch.cl {
+			if ch.oID > maxOpID[ch.id] && !ch.cl {
 				waitingReceive = append(waitingReceive, ch)
 				return
 			}
@@ -277,7 +277,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case send:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.toString(), logging.DEBUG)
-			vc.Send(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
+			vc.Send(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
 				currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
@@ -287,7 +287,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.toString(), logging.DEBUG)
-				vc.Recv(ch.routine, ch.id, ch.oId, ch.qSize, ch.pos,
+				vc.Recv(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
 					currentVectorClocks, fifo)
 			}
 		case close:
@@ -317,12 +317,12 @@ func (ch *traceElementChannel) findUnbufferedPartner() int {
 		elem := trace[currentIndex[routine]]
 		switch e := elem.(type) {
 		case *traceElementChannel:
-			if e.id == ch.id && e.oId == ch.oId {
+			if e.id == ch.id && e.oID == ch.oID {
 				return routine
 			}
 		case *traceElementSelect:
-			if e.chosenCase.oId == ch.id &&
-				e.chosenCase.oId == ch.oId {
+			if e.chosenCase.oID == ch.id &&
+				e.chosenCase.oID == ch.oID {
 				return routine
 			}
 		default:
