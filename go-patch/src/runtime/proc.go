@@ -4439,7 +4439,6 @@ func newproc(fn *funcval) {
 		// COBUFI-CHANGE-STAR
 		newg.goInfo = newCobufiRoutine(newg)
 		if gp != nil && gp.goInfo != nil {
-
 			f := findfunc(pc)
 			tracepc := pc
 			if pc > f.entry() {
@@ -4447,7 +4446,6 @@ func newproc(fn *funcval) {
 			}
 			file, line := funcline(f, tracepc)
 			CobufiSpawn(gp.goInfo, newg.goInfo.id, file, line)
-
 		}
 		// COBUFI-CHANGE-END
 
