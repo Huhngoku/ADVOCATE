@@ -2,6 +2,7 @@ package cobufi
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"runtime"
 	"sort"
@@ -197,6 +198,9 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	// and are therefore always called, before the program starts.
 	// Because we enable the replay in the program, we must ignore them.
 	replayData = replayData[5:]
+	for _, elem := range replayData {
+		fmt.Println(elem)
+	}
 	return replayData
 }
 

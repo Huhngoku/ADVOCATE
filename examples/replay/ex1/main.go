@@ -7,18 +7,15 @@ import (
 )
 
 func main() {
-	replay := true
 
-	if !replay {
-		// init tracing
-		runtime.InitCobufi(0)
-		defer cobufi.CreateTrace("trace.log")
-	} else {
-		// init replay
-		trace := cobufi.ReadTrace("trace.log")
-		runtime.EnableReplay(trace)
-		defer runtime.WaitForReplayFinish()
-	}
+	// init replay
+	trace := cobufi.ReadTrace("trace.log")
+	runtime.EnableReplay(trace)
+	defer runtime.WaitForReplayFinish()
+
+	// init tracing
+	runtime.InitCobufi(0)
+	defer cobufi.CreateTrace("trace2.log")
 
 	c := make(chan int)
 	d := make(chan int)

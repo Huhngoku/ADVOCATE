@@ -109,10 +109,12 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
 		next := getNextReplayElement()
 		// print("Replay: ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
-		if (next.Op != op && !correctSelect(next.Op, op)) ||
-			next.File != file || next.Line != line {
-			// TODO: sleep here to not waste CPU
-			continue
+		if next.Time != 0 { // if next == ReplayElement{}
+			if (next.Op != op && !correctSelect(next.Op, op)) ||
+				next.File != file || next.Line != line {
+				// TODO: sleep here to not waste CPU
+				continue
+			}
 		}
 
 		lock(&replayLock)
@@ -146,7 +148,8 @@ func getNextReplayElement() ReplayElement {
 	lock(&replayLock)
 	defer unlock(&replayLock)
 	if replayIndex >= len(replayData) {
-		panic("Unknown Operation in Replay. The Program was most likely altered between recording and replay.")
+		return ReplayElement{}
+		panic("Tace to short. The Program was most likely altered between recording and replay.")
 	}
 	return replayData[replayIndex]
 }
