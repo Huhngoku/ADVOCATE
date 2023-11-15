@@ -211,10 +211,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
+	var enabled bool
 	if !c.cobufiIgnore {
-		enabled, waitChan := WaitForReplay(CobufiReplayChannelSend, 3)
+		enabled, replayElem = WaitForReplay(CobufiReplayChannelSend, 3)
 		if enabled {
-			replayElem = <-waitChan
 			if replayElem.Blocked {
 				lock(&c.numberSendMutex)
 				c.numberSend++
@@ -476,10 +476,7 @@ func closechan(c *hchan) {
 	// CobufiChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	if !c.cobufiIgnore {
-		enabled, waitChan := WaitForReplay(CobufiReplayChannelClose, 2)
-		if enabled {
-			<-waitChan
-		}
+		_, _ = WaitForReplay(CobufiReplayChannelClose, 2)
 		CobufiChanClose(c.id, c.dataqsiz)
 	}
 	// COBUFI-CHANGE-END
@@ -597,10 +594,10 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// COBUFI-CHANGE-START
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
+	var enabled bool
 	if !c.cobufiIgnore {
-		enabled, waitChan := WaitForReplay(CobufiReplayChannelRecv, 3)
+		enabled, replayElem = WaitForReplay(CobufiReplayChannelRecv, 3)
 		if enabled {
-			replayElem = <-waitChan
 			if replayElem.Blocked {
 				lock(&c.numberRecvMutex)
 				c.numberRecv++

@@ -8,10 +8,12 @@ var CobufiRoutinesLock mutex = mutex{}
 var projectPath string
 
 type CobufiRoutine struct {
-	id    uint64
-	G     *g
-	Trace []cobufiTraceElement
-	lock  *mutex
+	id          uint64
+	G           *g
+	Trace       []cobufiTraceElement
+	lock        *mutex
+	createdFile string
+	createdLine int32
 }
 
 /*
@@ -21,10 +23,12 @@ type CobufiRoutine struct {
  * Return:
  * 	the new cobufi routine
  */
-func newCobufiRoutine(g *g) *CobufiRoutine {
+func newCobufiRoutine(g *g, file string, line int32) *CobufiRoutine {
 	routine := &CobufiRoutine{id: GetCobufiRoutineId(), G: g,
-		Trace: make([]cobufiTraceElement, 0),
-		lock:  &mutex{}}
+		Trace:       make([]cobufiTraceElement, 0),
+		lock:        &mutex{},
+		createdFile: file,
+		createdLine: line}
 
 	lock(&CobufiRoutinesLock)
 	defer unlock(&CobufiRoutinesLock)

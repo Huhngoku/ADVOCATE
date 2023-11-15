@@ -98,34 +98,28 @@ func WaitForReplayFinish() {
  * 	bool: true if trace replay is enabled, false otherwise
  * 	chan ReplayElement: channel to receive the next replay element
  */
-func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
+func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
 	if !replayEnabled {
-		return false, nil
+		return false, ReplayElement{}
 	}
 
 	_, file, line, _ := Caller(skip)
-	c := make(chan ReplayElement, 1<<16)
 
-	go func() {
-		for {
-			next := getNextReplayElement()
-			// print("Replay: ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+	for {
+		next := getNextReplayElement()
+		// print("Replay: ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
-			if (next.Op != op && !correctSelect(next.Op, op)) ||
-				next.File != file || next.Line != line {
-				// TODO: sleep here to not waste CPU
-				continue
-			}
-
-			c <- next
-			lock(&replayLock)
-			replayIndex++
-			unlock(&replayLock)
-			return
+		if (next.Op != op && !correctSelect(next.Op, op)) ||
+			next.File != file || next.Line != line {
+			// TODO: sleep here to not waste CPU
+			continue
 		}
-	}()
 
-	return true, c
+		lock(&replayLock)
+		replayIndex++
+		unlock(&replayLock)
+		return true, next
+	}
 }
 
 func correctSelect(next ReplayOperation, op ReplayOperation) bool {

@@ -67,10 +67,9 @@ func (o *Once) Do(f func()) {
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayOnce, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayOnce, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if o.id == 0 {
 				o.id = runtime.GetCobufiObjectId()
 			}
@@ -78,7 +77,7 @@ func (o *Once) Do(f func()) {
 			runtime.BlockForever()
 		}
 
-		if !elem.Suc {
+		if !replayElem.Suc {
 			if o.id == 0 {
 				o.id = runtime.GetCobufiObjectId()
 			}

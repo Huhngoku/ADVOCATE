@@ -69,10 +69,9 @@ const rwmutexMaxReaders = 1 << 30
 // documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexRLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexRLock, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetCobufiObjectId()
 			}
@@ -119,17 +118,16 @@ func (rw *RWMutex) RLock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryRLock() bool {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryRLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryRLock, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetCobufiObjectId()
 			}
 			_ = runtime.CobufiMutexLockTry(rw.id, true, true)
 			runtime.BlockForever()
 		}
-		if !elem.Suc {
+		if !replayElem.Suc {
 			if rw.id == 0 {
 				rw.id = runtime.GetCobufiObjectId()
 			}
@@ -188,10 +186,9 @@ func (rw *RWMutex) TryRLock() bool {
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexRUnlock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexRUnlock, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			_ = runtime.CobufiUnlockPre(rw.id, true, true)
 			runtime.BlockForever()
 		}
@@ -234,10 +231,9 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexLock, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetCobufiObjectId()
 			}
@@ -288,10 +284,9 @@ func (rw *RWMutex) Lock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryLock() bool {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayRWMutexTryLock, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetCobufiObjectId()
 			}
@@ -300,7 +295,7 @@ func (rw *RWMutex) TryLock() bool {
 			_ = runtime.CobufiMutexLockTry(rw.id, true, false)
 			runtime.BlockForever()
 		}
-		if !elem.Suc {
+		if !replayElem.Suc {
 			cobufiIndex := runtime.CobufiMutexLockTry(rw.id, true, false)
 			runtime.CobufiPostTry(cobufiIndex, false)
 			return false
@@ -366,10 +361,7 @@ func (rw *RWMutex) TryLock() bool {
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayRWMutexUnlock, 2)
-	if enabled {
-		<-waitChan
-	}
+	_, _ = runtime.WaitForReplay(runtime.CobufiReplayRWMutexUnlock, 2)
 	// CobufiUnlockPre is used to record the unlocking of a mutex.
 	// CobufiPost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not

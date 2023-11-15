@@ -54,10 +54,7 @@ func (wg *WaitGroup) Add(delta int) {
 	if delta > 0 {
 		skip = 2
 	}
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayWaitgroupAddDone, skip)
-	if enabled {
-		<-waitChan
-	}
+	_, _ = runtime.WaitForReplay(runtime.CobufiReplayWaitgroupAddDone, skip)
 	// COBUFI-CHANGE-END
 	if race.Enabled {
 		if delta < 0 {
@@ -127,10 +124,9 @@ func (wg *WaitGroup) Done() {
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayWaitgroupWait, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayWaitgroupWait, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if wg.id == 0 {
 				wg.id = runtime.GetCobufiObjectId()
 			}

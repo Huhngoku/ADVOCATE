@@ -86,13 +86,12 @@ const (
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayMutexLock, 2)
+	enabled, reaplayElem := runtime.WaitForReplay(runtime.CobufiReplayMutexLock, 2)
 	if enabled {
-		elem := <-waitChan
 		if m.id == 0 {
 			m.id = runtime.GetCobufiObjectId()
 		}
-		if elem.Blocked {
+		if reaplayElem.Blocked {
 			_ = runtime.CobufiMutexLockPre(m.id, false, false)
 			runtime.BlockForever()
 		}
@@ -132,17 +131,16 @@ func (m *Mutex) Lock() {
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayMutexTryLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayMutexTryLock, 2)
 	if enabled {
-		elem := <-waitChan
-		if !elem.Blocked {
+		if !replayElem.Blocked {
 			if m.id == 0 {
 				m.id = runtime.GetCobufiObjectId()
 			}
 			_ = runtime.CobufiMutexLockTry(m.id, false, false)
 			runtime.BlockForever()
 		}
-		if !elem.Suc {
+		if !replayElem.Suc {
 			if m.id == 0 {
 				m.id = runtime.GetCobufiObjectId()
 			}
@@ -291,10 +289,9 @@ func (m *Mutex) lockSlow() {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
 	// COBUFI-CHANGE-START
-	enabled, waitChan := runtime.WaitForReplay(runtime.CobufiReplayMutexUnlock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayMutexUnlock, 2)
 	if enabled {
-		elem := <-waitChan
-		if elem.Blocked {
+		if replayElem.Blocked {
 			if m.id == 0 {
 				m.id = runtime.GetCobufiObjectId()
 			}

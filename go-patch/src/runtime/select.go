@@ -124,10 +124,8 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	// COBUFI-CHANGE-START
-	replayEnabled, waitChan := WaitForReplay(CobufiReplaySelect, 2)
-	var replayElem ReplayElement
+	replayEnabled, replayElem := WaitForReplay(CobufiReplaySelect, 2)
 	if replayEnabled {
-		replayElem = <-waitChan
 		if replayElem.Blocked {
 			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
 			_ = (*[1 << 17]uint16)(unsafe.Pointer(order0))
