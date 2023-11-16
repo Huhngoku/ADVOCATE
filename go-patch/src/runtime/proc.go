@@ -4427,6 +4427,10 @@ func malg(stacksize int32) *g {
 	return newg
 }
 
+func newFunc() {
+	print("a")
+}
+
 // Create a new g running fn.
 // Put it on the queue of g's waiting to run.
 // The compiler turns a go statement into a call to this.
@@ -4546,6 +4550,7 @@ func newproc1(fn *funcval, callergp *g, callerpc uintptr) *g {
 			racereleasemergeg(newg, unsafe.Pointer(&labelSync))
 		}
 	}
+
 	if traceEnabled() {
 		traceGoCreate(newg, newg.startpc)
 	}
