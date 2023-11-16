@@ -278,7 +278,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		if replayElem.Op == CobufiReplaySelectDefault {
 			selunlock(scases, lockorder)
 			casi = -1
-			// COBUFI-CHANGE-START
 			CobufiSelectPost(cobufiIndex, c, casi, lockorder, cobufiRClose)
 			// COBUFI-CHANGE-END
 			goto retc
@@ -292,14 +291,11 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		c = cas.c
 
 		// COBUFI-CHANGE-START
-		// if replayEnabled {
-		// 	if replayEnabled {
-		// 		if casi != replayElem.SelIndex {
-		// 			continue
-		// 		}
-		// 		println("Casi1", casi, replayElem.SelIndex)
-		// 	}
-		// }
+		if replayEnabled {
+			if casi != replayElem.SelIndex {
+				continue
+			}
+		}
 		// COBUFI-CHANGE-END
 
 		if casi >= nsends {
@@ -354,14 +350,13 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		cas = &scases[casi]
 		c = cas.c
 
-		// COBUFI-CHANGE-START
-		// if replayEnabled {
-		// 	if casi != replayElem.SelIndex {
-		// 		continue
-		// 	}
-		// 	println("Casi2", casi, replayElem.SelIndex)
-		// }
-		// COBUFI-CHANGE-END
+		// COBUFI - CHANGE - START
+		if replayEnabled {
+			if casi != replayElem.SelIndex {
+				continue
+			}
+		}
+		// COBUFI - CHANGE - END
 
 		sg := acquireSudog()
 		sg.g = gp
@@ -424,15 +419,13 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		sg1.c = nil
 	}
 	gp.waiting = nil
-
 	for _, casei := range lockorder {
 		// COBUFI-CHANGE-START
-		// if replayEnabled {
-		// 	if int(casei) != replayElem.SelIndex {
-		// 		continue
-		// 	}
-		// 	println("Casi3", casi, replayElem.SelIndex)
-		// }
+		if replayEnabled {
+			if int(casei) != replayElem.SelIndex {
+				continue
+			}
+		}
 		// COBUFI-CHANGE-END
 
 		k = &scases[casei]

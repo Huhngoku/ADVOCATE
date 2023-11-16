@@ -797,6 +797,7 @@ func CobufiSelectPre(cases *[]scase, nsends int, block bool) int {
  */
 func CobufiSelectPost(index int, c *hchan, chosenIndex int,
 	lockOrder []uint16, rClosed bool) {
+
 	if index == -1 || c == nil {
 		return
 	}
