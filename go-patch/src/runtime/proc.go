@@ -4437,16 +4437,23 @@ func newFunc() {
 func newproc(fn *funcval) {
 	gp := getg()
 	pc := getcallerpc()
+
+	// COBUFI-CHANGE-START
+	f := findfunc(pc)
+	tracepc := pc
+	if pc > f.entry() {
+		tracepc -= sys.PCQuantum
+	}
+	file, line := funcline(f, tracepc)
+
+	_, _ = WaitForReplayPath(CobufiReplaySpawn, file, int(line))
+
+	// COBUFI-CHANGE-END
+
 	systemstack(func() {
 		newg := newproc1(fn, gp, pc)
 
 		// COBUFI-CHANGE-START
-		f := findfunc(pc)
-		tracepc := pc
-		if pc > f.entry() {
-			tracepc -= sys.PCQuantum
-		}
-		file, line := funcline(f, tracepc)
 		newg.goInfo = newCobufiRoutine(newg, file, line)
 		if gp != nil && gp.goInfo != nil {
 			CobufiSpawn(gp.goInfo, newg.goInfo.id, file, line)

@@ -1,20 +1,24 @@
 package main
 
-import "time"
+import (
+	"cobufi"
+	"runtime"
+	"time"
+)
 
 func main() {
-	// replay := false
+	replay := true
 
-	// if !replay {
-	// 	// init tracing
-	// 	runtime.InitCobufi(0)
-	// 	defer cobufi.CreateTrace("trace.log")
-	// } else {
-	// 	// init replay
-	// 	trace := cobufi.ReadTrace("trace.log")
-	// 	runtime.EnableReplay(trace)
-	// 	defer runtime.WaitForReplayFinish()
-	// }
+	if !replay {
+		// init tracing
+		runtime.InitCobufi(0)
+		defer cobufi.CreateTrace("trace.log")
+	} else {
+		// init replay
+		trace := cobufi.ReadTrace("trace.log")
+		runtime.EnableReplay(trace)
+		defer runtime.WaitForReplayFinish()
+	}
 
 	go func() {
 		println("Routine 1")

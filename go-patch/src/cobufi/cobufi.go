@@ -89,6 +89,11 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 			fields := strings.Split(elem, ",")
 			time, _ := strconv.Atoi(fields[1])
 			switch fields[0] {
+			case "G":
+				op = runtime.CobufiReplaySpawn
+				pos := strings.Split(fields[3], ":")
+				file = pos[0]
+				line, _ = strconv.Atoi(pos[1])
 			case "C":
 				switch fields[4] {
 				case "S":
@@ -193,10 +198,10 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
-	// remove the first 5 elements from the trace. They are part of the go init
+	// remove the first 10 elements from the trace. They are part of the go init
 	// and are therefore always called, before the program starts.
 	// Because we enable the replay in the program, we must ignore them.
-	replayData = replayData[5:]
+	replayData = replayData[10:]
 	return replayData
 }
 

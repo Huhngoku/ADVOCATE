@@ -105,6 +105,24 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
 
 	_, file, line, _ := Caller(skip)
 
+	return WaitForReplayPath(op, file, line)
+}
+
+/*
+ * Wait until the correct operation is about to be executed.
+ * Arguments:
+ * 		op: the operation type that is about to be executed
+ * 		file: file in which the operation is executed
+ * 		line: line number of the operation
+ * Return:
+ * 	bool: true if trace replay is enabled, false otherwise
+ * 	chan ReplayElement: channel to receive the next replay element
+ */
+func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayElement) {
+	if !replayEnabled {
+		return false, ReplayElement{}
+	}
+
 	for {
 		next := getNextReplayElement()
 		// print("Replay: ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
