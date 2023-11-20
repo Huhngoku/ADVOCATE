@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-var com chan<- AtomicElem
+var chanRecording chan<- AtomicElem
 var linked bool
 var counter uint64
 
@@ -24,13 +24,13 @@ type AtomicElem struct {
 	Operation int
 }
 
-func CobufiAtomicLink(c chan<- AtomicElem) {
-	com = c
+func CobufiAtomicLink(cRecording chan<- AtomicElem) {
+	chanRecording = cRecording
 	linked = true
 }
 
 func CobufiAtomicUnlink() {
-	com = nil
+	chanRecording = nil
 	linked = false
 }
 
@@ -38,7 +38,7 @@ func CobufiAtomicUnlink() {
 func CobufiAtomic64Load(addr *uint64) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: LoadOp}
 	}
 }
@@ -47,7 +47,7 @@ func CobufiAtomic64Load(addr *uint64) {
 func CobufiAtomic64Store(addr *uint64) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: StoreOp}
 	}
 }
@@ -56,7 +56,7 @@ func CobufiAtomic64Store(addr *uint64) {
 func CobufiAtomic64Add(addr *uint64) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: AddOp}
 	}
 }
@@ -65,7 +65,7 @@ func CobufiAtomic64Add(addr *uint64) {
 func CobufiAtomic64Swap(addr *uint64) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: SwapOp}
 	}
 }
@@ -74,7 +74,7 @@ func CobufiAtomic64Swap(addr *uint64) {
 func CobufiAtomic64CompSwap(addr *uint64) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: CompSwapOp}
 	}
 }
@@ -83,7 +83,7 @@ func CobufiAtomic64CompSwap(addr *uint64) {
 func CobufiAtomic32Load(addr *uint32) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: LoadOp}
 	}
 }
@@ -92,7 +92,7 @@ func CobufiAtomic32Load(addr *uint32) {
 func CobufiAtomic32Store(addr *uint32) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: StoreOp}
 	}
 }
@@ -101,7 +101,7 @@ func CobufiAtomic32Store(addr *uint32) {
 func CobufiAtomic32Add(addr *uint32) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: AddOp}
 	}
 }
@@ -110,7 +110,7 @@ func CobufiAtomic32Add(addr *uint32) {
 func CobufiAtomic32Swap(addr *uint32) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: SwapOp}
 	}
 }
@@ -119,7 +119,7 @@ func CobufiAtomic32Swap(addr *uint32) {
 func CobufiAtomic32CompSwap(addr *uint32) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: CompSwapOp}
 	}
 }
@@ -128,7 +128,7 @@ func CobufiAtomic32CompSwap(addr *uint32) {
 func CobufiAtomicUIntPtr(addr *uintptr) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
 			Operation: LoadOp}
 	}
 }
@@ -137,7 +137,7 @@ func CobufiAtomicUIntPtr(addr *uintptr) {
 func CobufiAtomicPtr(addr unsafe.Pointer) {
 	if linked {
 		counter += 1
-		com <- AtomicElem{Index: counter, Addr: uint64(uintptr(addr)),
+		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(addr)),
 			Operation: LoadOp}
 	}
 }

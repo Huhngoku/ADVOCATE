@@ -57,10 +57,7 @@ are run in the correct global order.
 
 For the most operations we use the file and line number to connect an operation
 in the trace with an operation in the program code that is to be replayed. The
-only operations which cannot use this are the spawn and atomic operations.
-These operations are directly implemented in Go-Assambly, which makes it impossible
-to get the position, from which they were called. We therefore need to find an
-other system for spawn (not implemented yet), and ignore atomics (maybe add in back later).
+only operations which cannot use this yet are atomic operations.
 
 If a traced operation in the replaying trace starts, it calls the following function
 ```go
@@ -214,9 +211,7 @@ if enabled && replayElem.Op == CobufiReplaySelectDefault {
 before the check which channel could be executed. This will imminently execute
 the default case.
 
-The same check for the channel communication partners as described in `Making sure, that channel partners are correct` will force select cases, to find the actually
-executed channel pair before being able to execute. This will stop incorrect
-cases to execute. Unfortunately this only works with pairwise distinct cases.
+The same check for the channel communication partners as described in `Making sure, that channel partners are correct` will force select cases, to find the actually executed channel pair before being able to execute. This will stop incorrect cases to execute.
 If a select contains the same case twice, i.e.
 ```go
 select {
@@ -226,5 +221,4 @@ select {
         ...
 }
 ```
-this will still select one of this cases by random. I cannot think about a situation, where such a construct would be useful, but it should still work and must therefor
-be handled correctly. This case is not implemented yet.
+this will still select one of this cases by random. To make sure, that those select statements will also be replayed correctly, we use the internal index `casi` for the cases, used in the implementation of the select statement. This case is not identical to the ordering of the select cases but is still deterministic. For this reason it is possible to use this index as an identifier for a specific case. From this, when the select determines, if a select case is usable, we reject every case, for which the index is not correct.

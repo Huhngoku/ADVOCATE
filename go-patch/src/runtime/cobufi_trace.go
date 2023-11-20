@@ -41,7 +41,7 @@ type cobufiAtomicMapElem struct {
 	operation int
 }
 
-var cobufiDisabled = false
+var cobufiDisabled = true
 var cobufiAtomicMap = make(map[uint64]cobufiAtomicMapElem)
 var cobufiAtomicMapToID = make(map[uint64]uint64)
 var cobufiAtomicMapIDCounter uint64 = 1

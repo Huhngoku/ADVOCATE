@@ -55,143 +55,167 @@ func CreateTrace(file_name string) {
  * 	- select
  * For now we ignore atomic operations.
  * We only record the relevant information for each operation.
+ * Arguments:
+ * 	- file_name: The name of the file that contains the trace.
  */
 func ReadTrace(file_name string) runtime.CobufiReplayTrace {
-	file, err := os.Open(file_name)
-	if err != nil {
-		panic(err)
-	}
+	mb := 1048576
+	maxTokenSize := 1
 
 	replayData := make(runtime.CobufiReplayTrace, 0)
-
 	chanWithoutPartner := make(map[string]int)
 
-	scanner := bufio.NewScanner(file)
-
-	for scanner.Scan() {
-		l := scanner.Text()
-		if l == "" {
-			continue
+	for {
+		file, err := os.Open(file_name)
+		if err != nil {
+			panic(err)
 		}
-		elems := strings.Split(l, ";")
-		for _, elem := range elems {
-			if elem == "" {
+
+		scanner := bufio.NewScanner(file)
+		scanner.Buffer(make([]byte, 0, maxTokenSize*mb), maxTokenSize*mb)
+
+		for scanner.Scan() {
+			l := scanner.Text()
+			if l == "" {
 				continue
 			}
-			var op runtime.ReplayOperation
-			var file string
-			var line int
-			var pFile string
-			var pLine int
-			var blocked = false
-			var suc = true
-			var selIndex int
-			fields := strings.Split(elem, ",")
-			time, _ := strconv.Atoi(fields[1])
-			switch fields[0] {
-			case "G":
-				op = runtime.CobufiReplaySpawn
-				pos := strings.Split(fields[3], ":")
-				file = pos[0]
-				line, _ = strconv.Atoi(pos[1])
-			case "C":
-				switch fields[4] {
-				case "S":
-					op = runtime.CobufiReplayChannelSend
-				case "R":
-					op = runtime.CobufiReplayChannelRecv
+			elems := strings.Split(l, ";")
+			for _, elem := range elems {
+				if elem == "" {
+					continue
+				}
+				var op runtime.ReplayOperation
+				var file string
+				var line int
+				var pFile string
+				var pLine int
+				var blocked = false
+				var suc = true
+				var selIndex int
+				fields := strings.Split(elem, ",")
+				time, _ := strconv.Atoi(fields[1])
+				if time == 39 {
+					println(elem + "\n\n")
+				}
+				switch fields[0] {
+				case "G":
+					op = runtime.CobufiReplaySpawn
+					pos := strings.Split(fields[3], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
 				case "C":
-					op = runtime.CobufiReplayChannelClose
-				default:
-					panic("Unknown channel operation")
-				}
-				if fields[2] == "0" {
-					blocked = true
-				}
-				pos := strings.Split(fields[8], ":")
-				file = pos[0]
-				line, _ = strconv.Atoi(pos[1])
-				if op == runtime.CobufiReplayChannelSend || op == runtime.CobufiReplayChannelRecv {
-					index := findReplayPartner(fields[3], fields[6], len(replayData), chanWithoutPartner)
-					if index != -1 {
-						pFile = replayData[index].File
-						pLine = replayData[index].Line
-						replayData[index].PFile = file
-						replayData[index].PLine = line
+					switch fields[4] {
+					case "S":
+						op = runtime.CobufiReplayChannelSend
+					case "R":
+						op = runtime.CobufiReplayChannelRecv
+					case "C":
+						op = runtime.CobufiReplayChannelClose
+					default:
+						panic("Unknown channel operation")
 					}
-				}
-			case "M":
-				switch fields[5] {
-				case "L":
-					op = runtime.CobufiReplayMutexLock
-				case "U":
-					op = runtime.CobufiReplayMutexUnlock
-				case "T":
-					op = runtime.CobufiReplayMutexTryLock
-				case "R":
-					op = runtime.CobufiReplayRWMutexRLock
-				case "N":
-					op = runtime.CobufiReplayRWMutexRUnlock
-				case "Y":
-					op = runtime.CobufiReplayRWMutexTryRLock
-				default:
-					panic("Unknown mutex operation")
-				}
-				if fields[2] == "0" {
-					blocked = true
-				}
-				if fields[6] == "f" {
-					suc = false
-				}
-				pos := strings.Split(fields[7], ":")
-				file = pos[0]
-				line, _ = strconv.Atoi(pos[1])
-			case "O":
-				if fields[2] == "0" {
-					blocked = true
-				}
-				if fields[6] == "f" {
-					suc = false
-				}
-				pos := strings.Split(fields[5], ":")
-				file = pos[0]
-				line, _ = strconv.Atoi(pos[1])
-			case "W":
-				switch fields[4] {
+					if fields[2] == "0" {
+						blocked = true
+					}
+					pos := strings.Split(fields[8], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
+					if op == runtime.CobufiReplayChannelSend || op == runtime.CobufiReplayChannelRecv {
+						index := findReplayPartner(fields[3], fields[6], len(replayData), chanWithoutPartner)
+						if index != -1 {
+							pFile = replayData[index].File
+							pLine = replayData[index].Line
+							replayData[index].PFile = file
+							replayData[index].PLine = line
+						}
+					}
+				case "M":
+					switch fields[5] {
+					case "L":
+						op = runtime.CobufiReplayMutexLock
+					case "U":
+						op = runtime.CobufiReplayMutexUnlock
+					case "T":
+						op = runtime.CobufiReplayMutexTryLock
+					case "R":
+						op = runtime.CobufiReplayRWMutexRLock
+					case "N":
+						op = runtime.CobufiReplayRWMutexRUnlock
+					case "Y":
+						op = runtime.CobufiReplayRWMutexTryRLock
+					default:
+						panic("Unknown mutex operation")
+					}
+					if fields[2] == "0" {
+						blocked = true
+					}
+					if fields[6] == "f" {
+						suc = false
+					}
+					pos := strings.Split(fields[7], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
+				case "O":
+					op = runtime.CobufiReplayOnce
+					if fields[2] == "0" {
+						blocked = true
+					}
+					if fields[4] == "f" {
+						suc = false
+					}
+					pos := strings.Split(fields[5], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
 				case "W":
-					op = runtime.CobufiReplayWaitgroupWait
-				case "A":
-					op = runtime.CobufiReplayWaitgroupAddDone
-				default:
-					panic("Unknown waitgroup operation")
+					switch fields[4] {
+					case "W":
+						op = runtime.CobufiReplayWaitgroupWait
+					case "A":
+						op = runtime.CobufiReplayWaitgroupAddDone
+					default:
+						panic("Unknown waitgroup operation")
+					}
+					if fields[2] == "0" {
+						blocked = true
+					}
+					pos := strings.Split(fields[7], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
+				case "S": // TODO: (cobufi) get correct select case
+					cases := strings.Split(fields[4], "~")
+					if cases[len(cases)-1] == "D" {
+						op = runtime.CobufiReplaySelectDefault
+					} else {
+						op = runtime.CobufiReplaySelectCase
+					}
+					if fields[2] == "0" {
+						blocked = true
+					}
+					selIndex, _ = strconv.Atoi(fields[5])
+					pos := strings.Split(fields[6], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
 				}
-				if fields[2] == "0" {
-					blocked = true
+				if op != runtime.CobufiNone {
+					replayData = append(replayData, runtime.ReplayElement{
+						Op: op, Time: time, File: file, Line: line,
+						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
+						SelIndex: selIndex})
 				}
-				pos := strings.Split(fields[7], ":")
-				file = pos[0]
-				line, _ = strconv.Atoi(pos[1])
-			case "S": // TODO: (cobufi) get correct select case
-				cases := strings.Split(fields[4], "~")
-				if cases[len(cases)-1] == "D" {
-					op = runtime.CobufiReplaySelectDefault
-				} else {
-					op = runtime.CobufiReplaySelectCase
-				}
-				if fields[2] == "0" {
-					blocked = true
-				}
-				selIndex, _ = strconv.Atoi(fields[5])
-				pos := strings.Split(fields[6], ":")
-				file = pos[0]
-				line, _ = strconv.Atoi(pos[1])
 			}
-			if op != runtime.CobufiNone {
-				replayData = append(replayData, runtime.ReplayElement{
-					Op: op, Time: time, File: file, Line: line,
-					Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
-					SelIndex: selIndex})
+		}
+
+		if err := scanner.Err(); err != nil {
+			if err == bufio.ErrTooLong {
+				maxTokenSize *= 2 // max buffer was to short, restart
+				println("Increase max token size to " + strconv.Itoa(maxTokenSize) + "MB")
+				replayData = make(runtime.CobufiReplayTrace, 0)
+				chanWithoutPartner = make(map[string]int)
+			} else {
+				panic(err)
 			}
+		} else {
+			break // read was successful
 		}
 	}
 
@@ -201,7 +225,10 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	// remove the first 10 elements from the trace. They are part of the go init
 	// and are therefore always called, before the program starts.
 	// Because we enable the replay in the program, we must ignore them.
-	replayData = replayData[10:]
+	for elem := range replayData {
+		println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
+	}
+	println("\n\n")
 	return replayData
 }
 
