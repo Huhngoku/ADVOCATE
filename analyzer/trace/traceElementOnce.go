@@ -5,7 +5,7 @@ import (
 	"math"
 	"strconv"
 
-	vc "analyzer/vectorClock"
+	"analyzer/analysis"
 )
 
 /*
@@ -126,8 +126,8 @@ func (on *traceElementOnce) toString() string {
  */
 func (on *traceElementOnce) updateVectorClock() {
 	if on.suc {
-		vc.DoSuc(on.routine, on.id, currentVectorClocks)
+		analysis.DoSuc(on.routine, on.id, currentVectorClocks)
 	} else {
-		vc.DoFail(on.routine, on.id, currentVectorClocks)
+		analysis.DoFail(on.routine, on.id, currentVectorClocks)
 	}
 }

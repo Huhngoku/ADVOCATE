@@ -5,8 +5,8 @@ import (
 	"math"
 	"strconv"
 
+	"analyzer/analysis"
 	"analyzer/logging"
-	vc "analyzer/vectorClock"
 )
 
 // enum for opM
@@ -178,21 +178,21 @@ var mutexNoPartner []*traceElementMutex
 func (mu *traceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
-		vc.Lock(mu.routine, mu.id, currentVectorClocks)
+		analysis.Lock(mu.routine, mu.id, currentVectorClocks)
 	case RLockOp:
-		vc.RLock(mu.routine, mu.id, currentVectorClocks)
+		analysis.RLock(mu.routine, mu.id, currentVectorClocks)
 	case TryLockOp:
 		if mu.suc {
-			vc.Lock(mu.routine, mu.id, currentVectorClocks)
+			analysis.Lock(mu.routine, mu.id, currentVectorClocks)
 		}
 	case TryRLockOp:
 		if mu.suc {
-			vc.RLock(mu.routine, mu.id, currentVectorClocks)
+			analysis.RLock(mu.routine, mu.id, currentVectorClocks)
 		}
 	case UnlockOp:
-		vc.Unlock(mu.routine, mu.id, currentVectorClocks)
+		analysis.Unlock(mu.routine, mu.id, currentVectorClocks)
 	case RUnlockOp:
-		vc.RUnlock(mu.routine, mu.id, currentVectorClocks)
+		analysis.RUnlock(mu.routine, mu.id, currentVectorClocks)
 	default:
 		err := "Unknown mutex operation: " + mu.toString()
 		logging.Debug(err, logging.ERROR)

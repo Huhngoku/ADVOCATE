@@ -1,8 +1,8 @@
 package trace
 
 import (
+	"analyzer/analysis"
 	"analyzer/logging"
-	vc "analyzer/vectorClock"
 	"errors"
 	"strconv"
 )
@@ -131,11 +131,11 @@ func (at *traceElementAtomic) toString() string {
 func (at *traceElementAtomic) updateVectorClock() {
 	switch at.opA {
 	case LoadOp:
-		vc.Read(at.routine, at.id, currentVectorClocks)
+		analysis.Read(at.routine, at.id, currentVectorClocks)
 	case StoreOp, AddOp:
-		vc.Write(at.routine, at.id, currentVectorClocks)
+		analysis.Write(at.routine, at.id, currentVectorClocks)
 	case SwapOp, CompSwapOp:
-		vc.Swap(at.routine, at.id, currentVectorClocks)
+		analysis.Swap(at.routine, at.id, currentVectorClocks)
 	default:
 		err := "Unknown operation: " + at.toString()
 		logging.Debug(err, logging.ERROR)

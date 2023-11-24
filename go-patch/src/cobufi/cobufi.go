@@ -222,6 +222,12 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
+	// when the program runs the tracer, the once in
+	// src/internal/poll/fd_poll_runtime.go was already called by the trace
+	// reader. To prevent a block by the following two mutex operations,
+	// we change the trace data.
+	fixOnceFdPollRuntime(replayData)
+
 	// remove the first 10 elements from the trace. They are part of the go init
 	// and are therefore always called, before the program starts.
 	// Because we enable the replay in the program, we must ignore them.
@@ -260,4 +266,42 @@ func sortReplayDataByTime(replayData runtime.CobufiReplayTrace) runtime.CobufiRe
 		return replayData[i].Time < replayData[j].Time
 	})
 	return replayData
+}
+
+/*
+ * For reading a file, a global once in `internal/poll/fd_poll_runtime.go` is
+ * used. This once is already called by the trace reader for the replay. Because
+ * of the mutexes in the once, this can caused a block in the replay, if
+ * the once was, in the recorded run, called by the program. To prevent this,
+ * we adapt the trace data by removing the mutex operations in the once from
+ * the recorded trace.
+ * TODO: (cobufi) does this work when we replay ans simultaneously record?
+ */
+func fixOnceFdPollRuntime(replayData runtime.CobufiReplayTrace) {
+	for i := 0; i < len(replayData); i++ {
+		if !(replayData[i].Op == runtime.CobufiReplayOnce &&
+			strings.HasSuffix(replayData[i].File, "internal/poll/fd_poll_runtime.go") &&
+			replayData[i].Line == 39 &&
+			replayData[i].Suc) {
+			continue
+		}
+		replayData[i].Suc = false
+		for j := i + 1; j < len(replayData); j++ {
+			if !(replayData[j].Op == runtime.CobufiReplayMutexLock &&
+				strings.HasSuffix(replayData[j].File, "sync/once.go") &&
+				replayData[j].Line == 111) {
+				continue
+			}
+			replayData = append(replayData[:j], replayData[j+1:]...)
+			for k := j; k < len(replayData); k++ {
+				if !(replayData[j].Op == runtime.CobufiReplayMutexUnlock &&
+					strings.HasSuffix(replayData[j].File, "sync/once.go") &&
+					(replayData[j].Line == 117 || replayData[j].Line == 121)) {
+					continue
+				}
+				replayData = append(replayData[:k], replayData[k+1:]...)
+				return
+			}
+		}
+	}
 }

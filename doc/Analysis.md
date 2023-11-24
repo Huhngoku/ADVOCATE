@@ -643,6 +643,17 @@ close(t,x) {
 }
 ~~~~~~~~~
 
+### Analysis scenario: "Close on closed channel"
+A close on a closed channel will cause the program to panic. For this reason 
+it would be interesting to detect potential close on closed channels. 
+Unfortunately this is only partially possible. We only use the recorded trace 
+to detect potential problems. For a close on a closed channel, we need to record 
+both close operations. This will directly result in a panic of the program, 
+and is therefore detectable without the help of the analyzer. For completeness 
+we want to show the problem anyways. For this, we record each close event. When 
+a new close event is processed, we check if the channel was already closed before. 
+If this is the case, we show a warning.
+
 ### Analysis scenario: "Concurrent Receive"
 Having multiple potentially concurrent receives on the same channel can cause 
 nondeterministic behavior, which is rarely desired. We therefor want to detect 

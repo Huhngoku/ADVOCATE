@@ -5,8 +5,8 @@ import (
 	"math"
 	"strconv"
 
+	"analyzer/analysis"
 	"analyzer/logging"
-	vc "analyzer/vectorClock"
 )
 
 // enum for opC
@@ -232,7 +232,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 					traces[partner][currentIndex[partner]].toString(),
 					logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
-				vc.Unbuffered(ch.routine, partner, ch.id, ch.pos,
+				analysis.Unbuffered(ch.routine, partner, ch.id, ch.pos,
 					pos, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
@@ -240,7 +240,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.toString(), logging.DEBUG)
-					vc.RecvC(ch.routine, ch.id, ch.pos,
+					analysis.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				} else {
 					logging.Debug("Could not find partner for "+ch.pos, logging.INFO)
@@ -252,7 +252,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 				logging.Debug("Update vector clock of channel operation: "+
 					traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
-				vc.Unbuffered(partner, ch.routine, ch.id, pos,
+				analysis.Unbuffered(partner, ch.routine, ch.id, pos,
 					ch.pos, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
@@ -260,14 +260,14 @@ func (ch *traceElementChannel) updateVectorClock() {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.toString(), logging.DEBUG)
-					vc.RecvC(ch.routine, ch.id, ch.pos,
+					analysis.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				} else {
 					logging.Debug("Could not find partner for "+ch.pos, logging.INFO)
 				}
 			}
 		case close:
-			vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
+			analysis.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
 			logging.Debug(err, logging.ERROR)
@@ -277,23 +277,23 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case send:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.toString(), logging.DEBUG)
-			vc.Send(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
+			analysis.Send(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
 				currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.toString(), logging.DEBUG)
-				vc.RecvC(ch.routine, ch.id, ch.pos, currentVectorClocks)
+				analysis.RecvC(ch.routine, ch.id, ch.pos, currentVectorClocks)
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.toString(), logging.DEBUG)
-				vc.Recv(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
+				analysis.Recv(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
 					currentVectorClocks, fifo)
 			}
 		case close:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.toString(), logging.DEBUG)
-			vc.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
+			analysis.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
 			err := "Unknown operation: " + ch.toString()
 			logging.Debug(err, logging.ERROR)

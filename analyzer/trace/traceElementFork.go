@@ -1,7 +1,7 @@
 package trace
 
 import (
-	vc "analyzer/vectorClock"
+	"analyzer/analysis"
 	"errors"
 	"strconv"
 )
@@ -98,5 +98,5 @@ func (ro *traceElementFork) toString() string {
  * TODO: implement
  */
 func (ro *traceElementFork) updateVectorClock() {
-	vc.Fork(ro.routine, ro.id, currentVectorClocks)
+	analysis.Fork(ro.routine, ro.id, currentVectorClocks)
 }

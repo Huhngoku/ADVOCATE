@@ -3,9 +3,9 @@
 This program is still under development and may return no or wrong results.
 
 ## What
-We want to analyze concurrent Go programs to automatically find potential concurrency bug. For now we only support the search for potential send/receive on a closed channel, but we plan to expand the use cases in the future.
+We want to analyze concurrent Go programs to automatically find potential concurrency bug. The different analysis scenarios can be found in `doc/Analysis.md`.
 
-We also implement a trace replay mechanism, to replay a trace as recorded
+We also implement a trace replay mechanism, to replay a trace as recorded.
 
 ## Recording
 To analyze the program, we first need

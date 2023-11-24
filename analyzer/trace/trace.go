@@ -1,14 +1,14 @@
 package trace
 
 import (
+	"analyzer/analysis"
 	"analyzer/logging"
-	vc "analyzer/vectorClock"
 	"sort"
 	"strconv"
 )
 
 var traces map[int][]traceElement = make(map[int][]traceElement)
-var currentVectorClocks map[int]vc.VectorClock = make(map[int]vc.VectorClock)
+var currentVectorClocks map[int]analysis.VectorClock = make(map[int]analysis.VectorClock)
 var currentIndex map[int]int = make(map[int]int)
 var numberOfRoutines int = 0
 var fifo bool
@@ -77,7 +77,7 @@ func RunAnalysis(assume_fifo bool) string {
 	fifo = assume_fifo
 
 	for i := 1; i <= numberOfRoutines; i++ {
-		currentVectorClocks[i] = vc.NewVectorClock(numberOfRoutines)
+		currentVectorClocks[i] = analysis.NewVectorClock(numberOfRoutines)
 	}
 
 	currentVectorClocks[1] = currentVectorClocks[1].Inc(1)
