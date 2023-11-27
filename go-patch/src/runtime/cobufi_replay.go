@@ -75,7 +75,14 @@ func (t CobufiReplayTrace) Print() {
 
 func EnableReplay(trace CobufiReplayTrace) {
 	replayData = trace
+	if len(replayData) == 0 {
+		println("Trace is empty. Disable replay")
+	}
 	replayEnabled = true
+}
+
+func DisableReplay() {
+	replayEnabled = false
 }
 
 func WaitForReplayFinish() {
@@ -123,10 +130,15 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return false, ReplayElement{}
 	}
 
+	if IsCobufiFile(file) {
+		return false, ReplayElement{}
+	}
+
 	println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
-		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+
+		print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		if next.Time != 0 { // if next == ReplayElement{}
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
@@ -169,7 +181,6 @@ func getNextReplayElement() ReplayElement {
 	defer unlock(&replayLock)
 	if replayIndex >= len(replayData) {
 		return ReplayElement{}
-		panic("Tace to short. The Program was most likely altered between recording and replay.")
 	}
 	return replayData[replayIndex]
 }

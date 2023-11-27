@@ -1,0 +1,6 @@
+A,11,1,L;O,12,21,4,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/internal/poll/fd_poll_runtime.go:39;A,13,2,L;M,14,16,5,-,L,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/sync/once.go:111;A,15,3,C;A,17,2,S;M,18,20,5,-,U,t,/home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/sync/once.go:117;A,19,3,A;A,22,4,L;A,23,4,C;A,24,4,L;A,25,4,C;A,26,4,L;A,27,4,C;A,28,4,L;A,29,4,C
+
+
+
+
+

@@ -34,6 +34,7 @@ const (
 type cobufiTraceElement interface {
 	isCobufiTraceElement()
 	toString() string
+	getFile() string
 }
 
 type cobufiAtomicMapElem struct {
@@ -90,7 +91,32 @@ func traceToString(trace *[]cobufiTraceElement) string {
  * 	index of the element in the trace
  */
 func insertIntoTrace(elem cobufiTraceElement) int {
+	if isCobufiElement(elem) {
+		return -1
+	}
 	return currentGoRoutine().addToTrace(elem)
+}
+
+func isCobufiElement(elem cobufiTraceElement) bool {
+	return IsCobufiFile(elem.getFile())
+}
+
+func IsCobufiFile(file string) bool {
+	fileNames := []string{
+		"cobufi_trace.go",
+		"cobufi_replay.go",
+		"cobufi.go",
+		"cobufi_util.go",
+		"cobufi_routine.go",
+		"cobufi_atomic.go",
+	}
+
+	for _, fileName := range fileNames {
+		if file == fileName {
+			return true
+		}
+	}
+	return false
 }
 
 /*
@@ -230,6 +256,10 @@ type cobufiTraceSpawnElement struct {
 
 func (elem cobufiTraceSpawnElement) isCobufiTraceElement() {}
 
+func (elem cobufiTraceSpawnElement) getFile() string {
+	return elem.file
+}
+
 /*
  * Get a string representation of the element
  * Return:
@@ -269,6 +299,10 @@ type cobufiTraceMutexElement struct {
 }
 
 func (elem cobufiTraceMutexElement) isCobufiTraceElement() {}
+
+func (elem cobufiTraceMutexElement) getFile() string {
+	return elem.file
+}
 
 /*
  * Get a string representation of the element
@@ -450,6 +484,10 @@ type cobufiTraceWaitGroupElement struct {
 
 func (elem cobufiTraceWaitGroupElement) isCobufiTraceElement() {}
 
+func (elem cobufiTraceWaitGroupElement) getFile() string {
+	return elem.file
+}
+
 /*
  * Get a string representation of the element
  * Return:
@@ -533,6 +571,10 @@ type cobufiTraceChannelElement struct {
 }
 
 func (elem cobufiTraceChannelElement) isCobufiTraceElement() {}
+
+func (elem cobufiTraceChannelElement) getFile() string {
+	return elem.file
+}
 
 /*
  * Get a string representation of the element
@@ -707,6 +749,10 @@ type cobufiTraceSelectElement struct {
 }
 
 func (elem cobufiTraceSelectElement) isCobufiTraceElement() {}
+
+func (elem cobufiTraceSelectElement) getFile() string {
+	return elem.file
+}
 
 /*
  * Get a string representation of the element
@@ -914,6 +960,10 @@ type cobufiTraceAtomicElement struct {
 
 func (elem cobufiTraceAtomicElement) isCobufiTraceElement() {}
 
+func (elem cobufiTraceAtomicElement) getFile() string {
+	return ""
+}
+
 /*
  * Get a string representation of the element
  * Return:
@@ -965,7 +1015,7 @@ func CobufiAtomic(index uint64) {
 }
 
 // ======================= Once ============================
-type cobufiOnceElement struct {
+type cobufiTraceOnceElement struct {
 	tpre  uint64 // global timer at the beginning of the execution
 	tpost uint64 // global timer at the end of the execution
 	id    uint64 // id of the once
@@ -974,7 +1024,11 @@ type cobufiOnceElement struct {
 	line  int    // line where the operation was called
 }
 
-func (elem cobufiOnceElement) isCobufiTraceElement() {}
+func (elem cobufiTraceOnceElement) isCobufiTraceElement() {}
+
+func (elem cobufiTraceOnceElement) getFile() string {
+	return elem.file
+}
 
 /*
  * Return a string representation of the element
@@ -987,7 +1041,7 @@ func (elem cobufiOnceElement) isCobufiTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (string): line where the operation was called
  */
-func (elem cobufiOnceElement) toString() string {
+func (elem cobufiTraceOnceElement) toString() string {
 	res := "O,"
 	res += uint64ToString(elem.tpre) + ","
 	res += uint64ToString(elem.tpost) + ","
@@ -1004,7 +1058,7 @@ func (elem cobufiOnceElement) toString() string {
 func CobufiOncePre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetCobufiCounter()
-	elem := cobufiOnceElement{id: id, tpre: timer, file: file, line: line}
+	elem := cobufiTraceOnceElement{id: id, tpre: timer, file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
@@ -1013,7 +1067,7 @@ func CobufiOncePost(index int, suc bool) {
 		return
 	}
 	timer := GetCobufiCounter()
-	elem := currentGoRoutine().getElement(index).(cobufiOnceElement)
+	elem := currentGoRoutine().getElement(index).(cobufiTraceOnceElement)
 	elem.tpost = timer
 	elem.suc = suc
 

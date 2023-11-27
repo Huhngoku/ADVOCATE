@@ -217,16 +217,16 @@ defer runtime.WaitForReplayFinish()
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
 
 If you want replay and at the same time record the program, make sure to add 
-the replay header before the tracing header. Otherwise the program will crash
+the tracing header before the replay header. Otherwise the program will crash
 ```go
+// init tracing
+runtime.InitCobufi(0)
+defer cobufi.CreateTrace("trace_new.log")
+
 // init replay
 trace := cobufi.ReadTrace("trace_old.log")
 runtime.EnableReplay(trace)
 defer runtime.WaitForReplayFinish()
-
-// init tracing
-runtime.InitCobufi(0)
-defer cobufi.CreateTrace("trace_new.log")
 ```
 
 ### Warning:

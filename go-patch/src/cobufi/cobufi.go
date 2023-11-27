@@ -16,6 +16,7 @@ import (
  */
 func CreateTrace(file_name string) {
 	runtime.DisableTrace()
+	runtime.DisableReplay()
 
 	os.Remove(file_name)
 	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -130,19 +131,35 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 						}
 					}
 				case "M":
+					rlock := false
+					if fields[4] == "R" {
+						rlock = true
+					}
 					switch fields[5] {
 					case "L":
-						op = runtime.CobufiReplayMutexLock
-					case "U":
-						op = runtime.CobufiReplayMutexUnlock
-					case "T":
-						op = runtime.CobufiReplayMutexTryLock
+						if rlock {
+							op = runtime.CobufiReplayRWMutexLock
+						} else {
+							op = runtime.CobufiReplayMutexLock
+						}
 					case "R":
 						op = runtime.CobufiReplayRWMutexRLock
-					case "N":
-						op = runtime.CobufiReplayRWMutexRUnlock
+					case "T":
+						if rlock {
+							op = runtime.CobufiReplayRWMutexTryLock
+						} else {
+							op = runtime.CobufiReplayMutexTryLock
+						}
 					case "Y":
 						op = runtime.CobufiReplayRWMutexTryRLock
+					case "U":
+						if rlock {
+							op = runtime.CobufiReplayRWMutexUnlock
+						} else {
+							op = runtime.CobufiReplayMutexUnlock
+						}
+					case "N":
+						op = runtime.CobufiReplayRWMutexRUnlock
 					default:
 						panic("Unknown mutex operation")
 					}
@@ -181,7 +198,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 					pos := strings.Split(fields[7], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
-				case "S": // TODO: (cobufi) get correct select case
+				case "S":
 					cases := strings.Split(fields[4], "~")
 					if cases[len(cases)-1] == "D" {
 						op = runtime.CobufiReplaySelectDefault
@@ -217,6 +234,10 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 		} else {
 			break // read was successful
 		}
+	}
+
+	if len(replayData) == 0 {
+		return replayData
 	}
 
 	// sort data by tpre
@@ -304,4 +325,41 @@ func fixOnceFdPollRuntime(replayData runtime.CobufiReplayTrace) {
 			}
 		}
 	}
+
+	newOnce := runtime.ReplayElement{
+		Op:       runtime.CobufiReplayOnce,
+		Time:     0,
+		File:     "internal/poll/fd_poll_runtime.go",
+		Line:     39,
+		Blocked:  false,
+		Suc:      true,
+		PFile:    "",
+		PLine:    0,
+		SelIndex: 0}
+
+	newLock := runtime.ReplayElement{
+		Op:       runtime.CobufiReplayMutexLock,
+		Time:     0,
+		File:     "sync/once.go",
+		Line:     111,
+		Blocked:  false,
+		Suc:      true,
+		PFile:    "",
+		PLine:    0,
+		SelIndex: 0}
+
+	newUnlock := runtime.ReplayElement{
+		Op:       runtime.CobufiReplayMutexUnlock,
+		Time:     0,
+		File:     "sync/once.go",
+		Line:     117,
+		Blocked:  false,
+		Suc:      true,
+		PFile:    "",
+		PLine:    0,
+		SelIndex: 0}
+
+	newElems := []runtime.ReplayElement{newOnce, newLock, newUnlock}
+
+	replayData = append(replayData[:1], append(newElems, replayData[1:]...)...)
 }
