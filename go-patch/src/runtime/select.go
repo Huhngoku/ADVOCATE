@@ -350,14 +350,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		cas = &scases[casi]
 		c = cas.c
 
-		// COBUFI - CHANGE - START
-		if replayEnabled {
-			if casi != replayElem.SelIndex {
-				continue
-			}
-		}
-		// COBUFI - CHANGE - END
-
 		sg := acquireSudog()
 		sg.g = gp
 		sg.isSelect = true
@@ -374,6 +366,13 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		nextp = &sg.waitlink
 
 		// COBUFI-CHANGE-START
+		// make sure, only the correct case is enqueued
+		if replayEnabled {
+			if casi != replayElem.SelIndex {
+				continue
+			}
+		}
+
 		if replayEnabled && !c.cobufiIgnore {
 			sg.replayEnabled = true
 			sg.pFile = replayElem.PFile
