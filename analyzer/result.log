@@ -1,0 +1,53 @@
+==================== Summary ====================
+
+-------------------- Critical -------------------
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:131
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:123
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:145
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:140
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:182
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:188
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:183
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:198
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:315
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:303
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:362
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:352
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:438
+	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:430
+Found concurrent Recv on same channel:
+	recv: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:448
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:452
+-------------------- Warning --------------------
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:131
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:127
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:145
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:141
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:170
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:167
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:182
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:199
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:183
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:193
+Receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:341
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:335
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:362
+	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/potentialBugs/constructed/potentialBugs.go:358
+
+=================================================
+Total runtime: 4.801568ms
+=================================================

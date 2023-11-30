@@ -1,16 +1,13 @@
-/*
-Package reader provides functions for reading and processing log files.
-*/
-package reader
+package io
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 
-	"analyzer/logging"
-	"analyzer/trace"
+	"rewrite/trace"
 )
 
 /*
@@ -18,72 +15,44 @@ import (
  * Args:
  *   filePath (string): The path to the log file
  *   bufferSize (int): The size of the buffer for the scanner
- * Returns:
- *   int: The number of routines in the trace
  */
-func CreateTraceFromFile(filePath string) int {
-	logging.Debug("Create trace from file "+filePath+"...", logging.INFO)
+func ReadTrace(filePath string) {
+	println("Read trace from " + filePath + "...")
 	mb := 1048576 // 1 MB
 	maxTokenSize := 4
-	numberOfRoutines := 0
 
 	for {
 		file, err := os.Open(filePath)
 		if err != nil {
-			logging.Debug("Error opening file: "+filePath, logging.ERROR)
+			println("Error opening file: " + filePath)
 			panic(err)
 		}
 
-		logging.Debug("Count number of routines...", logging.DEBUG)
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 0, maxTokenSize*mb), maxTokenSize*mb)
+		routine := 0
 		for scanner.Scan() {
-			numberOfRoutines++
+			routine++
+			line := scanner.Text()
+			processLine(line, routine)
 		}
-		file.Close()
+
 		if err := scanner.Err(); err != nil {
 			if err == bufio.ErrTooLong {
 				maxTokenSize *= 2 // max buffer was to short, restart
 				println("Increase max file size to " + strconv.Itoa(maxTokenSize) + "MB")
-				numberOfRoutines = 0
 			} else {
+				println("Error reading file line.")
 				panic(err)
 			}
 		} else {
 			break
 		}
 	}
-	logging.Debug("Number of routines: "+strconv.Itoa(numberOfRoutines), logging.INFO)
-
-	file2, err := os.Open(filePath)
-	if err != nil {
-		logging.Debug("Error opening file: "+filePath, logging.ERROR)
-		panic(err)
-	}
-
-	logging.Debug("Create trace with "+strconv.Itoa(numberOfRoutines)+" routines...", logging.DEBUG)
-
-	scanner := bufio.NewScanner(file2)
-	scanner.Buffer(make([]byte, 0, maxTokenSize*mb), maxTokenSize*mb)
-	routine := 0
-	for scanner.Scan() {
-		routine++
-		line := scanner.Text()
-		processLine(line, routine)
-	}
-
-	if err := scanner.Err(); err != nil {
-		logging.Debug("Error reading file line.", logging.ERROR)
-		if err.Error() != "token too long" {
-			logging.Debug("Reader buffer size to small. Increase with -b.", logging.ERROR)
-		}
-		panic(err)
-	}
 
 	trace.Sort()
 
-	logging.Debug("Trace created", logging.INFO)
-	return numberOfRoutines
+	println("Trace created")
 }
 
 /*
@@ -93,7 +62,6 @@ func CreateTraceFromFile(filePath string) int {
  *   routine (int): The routine id, equal to the line number
  */
 func processLine(line string, routine int) {
-	logging.Debug("Read routine "+strconv.Itoa(routine), logging.DEBUG)
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
 		processElement(element, routine)
@@ -108,7 +76,6 @@ func processLine(line string, routine int) {
  */
 func processElement(element string, routine int) {
 	if element == "" {
-		logging.Debug("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
 		return
 	}
 	fields := strings.Split(element, ",")
@@ -141,4 +108,35 @@ func processElement(element string, routine int) {
 		panic(err)
 	}
 
+}
+
+/*
+ * Copy a file from source to dest
+ * Args:
+ *   source (string): The path to the source file
+ *   dest (string): The path to the destination file
+ */
+func CopyFile(source string, dest string) {
+	println("Copy file from " + source + " to " + dest + "...")
+	sourceFile, err := os.Open(source)
+	if err != nil {
+		panic(err)
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dest)
+	if err != nil {
+		panic(err)
+	}
+	defer destFile.Close()
+
+	_, err = io.Copy(destFile, sourceFile)
+	if err != nil {
+		panic(err)
+	}
+
+	err = destFile.Sync()
+	if err != nil {
+		panic(err)
+	}
 }

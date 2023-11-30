@@ -164,10 +164,7 @@ func Close(rout int, id int, pos string, vc map[int]VectorClock) {
  * 	vc (map[int]VectorClock): the current vector clocks
  */
 func RecvC(rout int, id int, pos string, vc map[int]VectorClock) {
-	found := "Receive on closed channel:\n"
-	found += "\tclose: " + closePos[id] + "\n"
-	found += "\trecv : " + pos
-	logging.Result(found, logging.WARNING)
+	foundReceiveOnClosedChannel(closePos[id], pos)
 
 	vc[rout] = vc[rout].Sync(closeVC[id])
 	vc[rout] = vc[rout].Inc(rout)

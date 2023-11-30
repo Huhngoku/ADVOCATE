@@ -29,7 +29,3 @@ Possible receive on closed channel:
 Possible receive on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:181
 	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/constructed/sendToClosedChan.go:193
-
-=================================================
-Total runtime: 4.094666ms
-=================================================

@@ -3,12 +3,10 @@ package logging
 import (
 	"os"
 	"strings"
-	"time"
 )
 
 var levelDebug int = 0
 var levelResult int = 0
-var start_time = time.Now()
 
 var reset = "\033[0m"
 var red = "\033[31m"
@@ -16,16 +14,16 @@ var orange = "\033[33m"
 var green = "\033[32m"
 var blue = "\033[34m"
 
-type debug_level int
+type debugLevel int
 
 const (
-	SILENT debug_level = iota
+	SILENT debugLevel = iota
 	ERROR
 	INFO
 	DEBUG
 )
 
-type result_level int
+type resultLevel int
 
 const (
 	NONE = iota
@@ -33,9 +31,11 @@ const (
 	WARNING
 )
 
-var output_file string
-var output = false
-var found_bug = false
+var outputReadableFile string
+var outputReadable = false
+var outputMachineFile string
+var outputMachine = false
+var foundBug = false
 var no_sum = false
 var resultsWarning []string
 var resultCritical []string
@@ -46,7 +46,7 @@ var resultCritical []string
 *   message: message to print
 *   level: level of the message
  */
-func Debug(message string, level debug_level) {
+func Debug(message string, level debugLevel) {
 	// print message to terminal
 	if int(level) <= levelDebug {
 		if level == ERROR {
@@ -66,8 +66,8 @@ Args:
 	message: message to print
 	level: level of the message
 */
-func Result(message string, level result_level) {
-	found_bug = true
+func Result(message string, level resultLevel) {
+	foundBug = true
 	if level == WARNING {
 		if !contains(resultsWarning, message) {
 			resultsWarning = append(resultsWarning, message)
@@ -92,20 +92,26 @@ func Result(message string, level result_level) {
 * Initialize the debug
 * Args:
 *   level: level of the debug
-*   out: path to the output file, no output file if empty
+*   outReadable: path to the output file, no output file if empty
+*   outMachine: path to the output file for the reordered trace, no output file if empty
 *   noResult: true if no result should be printed
 *   noWarn: true if no warnings should be printed
 *   NoSum: true if no summary should be printed
  */
-func InitLogging(level int, out string, result bool, noSum bool) {
+func InitLogging(level int, outReadable string, outMachine string, result bool, noSum bool) {
 	if level < 0 {
 		level = 0
 	}
 	levelDebug = level
 
-	if out != "" {
-		output_file = out
-		output = true
+	if outReadable != "" {
+		outputReadableFile = outReadable
+		outputReadable = true
+	}
+
+	if outMachine != "" {
+		outputMachineFile = outMachine
+		outputMachine = true
 	}
 
 	if result {
@@ -121,7 +127,7 @@ func InitLogging(level int, out string, result bool, noSum bool) {
 * Disable the output to a file
  */
 func DisableOutput() {
-	output = false
+	outputReadable = false
 }
 
 func PrintSummary() {
@@ -144,21 +150,18 @@ func PrintSummary() {
 	if !found {
 		res += red + "No bugs found" + reset + "\n"
 	}
-	res += "\n=================================================\n"
-	res += "Total runtime: " + GetRuntime() + "\n"
-	res += "=================================================\n"
 
 	if !no_sum {
 		print("\n\n")
 		println(res)
 	}
 
-	if output {
-		res = strings.ReplaceAll(res, red, "")
-		res = strings.ReplaceAll(res, orange, "")
-		res = strings.ReplaceAll(res, reset, "")
+	res = strings.ReplaceAll(res, red, "")
+	res = strings.ReplaceAll(res, orange, "")
+	res = strings.ReplaceAll(res, reset, "")
 
-		file, err := os.OpenFile(output_file, os.O_CREATE|os.O_WRONLY, 0644)
+	if outputReadable {
+		file, err := os.OpenFile(outputReadableFile, os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -168,13 +171,24 @@ func PrintSummary() {
 			panic(err)
 		}
 	}
-}
 
-/*
-* Get the current runtime
- */
-func GetRuntime() string {
-	return time.Since(start_time).String()
+	// remove a given line from res
+	res = strings.ReplaceAll(res, "-------------------- Critical -------------------\n", "")
+	res = strings.ReplaceAll(res, "-------------------- Warning --------------------\n", "")
+	res = strings.ReplaceAll(res, "==================== Summary ====================\n\n", "")
+	res = strings.ReplaceAll(res, "\n\n", "\n")
+
+	if outputMachine {
+		file, err := os.OpenFile(outputMachineFile, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			panic(err)
+		}
+		defer file.Close()
+
+		if _, err := file.WriteString(res); err != nil {
+			panic(err)
+		}
+	}
 }
 
 /*

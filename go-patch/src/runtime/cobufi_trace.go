@@ -91,17 +91,21 @@ func traceToString(trace *[]cobufiTraceElement) string {
  * 	index of the element in the trace
  */
 func insertIntoTrace(elem cobufiTraceElement) int {
-	if isCobufiElement(elem) {
+	if ignoreElement(elem) {
 		return -1
 	}
 	return currentGoRoutine().addToTrace(elem)
 }
 
-func isCobufiElement(elem cobufiTraceElement) bool {
-	return IsCobufiFile(elem.getFile())
+func ignoreElement(elem cobufiTraceElement) bool {
+	return IsIgnoredFile(elem.getFile())
 }
 
-func IsCobufiFile(file string) bool {
+func IsIgnoredFile(file string) bool {
+	return isIgnoredBackgroundFile(file) || isCobufiFile(file)
+}
+
+func isCobufiFile(file string) bool {
 	fileNames := []string{
 		"cobufi_trace.go",
 		"cobufi_replay.go",
@@ -112,7 +116,19 @@ func IsCobufiFile(file string) bool {
 	}
 
 	for _, fileName := range fileNames {
-		if file == fileName {
+		if isSuffix(file, fileName) {
+			return true
+		}
+	}
+	return false
+}
+
+func isIgnoredBackgroundFile(file string) bool {
+	fileNames := []string{
+		"mgc.go", // garbage collection
+	}
+	for _, fileName := range fileNames {
+		if isSuffix(file, fileName) {
 			return true
 		}
 	}
@@ -174,8 +190,6 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 	}
 
 }
-
-// }
 
 /*
  * Return the trace of all traces

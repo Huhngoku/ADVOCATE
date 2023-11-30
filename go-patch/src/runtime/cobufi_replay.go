@@ -130,15 +130,13 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return false, ReplayElement{}
 	}
 
-	if IsCobufiFile(file) {
+	if IsIgnoredFile(file) {
 		return false, ReplayElement{}
 	}
 
 	println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
-
-		print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		if next.Time != 0 { // if next == ReplayElement{}
 			if (next.Op != op && !correctSelect(next.Op, op)) ||

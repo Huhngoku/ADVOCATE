@@ -67,6 +67,13 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 
 }
 
+func foundReceiveOnClosedChannel(posClose string, posRecv string) {
+	found := "Found receive on closed channel:\n"
+	found += "\tclose: " + posClose + "\n"
+	found += "\trecv : " + posRecv
+	logging.Result(found, logging.WARNING)
+}
+
 func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorClock) {
 	if _, ok := lastRecvRoutine[routine]; !ok {
 		lastRecvRoutine[routine] = make(map[int]VectorClock)
@@ -104,7 +111,7 @@ func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorCl
  */
 func checkForClosedOnClosed(id int, pos string) {
 	if posOld, ok := closePos[id]; ok {
-		found := "Close on closed channel:\n"
+		found := "Found close on closed channel:\n"
 		found += "\tclose: " + pos + "\n"
 		found += "\tclose: " + posOld
 		logging.Result(found, logging.CRITICAL)

@@ -159,6 +159,7 @@ The analyzer can take the following command line arguments:
 - -b [buffer_size]: if the trace file is to big, it can be necessary to increase the size of the reader buffer. The size is given in MB, default: 25
 - -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
 - -o [file_name]: set the name of the output file. If it is not set, or set to "", no output file will be created.
+- -m [file_name]: set the name of the machine readable output file. This can be used in the trace reordering (not implemented jet). If it is not set, or set to "", no output file will be created.
 - -r: show the result immediately when found (default false)
 - -s: do not show the summary at the end
 
@@ -179,13 +180,26 @@ Possible send on closed channel:
 Possible receive on closed channel:
 	close: .../main.go:56
 	recv: .../main.go:42
-=================================================
-Total runtime: Total runtime: 5.464833ms
-=================================================
 ```
 The send can cause a panic of the program, if it occurs. It is therefor an error message (in terminal red).
 
 A receive on a closed channel does not cause a panic, but returns a default value. It can therefor be a desired behavior. For this reason it is only considered a warning (in terminal orange, can be silenced with -w).
+
+## Trace Reorder
+We wand to be able to produce a new valid trace, based on the recorded one, 
+in which a detected possible bug actually occurs. This new trace can then used
+in the replay, to confirm and simplify the removal of the bug.
+For this we use the rewriter in the `rewrite` directory. 
+It takes the following arguments:
+- -t [file_path]: path to the recorded trace
+- -e [file_path]: path to the result file form the analyzer. Make sure to use the one 
+created with `-m` and not `-o`.
+- -i [index]: index of the bug in the result file, which should be occur in the 
+new trace (1 based).
+- o [file_path]: path to the new trace file
+
+**The reorder is still in developement and does not work yet**
+
 
 ## Trace Replay
 The trace replay reruns a given program as given in the recorded trace. Please be aware, 

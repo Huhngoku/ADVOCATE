@@ -7,7 +7,7 @@ explanation for all trace elements in the corresponding files in `traceElements`
 T := L\nT | ""                                                  (trace)
 L := "" | {E";"}E                                               (routine local trace)
 E := G | M | W | C | S | O                                      (trace element)
-G := "G,"tpre","id                                              (element for creation of new routine)
+G := "G,"tpre","id,","pos                                       (element for creation of new routine)
 A := "A,"tpre","addr","opA                                      (element for atomic operation)
 M := "M,"tpre","tpost","id","rw","opM","suc","pos               (element for operation on sync (rw)mutex)
 W := "W,"tpre","tpost","id","opW","delta","val","pos            (element for operation on sync wait group)

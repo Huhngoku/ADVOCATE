@@ -213,7 +213,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				}
-				if op != runtime.CobufiNone {
+				if op != runtime.CobufiNone && !runtime.IsIgnoredFile(file) {
 					replayData = append(replayData, runtime.ReplayElement{
 						Op: op, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
