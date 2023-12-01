@@ -2,7 +2,6 @@ package io
 
 import (
 	"bufio"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -15,11 +14,14 @@ import (
  * Args:
  *   filePath (string): The path to the log file
  *   bufferSize (int): The size of the buffer for the scanner
+ * Returns:
+ *   int: The number of routines in the trace
  */
-func ReadTrace(filePath string) {
+func ReadTrace(filePath string) int {
 	println("Read trace from " + filePath + "...")
 	mb := 1048576 // 1 MB
 	maxTokenSize := 4
+	numberRoutines := 0
 
 	for {
 		file, err := os.Open(filePath)
@@ -30,16 +32,16 @@ func ReadTrace(filePath string) {
 
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 0, maxTokenSize*mb), maxTokenSize*mb)
-		routine := 0
 		for scanner.Scan() {
-			routine++
+			numberRoutines++
 			line := scanner.Text()
-			processLine(line, routine)
+			processLine(line, numberRoutines)
 		}
 
 		if err := scanner.Err(); err != nil {
 			if err == bufio.ErrTooLong {
 				maxTokenSize *= 2 // max buffer was to short, restart
+				numberRoutines = 0
 				println("Increase max file size to " + strconv.Itoa(maxTokenSize) + "MB")
 			} else {
 				println("Error reading file line.")
@@ -53,6 +55,7 @@ func ReadTrace(filePath string) {
 	trace.Sort()
 
 	println("Trace created")
+	return numberRoutines
 }
 
 /*
@@ -63,6 +66,7 @@ func ReadTrace(filePath string) {
  */
 func processLine(line string, routine int) {
 	elements := strings.Split(line, ";")
+	trace.AddEmptyRoutine(routine)
 	for _, element := range elements {
 		processElement(element, routine)
 	}
@@ -108,35 +112,4 @@ func processElement(element string, routine int) {
 		panic(err)
 	}
 
-}
-
-/*
- * Copy a file from source to dest
- * Args:
- *   source (string): The path to the source file
- *   dest (string): The path to the destination file
- */
-func CopyFile(source string, dest string) {
-	println("Copy file from " + source + " to " + dest + "...")
-	sourceFile, err := os.Open(source)
-	if err != nil {
-		panic(err)
-	}
-	defer sourceFile.Close()
-
-	destFile, err := os.Create(dest)
-	if err != nil {
-		panic(err)
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, sourceFile)
-	if err != nil {
-		panic(err)
-	}
-
-	err = destFile.Sync()
-	if err != nil {
-		panic(err)
-	}
 }

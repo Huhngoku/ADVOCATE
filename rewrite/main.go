@@ -43,8 +43,10 @@ func main() {
 		return
 	}
 
-	io.ReadTrace(*tracePath)
+	numberRoutines := io.ReadTrace(*tracePath)
 
 	rewriter.CreateNewTrace(bug)
+
+	io.WriteTrace(*outputPath, numberRoutines)
 
 }

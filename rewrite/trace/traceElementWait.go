@@ -141,7 +141,7 @@ func (wa *traceElementWait) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (wa *traceElementWait) toString() string {
+func (wa *traceElementWait) ToString() string {
 	return "W" + strconv.Itoa(wa.id) + "," + strconv.Itoa(wa.tpre) + "," +
 		strconv.Itoa(wa.tpost) + "," + "," +
 		strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val) + "," + wa.pos

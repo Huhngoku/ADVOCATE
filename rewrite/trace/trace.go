@@ -20,6 +20,10 @@ func addElementToTrace(element traceElement) error {
 	return nil
 }
 
+func AddEmptyRoutine(routine int) {
+	traces[routine] = make([]traceElement, 0)
+}
+
 /*
  * Sort the trace by tsort
  */
@@ -45,6 +49,13 @@ func sortTrace(trace []traceElement) []traceElement {
 
 func Sort() {
 	for routine, trace := range traces {
+		if len(traces[routine]) <= 1 {
+			continue
+		}
 		traces[routine] = sortTrace(trace)
 	}
+}
+
+func GetTraces() *map[int][]traceElement {
+	return &traces
 }

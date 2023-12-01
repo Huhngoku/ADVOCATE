@@ -118,7 +118,7 @@ func (at *traceElementAtomic) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (at *traceElementAtomic) toString() string {
+func (at *traceElementAtomic) ToString() string {
 	return "A," + strconv.Itoa(at.tpost) + "," + strconv.Itoa(at.id) + "," +
 		strconv.Itoa(int(at.opA))
 }

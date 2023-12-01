@@ -159,7 +159,7 @@ func (mu *traceElementMutex) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (mu *traceElementMutex) toString() string {
+func (mu *traceElementMutex) ToString() string {
 	return "M" + "," + strconv.Itoa(mu.tPre) + "," + strconv.Itoa(mu.tPost) + "," +
 		strconv.Itoa(mu.id) + "," + strconv.FormatBool(mu.rw) + "," +
 		strconv.Itoa(int(mu.opM)) + "," + strconv.FormatBool(mu.suc) + "," +

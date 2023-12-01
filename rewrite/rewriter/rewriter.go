@@ -10,5 +10,5 @@ import "rewrite/bugs"
 func CreateNewTrace(bug bugs.Bug) {
 	println("Start creating new trace...")
 	// TODO: implement
-	panic("Not implemented")
+	// panic("Not implemented")
 }

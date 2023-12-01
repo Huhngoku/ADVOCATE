@@ -88,6 +88,6 @@ func (ro *traceElementFork) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ro *traceElementFork) toString() string {
+func (ro *traceElementFork) ToString() string {
 	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id)
 }

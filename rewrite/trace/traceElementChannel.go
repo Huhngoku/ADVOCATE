@@ -174,7 +174,7 @@ func (ch *traceElementChannel) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ch *traceElementChannel) toString() string {
+func (ch *traceElementChannel) ToString() string {
 	return ch.toStringSep(",", true)
 }
 

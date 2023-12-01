@@ -113,7 +113,7 @@ func (on *traceElementOnce) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (on *traceElementOnce) toString() string {
+func (on *traceElementOnce) ToString() string {
 	return "O" + "," + strconv.Itoa(on.tPre) + "," + strconv.Itoa(on.tPost) +
 		strconv.Itoa(on.id) + "," + strconv.FormatBool(on.suc) + "," +
 		on.pos

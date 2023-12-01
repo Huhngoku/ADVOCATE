@@ -195,7 +195,7 @@ func (se *traceElementSelect) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (se *traceElementSelect) toString() string {
+func (se *traceElementSelect) ToString() string {
 	res := "S" + "," + strconv.Itoa(se.tpre) + "," +
 		strconv.Itoa(se.tpost) + "," + strconv.Itoa(se.id) + ","
 

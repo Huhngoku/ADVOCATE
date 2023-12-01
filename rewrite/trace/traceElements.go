@@ -6,5 +6,5 @@ type traceElement interface {
 	getTpost() int
 	getTsort() int
 	getRoutine() int
-	toString() string
+	ToString() string
 }
