@@ -1,43 +1,43 @@
-// COBUFI-FILE_START
+// ADVOCATE-FILE_START
 
 package runtime
 
-var CobufiRoutines map[uint64]*[]cobufiTraceElement
-var CobufiRoutinesLock mutex = mutex{}
+var AdvocateRoutines map[uint64]*[]advocateTraceElement
+var AdvocateRoutinesLock mutex = mutex{}
 
 var projectPath string
 
-type CobufiRoutine struct {
+type AdvocateRoutine struct {
 	id          uint64
 	G           *g
-	Trace       []cobufiTraceElement
+	Trace       []advocateTraceElement
 	lock        *mutex
 	createdFile string
 	createdLine int32
 }
 
 /*
- * Create a new cobufi routine
+ * Create a new advocate routine
  * Params:
  * 	g: the g struct of the routine
  * Return:
- * 	the new cobufi routine
+ * 	the new advocate routine
  */
-func newCobufiRoutine(g *g, file string, line int32) *CobufiRoutine {
-	routine := &CobufiRoutine{id: GetCobufiRoutineId(), G: g,
-		Trace:       make([]cobufiTraceElement, 0),
+func newAdvocateRoutine(g *g, file string, line int32) *AdvocateRoutine {
+	routine := &AdvocateRoutine{id: GetAdvocateRoutineId(), G: g,
+		Trace:       make([]advocateTraceElement, 0),
 		lock:        &mutex{},
 		createdFile: file,
 		createdLine: line}
 
-	lock(&CobufiRoutinesLock)
-	defer unlock(&CobufiRoutinesLock)
+	lock(&AdvocateRoutinesLock)
+	defer unlock(&AdvocateRoutinesLock)
 
-	if CobufiRoutines == nil {
-		CobufiRoutines = make(map[uint64]*[]cobufiTraceElement)
+	if AdvocateRoutines == nil {
+		AdvocateRoutines = make(map[uint64]*[]advocateTraceElement)
 	}
 
-	CobufiRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
+	AdvocateRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
 
 	return routine
 }
@@ -49,9 +49,9 @@ func newCobufiRoutine(g *g, file string, line int32) *CobufiRoutine {
  * Return:
  * 	the index of the element in the trace
  */
-func (gi *CobufiRoutine) addToTrace(elem cobufiTraceElement) int {
+func (gi *AdvocateRoutine) addToTrace(elem advocateTraceElement) int {
 	// do nothing if tracer disabled
-	if cobufiDisabled {
+	if advocateDisabled {
 		return -1
 	}
 	// never needed in actual code, without it the compiler tests fail
@@ -61,13 +61,13 @@ func (gi *CobufiRoutine) addToTrace(elem cobufiTraceElement) int {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	if gi.Trace == nil {
-		gi.Trace = make([]cobufiTraceElement, 0)
+		gi.Trace = make([]advocateTraceElement, 0)
 	}
 	gi.Trace = append(gi.Trace, elem)
 	return len(gi.Trace) - 1
 }
 
-func (gi *CobufiRoutine) getElement(index int) cobufiTraceElement {
+func (gi *AdvocateRoutine) getElement(index int) advocateTraceElement {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	return gi.Trace[index]
@@ -79,8 +79,8 @@ func (gi *CobufiRoutine) getElement(index int) cobufiTraceElement {
  * 	index: the index of the element to update
  * 	elem: the new element
  */
-func (gi *CobufiRoutine) updateElement(index int, elem cobufiTraceElement) {
-	if cobufiDisabled {
+func (gi *AdvocateRoutine) updateElement(index int, elem advocateTraceElement) {
+	if advocateDisabled {
 		return
 	}
 
@@ -106,7 +106,7 @@ func (gi *CobufiRoutine) updateElement(index int, elem cobufiTraceElement) {
  * Return:
  * 	the current routine
  */
-func currentGoRoutine() *CobufiRoutine {
+func currentGoRoutine() *AdvocateRoutine {
 	return getg().goInfo
 }
 
@@ -122,4 +122,4 @@ func GetRoutineId() uint64 {
 	return currentGoRoutine().id
 }
 
-// COBUFI-FILE-END
+// ADVOCATE-FILE-END

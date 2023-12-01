@@ -2,15 +2,15 @@
 
 -------------------- Critical -------------------
 Found concurrent Recv on same channel:
-	recv: /home/erik/Uni/HiWi/CoBuFi-Go/examples/concurrentCommunicaion/constructed/constructed.go:54
-	recv : /home/erik/Uni/HiWi/CoBuFi-Go/examples/concurrentCommunicaion/constructed/constructed.go:58
+	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/concurrentCommunicaion/constructed/constructed.go:54
+	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/concurrentCommunicaion/constructed/constructed.go:58
 -------------------- Warning --------------------
 Found concurrent Send on same channel:
-	send: /home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcsweep.go:279
-	send : /home/erik/Uni/HiWi/CoBuFi-Go/go-patch/src/runtime/mgcscavenge.go:652
+	send: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgcsweep.go:279
+	send : /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgcscavenge.go:652
 Found concurrent Send on same channel:
-	send: /home/erik/Uni/HiWi/CoBuFi-Go/examples/concurrentCommunicaion/constructed/constructed.go:25
-	send : /home/erik/Uni/HiWi/CoBuFi-Go/examples/concurrentCommunicaion/constructed/constructed.go:29
+	send: /home/erik/Uni/HiWi/ADVOCATE/examples/concurrentCommunicaion/constructed/constructed.go:25
+	send : /home/erik/Uni/HiWi/ADVOCATE/examples/concurrentCommunicaion/constructed/constructed.go:29
 
 =================================================
 Total runtime: 2.623148ms

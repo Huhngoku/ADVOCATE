@@ -54,7 +54,7 @@ func (wg *WaitGroup) Add(delta int) {
 	if delta > 0 {
 		skip = 2
 	}
-	_, _ = runtime.WaitForReplay(runtime.CobufiReplayWaitgroupAddDone, skip)
+	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayWaitgroupAddDone, skip)
 	// COBUFI-CHANGE-END
 	if race.Enabled {
 		if delta < 0 {
@@ -74,7 +74,7 @@ func (wg *WaitGroup) Add(delta int) {
 	// is directly in it's functions. If the id of the wg is the default
 	// value, it is set to a new, unique object id
 	if wg.id == 0 {
-		wg.id = runtime.GetCobufiObjectId()
+		wg.id = runtime.GetAdvocateObjectId()
 	}
 	// Record the add or done of a wait group in the routine's trace.
 	// If delta > 0, it is an add, if it's -1, it's a done.
@@ -82,7 +82,7 @@ func (wg *WaitGroup) Add(delta int) {
 	// do not block the program. Therefore it is not possible, that it is
 	// called but not finished (except if it panics). Therefore it is not
 	// necessary to record a post event.
-	runtime.CobufiWaitGroupAdd(wg.id, delta, v)
+	runtime.AdvocateWaitGroupAdd(wg.id, delta, v)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled && delta > 0 && v == int32(delta) {
@@ -124,13 +124,13 @@ func (wg *WaitGroup) Done() {
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
 	// COBUFI-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayWaitgroupWait, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayWaitgroupWait, 2)
 	if enabled {
 		if replayElem.Blocked {
 			if wg.id == 0 {
-				wg.id = runtime.GetCobufiObjectId()
+				wg.id = runtime.GetAdvocateObjectId()
 			}
-			_ = runtime.CobufiWaitGroupWaitPre(wg.id)
+			_ = runtime.AdvocateWaitGroupWaitPre(wg.id)
 			runtime.BlockForever()
 		}
 	}
@@ -146,15 +146,15 @@ func (wg *WaitGroup) Wait() {
 	// is directly in it's functions. If the id of the wg is the default
 	// value, it is set to a new, unique object id
 	if wg.id == 0 {
-		wg.id = runtime.GetCobufiObjectId()
+		wg.id = runtime.GetAdvocateObjectId()
 	}
 
 	// Record the wait of a wait group in the routine's trace.
 	// The wait will run until the waitgroup counte is zero. Therefor it
 	// blocks the routine and it is nessesary to record the successful
 	// finish of the wait with a post.
-	cobufiIndex := runtime.CobufiWaitGroupWaitPre(wg.id)
-	defer runtime.CobufiPost(cobufiIndex)
+	advocateIndex := runtime.AdvocateWaitGroupWaitPre(wg.id)
+	defer runtime.AdvocatePost(advocateIndex)
 	// COBUFI-CHANGE-END
 	for {
 		state := wg.state.Load()

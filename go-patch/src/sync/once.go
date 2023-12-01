@@ -67,30 +67,30 @@ func (o *Once) Do(f func()) {
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
 	// COBUFI-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayOnce, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayOnce, 2)
 	if enabled {
 		if replayElem.Blocked {
 			if o.id == 0 {
-				o.id = runtime.GetCobufiObjectId()
+				o.id = runtime.GetAdvocateObjectId()
 			}
-			_ = runtime.CobufiOncePre(o.id)
+			_ = runtime.AdvocateOncePre(o.id)
 			runtime.BlockForever()
 		}
 
 		if !replayElem.Suc {
 			if o.id == 0 {
-				o.id = runtime.GetCobufiObjectId()
+				o.id = runtime.GetAdvocateObjectId()
 			}
-			index := runtime.CobufiOncePre(o.id)
-			runtime.CobufiOncePost(index, false)
+			index := runtime.AdvocateOncePre(o.id)
+			runtime.AdvocateOncePost(index, false)
 			return
 		}
 	}
 	// COBUFI-CHANGE-END
 	if o.id == 0 {
-		o.id = runtime.GetCobufiObjectId()
+		o.id = runtime.GetAdvocateObjectId()
 	}
-	index := runtime.CobufiOncePre(o.id)
+	index := runtime.AdvocateOncePre(o.id)
 	res := false
 	// COBUFI-CHANGE-END
 
@@ -101,7 +101,7 @@ func (o *Once) Do(f func()) {
 		// COBUFI-CHANGE-END
 	}
 	// COBUFI-CHANGE-START
-	runtime.CobufiOncePost(index, res)
+	runtime.AdvocateOncePost(index, res)
 	// COBUFI-CHANGE-END
 }
 

@@ -1,15 +1,15 @@
 package main
 
 import (
-	"cobufi"
+	"advocate"
 	"runtime"
 )
 
 func main() {
-	runtime.InitCobufi(0)
-	defer cobufi.CreateTrace("trace.log")
+	runtime.InitAdvocate(0)
+	defer advocate.CreateTrace("trace.log")
 
-	trace := cobufi.ReadTrace("trace.log")
+	trace := advocate.ReadTrace("trace.log")
 	runtime.EnableReplay(trace)
 	defer runtime.WaitForReplayFinish()
 

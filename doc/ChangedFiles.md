@@ -5,12 +5,12 @@ added or changed.
 
 Added files:
 
-- src/runtime/cobufi_routine.go
-- src/runtime/cobufi_trace.go
-- src/runtime/cobufi_util.go
-- src/runtime/cobufi_replay.go
-- src/runtime/internal/atomic/cobufi_atomic.go
-- src/cobufi/cobufi.go
+- src/runtime/advocate_routine.go
+- src/runtime/advocate_trace.go
+- src/runtime/advocate_util.go
+- src/runtime/advocate_replay.go
+- src/runtime/internal/atomic/advocate_atomic.go
+- src/advocate/advocate.go
 - 
 
 Changed files (marked with COBUFI-CHANGE, außer in .s):

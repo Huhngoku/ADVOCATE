@@ -1,4 +1,4 @@
-// COBUFI-FILE-START
+// ADVOCATE-FILE-START
 
 package runtime
 
@@ -89,24 +89,24 @@ func intToString(n int) string {
 	}
 }
 
-var cobufiCurrentRoutineId uint64
-var cobufiCurrentObjectId uint64
-var cobufiGlobalCounter uint64
+var advocateCurrentRoutineId uint64
+var advocateCurrentObjectId uint64
+var advocateGlobalCounter uint64
 
-var cobufiCurrentRoutineIdMutex mutex
-var cobufiCurrentObjectIdMutex mutex
-var cobufiGlobalCounterMutex mutex
+var advocateCurrentRoutineIdMutex mutex
+var advocateCurrentObjectIdMutex mutex
+var advocateGlobalCounterMutex mutex
 
 /*
  * Get a new id for a routine
  * Return:
  * 	new id
  */
-func GetCobufiRoutineId() uint64 {
-	lock(&cobufiCurrentRoutineIdMutex)
-	defer unlock(&cobufiCurrentRoutineIdMutex)
-	cobufiCurrentRoutineId += 1
-	return cobufiCurrentRoutineId
+func GetAdvocateRoutineId() uint64 {
+	lock(&advocateCurrentRoutineIdMutex)
+	defer unlock(&advocateCurrentRoutineIdMutex)
+	advocateCurrentRoutineId += 1
+	return advocateCurrentRoutineId
 }
 
 /*
@@ -114,11 +114,11 @@ func GetCobufiRoutineId() uint64 {
  * Return:
  * 	new id
  */
-func GetCobufiObjectId() uint64 {
-	lock(&cobufiCurrentObjectIdMutex)
-	defer unlock(&cobufiCurrentObjectIdMutex)
-	cobufiCurrentObjectId += 1
-	return cobufiCurrentObjectId
+func GetAdvocateObjectId() uint64 {
+	lock(&advocateCurrentObjectIdMutex)
+	defer unlock(&advocateCurrentObjectIdMutex)
+	advocateCurrentObjectId += 1
+	return advocateCurrentObjectId
 }
 
 /*
@@ -126,11 +126,11 @@ func GetCobufiObjectId() uint64 {
  * Return:
  * 	new counter value
  */
-func GetCobufiCounter() uint64 {
-	lock(&cobufiGlobalCounterMutex)
-	defer unlock(&cobufiGlobalCounterMutex)
-	cobufiGlobalCounter += 1
-	return cobufiGlobalCounter
+func GetAdvocateCounter() uint64 {
+	lock(&advocateGlobalCounterMutex)
+	defer unlock(&advocateGlobalCounterMutex)
+	advocateGlobalCounter += 1
+	return advocateGlobalCounter
 }
 
 /*
@@ -168,4 +168,4 @@ func stringToInt(s string) int {
 	return result * sign
 }
 
-// COBUFI-FILE-END
+// ADVOCATE-FILE-END

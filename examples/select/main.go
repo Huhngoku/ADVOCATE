@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cobufi"
+	"advocate"
 	"runtime"
 	"time"
 )
@@ -10,12 +10,12 @@ func main() {
 	replay := true
 
 	if replay {
-		trace := cobufi.ReadTrace("select_trace.log")
+		trace := advocate.ReadTrace("select_trace.log")
 		runtime.EnableReplay(trace)
 		defer runtime.WaitForReplayFinish()
 	} else {
-		runtime.InitCobufi(0)
-		defer cobufi.CreateTrace("select_trace.log")
+		runtime.InitAdvocate(0)
+		defer advocate.CreateTrace("select_trace.log")
 	}
 
 	c := make(chan int)

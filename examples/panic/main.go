@@ -1,14 +1,14 @@
 package main
 
 import (
-	"cobufi"
+	"advocate"
 	"runtime"
 	"sync"
 )
 
 func main() {
-	runtime.InitCobufi(0)
-	defer cobufi.CreateTrace("trace_name.log")
+	runtime.InitAdvocate(0)
+	defer advocate.CreateTrace("trace_name.log")
 
 	m := sync.Mutex{}
 	m.Lock()

@@ -4446,7 +4446,7 @@ func newproc(fn *funcval) {
 	}
 	file, line := funcline(f, tracepc)
 
-	_, _ = WaitForReplayPath(CobufiReplaySpawn, file, int(line))
+	_, _ = WaitForReplayPath(AdvocateReplaySpawn, file, int(line))
 
 	// COBUFI-CHANGE-END
 
@@ -4454,9 +4454,9 @@ func newproc(fn *funcval) {
 		newg := newproc1(fn, gp, pc)
 
 		// COBUFI-CHANGE-START
-		newg.goInfo = newCobufiRoutine(newg, file, line)
+		newg.goInfo = newAdvocateRoutine(newg, file, line)
 		if gp != nil && gp.goInfo != nil {
-			CobufiSpawn(gp.goInfo, newg.goInfo.id, file, line)
+			AdvocateSpawn(gp.goInfo, newg.goInfo.id, file, line)
 		}
 		// COBUFI-CHANGE-END
 

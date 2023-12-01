@@ -1,4 +1,4 @@
-package cobufi
+package advocate
 
 import (
 	"bufio"
@@ -12,11 +12,10 @@ import (
 /*
  * Write the trace of the program to a file.
  * The trace is written in the file named file_name.
- * The trace is written in the format of CoBufi.
+ * The trace is written in the format of advocate.
  */
 func CreateTrace(file_name string) {
 	runtime.DisableTrace()
-	runtime.DisableReplay()
 
 	os.Remove(file_name)
 	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -27,12 +26,12 @@ func CreateTrace(file_name string) {
 
 	numRout := runtime.GetNumberOfRoutines()
 	for i := 1; i <= numRout; i++ {
-		cobufiChan := make(chan string)
+		advocateChan := make(chan string)
 		go func() {
-			runtime.TraceToStringByIdChannel(i, cobufiChan)
-			close(cobufiChan)
+			runtime.TraceToStringByIdChannel(i, advocateChan)
+			close(advocateChan)
 		}()
-		for trace := range cobufiChan {
+		for trace := range advocateChan {
 			if _, err := file.WriteString(trace); err != nil {
 				panic(err)
 			}
@@ -59,11 +58,11 @@ func CreateTrace(file_name string) {
  * Arguments:
  * 	- file_name: The name of the file that contains the trace.
  */
-func ReadTrace(file_name string) runtime.CobufiReplayTrace {
+func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 	mb := 1048576
 	maxTokenSize := 1
 
-	replayData := make(runtime.CobufiReplayTrace, 0)
+	replayData := make(runtime.AdvocateReplayTrace, 0)
 	chanWithoutPartner := make(map[string]int)
 
 	for {
@@ -100,18 +99,18 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				}
 				switch fields[0] {
 				case "G":
-					op = runtime.CobufiReplaySpawn
+					op = runtime.AdvocateReplaySpawn
 					pos := strings.Split(fields[3], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				case "C":
 					switch fields[4] {
 					case "S":
-						op = runtime.CobufiReplayChannelSend
+						op = runtime.AdvocateReplayChannelSend
 					case "R":
-						op = runtime.CobufiReplayChannelRecv
+						op = runtime.AdvocateReplayChannelRecv
 					case "C":
-						op = runtime.CobufiReplayChannelClose
+						op = runtime.AdvocateReplayChannelClose
 					default:
 						panic("Unknown channel operation")
 					}
@@ -121,7 +120,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 					pos := strings.Split(fields[8], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
-					if op == runtime.CobufiReplayChannelSend || op == runtime.CobufiReplayChannelRecv {
+					if op == runtime.AdvocateReplayChannelSend || op == runtime.AdvocateReplayChannelRecv {
 						index := findReplayPartner(fields[3], fields[6], len(replayData), chanWithoutPartner)
 						if index != -1 {
 							pFile = replayData[index].File
@@ -131,35 +130,19 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 						}
 					}
 				case "M":
-					rlock := false
-					if fields[4] == "R" {
-						rlock = true
-					}
 					switch fields[5] {
 					case "L":
-						if rlock {
-							op = runtime.CobufiReplayRWMutexLock
-						} else {
-							op = runtime.CobufiReplayMutexLock
-						}
-					case "R":
-						op = runtime.CobufiReplayRWMutexRLock
-					case "T":
-						if rlock {
-							op = runtime.CobufiReplayRWMutexTryLock
-						} else {
-							op = runtime.CobufiReplayMutexTryLock
-						}
-					case "Y":
-						op = runtime.CobufiReplayRWMutexTryRLock
+						op = runtime.AdvocateReplayMutexLock
 					case "U":
-						if rlock {
-							op = runtime.CobufiReplayRWMutexUnlock
-						} else {
-							op = runtime.CobufiReplayMutexUnlock
-						}
+						op = runtime.AdvocateReplayMutexUnlock
+					case "T":
+						op = runtime.AdvocateReplayMutexTryLock
+					case "R":
+						op = runtime.AdvocateReplayRWMutexRLock
 					case "N":
-						op = runtime.CobufiReplayRWMutexRUnlock
+						op = runtime.AdvocateReplayRWMutexRUnlock
+					case "Y":
+						op = runtime.AdvocateReplayRWMutexTryRLock
 					default:
 						panic("Unknown mutex operation")
 					}
@@ -173,7 +156,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				case "O":
-					op = runtime.CobufiReplayOnce
+					op = runtime.AdvocateReplayOnce
 					if fields[2] == "0" {
 						blocked = true
 					}
@@ -186,9 +169,9 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 				case "W":
 					switch fields[4] {
 					case "W":
-						op = runtime.CobufiReplayWaitgroupWait
+						op = runtime.AdvocateReplayWaitgroupWait
 					case "A":
-						op = runtime.CobufiReplayWaitgroupAddDone
+						op = runtime.AdvocateReplayWaitgroupAddDone
 					default:
 						panic("Unknown waitgroup operation")
 					}
@@ -198,12 +181,12 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 					pos := strings.Split(fields[7], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
-				case "S":
+				case "S": // TODO: (advocate) get correct select case
 					cases := strings.Split(fields[4], "~")
 					if cases[len(cases)-1] == "D" {
-						op = runtime.CobufiReplaySelectDefault
+						op = runtime.AdvocateReplaySelectDefault
 					} else {
-						op = runtime.CobufiReplaySelectCase
+						op = runtime.AdvocateReplaySelectCase
 					}
 					if fields[2] == "0" {
 						blocked = true
@@ -213,7 +196,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				}
-				if op != runtime.CobufiNone && !runtime.IsIgnoredFile(file) {
+				if op != runtime.AdvocateNone {
 					replayData = append(replayData, runtime.ReplayElement{
 						Op: op, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
@@ -226,7 +209,7 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 			if err == bufio.ErrTooLong {
 				maxTokenSize *= 2 // max buffer was to short, restart
 				println("Increase max token size to " + strconv.Itoa(maxTokenSize) + "MB")
-				replayData = make(runtime.CobufiReplayTrace, 0)
+				replayData = make(runtime.AdvocateReplayTrace, 0)
 				chanWithoutPartner = make(map[string]int)
 			} else {
 				panic(err)
@@ -236,18 +219,8 @@ func ReadTrace(file_name string) runtime.CobufiReplayTrace {
 		}
 	}
 
-	if len(replayData) == 0 {
-		return replayData
-	}
-
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
-
-	// when the program runs the tracer, the once in
-	// src/internal/poll/fd_poll_runtime.go was already called by the trace
-	// reader. To prevent a block by the following two mutex operations,
-	// we change the trace data.
-	fixOnceFdPollRuntime(replayData)
 
 	// remove the first 10 elements from the trace. They are part of the go init
 	// and are therefore always called, before the program starts.
@@ -282,7 +255,7 @@ func findReplayPartner(cId string, oId string, index int, chanWithoutPartner map
  * Sort the replay data structure by time.
  * The function returns the sorted replay data structure.
  */
-func sortReplayDataByTime(replayData runtime.CobufiReplayTrace) runtime.CobufiReplayTrace {
+func sortReplayDataByTime(replayData runtime.AdvocateReplayTrace) runtime.AdvocateReplayTrace {
 	sort.Slice(replayData, func(i, j int) bool {
 		return replayData[i].Time < replayData[j].Time
 	})
@@ -296,11 +269,11 @@ func sortReplayDataByTime(replayData runtime.CobufiReplayTrace) runtime.CobufiRe
  * the once was, in the recorded run, called by the program. To prevent this,
  * we adapt the trace data by removing the mutex operations in the once from
  * the recorded trace.
- * TODO: (cobufi) does this work when we replay ans simultaneously record?
+ * TODO: (advocate) does this work when we replay ans simultaneously record?
  */
-func fixOnceFdPollRuntime(replayData runtime.CobufiReplayTrace) {
+func fixOnceFdPollRuntime(replayData runtime.AdvocateReplayTrace) {
 	for i := 0; i < len(replayData); i++ {
-		if !(replayData[i].Op == runtime.CobufiReplayOnce &&
+		if !(replayData[i].Op == runtime.AdvocateReplayOnce &&
 			strings.HasSuffix(replayData[i].File, "internal/poll/fd_poll_runtime.go") &&
 			replayData[i].Line == 39 &&
 			replayData[i].Suc) {
@@ -308,14 +281,14 @@ func fixOnceFdPollRuntime(replayData runtime.CobufiReplayTrace) {
 		}
 		replayData[i].Suc = false
 		for j := i + 1; j < len(replayData); j++ {
-			if !(replayData[j].Op == runtime.CobufiReplayMutexLock &&
+			if !(replayData[j].Op == runtime.AdvocateReplayMutexLock &&
 				strings.HasSuffix(replayData[j].File, "sync/once.go") &&
 				replayData[j].Line == 111) {
 				continue
 			}
 			replayData = append(replayData[:j], replayData[j+1:]...)
 			for k := j; k < len(replayData); k++ {
-				if !(replayData[j].Op == runtime.CobufiReplayMutexUnlock &&
+				if !(replayData[j].Op == runtime.AdvocateReplayMutexUnlock &&
 					strings.HasSuffix(replayData[j].File, "sync/once.go") &&
 					(replayData[j].Line == 117 || replayData[j].Line == 121)) {
 					continue
@@ -325,41 +298,4 @@ func fixOnceFdPollRuntime(replayData runtime.CobufiReplayTrace) {
 			}
 		}
 	}
-
-	newOnce := runtime.ReplayElement{
-		Op:       runtime.CobufiReplayOnce,
-		Time:     0,
-		File:     "internal/poll/fd_poll_runtime.go",
-		Line:     39,
-		Blocked:  false,
-		Suc:      true,
-		PFile:    "",
-		PLine:    0,
-		SelIndex: 0}
-
-	newLock := runtime.ReplayElement{
-		Op:       runtime.CobufiReplayMutexLock,
-		Time:     0,
-		File:     "sync/once.go",
-		Line:     111,
-		Blocked:  false,
-		Suc:      true,
-		PFile:    "",
-		PLine:    0,
-		SelIndex: 0}
-
-	newUnlock := runtime.ReplayElement{
-		Op:       runtime.CobufiReplayMutexUnlock,
-		Time:     0,
-		File:     "sync/once.go",
-		Line:     117,
-		Blocked:  false,
-		Suc:      true,
-		PFile:    "",
-		PLine:    0,
-		SelIndex: 0}
-
-	newElems := []runtime.ReplayElement{newOnce, newLock, newUnlock}
-
-	replayData = append(replayData[:1], append(newElems, replayData[1:]...)...)
 }

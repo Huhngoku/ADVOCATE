@@ -274,14 +274,14 @@ To start the replay, add the following header at the beginning of the
 main function:
 
 ```go
-trace := cobufi.ReadTrace("trace.log")
+trace := advocate.ReadTrace("trace.log")
 runtime.EnableReplay(trace)
 defer runtime.WaitForReplayFinish()
 ```
 
 `"trace.log"` must be replaced with the path to the trace file. Also include the following imports:
 ```go
-"cobufi"
+"advocate"
 "runtime"
 ```
 
@@ -365,8 +365,8 @@ The begin of each operation is modified to call this WaitForReplay and then
 try to receive at the returned channel. A simplified version of this looks like
 ```go
 var replayElem ReplayElement
-if !c.cobufiIgnore {  // c is not an channel from the replay mechanism
-    enabled, waitChan := WaitForReplay(CobufiReplayChannelSend, 3)
+if !c.advocateIgnore {  // c is not an channel from the replay mechanism
+    enabled, waitChan := WaitForReplay(AdvocateReplayChannelSend, 3)
     if enabled {
         replayElem = <-waitChan
     }
@@ -412,7 +412,7 @@ if enabled {  // replay is running
         lock(&c.numberSendMutex)
         c.numberSend++
         unlock(&c.numberSendMutex)
-        _ = CobufiChanSendPre(c.id, c.numberSend, c.dataqsiz)
+        _ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
         BlockForever()
     }
 }
@@ -428,10 +428,10 @@ if envable {  // replay is running
     ...
     if !elem.Suc {
         if o.id == 0 {
-            o.id = runtime.GetCobufiObjectId()
+            o.id = runtime.GetAdvocateObjectId()
         }
-        index := runtime.CobufiOncePre(o.id)
-        runtime.CobufiOncePost(index, false)
+        index := runtime.AdvocateOncePre(o.id)
+        runtime.AdvocateOncePost(index, false)
         return
     }
 }
@@ -453,7 +453,7 @@ the one in the trace, and it can continue as normal. If the information is not c
 This is implemented in the `dequeue` function as
 ```go
 if replayEnabled && !sgp.replayEnabled {  // replay is enabled and the channel is not part of the replay mechanism
-    if !(rElem.File == "") && !sgp.c.cobufiIgnore {
+    if !(rElem.File == "") && !sgp.c.advocateIgnore {
         if sgp.pFile != rElem.File || sgp.pLine != rElem.Line {
             return nil  // reject communication
         }
@@ -467,7 +467,7 @@ If the default case is supposed to be executed, we can immediately force the
 execution of the default case, before the select checks, if other channels
 would be available by adding
 ```go
-if enabled && replayElem.Op == CobufiReplaySelectDefault {
+if enabled && replayElem.Op == AdvocateReplaySelectDefault {
     selunlock(scases, lockorder)
     casi = -1
     goto retc

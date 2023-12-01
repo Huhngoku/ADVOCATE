@@ -42,21 +42,21 @@ WARNING: It can currently happen, that `make.bash` command result in a `fatal er
 
 It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
 ```
-export GOROOT=$HOME/CoBuFiGo/go-patch/
+export GOROOT=$HOME/ADVOCATE/go-patch/
 ```
 
 To create a trace, add
 
 ```go
-runtime.InitCobufi(0)
-defer cobufi.CreateTrace("trace_name.log")
+runtime.InitAdvocate(0)
+defer advocate.CreateTrace("trace_name.log")
 ```
 
 at the beginning of the main function.
 Also include the following imports 
 ```go
 runtime
-cobufi
+advocate
 ```
 
 Autocompletion often includes "std/runtime" instead of "runtime". Make sure to include the correct one.
@@ -101,14 +101,14 @@ package main
 
 import (
 	"runtime"
-	"cobufi"
+	"advocate"
 	"time"
 )
 
 func main() {
 	// ======= Preamble Start =======
-	runtime.InitCobufi(0)
-	defer cobufi.CreateTrace("trace_name.log")
+	runtime.InitAdvocate(0)
+	defer advocate.CreateTrace("trace_name.log")
 	// ======= Preamble End =======
 
 	c := make(chan int, 0)
@@ -204,14 +204,14 @@ To start the replay, add the following header at the beginning of the
 main function:
 
 ```go
-trace := cobufi.ReadTrace("trace.log")
+trace := advocate.ReadTrace("trace.log")
 runtime.EnableReplay(trace)
 defer runtime.WaitForReplayFinish()
 ```
 
 `"trace.log"` must be replaced with the path to the trace file. Also include the following imports:
 ```go
-"cobufi"
+"advocate"
 "runtime"
 ```
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
@@ -221,13 +221,13 @@ If you want replay and at the same time record the program, make sure to add
 the replay header before the tracing header. Otherwise the program will crash
 ```go
 // init replay
-trace := cobufi.ReadTrace("trace_old.log")
+trace := advocate.ReadTrace("trace_old.log")
 runtime.EnableReplay(trace)
 defer runtime.WaitForReplayFinish()
 
 // init tracing
-runtime.InitCobufi(0)
-defer cobufi.CreateTrace("trace_new.log")
+runtime.InitAdvocate(0)
+defer advocate.CreateTrace("trace_new.log")
 ```
 
 ### Warning:

@@ -2,47 +2,47 @@
 
 -------------------- Warning --------------------
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:28
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1242
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1389
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:28
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:28
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:28
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:28
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/crypto/internal/randutil/randutil.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1242
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1389
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1242
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1389
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1242
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1389
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1242
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:1389
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2257
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2198
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2257
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2198
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2744
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2417
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2744
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2417
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2744
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2417
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2744
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2417
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2744
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/go-patch/src/net/http/transport.go:2417
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2744
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:2417
 
 =================================================
 Total runtime: 355.196361ms

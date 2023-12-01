@@ -10,9 +10,9 @@ import "unsafe"
 //
 //go:linkname Load
 // COBUFI-CHANGE-START
-//go:linkname LoadCobufi
-//go:linkname Load64Cobufi
-//go:linkname LoadpCobufi
+//go:linkname LoadAdvocate
+//go:linkname Load64Advocate
+//go:linkname LoadpAdvocate
 // COBUFI-CHANGE-END
 //go:linkname Loadp
 //go:linkname Load64
@@ -27,8 +27,8 @@ func Load(ptr *uint32) uint32 {
 //
 //go:nosplit
 //go:noinline
-func LoadCobufi(ptr *uint32) uint32 {
-	CobufiAtomic32Load(ptr)
+func LoadAdvocate(ptr *uint32) uint32 {
+	AdvocateAtomic32Load(ptr)
 	return *ptr
 }
 
@@ -44,8 +44,8 @@ func Loadp(ptr unsafe.Pointer) unsafe.Pointer {
 //
 //go:nosplit
 //go:noinline
-func LoadpCobufi(ptr unsafe.Pointer) unsafe.Pointer {
-	CobufiAtomicPtr(ptr)
+func LoadpAdvocate(ptr unsafe.Pointer) unsafe.Pointer {
+	AdvocateAtomicPtr(ptr)
 	return *(*unsafe.Pointer)(ptr)
 }
 
@@ -61,8 +61,8 @@ func Load64(ptr *uint64) uint64 {
 //
 //go:nosplit
 //go:noinline
-func Load64Cobufi(ptr *uint64) uint64 {
-	CobufiAtomic64Load(ptr)
+func Load64Advocate(ptr *uint64) uint64 {
+	AdvocateAtomic64Load(ptr)
 	return *ptr
 }
 

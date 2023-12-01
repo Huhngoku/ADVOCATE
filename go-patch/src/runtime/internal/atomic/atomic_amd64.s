@@ -30,7 +30,7 @@ TEXT ·Cas(SB),NOSPLIT,$0-17
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic32CompSwap(SB)
+	CALL	·AdvocateAtomic32CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	old+8(FP), AX
@@ -52,7 +52,7 @@ TEXT ·Cas64(SB), NOSPLIT, $0-25
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic64CompSwap(SB)
+	CALL	·AdvocateAtomic64CompSwap(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	old+8(FP), AX
@@ -98,7 +98,7 @@ TEXT ·Xadd(SB), NOSPLIT, $0-20
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic32Add(SB)
+	CALL	·AdvocateAtomic32Add(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	delta+8(FP), AX
@@ -117,7 +117,7 @@ TEXT ·Xadd64(SB), NOSPLIT, $0-24
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic64Add(SB)
+	CALL	·AdvocateAtomic64Add(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	delta+8(FP), AX
@@ -146,7 +146,7 @@ TEXT ·Xchg(SB), NOSPLIT, $0-20
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic32Swap(SB)
+	CALL	·AdvocateAtomic32Swap(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	new+8(FP), AX
@@ -163,7 +163,7 @@ TEXT ·Xchg64(SB), NOSPLIT, $0-24
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic64Swap(SB)
+	CALL	·AdvocateAtomic64Swap(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	new+8(FP), AX
@@ -190,7 +190,7 @@ TEXT ·Store(SB), NOSPLIT, $0-12
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic32Store(SB)
+	CALL	·AdvocateAtomic32Store(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVL	val+8(FP), AX
@@ -201,7 +201,7 @@ TEXT ·Store8(SB), NOSPLIT, $0-9
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic32Store(SB)
+	CALL	·AdvocateAtomic32Store(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVB	val+8(FP), AX
@@ -212,7 +212,7 @@ TEXT ·Store64(SB), NOSPLIT, $0-16
 	// COBUFI-CHANGE-START
  	MOVQ 	ptr+0(FP), AX
   	MOVQ 	AX, 0(SP)
-	CALL	·CobufiAtomic64Store(SB)
+	CALL	·AdvocateAtomic64Store(SB)
 	// COBUFI-CHANGE-END
 	MOVQ	ptr+0(FP), BX
 	MOVQ	val+8(FP), AX

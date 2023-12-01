@@ -3,31 +3,31 @@ package runtime
 type ReplayOperation int
 
 const (
-	CobufiNone ReplayOperation = iota
-	CobufiReplaySpawn
+	AdvocateNone ReplayOperation = iota
+	AdvocateReplaySpawn
 
-	CobufiReplayChannelSend
-	CobufiReplayChannelRecv
-	CobufiReplayChannelClose
+	AdvocateReplayChannelSend
+	AdvocateReplayChannelRecv
+	AdvocateReplayChannelClose
 
-	CobufiReplayMutexLock
-	CobufiReplayMutexUnlock
-	CobufiReplayMutexTryLock
-	CobufiReplayRWMutexLock
-	CobufiReplayRWMutexUnlock
-	CobufiReplayRWMutexTryLock
-	CobufiReplayRWMutexRLock
-	CobufiReplayRWMutexRUnlock
-	CobufiReplayRWMutexTryRLock
+	AdvocateReplayMutexLock
+	AdvocateReplayMutexUnlock
+	AdvocateReplayMutexTryLock
+	AdvocateReplayRWMutexLock
+	AdvocateReplayRWMutexUnlock
+	AdvocateReplayRWMutexTryLock
+	AdvocateReplayRWMutexRLock
+	AdvocateReplayRWMutexRUnlock
+	AdvocateReplayRWMutexTryRLock
 
-	CobufiReplayOnce
+	AdvocateReplayOnce
 
-	CobufiReplayWaitgroupAddDone
-	CobufiReplayWaitgroupWait
+	AdvocateReplayWaitgroupAddDone
+	AdvocateReplayWaitgroupWait
 
-	CobufiReplaySelect
-	CobufiReplaySelectCase
-	CobufiReplaySelectDefault
+	AdvocateReplaySelect
+	AdvocateReplaySelectCase
+	AdvocateReplaySelectDefault
 )
 
 /*
@@ -59,30 +59,23 @@ type ReplayElement struct {
 	SelIndex int
 }
 
-type CobufiReplayTrace []ReplayElement
+type AdvocateReplayTrace []ReplayElement
 
 var replayEnabled bool = false
 var replayLock mutex
 var replayIndex int = 0
 
-var replayData CobufiReplayTrace = make(CobufiReplayTrace, 0)
+var replayData AdvocateReplayTrace = make(AdvocateReplayTrace, 0)
 
-func (t CobufiReplayTrace) Print() {
+func (t AdvocateReplayTrace) Print() {
 	for _, e := range t {
 		println(e.Op, e.Time, e.File, e.Line, e.Blocked, e.Suc)
 	}
 }
 
-func EnableReplay(trace CobufiReplayTrace) {
+func EnableReplay(trace AdvocateReplayTrace) {
 	replayData = trace
-	if len(replayData) == 0 {
-		println("Trace is empty. Disable replay")
-	}
 	replayEnabled = true
-}
-
-func DisableReplay() {
-	replayEnabled = false
 }
 
 func WaitForReplayFinish() {
@@ -130,13 +123,10 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return false, ReplayElement{}
 	}
 
-	if IsIgnoredFile(file) {
-		return false, ReplayElement{}
-	}
-
 	println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
+		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		if next.Time != 0 { // if next == ReplayElement{}
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
@@ -155,11 +145,11 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 }
 
 func correctSelect(next ReplayOperation, op ReplayOperation) bool {
-	if op != CobufiReplaySelect {
+	if op != AdvocateReplaySelect {
 		return false
 	}
 
-	if next != CobufiReplaySelectCase && next != CobufiReplaySelectDefault {
+	if next != AdvocateReplaySelectCase && next != AdvocateReplaySelectDefault {
 		return false
 	}
 
@@ -179,6 +169,7 @@ func getNextReplayElement() ReplayElement {
 	defer unlock(&replayLock)
 	if replayIndex >= len(replayData) {
 		return ReplayElement{}
+		panic("Tace to short. The Program was most likely altered between recording and replay.")
 	}
 	return replayData[replayIndex]
 }

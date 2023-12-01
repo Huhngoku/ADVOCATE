@@ -86,13 +86,13 @@ const (
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
 	// COBUFI-CHANGE-START
-	enabled, reaplayElem := runtime.WaitForReplay(runtime.CobufiReplayMutexLock, 2)
+	enabled, reaplayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexLock, 2)
 	if enabled {
 		if m.id == 0 {
-			m.id = runtime.GetCobufiObjectId()
+			m.id = runtime.GetAdvocateObjectId()
 		}
 		if reaplayElem.Blocked {
-			_ = runtime.CobufiMutexLockPre(m.id, false, false)
+			_ = runtime.AdvocateMutexLockPre(m.id, false, false)
 			runtime.BlockForever()
 		}
 	}
@@ -101,16 +101,16 @@ func (m *Mutex) Lock() {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id.
 	if m.id == 0 {
-		m.id = runtime.GetCobufiObjectId()
+		m.id = runtime.GetAdvocateObjectId()
 	}
 
-	// CobufiMutexLockPre records, that a routine tries to lock a mutex.
-	// CobufiPost is called, if the mutex was locked successfully.
+	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
+	// AdvocatePost is called, if the mutex was locked successfully.
 	// In this case, the Lock event in the trace is updated to include
-	// this information. cobufiIndex is used for CobufiPost to find the
+	// this information. advocateIndex is used for AdvocatePost to find the
 	// pre event.
-	cobufiIndex := runtime.CobufiMutexLockPre(m.id, false, false)
-	defer runtime.CobufiPost(cobufiIndex)
+	advocateIndex := runtime.AdvocateMutexLockPre(m.id, false, false)
+	defer runtime.AdvocatePost(advocateIndex)
 	// COBUFI-CHANGE-END
 
 	// Fast path: grab unlocked mutex.
@@ -131,21 +131,21 @@ func (m *Mutex) Lock() {
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
 	// COBUFI-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayMutexTryLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexTryLock, 2)
 	if enabled {
 		if !replayElem.Blocked {
 			if m.id == 0 {
-				m.id = runtime.GetCobufiObjectId()
+				m.id = runtime.GetAdvocateObjectId()
 			}
-			_ = runtime.CobufiMutexLockTry(m.id, false, false)
+			_ = runtime.AdvocateMutexLockTry(m.id, false, false)
 			runtime.BlockForever()
 		}
 		if !replayElem.Suc {
 			if m.id == 0 {
-				m.id = runtime.GetCobufiObjectId()
+				m.id = runtime.GetAdvocateObjectId()
 			}
-			cobufiIndex := runtime.CobufiMutexLockTry(m.id, false, false)
-			runtime.CobufiPostTry(cobufiIndex, false)
+			advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
+			runtime.AdvocatePostTry(advocateIndex, false)
 			return false
 		}
 	}
@@ -154,17 +154,17 @@ func (m *Mutex) TryLock() bool {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if m.id == 0 {
-		m.id = runtime.GetCobufiObjectId()
+		m.id = runtime.GetAdvocateObjectId()
 	}
 
-	// CobufiMutexLockPre records, that a routine tries to lock a mutex.
-	// cobufiIndex is used for CobufiPostTry to find the pre event.
-	cobufiIndex := runtime.CobufiMutexLockTry(m.id, false, false)
+	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
+	// advocateIndex is used for AdvocatePostTry to find the pre event.
+	advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
 	// COBUFI-CHANGE-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
 		// COBUFI-CHANGE-START
-		runtime.CobufiPostTry(cobufiIndex, false)
+		runtime.AdvocatePostTry(advocateIndex, false)
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -174,9 +174,9 @@ func (m *Mutex) TryLock() bool {
 	// goroutine wakes up.
 	if !atomic.CompareAndSwapInt32(&m.state, old, old|mutexLocked) {
 		// COBUFI-CHANGE-START
-		// If the mutex was not locked successfully, CobufiPostTry is called
+		// If the mutex was not locked successfully, AdvocatePostTry is called
 		// to update the trace.
-		runtime.CobufiPostTry(cobufiIndex, false)
+		runtime.AdvocatePostTry(advocateIndex, false)
 		// COBUFI-CHANGE-END
 		return false
 	}
@@ -185,9 +185,9 @@ func (m *Mutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(m))
 	}
 	// COBUFI-CHANGE-START
-	// If the mutex was locked successfully, CobufiPostTry is called
+	// If the mutex was locked successfully, AdvocatePostTry is called
 	// to update the trace.
-	runtime.CobufiPostTry(cobufiIndex, true)
+	runtime.AdvocatePostTry(advocateIndex, true)
 	// COBUFI-CHANGE-END
 	return true
 }
@@ -289,18 +289,18 @@ func (m *Mutex) lockSlow() {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
 	// COBUFI-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.CobufiReplayMutexUnlock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexUnlock, 2)
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {
-				m.id = runtime.GetCobufiObjectId()
+				m.id = runtime.GetAdvocateObjectId()
 			}
-			_ = runtime.CobufiUnlockPre(m.id, false, false)
+			_ = runtime.AdvocateUnlockPre(m.id, false, false)
 			runtime.BlockForever()
 		}
 	}
-	// CobufiUnlockPre is used to record the unlocking of a mutex.
-	// CobufiPost records the successful unlocking of a mutex.
+	// AdvocateUnlockPre is used to record the unlocking of a mutex.
+	// AdvocatePost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not
 	// strictly necessary to record the post for the unlocking of a mutex.
 	// For rw mutexes, the unlock can fail (e.g. unlock after rlock). Therefore
@@ -308,8 +308,8 @@ func (m *Mutex) Unlock() {
 	// rw mutex.
 	// Here the post is seperatly recorded to easy the implementation for
 	// the rw mutexes.
-	cobufiIndex := runtime.CobufiUnlockPre(m.id, false, false)
-	defer runtime.CobufiPost(cobufiIndex)
+	advocateIndex := runtime.AdvocateUnlockPre(m.id, false, false)
+	defer runtime.AdvocatePost(advocateIndex)
 	// COBUFI-CHANGE-END
 
 	if race.Enabled {

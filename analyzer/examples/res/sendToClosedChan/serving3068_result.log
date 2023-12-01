@@ -2,15 +2,15 @@
 
 -------------------- Critical -------------------
 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:51
-	send : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:45
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:51
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:45
 -------------------- Warning --------------------
 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:51
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:51
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:31
 Receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:51
-	recv : /home/erikkassubek/Uni/HiWi/CoBuFi-Go/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:31
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:51
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/sendToClosedChan/gobench/serving_3068/serving3068.go:31
 
 =================================================
 Total runtime: 6.368666ms

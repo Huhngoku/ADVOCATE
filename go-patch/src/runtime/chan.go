@@ -57,7 +57,7 @@ type hchan struct {
 	numberSendMutex mutex  // mutex for numberSend
 	numberRecv      uint64 // number of completed recv operations
 	numberRecvMutex mutex  // mutex for numberRecv
-	cobufiIgnore    bool   // if true, the channel is ignored by tracing and replay
+	advocateIgnore  bool   // if true, the channel is ignored by tracing and replay
 	// COBUFI-CHANGE-END
 }
 
@@ -83,9 +83,9 @@ func makechan(t *chantype, size int) *hchan {
 	elem := t.Elem
 
 	// COBUFI-CHANGE-START
-	cobufiIgnored := false
+	advocateIgnored := false
 	if size == 1<<16 {
-		cobufiIgnored = true
+		advocateIgnored = true
 		size = 0
 	}
 	// COBUFI-CHANGE-END
@@ -131,9 +131,9 @@ func makechan(t *chantype, size int) *hchan {
 
 	// COBUFI-CHANGE-START
 	// get and save a new id for the channel
-	c.cobufiIgnore = cobufiIgnored
-	if !c.cobufiIgnore {
-		c.id = GetCobufiObjectId()
+	c.advocateIgnore = advocateIgnored
+	if !c.advocateIgnore {
+		c.id = GetAdvocateObjectId()
 	}
 	// COBUFI-CHANGE-END
 
@@ -146,8 +146,8 @@ func makechan(t *chantype, size int) *hchan {
 }
 
 // COBUFI-CHANGE-START
-func (c *hchan) SetCobufiIgnore() {
-	c.cobufiIgnore = true
+func (c *hchan) SetAdvocateIgnore() {
+	c.advocateIgnore = true
 }
 
 // COBUFI-CHANGE-END
@@ -212,14 +212,14 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
-	if !c.cobufiIgnore {
-		enabled, replayElem = WaitForReplay(CobufiReplayChannelSend, 3)
+	if !c.advocateIgnore {
+		enabled, replayElem = WaitForReplay(AdvocateReplayChannelSend, 3)
 		if enabled {
 			if replayElem.Blocked {
 				lock(&c.numberSendMutex)
 				c.numberSend++
 				unlock(&c.numberSendMutex)
-				_ = CobufiChanSendPre(c.id, c.numberSend, c.dataqsiz)
+				_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
 				BlockForever()
 			}
 		}
@@ -256,21 +256,21 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// COBUFI-CHANGE-START
 	// this block is called if a send is made on a channel
 	// it increases the number of sends on the channel, which is used to
-	// identify the communication partner in the cobufi analysis
+	// identify the communication partner in the advocate analysis
 	// After that a channel send event is created in the trace to show,
 	// that the channel tried to send.
 	// The current function 'chansend' only returns, if the send was successful,
 	// meaning the channel either directly communicated with a receive or wrote
 	// into the channel buffer. Therefor, the send event is modified to include
-	// the post information by CobufiChanPost, if 'chansend' returns.
-	// cobufiIndex is used to connect the post event to the correct
+	// the post information by AdvocateChanPost, if 'chansend' returns.
+	// advocateIndex is used to connect the post event to the correct
 	// pre envent in the trace.
-	var cobufiIndex int
-	if !c.cobufiIgnore {
+	var advocateIndex int
+	if !c.advocateIgnore {
 		lock(&c.numberSendMutex)
 		c.numberSend++
 		unlock(&c.numberSendMutex)
-		cobufiIndex = CobufiChanSendPre(c.id, c.numberSend, c.dataqsiz)
+		advocateIndex = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
 	}
 	// COBUFI-CHANGE-END
 
@@ -283,8 +283,8 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
 		// COBUFI-CHANGE-START
-		if !c.cobufiIgnore {
-			CobufiChanPost(cobufiIndex)
+		if !c.advocateIgnore {
+			AdvocateChanPost(advocateIndex)
 		}
 		// COBUFI-CHANGE-END
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
@@ -294,8 +294,8 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if c.qcount < c.dataqsiz {
 		// Space is available in the channel buffer. Enqueue the element to send.
 		// COBUFI-CHANGE-START
-		if !c.cobufiIgnore {
-			CobufiChanPost(cobufiIndex)
+		if !c.advocateIgnore {
+			AdvocateChanPost(advocateIndex)
 		}
 		// COBUFI-CHANGE-END
 		qp := chanbuf(c, c.sendx)
@@ -315,8 +315,8 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	if !block {
 		// COBUFI-CHANGE-START
-		if !c.cobufiIgnore {
-			CobufiChanPost(cobufiIndex)
+		if !c.advocateIgnore {
+			AdvocateChanPost(advocateIndex)
 		}
 		// COBUFI-CHANGE-END
 		unlock(&c.lock)
@@ -339,7 +339,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	mysg.c = c
 	// COBUFI-CHANGE-START
 	// save partner file and line in sudog
-	if replayEnabled && !c.cobufiIgnore {
+	if replayEnabled && !c.advocateIgnore {
 		mysg.replayEnabled = true
 		mysg.pFile = replayElem.PFile
 		mysg.pLine = replayElem.PLine
@@ -369,8 +369,8 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		throw("G waiting list is corrupted")
 	}
 	// COBUFI-CHANGE-START
-	if !c.cobufiIgnore {
-		CobufiChanPost(cobufiIndex)
+	if !c.advocateIgnore {
+		AdvocateChanPost(advocateIndex)
 	}
 	// COBUFI-CHANGE-END
 	gp.waiting = nil
@@ -384,8 +384,8 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	releaseSudog(mysg)
 	if closed {
 		// COBUFI-CHANGE-START
-		if !c.cobufiIgnore {
-			CobufiChanPostCausedByClose(cobufiIndex)
+		if !c.advocateIgnore {
+			AdvocateChanPostCausedByClose(advocateIndex)
 		}
 		// COBUFI-CHANGE-END
 		if c.closed == 0 {
@@ -473,11 +473,11 @@ func closechan(c *hchan) {
 	lock(&c.lock)
 
 	// COBUFI-CHANGE-START
-	// CobufiChanClose is called when a channel is closed. It creates a close event
+	// AdvocateChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
-	if !c.cobufiIgnore {
-		_, _ = WaitForReplay(CobufiReplayChannelClose, 2)
-		CobufiChanClose(c.id, c.dataqsiz)
+	if !c.advocateIgnore {
+		_, _ = WaitForReplay(AdvocateReplayChannelClose, 2)
+		AdvocateChanClose(c.id, c.dataqsiz)
 	}
 	// COBUFI-CHANGE-END
 
@@ -595,14 +595,14 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
-	if !c.cobufiIgnore {
-		enabled, replayElem = WaitForReplay(CobufiReplayChannelRecv, 3)
+	if !c.advocateIgnore {
+		enabled, replayElem = WaitForReplay(AdvocateReplayChannelRecv, 3)
 		if enabled {
 			if replayElem.Blocked {
 				lock(&c.numberRecvMutex)
 				c.numberRecv++
 				unlock(&c.numberRecvMutex)
-				_ = CobufiChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+				_ = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
 				BlockForever()
 			}
 		}
@@ -652,22 +652,22 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// COBUFI-CHANGE-START
 	// this block is called if a receive is made on a channel.
 	// It increases the number of receives on the channel, which is used to
-	// identify the communication partner in the cobufi analysis.
+	// identify the communication partner in the advocate analysis.
 	// After that a channel receive event is created in the trace to show,
 	// that the channel tried to receive.
 	// The current function 'chanrecv' only returns, if the receive was successful,
 	// meaning the channel either communicated with a send or read from the
 	// channel buffer. Therefor, the recive event is modified to include the
-	// post information by CobufiChanPost, if 'chansend' returns.
-	// cobufiIndex is used to connect the post event to the correct
+	// post information by AdvocateChanPost, if 'chansend' returns.
+	// advocateIndex is used to connect the post event to the correct
 	// pre envent in the trace.
-	var cobufiIndex int
-	if !c.cobufiIgnore {
+	var advocateIndex int
+	if !c.advocateIgnore {
 		lock(&c.numberRecvMutex)
 		c.numberRecv++
 		unlock(&c.numberRecvMutex)
-		cobufiIndex = CobufiChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
-		defer CobufiChanPost(cobufiIndex)
+		advocateIndex = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+		defer AdvocateChanPost(advocateIndex)
 	}
 	// COBUFI-CHANGE-END
 
@@ -681,8 +681,8 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 				typedmemclr(c.elemtype, ep)
 			}
 			// COBUFI-CHANGE-START
-			if !c.cobufiIgnore {
-				CobufiChanPostCausedByClose(cobufiIndex)
+			if !c.advocateIgnore {
+				AdvocateChanPostCausedByClose(advocateIndex)
 			}
 			// COBUFI-CHANGE-END
 			return true, false
@@ -741,7 +741,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	mysg.c = c
 	// COBUFI-CHANGE-START
 	// save partner file and line in sudog
-	if replayEnabled && !c.cobufiIgnore {
+	if replayEnabled && !c.advocateIgnore {
 		mysg.replayEnabled = true
 		mysg.pFile = replayElem.PFile
 		mysg.pLine = replayElem.PLine
@@ -772,8 +772,8 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	}
 	success := mysg.success
 	// COBUFI-CHANGE-START
-	if !success && !c.cobufiIgnore {
-		CobufiChanPostCausedByClose(cobufiIndex)
+	if !success && !c.advocateIgnore {
+		AdvocateChanPostCausedByClose(advocateIndex)
 	}
 	// COBUFI-CHANGE-END
 	gp.param = nil
@@ -881,15 +881,15 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	// It the return is nesseserry, because otherwise the following lock
 	// would try to lock a mutex which is a member of a nil element.
 	// This would lead to a SIGSEGV
-	if c != nil && !c.cobufiIgnore {
+	if c != nil && !c.advocateIgnore {
 		if c == nil {
 			return false
 		}
-		// cobufiIndex := CobufiSelectPreOneNonDef(c, true)
+		// advocateIndex := AdvocateSelectPreOneNonDef(c, true)
 		res := chansend(c, elem, false, getcallerpc())
 		lock(&c.numberSendMutex)
 		defer unlock(&c.numberSendMutex)
-		// CobufiSelectPostOneNonDef(cobufiIndex, res, c.numberSend)
+		// AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberSend)
 		return res
 	}
 	return chansend(c, elem, false, getcallerpc())
@@ -916,15 +916,15 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	// COBUFI-CHANGE-START
 	// see selectnbsend
-	if c != nil && !c.cobufiIgnore {
+	if c != nil && !c.advocateIgnore {
 		if c == nil {
 			return false, false
 		}
-		// cobufiIndex := CobufiSelectPreOneNonDef(c, false)
+		// advocateIndex := AdvocateSelectPreOneNonDef(c, false)
 		res, recv := chanrecv(c, elem, false)
 		lock(&c.numberRecvMutex)
 		defer unlock(&c.numberRecvMutex)
-		// CobufiSelectPostOneNonDef(cobufiIndex, res, c.numberRecv)
+		// AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberRecv)
 		return res, recv
 	}
 
@@ -1000,7 +1000,7 @@ func (q *waitq) dequeue(rElem ReplayElement) *sudog {
 		// zu verhindern, das Umordnung zu Block führt
 		// TODO: oder ganz raus schmeißen, wenn nicht notwendig
 		if replayEnabled && !sgp.replayEnabled {
-			if !(rElem.File == "") && !sgp.c.cobufiIgnore {
+			if !(rElem.File == "") && !sgp.c.advocateIgnore {
 				if sgp.pFile != rElem.File || sgp.pLine != rElem.Line {
 					return nil
 				}

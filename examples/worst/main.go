@@ -24,12 +24,12 @@ func main() {
 
 		numRout := runtime.GetNumberOfRoutines()
 		for i := 0; i <= numRout; i++ {
-			cobufiChan := make(chan string)
+			advocateChan := make(chan string)
 			go func() {
-				runtime.TraceToStringByIdChannel(i, cobufiChan)
-				close(cobufiChan)
+				runtime.TraceToStringByIdChannel(i, advocateChan)
+				close(advocateChan)
 			}()
-			for trace := range cobufiChan {
+			for trace := range advocateChan {
 				if _, err := file.WriteString(trace); err != nil {
 					panic(err)
 				}

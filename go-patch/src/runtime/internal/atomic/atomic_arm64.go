@@ -39,7 +39,7 @@ func Load(ptr *uint32) uint32
 // COBUFI-CHANGE-START
 //
 //go:noescape
-func LoadCobufi(ptr *uint32) uint32
+func LoadAdvocate(ptr *uint32) uint32
 
 // COBUFI-CHANGE-END
 
@@ -49,7 +49,7 @@ func Load8(ptr *uint8) uint8
 // COBUFI-CHANGE-START
 //
 //go:noescape
-func Load8Cobufi(ptr *uint64) uint64
+func Load8Advocate(ptr *uint64) uint64
 
 // COBUFI-CHANGE-END
 
@@ -59,7 +59,7 @@ func Load64(ptr *uint64) uint64
 // COBUFI-CHANGE-START
 //
 //go:noescape
-func Load64Cobufi(ptr *uint64) uint64
+func Load64Advocate(ptr *uint64) uint64
 
 // COBUFI-CHANGE-END
 
@@ -68,7 +68,7 @@ func Loadp(ptr unsafe.Pointer) unsafe.Pointer
 
 // COBUFI-CHANGE-START
 // NO go:noescape annotation; *ptr escapes if result escapes (#31525)
-func LoadpCobufi(ptr unsafe.Pointer) unsafe.Pointer
+func LoadpAdvocate(ptr unsafe.Pointer) unsafe.Pointer
 
 // COBUFI-CHANGE-END
 

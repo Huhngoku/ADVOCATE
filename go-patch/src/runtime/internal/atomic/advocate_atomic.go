@@ -1,6 +1,6 @@
 package atomic
 
-// COBUFI-FILE-START
+// ADVOCATE-FILE-START
 
 import (
 	"unsafe"
@@ -24,18 +24,18 @@ type AtomicElem struct {
 	Operation int
 }
 
-func CobufiAtomicLink(cRecording chan<- AtomicElem) {
+func AdvocateAtomicLink(cRecording chan<- AtomicElem) {
 	chanRecording = cRecording
 	linked = true
 }
 
-func CobufiAtomicUnlink() {
+func AdvocateAtomicUnlink() {
 	chanRecording = nil
 	linked = false
 }
 
 //go:nosplit
-func CobufiAtomic64Load(addr *uint64) {
+func AdvocateAtomic64Load(addr *uint64) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -44,7 +44,7 @@ func CobufiAtomic64Load(addr *uint64) {
 }
 
 //go:nosplit
-func CobufiAtomic64Store(addr *uint64) {
+func AdvocateAtomic64Store(addr *uint64) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -53,7 +53,7 @@ func CobufiAtomic64Store(addr *uint64) {
 }
 
 //go:nosplit
-func CobufiAtomic64Add(addr *uint64) {
+func AdvocateAtomic64Add(addr *uint64) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -62,7 +62,7 @@ func CobufiAtomic64Add(addr *uint64) {
 }
 
 //go:nosplit
-func CobufiAtomic64Swap(addr *uint64) {
+func AdvocateAtomic64Swap(addr *uint64) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -71,7 +71,7 @@ func CobufiAtomic64Swap(addr *uint64) {
 }
 
 //go:nosplit
-func CobufiAtomic64CompSwap(addr *uint64) {
+func AdvocateAtomic64CompSwap(addr *uint64) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -80,7 +80,7 @@ func CobufiAtomic64CompSwap(addr *uint64) {
 }
 
 //go:nosplit
-func CobufiAtomic32Load(addr *uint32) {
+func AdvocateAtomic32Load(addr *uint32) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -89,7 +89,7 @@ func CobufiAtomic32Load(addr *uint32) {
 }
 
 //go:nosplit
-func CobufiAtomic32Store(addr *uint32) {
+func AdvocateAtomic32Store(addr *uint32) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -98,7 +98,7 @@ func CobufiAtomic32Store(addr *uint32) {
 }
 
 //go:nosplit
-func CobufiAtomic32Add(addr *uint32) {
+func AdvocateAtomic32Add(addr *uint32) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -107,7 +107,7 @@ func CobufiAtomic32Add(addr *uint32) {
 }
 
 //go:nosplit
-func CobufiAtomic32Swap(addr *uint32) {
+func AdvocateAtomic32Swap(addr *uint32) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -116,7 +116,7 @@ func CobufiAtomic32Swap(addr *uint32) {
 }
 
 //go:nosplit
-func CobufiAtomic32CompSwap(addr *uint32) {
+func AdvocateAtomic32CompSwap(addr *uint32) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -125,7 +125,7 @@ func CobufiAtomic32CompSwap(addr *uint32) {
 }
 
 //go:nosplit
-func CobufiAtomicUIntPtr(addr *uintptr) {
+func AdvocateAtomicUIntPtr(addr *uintptr) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
@@ -134,7 +134,7 @@ func CobufiAtomicUIntPtr(addr *uintptr) {
 }
 
 //go:nosplit
-func CobufiAtomicPtr(addr unsafe.Pointer) {
+func AdvocateAtomicPtr(addr unsafe.Pointer) {
 	if linked {
 		counter += 1
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(addr)),
@@ -142,4 +142,4 @@ func CobufiAtomicPtr(addr unsafe.Pointer) {
 	}
 }
 
-// COBUFI-FILE-END
+// ADVOCATE-FILE-END

@@ -1,4 +1,4 @@
-// COBUFI-FILE-START
+// ADVOCATE-FILE-START
 
 package runtime
 
@@ -31,22 +31,21 @@ const (
 	none
 )
 
-type cobufiTraceElement interface {
-	isCobufiTraceElement()
+type advocateTraceElement interface {
+	isAdvocateTraceElement()
 	toString() string
-	getFile() string
 }
 
-type cobufiAtomicMapElem struct {
+type advocateAtomicMapElem struct {
 	addr      uint64
 	operation int
 }
 
-var cobufiDisabled = true
-var cobufiAtomicMap = make(map[uint64]cobufiAtomicMapElem)
-var cobufiAtomicMapToID = make(map[uint64]uint64)
-var cobufiAtomicMapIDCounter uint64 = 1
-var cobufiAtomicMapLock mutex
+var advocateDisabled = true
+var advocateAtomicMap = make(map[uint64]advocateAtomicMapElem)
+var advocateAtomicMapToID = make(map[uint64]uint64)
+var advocateAtomicMapIDCounter uint64 = 1
+var advocateAtomicMapLock mutex
 
 /*
  * Return a string representation of the trace
@@ -72,7 +71,7 @@ func CurrentTraceToString() string {
  * Return:
  * 	string representation of the trace
  */
-func traceToString(trace *[]cobufiTraceElement) string {
+func traceToString(trace *[]advocateTraceElement) string {
 	res := ""
 	for i, elem := range *trace {
 		if i != 0 {
@@ -90,49 +89,8 @@ func traceToString(trace *[]cobufiTraceElement) string {
  * Return:
  * 	index of the element in the trace
  */
-func insertIntoTrace(elem cobufiTraceElement) int {
-	if ignoreElement(elem) {
-		return -1
-	}
+func insertIntoTrace(elem advocateTraceElement) int {
 	return currentGoRoutine().addToTrace(elem)
-}
-
-func ignoreElement(elem cobufiTraceElement) bool {
-	return IsIgnoredFile(elem.getFile())
-}
-
-func IsIgnoredFile(file string) bool {
-	return isIgnoredBackgroundFile(file) || isCobufiFile(file)
-}
-
-func isCobufiFile(file string) bool {
-	fileNames := []string{
-		"cobufi_trace.go",
-		"cobufi_replay.go",
-		"cobufi.go",
-		"cobufi_util.go",
-		"cobufi_routine.go",
-		"cobufi_atomic.go",
-	}
-
-	for _, fileName := range fileNames {
-		if isSuffix(file, fileName) {
-			return true
-		}
-	}
-	return false
-}
-
-func isIgnoredBackgroundFile(file string) bool {
-	fileNames := []string{
-		"mgc.go", // garbage collection
-	}
-	for _, fileName := range fileNames {
-		if isSuffix(file, fileName) {
-			return true
-		}
-	}
-	return false
 }
 
 /*
@@ -152,9 +110,9 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringById(id uint64) (string, bool) {
-	lock(&CobufiRoutinesLock)
-	defer unlock(&CobufiRoutinesLock)
-	if trace, ok := CobufiRoutines[id]; ok {
+	lock(&AdvocateRoutinesLock)
+	defer unlock(&AdvocateRoutinesLock)
+	if trace, ok := AdvocateRoutines[id]; ok {
 		return traceToString(trace), true
 	}
 	return "", false
@@ -170,10 +128,10 @@ func TraceToStringById(id uint64) (string, bool) {
  *  atomic: it true, the atomic trace is returned
  */
 func TraceToStringByIdChannel(id int, c chan<- string) {
-	// lock(&CobufiRoutinesLock)
-	// defer unlock(&CobufiRoutinesLock)
+	// lock(&AdvocateRoutinesLock)
+	// defer unlock(&AdvocateRoutinesLock)
 
-	if trace, ok := CobufiRoutines[uint64(id)]; ok {
+	if trace, ok := AdvocateRoutines[uint64(id)]; ok {
 		res := ""
 		for i, elem := range *trace {
 			if i != 0 {
@@ -191,6 +149,8 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 
 }
 
+// }
+
 /*
  * Return the trace of all traces
  * Return:
@@ -199,12 +159,12 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 func AllTracesToString() string {
 	// write warning if projectPath is empty
 	res := ""
-	lock(&CobufiRoutinesLock)
-	defer unlock(&CobufiRoutinesLock)
+	lock(&AdvocateRoutinesLock)
+	defer unlock(&AdvocateRoutinesLock)
 
-	for i := 1; i <= len(CobufiRoutines); i++ {
+	for i := 1; i <= len(AdvocateRoutines); i++ {
 		res += ""
-		trace := CobufiRoutines[uint64(i)]
+		trace := AdvocateRoutines[uint64(i)]
 		if trace == nil {
 			panic("Trace is nil")
 		}
@@ -227,52 +187,48 @@ func PrintAllTraces() {
  *	number of routines in the trace
  */
 func GetNumberOfRoutines() int {
-	lock(&CobufiRoutinesLock)
-	defer unlock(&CobufiRoutinesLock)
-	return len(CobufiRoutines)
+	lock(&AdvocateRoutinesLock)
+	defer unlock(&AdvocateRoutinesLock)
+	return len(AdvocateRoutines)
 }
 
 /* Enable the collection of the trace */
-func InitCobufi(size int) {
+func InitAdvocate(size int) {
 	// link runtime with atomic via channel to receive information about
 	// atomic events
 	c := make(chan at.AtomicElem, size)
-	at.CobufiAtomicLink(c)
+	at.AdvocateAtomicLink(c)
 	go func() {
 		for atomic := range c {
-			lock(&cobufiAtomicMapLock)
-			cobufiAtomicMap[atomic.Index] = cobufiAtomicMapElem{
+			lock(&advocateAtomicMapLock)
+			advocateAtomicMap[atomic.Index] = advocateAtomicMapElem{
 				addr:      atomic.Addr,
 				operation: atomic.Operation,
 			}
-			unlock(&cobufiAtomicMapLock)
+			unlock(&advocateAtomicMapLock)
 		}
 	}()
 
-	cobufiDisabled = false
+	advocateDisabled = false
 }
 
 /* Disable the collection of the trace */
 func DisableTrace() {
-	at.CobufiAtomicUnlink()
-	cobufiDisabled = true
+	at.AdvocateAtomicUnlink()
+	advocateDisabled = true
 }
 
 // ============================= Routine ===========================
 
 // type to save in the trace for routines
-type cobufiTraceSpawnElement struct {
+type advocateTraceSpawnElement struct {
 	id    uint64 // id of the routine
 	timer uint64 // global timer
 	file  string // file where the routine was created
 	line  int32  // line where the routine was created
 }
 
-func (elem cobufiTraceSpawnElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceSpawnElement) getFile() string {
-	return elem.file
-}
+func (elem advocateTraceSpawnElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -280,7 +236,7 @@ func (elem cobufiTraceSpawnElement) getFile() string {
  * 	string representation of the element "G,'id'"
  *    'id' (number): id of the routine
  */
-func (elem cobufiTraceSpawnElement) toString() string {
+func (elem advocateTraceSpawnElement) toString() string {
 	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + int32ToString(elem.line)
 }
 
@@ -292,16 +248,16 @@ func (elem cobufiTraceSpawnElement) toString() string {
  * 	file: file where the routine was created
  * 	line: line where the routine was created
  */
-func CobufiSpawn(callerRoutine *CobufiRoutine, newID uint64, file string, line int32) {
-	timer := GetCobufiCounter()
-	callerRoutine.addToTrace(cobufiTraceSpawnElement{id: newID, timer: timer,
+func AdvocateSpawn(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
+	timer := GetAdvocateCounter()
+	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
 		file: file, line: line})
 }
 
 // ============================= Mutex =============================
 
 // type to save in the trace for mutexe
-type cobufiTraceMutexElement struct {
+type advocateTraceMutexElement struct {
 	id    uint64    // id of the mutex
 	op    operation // operation
 	rw    bool      // true if it is a rwmutex
@@ -312,11 +268,7 @@ type cobufiTraceMutexElement struct {
 	tPost uint64    // global timer at end of operation
 }
 
-func (elem cobufiTraceMutexElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceMutexElement) getFile() string {
-	return elem.file
-}
+func (elem advocateTraceMutexElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -330,7 +282,7 @@ func (elem cobufiTraceMutexElement) getFile() string {
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem cobufiTraceMutexElement) toString() string {
+func (elem advocateTraceMutexElement) toString() string {
 	res := "M,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -374,14 +326,14 @@ func (elem cobufiTraceMutexElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiMutexLockPre(id uint64, rw bool, r bool) int {
+func AdvocateMutexLockPre(id uint64, rw bool, r bool) int {
 	op := opMutLock
 	if r {
 		op = opMutRLock
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetCobufiCounter()
-	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -395,14 +347,14 @@ func CobufiMutexLockPre(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiMutexLockTry(id uint64, rw bool, r bool) int {
+func AdvocateMutexLockTry(id uint64, rw bool, r bool) int {
 	op := opMutTryLock
 	if r {
 		op = opMutRTryLock
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetCobufiCounter()
-	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, file: file,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceMutexElement{id: id, op: op, rw: rw, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -416,26 +368,26 @@ func CobufiMutexLockTry(id uint64, rw bool, r bool) int {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiUnlockPre(id uint64, rw bool, r bool) int {
+func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
 	op := opMutUnlock
 	if r {
 		op = opMutRUnlock
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetCobufiCounter()
-	elem := cobufiTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 }
 
 /*
- * Add the end counter to an operation of the trace. For try use CobufiPostTry.
+ * Add the end counter to an operation of the trace. For try use AdvocatePostTry.
  *   Also used for wait group
  * Args:
  * 	index: index of the operation in the trace
  * 	c: number of the send
  */
-func CobufiPost(index int) {
+func AdvocatePost(index int) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -446,18 +398,18 @@ func CobufiPost(index int) {
 		return
 	}
 
-	timer := GetCobufiCounter()
+	timer := GetAdvocateCounter()
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
-	case cobufiTraceMutexElement:
+	case advocateTraceMutexElement:
 		elem.tPost = timer
 		currentGoRoutine().updateElement(index, elem)
-	case cobufiTraceWaitGroupElement:
+	case advocateTraceWaitGroupElement:
 		elem.tPost = timer
 		currentGoRoutine().updateElement(index, elem)
 
 	default:
-		panic("CobufiPost called on non mutex, waitgroup or channel")
+		panic("AdvocatePost called on non mutex, waitgroup or channel")
 	}
 }
 
@@ -467,25 +419,25 @@ func CobufiPost(index int) {
  * 	index: index of the operation in the trace
  * 	suc: true if the try was successful, false otherwise
  */
-func CobufiPostTry(index int, suc bool) {
+func AdvocatePostTry(index int, suc bool) {
 	// internal elements are not in the trace
 	if index == -1 {
 		return
 	}
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
-	case cobufiTraceMutexElement:
+	case advocateTraceMutexElement:
 		elem.suc = suc
-		elem.tPost = GetCobufiCounter()
+		elem.tPost = GetAdvocateCounter()
 		currentGoRoutine().updateElement(index, elem)
 	default:
-		panic("CobufiPostTry called on non mutex")
+		panic("AdvocatePostTry called on non mutex")
 	}
 }
 
 // ============================= WaitGroup ===========================
 
-type cobufiTraceWaitGroupElement struct {
+type advocateTraceWaitGroupElement struct {
 	id    uint64    // id of the waitgroup
 	op    operation // operation
 	delta int       // delta of the waitgroup
@@ -496,11 +448,7 @@ type cobufiTraceWaitGroupElement struct {
 	tPost uint64    // global timer
 }
 
-func (elem cobufiTraceWaitGroupElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceWaitGroupElement) getFile() string {
-	return elem.file
-}
+func (elem advocateTraceWaitGroupElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -515,7 +463,7 @@ func (elem cobufiTraceWaitGroupElement) getFile() string {
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem cobufiTraceWaitGroupElement) toString() string {
+func (elem advocateTraceWaitGroupElement) toString() string {
 	res := "W,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -540,7 +488,7 @@ func (elem cobufiTraceWaitGroupElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiWaitGroupAdd(id uint64, delta int, val int32) int {
+func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 	var file string
 	var line int
 	if delta > 0 {
@@ -548,8 +496,8 @@ func CobufiWaitGroupAdd(id uint64, delta int, val int32) int {
 	} else {
 		_, file, line, _ = Caller(3)
 	}
-	timer := GetCobufiCounter()
-	elem := cobufiTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
 		val: val, file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 
@@ -562,17 +510,17 @@ func CobufiWaitGroupAdd(id uint64, delta int, val int32) int {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiWaitGroupWaitPre(id uint64) int {
+func AdvocateWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
-	timer := GetCobufiCounter()
-	elem := cobufiTraceWaitGroupElement{id: id, op: opWgWait, file: file,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceWaitGroupElement{id: id, op: opWgWait, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
 // ============================= Channel =============================
 
-type cobufiTraceChannelElement struct {
+type advocateTraceChannelElement struct {
 	id     uint64    // id of the channel
 	op     operation // operation
 	qSize  uint32    // size of the channel, 0 for unbuffered
@@ -584,11 +532,7 @@ type cobufiTraceChannelElement struct {
 	closed bool      // true if the channel operation was finished, because the channel was closed at another routine
 }
 
-func (elem cobufiTraceChannelElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceChannelElement) getFile() string {
-	return elem.file
-}
+func (elem advocateTraceChannelElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -602,7 +546,7 @@ func (elem cobufiTraceChannelElement) getFile() string {
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem cobufiTraceChannelElement) toString() string {
+func (elem advocateTraceChannelElement) toString() string {
 	return elem.toStringSep(",", true)
 }
 
@@ -614,7 +558,7 @@ func (elem cobufiTraceChannelElement) toString() string {
 * Return:
 * 	string representation of the element
  */
-func (elem cobufiTraceChannelElement) toStringSep(sep string, showPos bool) string {
+func (elem advocateTraceChannelElement) toStringSep(sep string, showPos bool) string {
 	res := "C" + sep
 	res += uint64ToString(elem.tPre) + sep + uint64ToString(elem.tPost) + sep
 	res += uint64ToString(elem.id) + sep
@@ -654,19 +598,19 @@ func (elem cobufiTraceChannelElement) toStringSep(sep string, showPos bool) stri
  * Return:
  * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
-var cobufiCounterAtomic uint64
+var advocateCounterAtomic uint64
 
-func CobufiChanSendPre(id uint64, opId uint64, qSize uint) int {
+func AdvocateChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
-	if isSuffix(file, "cobufi_atomic.go") {
-		cobufiCounterAtomic += 1
-		CobufiAtomic(cobufiCounterAtomic)
+	if isSuffix(file, "advocate_atomic.go") {
+		advocateCounterAtomic += 1
+		AdvocateAtomic(advocateCounterAtomic)
 		// they are not recorded in the trace
 		return -1
 	}
-	timer := GetCobufiCounter()
-	elem := cobufiTraceChannelElement{id: id, op: opChanSend, opId: opId,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceChannelElement{id: id, op: opChanSend, opId: opId,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -695,15 +639,15 @@ func isSuffix(s, suffix string) bool {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiChanRecvPre(id uint64, opId uint64, qSize uint) int {
+func AdvocateChanRecvPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
-	if isSuffix(file, "cobufi_trace.go") {
+	if isSuffix(file, "advocate_trace.go") {
 		return -1
 	}
 
-	timer := GetCobufiCounter()
-	elem := cobufiTraceChannelElement{id: id, op: opChanRecv, opId: opId,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceChannelElement{id: id, op: opChanRecv, opId: opId,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -715,10 +659,10 @@ func CobufiChanRecvPre(id uint64, opId uint64, qSize uint) int {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiChanClose(id uint64, qSize uint) int {
+func AdvocateChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
-	timer := GetCobufiCounter()
-	elem := cobufiTraceChannelElement{id: id, op: opChanClose, file: file,
+	timer := GetAdvocateCounter()
+	elem := advocateTraceChannelElement{id: id, op: opChanClose, file: file,
 		line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -728,45 +672,41 @@ func CobufiChanClose(id uint64, qSize uint) int {
  * Args:
  * 	index: index of the operation in the trace
  */
-func CobufiChanPost(index int) {
+func AdvocateChanPost(index int) {
 	if index == -1 {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(cobufiTraceChannelElement)
-	elem.tPost = GetCobufiCounter()
+	elem := currentGoRoutine().getElement(index).(advocateTraceChannelElement)
+	elem.tPost = GetAdvocateCounter()
 	currentGoRoutine().updateElement(index, elem)
 }
 
-func CobufiChanPostCausedByClose(index int) {
+func AdvocateChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().getElement(index).(cobufiTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(advocateTraceChannelElement)
 	elem.closed = true
 	currentGoRoutine().updateElement(index, elem)
 }
 
 // ============================= Select ==============================
 
-type cobufiTraceSelectElement struct {
-	tPre    uint64                      // global timer before the operation
-	tPost   uint64                      // global timer after the operation
-	id      uint64                      // id of the select
-	cases   []cobufiTraceChannelElement // cases of the select
-	chosen  int                         // index of the chosen case in cases (0 indexed, -1 for default)
-	nsend   int                         // number of send cases
-	defa    bool                        // set true if a default case exists
-	defaSel bool                        // set true if a default case was chosen
-	file    string                      // file where the operation was called
-	line    int                         // line where the operation was called
+type advocateTraceSelectElement struct {
+	tPre    uint64                        // global timer before the operation
+	tPost   uint64                        // global timer after the operation
+	id      uint64                        // id of the select
+	cases   []advocateTraceChannelElement // cases of the select
+	chosen  int                           // index of the chosen case in cases (0 indexed, -1 for default)
+	nsend   int                           // number of send cases
+	defa    bool                          // set true if a default case exists
+	defaSel bool                          // set true if a default case was chosen
+	file    string                        // file where the operation was called
+	line    int                           // line where the operation was called
 }
 
-func (elem cobufiTraceSelectElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceSelectElement) getFile() string {
-	return elem.file
-}
+func (elem advocateTraceSelectElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -781,7 +721,7 @@ func (elem cobufiTraceSelectElement) getFile() string {
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem cobufiTraceSelectElement) toString() string {
+func (elem advocateTraceSelectElement) toString() string {
 	res := "S,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -823,25 +763,25 @@ func (elem cobufiTraceSelectElement) toString() string {
  * Return:
  * 	index of the operation in the trace
  */
-func CobufiSelectPre(cases *[]scase, nsends int, block bool) int {
-	timer := GetCobufiCounter()
+func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
+	timer := GetAdvocateCounter()
 	if cases == nil {
 		return -1
 	}
 
-	id := GetCobufiObjectId()
-	caseElements := make([]cobufiTraceChannelElement, len(*cases))
+	id := GetAdvocateObjectId()
+	caseElements := make([]advocateTraceChannelElement, len(*cases))
 	_, file, line, _ := Caller(2)
 
 	for i, ca := range *cases {
 		if ca.c != nil { // ignore nil cases
-			caseElements[i] = cobufiTraceChannelElement{id: ca.c.id,
+			caseElements[i] = advocateTraceChannelElement{id: ca.c.id,
 				op:    opChanRecv,
 				qSize: uint32(ca.c.dataqsiz), tPre: timer}
 		}
 	}
 
-	elem := cobufiTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
+	elem := advocateTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
 		defa: !block, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -855,15 +795,15 @@ func CobufiSelectPre(cases *[]scase, nsends int, block bool) int {
  * 	lockOrder: order of the locks
  * 	rClosed: true if the channel was closed at another routine
  */
-func CobufiSelectPost(index int, c *hchan, chosenIndex int,
+func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 	lockOrder []uint16, rClosed bool) {
 
 	if index == -1 || c == nil {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(cobufiTraceSelectElement)
-	timer := GetCobufiCounter()
+	elem := currentGoRoutine().getElement(index).(advocateTraceSelectElement)
+	timer := GetAdvocateCounter()
 
 	elem.chosen = chosenIndex
 	elem.tPost = timer
@@ -910,21 +850,21 @@ func CobufiSelectPost(index int, c *hchan, chosenIndex int,
 * Return:
 * 	index of the operation in the trace
  */
-func CobufiSelectPreOneNonDef(c *hchan, send bool) int {
+func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	if c == nil {
 		return -1
 	}
 
-	id := GetCobufiObjectId()
-	timer := GetCobufiCounter()
+	id := GetAdvocateObjectId()
+	timer := GetAdvocateCounter()
 
 	opChan := opChanRecv
 	if send {
 		opChan = opChanSend
 	}
 
-	caseElements := make([]cobufiTraceChannelElement, 1)
-	caseElements[0] = cobufiTraceChannelElement{id: c.id,
+	caseElements := make([]advocateTraceChannelElement, 1)
+	caseElements[0] = advocateTraceChannelElement{id: c.id,
 		qSize: uint32(c.dataqsiz), tPre: timer, op: opChan}
 
 	nSend := 0
@@ -933,7 +873,7 @@ func CobufiSelectPreOneNonDef(c *hchan, send bool) int {
 	}
 
 	_, file, line, _ := Caller(2)
-	elem := cobufiTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
+	elem := advocateTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
 		defa: true, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -944,13 +884,13 @@ func CobufiSelectPreOneNonDef(c *hchan, send bool) int {
  * 	index: index of the operation in the trace
  * 	res: 0 for the non-default case, -1 for the default case
  */
-func CobufiSelectPostOneNonDef(index int, res bool, oId uint64) {
+func AdvocateSelectPostOneNonDef(index int, res bool, oId uint64) {
 	if index == -1 {
 		return
 	}
 
-	timer := GetCobufiCounter()
-	elem := currentGoRoutine().getElement(index).(cobufiTraceSelectElement)
+	timer := GetAdvocateCounter()
+	elem := currentGoRoutine().getElement(index).(advocateTraceSelectElement)
 
 	if res {
 		elem.chosen = 0
@@ -966,17 +906,13 @@ func CobufiSelectPostOneNonDef(index int, res bool, oId uint64) {
 }
 
 // ============================= Atomic ================================
-type cobufiTraceAtomicElement struct {
+type advocateTraceAtomicElement struct {
 	timer     uint64 // global timer
-	index     uint64 // index of the atomic event in cobufiAtomicMap
+	index     uint64 // index of the atomic event in advocateAtomicMap
 	operation int    // type of operation
 }
 
-func (elem cobufiTraceAtomicElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceAtomicElement) getFile() string {
-	return ""
-}
+func (elem advocateTraceAtomicElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -984,7 +920,7 @@ func (elem cobufiTraceAtomicElement) getFile() string {
  * 	string representation of the element "A,'addr'"
  *    'addr' (number): address of the atomic variable
  */
-// enum for atomic operation, must be the same as in cobufi_atomic.go
+// enum for atomic operation, must be the same as in advocate_atomic.go
 const (
 	LoadOp = iota
 	StoreOp
@@ -993,14 +929,14 @@ const (
 	CompSwapOp
 )
 
-func (elem cobufiTraceAtomicElement) toString() string {
-	lock(&cobufiAtomicMapLock)
-	mapElement := cobufiAtomicMap[elem.index]
-	if _, ok := cobufiAtomicMapToID[mapElement.addr]; !ok {
-		cobufiAtomicMapToID[mapElement.addr] = cobufiAtomicMapIDCounter
-		cobufiAtomicMapIDCounter++
+func (elem advocateTraceAtomicElement) toString() string {
+	lock(&advocateAtomicMapLock)
+	mapElement := advocateAtomicMap[elem.index]
+	if _, ok := advocateAtomicMapToID[mapElement.addr]; !ok {
+		advocateAtomicMapToID[mapElement.addr] = advocateAtomicMapIDCounter
+		advocateAtomicMapIDCounter++
 	}
-	id := cobufiAtomicMapToID[mapElement.addr]
+	id := advocateAtomicMapToID[mapElement.addr]
 
 	res := "A," + uint64ToString(elem.timer) + "," +
 		uint64ToString(id) + ","
@@ -1018,18 +954,18 @@ func (elem cobufiTraceAtomicElement) toString() string {
 	default:
 		res += "U"
 	}
-	unlock(&cobufiAtomicMapLock)
+	unlock(&advocateAtomicMapLock)
 	return res
 }
 
-func CobufiAtomic(index uint64) {
-	timer := GetCobufiCounter()
-	elem := cobufiTraceAtomicElement{index: index, timer: timer}
+func AdvocateAtomic(index uint64) {
+	timer := GetAdvocateCounter()
+	elem := advocateTraceAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)
 }
 
 // ======================= Once ============================
-type cobufiTraceOnceElement struct {
+type advocateOnceElement struct {
 	tpre  uint64 // global timer at the beginning of the execution
 	tpost uint64 // global timer at the end of the execution
 	id    uint64 // id of the once
@@ -1038,11 +974,7 @@ type cobufiTraceOnceElement struct {
 	line  int    // line where the operation was called
 }
 
-func (elem cobufiTraceOnceElement) isCobufiTraceElement() {}
-
-func (elem cobufiTraceOnceElement) getFile() string {
-	return elem.file
-}
+func (elem advocateOnceElement) isAdvocateTraceElement() {}
 
 /*
  * Return a string representation of the element
@@ -1055,7 +987,7 @@ func (elem cobufiTraceOnceElement) getFile() string {
  *    'file' (string): file where the operation was called
  *    'line' (string): line where the operation was called
  */
-func (elem cobufiTraceOnceElement) toString() string {
+func (elem advocateOnceElement) toString() string {
 	res := "O,"
 	res += uint64ToString(elem.tpre) + ","
 	res += uint64ToString(elem.tpost) + ","
@@ -1069,23 +1001,23 @@ func (elem cobufiTraceOnceElement) toString() string {
 	return res
 }
 
-func CobufiOncePre(id uint64) int {
+func AdvocateOncePre(id uint64) int {
 	_, file, line, _ := Caller(2)
-	timer := GetCobufiCounter()
-	elem := cobufiTraceOnceElement{id: id, tpre: timer, file: file, line: line}
+	timer := GetAdvocateCounter()
+	elem := advocateOnceElement{id: id, tpre: timer, file: file, line: line}
 	return insertIntoTrace(elem)
 }
 
-func CobufiOncePost(index int, suc bool) {
+func AdvocateOncePost(index int, suc bool) {
 	if index == -1 {
 		return
 	}
-	timer := GetCobufiCounter()
-	elem := currentGoRoutine().getElement(index).(cobufiTraceOnceElement)
+	timer := GetAdvocateCounter()
+	elem := currentGoRoutine().getElement(index).(advocateOnceElement)
 	elem.tpost = timer
 	elem.suc = suc
 
 	currentGoRoutine().updateElement(index, elem)
 }
 
-// COBUFI-FILE-END
+// ADVOCATE-FILE-END
