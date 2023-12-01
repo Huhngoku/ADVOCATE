@@ -4771,7 +4771,7 @@ func InitTables() {
 
 	/******** sync/atomic ********/
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	/*
 		// Note: these are disabled by flag_race in findIntrinsic below.
 		alias("sync/atomic", "LoadInt32", "runtime/internal/atomic", "Load", all...)
@@ -4811,7 +4811,7 @@ func InitTables() {
 		alias("sync/atomic", "AddUintptr", "runtime/internal/atomic", "Xadd", p4...)
 		alias("sync/atomic", "AddUintptr", "runtime/internal/atomic", "Xadd64", p8...)
 	*/
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	/******** math/big ********/
 	alias("math/big", "mulWW", "math/bits", "Mul64", p8...)

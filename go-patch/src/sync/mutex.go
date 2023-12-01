@@ -12,9 +12,9 @@ package sync
 
 import (
 	"internal/race"
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	"runtime"
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	"sync/atomic"
 	"unsafe"
 )
@@ -37,9 +37,9 @@ func fatal(string)
 type Mutex struct {
 	state int32
 	sema  uint32
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	id uint64 // id for the mutex
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 // A Locker represents an object that can be locked and unlocked.
@@ -85,7 +85,7 @@ const (
 // If the lock is already in use, the calling goroutine
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, reaplayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexLock, 2)
 	if enabled {
 		if m.id == 0 {
@@ -111,7 +111,7 @@ func (m *Mutex) Lock() {
 	// pre event.
 	advocateIndex := runtime.AdvocateMutexLockPre(m.id, false, false)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	// Fast path: grab unlocked mutex.
 	if atomic.CompareAndSwapInt32(&m.state, 0, mutexLocked) {
@@ -130,7 +130,7 @@ func (m *Mutex) Lock() {
 // and use of TryLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexTryLock, 2)
 	if enabled {
 		if !replayElem.Blocked {
@@ -160,12 +160,12 @@ func (m *Mutex) TryLock() bool {
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
 	// advocateIndex is used for AdvocatePostTry to find the pre event.
 	advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		runtime.AdvocatePostTry(advocateIndex, false)
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		return false
 	}
 
@@ -173,22 +173,22 @@ func (m *Mutex) TryLock() bool {
 	// running now and can try to grab the mutex before that
 	// goroutine wakes up.
 	if !atomic.CompareAndSwapInt32(&m.state, old, old|mutexLocked) {
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		// If the mutex was not locked successfully, AdvocatePostTry is called
 		// to update the trace.
 		runtime.AdvocatePostTry(advocateIndex, false)
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		return false
 	}
 
 	if race.Enabled {
 		race.Acquire(unsafe.Pointer(m))
 	}
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// If the mutex was locked successfully, AdvocatePostTry is called
 	// to update the trace.
 	runtime.AdvocatePostTry(advocateIndex, true)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	return true
 }
 
@@ -288,7 +288,7 @@ func (m *Mutex) lockSlow() {
 // It is allowed for one goroutine to lock a Mutex and then
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexUnlock, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -310,7 +310,7 @@ func (m *Mutex) Unlock() {
 	// the rw mutexes.
 	advocateIndex := runtime.AdvocateUnlockPre(m.id, false, false)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		_ = m.state

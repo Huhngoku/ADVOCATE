@@ -7,7 +7,7 @@
 
 package build
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 
 import (
@@ -810,4 +810,4 @@ wantLoop:
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END

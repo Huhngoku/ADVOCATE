@@ -86,9 +86,9 @@ func TestCflags(t *testing.T)              { testCflags(t) }
 func TestCheckConst(t *testing.T)          { testCheckConst(t) }
 func TestConst(t *testing.T)               { testConst(t) }
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 // func TestCthread(t *testing.T)               { testCthread(t) }
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END
 func TestEnum(t *testing.T)                  { testEnum(t) }
 func TestNamedEnum(t *testing.T)             { testNamedEnum(t) }
 func TestCastToEnum(t *testing.T)            { testCastToEnum(t) }

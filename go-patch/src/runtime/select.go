@@ -123,7 +123,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		print("select: cas0=", cas0, "\n")
 	}
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	replayEnabled, replayElem := WaitForReplay(AdvocateReplaySelect, 2)
 	if replayEnabled {
 		if replayElem.Blocked {
@@ -136,7 +136,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			BlockForever()
 		}
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	// NOTE: In order to maintain a lean stack size, the number of scases
 	// is capped at 65536.
@@ -149,7 +149,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	lockorder := order1[ncases:][:ncases:ncases]
 	// NOTE: pollorder/lockorder's underlying array was not zero-initialized by compiler.
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// This block is called, if the code runs a select statement.
 	// AdvocateSelectPre records the state of the select case, meaning which
 	// cases exists (channel / direction) and weather a default statement is present.
@@ -157,7 +157,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// is never executed.
 	advocateIndex := AdvocateSelectPre(&scases, nsends, block)
 	advocateRClose := false // case was chosen, because channel was closed
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	// Even when raceenabled is true, there might be select
 	// statements in packages compiled without -race (e.g.,
@@ -272,36 +272,36 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	var caseReleaseTime int64 = -1
 	var recvOK bool
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// if a default was selected in the trace, also select the default
 	if replayEnabled {
 		if replayElem.Op == AdvocateReplaySelectDefault {
 			selunlock(scases, lockorder)
 			casi = -1
 			AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-			// COBUFI-CHANGE-END
+			// ADVOCATE-CHANGE-END
 			goto retc
 		}
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	for _, casei := range pollorder {
 		casi = int(casei)
 		cas = &scases[casi]
 		c = cas.c
 
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		if replayEnabled {
 			if casi != replayElem.SelIndex {
 				continue
 			}
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 
 		if casi >= nsends {
-			// COBUFI-CHANGE-START
+			// ADVOCATE-CHANGE-START
 			sg = c.sendq.dequeue(replayElem)
-			// COBUFI-CHANGE-END
+			// ADVOCATE-CHANGE-END
 			if sg != nil {
 				goto recv
 			}
@@ -318,9 +318,9 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			if c.closed != 0 {
 				goto sclose
 			}
-			// COBUFI-CHANGE-START
+			// ADVOCATE-CHANGE-START
 			sg = c.recvq.dequeue(replayElem)
-			// COBUFI-CHANGE-END
+			// ADVOCATE-CHANGE-END
 			if sg != nil {
 				goto send
 			}
@@ -333,9 +333,9 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	if !block {
 		selunlock(scases, lockorder)
 		casi = -1
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		goto retc
 	}
 
@@ -365,7 +365,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		*nextp = sg
 		nextp = &sg.waitlink
 
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		// make sure, only the correct case is enqueued
 		if replayEnabled {
 			if casi != replayElem.SelIndex {
@@ -378,7 +378,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			sg.pFile = replayElem.PFile
 			sg.pLine = replayElem.PLine
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 
 		if casi < nsends {
 			c.sendq.enqueue(sg)
@@ -419,13 +419,13 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 	gp.waiting = nil
 	for _, casei := range lockorder {
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		if replayEnabled {
 			if int(casei) != replayElem.SelIndex {
 				continue
 			}
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 
 		k = &scases[casei]
 		if sg == sglist {
@@ -491,10 +491,10 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	selunlock(scases, lockorder)
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	advocateRClose = !caseSuccess
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	goto retc
 
 bufrecv:
@@ -523,15 +523,15 @@ bufrecv:
 	}
 	c.qcount--
 	selunlock(scases, lockorder)
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	goto retc
 
 bufsend:
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	// can send to buffer
 	if raceenabled {
 		racenotify(c, c.sendx, nil)
@@ -555,9 +555,9 @@ bufsend:
 recv:
 	// can receive from sleeping sender (sg)
 	recv(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	if debugSelect {
 		print("syncrecv: cas0=", cas0, " c=", c, "\n")
 	}
@@ -568,10 +568,10 @@ rclose:
 	// read at end of closed channel
 	selunlock(scases, lockorder)
 	recvOK = false
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	advocateRClose = true
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	if cas.elem != nil {
 		typedmemclr(c.elemtype, cas.elem)
 	}
@@ -591,9 +591,9 @@ send:
 	if asanenabled {
 		asanread(cas.elem, c.elemtype.Size_)
 	}
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	send(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
 	if debugSelect {
 		print("syncsend: cas0=", cas0, " c=", c, "\n")
@@ -610,10 +610,10 @@ retc:
 sclose:
 	// send on closed channel
 	selunlock(scases, lockorder)
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	advocateRClose = true
 	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	panic(plainError("send on closed channel"))
 }
 

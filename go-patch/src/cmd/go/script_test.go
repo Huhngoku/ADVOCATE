@@ -26,22 +26,22 @@ import (
 	"strings"
 	"testing"
 
-	// COBUFI-REMOVE_TEST-START
+	// ADVOCATE-REMOVE_TEST-START
 	// "time"
-	// COBUFI-REMOVE_TEST-END
+	// ADVOCATE-REMOVE_TEST-END
 
 	"cmd/go/internal/cfg"
 	"cmd/go/internal/script"
 
-	// COBUFI-REMOVE_TEST-START
+	// ADVOCATE-REMOVE_TEST-START
 	// "cmd/go/internal/script/scripttest"
-	// COBUFI-REMOVE_TEST-END
+	// ADVOCATE-REMOVE_TEST-END
 	"cmd/go/internal/vcweb/vcstest"
 )
 
 var testSum = flag.String("testsum", "", `may be tidy, listm, or listall. If set, TestScript generates a go.sum file at the beginning of each test and updates test files if they pass.`)
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 // TestScript runs the tests in testdata/script/*.txt.
 func TestScript(t *testing.T) {
@@ -164,7 +164,7 @@ func TestScript(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END
 
 // testingTBKey is the Context key for a testing.TB.
 type testingTBKey struct{}

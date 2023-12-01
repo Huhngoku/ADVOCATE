@@ -51,14 +51,14 @@ type hchan struct {
 	// with stack shrinking.
 	lock mutex
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	id              uint64 // id of the channel
 	numberSend      uint64 // number of completed send operations
 	numberSendMutex mutex  // mutex for numberSend
 	numberRecv      uint64 // number of completed recv operations
 	numberRecvMutex mutex  // mutex for numberRecv
 	advocateIgnore  bool   // if true, the channel is ignored by tracing and replay
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 type waitq struct {
@@ -82,13 +82,13 @@ func makechan64(t *chantype, size int64) *hchan {
 func makechan(t *chantype, size int) *hchan {
 	elem := t.Elem
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	advocateIgnored := false
 	if size == 1<<16 {
 		advocateIgnored = true
 		size = 0
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	// compiler checks this but be safe.
 	if elem.Size_ >= 1<<16 {
@@ -129,13 +129,13 @@ func makechan(t *chantype, size int) *hchan {
 	c.elemtype = elem
 	c.dataqsiz = uint(size)
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// get and save a new id for the channel
 	c.advocateIgnore = advocateIgnored
 	if !c.advocateIgnore {
 		c.id = GetAdvocateObjectId()
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	lockInit(&c.lock, lockRankHchan)
 
@@ -145,12 +145,12 @@ func makechan(t *chantype, size int) *hchan {
 	return c
 }
 
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 func (c *hchan) SetAdvocateIgnore() {
 	c.advocateIgnore = true
 }
 
-// COBUFI-CHANGE-END
+// ADVOCATE-CHANGE-END
 
 // chanbuf(c, i) is pointer to the i'th slot in the buffer.
 func chanbuf(c *hchan, i uint) unsafe.Pointer {
@@ -208,7 +208,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		racereadpc(c.raceaddr(), callerpc, abi.FuncPCABIInternal(chansend))
 	}
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
@@ -224,7 +224,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 			}
 		}
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
 	//
@@ -253,7 +253,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	lock(&c.lock)
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// this block is called if a send is made on a channel
 	// it increases the number of sends on the channel, which is used to
 	// identify the communication partner in the advocate analysis
@@ -272,7 +272,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		unlock(&c.numberSendMutex)
 		advocateIndex = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if c.closed != 0 {
 		unlock(&c.lock)
@@ -282,22 +282,22 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if sg := c.recvq.dequeue(replayElem); sg != nil {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		if !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
 		return true
 	}
 
 	if c.qcount < c.dataqsiz {
 		// Space is available in the channel buffer. Enqueue the element to send.
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		if !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		qp := chanbuf(c, c.sendx)
 		if raceenabled {
 			racenotify(c, c.sendx, nil)
@@ -314,11 +314,11 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	}
 
 	if !block {
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		if !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		unlock(&c.lock)
 		return false
 	}
@@ -337,14 +337,14 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	mysg.g = gp
 	mysg.isSelect = false
 	mysg.c = c
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// save partner file and line in sudog
 	if replayEnabled && !c.advocateIgnore {
 		mysg.replayEnabled = true
 		mysg.pFile = replayElem.PFile
 		mysg.pLine = replayElem.PLine
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	gp.waiting = mysg
 	gp.param = nil
 	c.sendq.enqueue(mysg)
@@ -353,10 +353,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// changes and when we set gp.activeStackChans is not safe for
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
-	// COBUFI-NOTE-START
+	// ADVOCATE-NOTE-START
 	// gopark blocks the routine if no communication partner is available
 	// and the has no free buffe.
-	// COBUFI-NOTE-END
+	// ADVOCATE-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanSend, traceBlockChanSend, 2)
 	// Ensure the value being sent is kept alive until the
 	// receiver copies it out. The sudog has a pointer to the
@@ -368,11 +368,11 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if mysg != gp.waiting {
 		throw("G waiting list is corrupted")
 	}
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	if !c.advocateIgnore {
 		AdvocateChanPost(advocateIndex)
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	gp.waiting = nil
 	gp.activeStackChans = false
 	closed := !mysg.success
@@ -383,11 +383,11 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	mysg.c = nil
 	releaseSudog(mysg)
 	if closed {
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		if !c.advocateIgnore {
 			AdvocateChanPostCausedByClose(advocateIndex)
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		if c.closed == 0 {
 			throw("chansend: spurious wakeup")
 		}
@@ -472,14 +472,14 @@ func closechan(c *hchan) {
 
 	lock(&c.lock)
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// AdvocateChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	if !c.advocateIgnore {
 		_, _ = WaitForReplay(AdvocateReplayChannelClose, 2)
 		AdvocateChanClose(c.id, c.dataqsiz)
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if c.closed != 0 {
 		unlock(&c.lock)
@@ -591,7 +591,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		throw("unreachable")
 	}
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
@@ -607,7 +607,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			}
 		}
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	// Fast path: check for failed non-blocking operation without acquiring the lock.
 	if !block && empty(c) {
@@ -649,7 +649,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 	lock(&c.lock)
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// this block is called if a receive is made on a channel.
 	// It increases the number of receives on the channel, which is used to
 	// identify the communication partner in the advocate analysis.
@@ -669,7 +669,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		advocateIndex = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
 		defer AdvocateChanPost(advocateIndex)
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if c.closed != 0 {
 		if c.qcount == 0 {
@@ -680,11 +680,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 			if ep != nil {
 				typedmemclr(c.elemtype, ep)
 			}
-			// COBUFI-CHANGE-START
+			// ADVOCATE-CHANGE-START
 			if !c.advocateIgnore {
 				AdvocateChanPostCausedByClose(advocateIndex)
 			}
-			// COBUFI-CHANGE-END
+			// ADVOCATE-CHANGE-END
 			return true, false
 		}
 		// The channel has been closed, but the channel's buffer have data.
@@ -739,14 +739,14 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	mysg.g = gp
 	mysg.isSelect = false
 	mysg.c = c
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// save partner file and line in sudog
 	if replayEnabled && !c.advocateIgnore {
 		mysg.replayEnabled = true
 		mysg.pFile = replayElem.PFile
 		mysg.pLine = replayElem.PLine
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	gp.param = nil
 	c.recvq.enqueue(mysg)
 	// Signal to anyone trying to shrink our stack that we're about
@@ -755,10 +755,10 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// stack shrinking.
 	gp.parkingOnChan.Store(true)
 
-	// COBUFI-NOTE-START
+	// ADVOCATE-NOTE-START
 	// gopark blocks the routine if no communication partner is available
 	// and the has no free buffe.
-	// COBUFI-NOTE-END
+	// ADVOCATE-NOTE-END
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceBlockChanRecv, 2)
 
 	// someone woke us up
@@ -771,11 +771,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		blockevent(mysg.releasetime-t0, 2)
 	}
 	success := mysg.success
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	if !success && !c.advocateIgnore {
 		AdvocateChanPostCausedByClose(advocateIndex)
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	gp.param = nil
 	mysg.c = nil
 	releaseSudog(mysg)
@@ -875,7 +875,7 @@ func chanparkcommit(gp *g, chanLock unsafe.Pointer) bool {
 //		... bar
 //	}
 func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// if c is nil, the select acts like as if there is only the default case.
 	// It therefor does not need to be recorded.
 	// It the return is nesseserry, because otherwise the following lock
@@ -894,7 +894,7 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	}
 	return chansend(c, elem, false, getcallerpc())
 
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 // compiler implements
@@ -914,7 +914,7 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 //		... bar
 //	}
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// see selectnbsend
 	if c != nil && !c.advocateIgnore {
 		if c == nil {
@@ -930,7 +930,7 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 
 	return chanrecv(c, elem, false)
 
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 //go:linkname reflect_chansend reflect.chansend0
@@ -986,15 +986,15 @@ func (q *waitq) enqueue(sgp *sudog) {
 	q.last = sgp
 }
 
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 func (q *waitq) dequeue(rElem ReplayElement) *sudog {
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	for {
 		sgp := q.first
 		if sgp == nil {
 			return nil
 		}
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		// if the channel partner is not correct, the goroutine is not woken up
 		// TODO: durch die ganze Queue durchgehen, ob partner vorhanden, um
 		// zu verhindern, das Umordnung zu Block führt
@@ -1006,7 +1006,7 @@ func (q *waitq) dequeue(rElem ReplayElement) *sudog {
 				}
 			}
 		}
-		// COBUFI-CHANE-END
+		// ADVOCATE-CHANE-END
 		y := sgp.next
 		if y == nil {
 			q.first = nil

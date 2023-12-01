@@ -10,9 +10,9 @@ import (
 	"runtime/metrics"
 	"sort"
 
-	// COBUFI-REMOVE_TEST-START
+	// ADVOCATE-REMOVE_TEST-START
 	// "strings"
-	// COBUFI-REMOVE_TEST-END
+	// ADVOCATE-REMOVE_TEST-END
 	"sync"
 	"testing"
 	"time"
@@ -156,7 +156,7 @@ func TestReadMetrics(t *testing.T) {
 	checkUint64(t, "/gc/heap/frees:objects", frees, mstats.Frees-tinyAllocs)
 }
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 func TestReadMetricsConsistency(t *testing.T) {
 	// Tests whether readMetrics produces consistent, sensible values.
@@ -368,7 +368,7 @@ func TestReadMetricsConsistency(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END
 
 func BenchmarkReadMetricsLatency(b *testing.B) {
 	stop := applyGCLoad(b)

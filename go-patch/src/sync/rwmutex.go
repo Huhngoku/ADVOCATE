@@ -6,9 +6,9 @@ package sync
 
 import (
 	"internal/race"
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	"runtime"
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	"sync/atomic"
 	"unsafe"
 )
@@ -42,9 +42,9 @@ type RWMutex struct {
 	readerSem   uint32       // semaphore for readers to wait for completing writers
 	readerCount atomic.Int32 // number of pending readers
 	readerWait  atomic.Int32 // number of departing readers
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	id uint64 // id for the mutex
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 const rwmutexMaxReaders = 1 << 30
@@ -68,7 +68,7 @@ const rwmutexMaxReaders = 1 << 30
 // call excludes new readers from acquiring the lock. See the
 // documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexRLock, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -95,7 +95,7 @@ func (rw *RWMutex) RLock() {
 	// pre event.
 	advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, true)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -117,7 +117,7 @@ func (rw *RWMutex) RLock() {
 // and use of TryRLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (rw *RWMutex) TryRLock() bool {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexTryRLock, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -146,7 +146,7 @@ func (rw *RWMutex) TryRLock() bool {
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
 	// advocateIndex is used for AdvocatePostTry to find the pre event.
 	advocateIndex := runtime.AdvocateMutexLockTry(rw.id, true, true)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -158,11 +158,11 @@ func (rw *RWMutex) TryRLock() bool {
 			if race.Enabled {
 				race.Enable()
 			}
-			// COBUFI-CHANGE-START
+			// ADVOCATE-CHANGE-START
 			// If the mutex was not locked successfully, AdvocatePostTry is called
 			// to update the trace.
 			runtime.AdvocatePostTry(advocateIndex, false)
-			// COBUFI-CHANGE-END
+			// ADVOCATE-CHANGE-END
 			return false
 		}
 		if rw.readerCount.CompareAndSwap(c, c+1) {
@@ -170,11 +170,11 @@ func (rw *RWMutex) TryRLock() bool {
 				race.Enable()
 				race.Acquire(unsafe.Pointer(&rw.readerSem))
 			}
-			// COBUFI-CHANGE-START
+			// ADVOCATE-CHANGE-START
 			// If the mutex was locked successfully, AdvocatePostTry is called
 			// to update the trace.
 			runtime.AdvocatePostTry(advocateIndex, true)
-			// COBUFI-CHANGE-END
+			// ADVOCATE-CHANGE-END
 			return true
 		}
 	}
@@ -185,7 +185,7 @@ func (rw *RWMutex) TryRLock() bool {
 // It is a run-time error if rw is not locked for reading
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexRUnlock, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -198,7 +198,7 @@ func (rw *RWMutex) RUnlock() {
 	// AdvocatePost records the successful unlocking of a mutex.
 	advocateIndex := runtime.AdvocateUnlockPre(rw.id, true, true)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -230,7 +230,7 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // If the lock is already locked for reading or writing,
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexLock, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -256,7 +256,7 @@ func (rw *RWMutex) Lock() {
 	// pre event.
 	advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, false)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state
@@ -283,7 +283,7 @@ func (rw *RWMutex) Lock() {
 // and use of TryLock is often a sign of a deeper problem
 // in a particular use of mutexes.
 func (rw *RWMutex) TryLock() bool {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexTryLock, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -311,7 +311,7 @@ func (rw *RWMutex) TryLock() bool {
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
 	// advocateIndex is used for AdvocatePostTry to find the pre event.
 	advocateIndex := runtime.AdvocateMutexLockTry(rw.id, true, false)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	if race.Enabled {
 		_ = rw.w.state
 		race.Disable()
@@ -320,11 +320,11 @@ func (rw *RWMutex) TryLock() bool {
 		if race.Enabled {
 			race.Enable()
 		}
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		// If the mutex was not locked successfully, AdvocatePostTry is called
 		// to update the trace.
 		runtime.AdvocatePostTry(advocateIndex, false)
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		return false
 	}
 	if !rw.readerCount.CompareAndSwap(0, -rwmutexMaxReaders) {
@@ -332,11 +332,11 @@ func (rw *RWMutex) TryLock() bool {
 		if race.Enabled {
 			race.Enable()
 		}
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		// If the mutex was not locked successfully, AdvocatePostTry is called
 		// to update the trace.
 		runtime.AdvocatePostTry(advocateIndex, false)
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 		return false
 	}
 	if race.Enabled {
@@ -344,11 +344,11 @@ func (rw *RWMutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(&rw.readerSem))
 		race.Acquire(unsafe.Pointer(&rw.writerSem))
 	}
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// If the mutex was locked successfully, AdvocatePostTry is called
 	// to update the trace.
 	runtime.AdvocatePostTry(advocateIndex, true)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	return true
 }
@@ -360,7 +360,7 @@ func (rw *RWMutex) TryLock() bool {
 // goroutine. One goroutine may RLock (Lock) a RWMutex and then
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayRWMutexUnlock, 2)
 	// AdvocateUnlockPre is used to record the unlocking of a mutex.
 	// AdvocatePost records the successful unlocking of a mutex.
@@ -368,7 +368,7 @@ func (rw *RWMutex) Unlock() {
 	// strictly necessary to record the post for the unlocking of a mutex.
 	advocateIndex := runtime.AdvocateUnlockPre(rw.id, true, false)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		_ = rw.w.state

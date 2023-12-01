@@ -7278,7 +7278,7 @@ func TestMapAlloc(t *testing.T) {
 	// map, but to still catch a regression where we keep re-allocating in the hashmap as new entries are added.
 }
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 func TestChanAlloc(t *testing.T) {
 	// Note: for a chan int, the return Value must be allocated, so we
@@ -7297,7 +7297,7 @@ func TestChanAlloc(t *testing.T) {
 	// allocs < 0.5 condition will trigger and this test should be fixed.
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END
 
 type TheNameOfThisTypeIsExactly255BytesLongSoWhenTheCompilerPrependsTheReflectTestPackageNameAndExtraStarTheLinkerRuntimeAndReflectPackagesWillHaveToCorrectlyDecodeTheSecondLengthByte0123456789_0123456789_0123456789_0123456789_0123456789_012345678 int
 

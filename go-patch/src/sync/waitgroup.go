@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	"runtime"
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 )
 
 // A WaitGroup waits for a collection of goroutines to finish.
@@ -30,9 +30,9 @@ type WaitGroup struct {
 	state atomic.Uint64 // high 32 bits are counter, low 32 bits are waiter count.
 	sema  uint32
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	id uint64 // id for the waitgroup
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 // Add adds delta, which may be negative, to the WaitGroup counter.
@@ -49,13 +49,13 @@ type WaitGroup struct {
 // new Add calls must happen after all previous Wait calls have returned.
 // See the WaitGroup example.
 func (wg *WaitGroup) Add(delta int) {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	skip := 3
 	if delta > 0 {
 		skip = 2
 	}
 	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayWaitgroupAddDone, skip)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	if race.Enabled {
 		if delta < 0 {
 			// Synchronize decrements with Wait.
@@ -68,7 +68,7 @@ func (wg *WaitGroup) Add(delta int) {
 	v := int32(state >> 32)
 	w := uint32(state)
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// Waitgroups don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a wg
 	// is directly in it's functions. If the id of the wg is the default
@@ -83,7 +83,7 @@ func (wg *WaitGroup) Add(delta int) {
 	// called but not finished (except if it panics). Therefore it is not
 	// necessary to record a post event.
 	runtime.AdvocateWaitGroupAdd(wg.id, delta, v)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled && delta > 0 && v == int32(delta) {
 		// The first increment must be synchronized with Wait.
@@ -123,7 +123,7 @@ func (wg *WaitGroup) Done() {
 
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayWaitgroupWait, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -134,13 +134,13 @@ func (wg *WaitGroup) Wait() {
 			runtime.BlockForever()
 		}
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
 		race.Disable()
 	}
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// Waitgroups don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a wg
 	// is directly in it's functions. If the id of the wg is the default
@@ -155,7 +155,7 @@ func (wg *WaitGroup) Wait() {
 	// finish of the wait with a post.
 	advocateIndex := runtime.AdvocateWaitGroupWaitPre(wg.id)
 	defer runtime.AdvocatePost(advocateIndex)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	for {
 		state := wg.state.Load()
 		v := int32(state >> 32)

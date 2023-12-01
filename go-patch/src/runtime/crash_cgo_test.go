@@ -834,7 +834,7 @@ func TestDestructorCallbackRace(t *testing.T) {
 	}
 }
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 func TestEnsureBindM(t *testing.T) {
 	t.Parallel()
@@ -849,4 +849,4 @@ func TestEnsureBindM(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END

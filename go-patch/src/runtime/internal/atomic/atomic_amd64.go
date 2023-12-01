@@ -9,11 +9,11 @@ import "unsafe"
 // Export some functions via linkname to assembly in sync/atomic.
 //
 //go:linkname Load
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 //go:linkname LoadAdvocate
 //go:linkname Load64Advocate
 //go:linkname LoadpAdvocate
-// COBUFI-CHANGE-END
+// ADVOCATE-CHANGE-END
 //go:linkname Loadp
 //go:linkname Load64
 
@@ -23,7 +23,7 @@ func Load(ptr *uint32) uint32 {
 	return *ptr
 }
 
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 //
 //go:nosplit
 //go:noinline
@@ -32,7 +32,7 @@ func LoadAdvocate(ptr *uint32) uint32 {
 	return *ptr
 }
 
-// COBUFI-CHANGE-END
+// ADVOCATE-CHANGE-END
 
 //go:nosplit
 //go:noinline
@@ -40,7 +40,7 @@ func Loadp(ptr unsafe.Pointer) unsafe.Pointer {
 	return *(*unsafe.Pointer)(ptr)
 }
 
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 //
 //go:nosplit
 //go:noinline
@@ -49,7 +49,7 @@ func LoadpAdvocate(ptr unsafe.Pointer) unsafe.Pointer {
 	return *(*unsafe.Pointer)(ptr)
 }
 
-// COBUFI-CHANGE-END
+// ADVOCATE-CHANGE-END
 
 //go:nosplit
 //go:noinline
@@ -57,7 +57,7 @@ func Load64(ptr *uint64) uint64 {
 	return *ptr
 }
 
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 //
 //go:nosplit
 //go:noinline
@@ -66,7 +66,7 @@ func Load64Advocate(ptr *uint64) uint64 {
 	return *ptr
 }
 
-// COBUFI-CHANGE-END
+// ADVOCATE-CHANGE-END
 
 //go:nosplit
 //go:noinline

@@ -387,11 +387,11 @@ type sudog struct {
 	waittail *sudog // semaRoot
 	c        *hchan // channel
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	replayEnabled bool
 	pFile         string
 	pLine         int
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 type libcall struct {
@@ -517,12 +517,12 @@ type g struct {
 	// determines how this corresponds to scan work debt.
 	gcAssistBytes int64
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	// For each routine a g is automaticcaly created. In this g the goInfo
 	// element is added to store the information about the routine.
 	// This includes the Id and the trace of the routine.
 	goInfo *AdvocateRoutine
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 // gTrackingPeriod is the number of transitions out of _Grunning between

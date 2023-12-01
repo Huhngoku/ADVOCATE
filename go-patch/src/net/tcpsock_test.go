@@ -466,7 +466,7 @@ func TestTCPConcurrentAccept(t *testing.T) {
 	}
 }
 
-// COBUFI-REMOVE_TEST_START
+// ADVOCATE-REMOVE_TEST_START
 /*
 func TestTCPReadWriteAllocs(t *testing.T) {
 	switch runtime.GOOS {
@@ -537,7 +537,7 @@ func TestTCPReadWriteAllocs(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST_END
+// ADVOCATE-REMOVE_TEST_END
 
 func TestTCPStress(t *testing.T) {
 	const conns = 2

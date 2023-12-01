@@ -5,9 +5,9 @@
 package sync
 
 import (
-	// COBUFI-CHANGE-BEGIN
+	// ADVOCATE-CHANGE-BEGIN
 	"runtime"
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	"sync/atomic"
 )
 
@@ -26,9 +26,9 @@ type Once struct {
 	// and fewer instructions (to calculate offset) on other architectures.
 	done uint32
 	m    Mutex
-	// COBUFI-CHANGE-BEGIN
+	// ADVOCATE-CHANGE-BEGIN
 	id uint64 // id of the once
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
 // Do calls the function f if and only if Do is being called for the
@@ -66,7 +66,7 @@ func (o *Once) Do(f func()) {
 	// This is why the slow path falls back to a mutex, and why
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayOnce, 2)
 	if enabled {
 		if replayElem.Blocked {
@@ -86,38 +86,38 @@ func (o *Once) Do(f func()) {
 			return
 		}
 	}
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	if o.id == 0 {
 		o.id = runtime.GetAdvocateObjectId()
 	}
 	index := runtime.AdvocateOncePre(o.id)
 	res := false
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	if atomic.LoadUint32(&o.done) == 0 {
 		// Outlined slow-path to allow inlining of the fast-path.
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		res = o.doSlow(f)
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 	}
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	runtime.AdvocateOncePost(index, res)
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }
 
-// COBUFI-CHANGE-START
+// ADVOCATE-CHANGE-START
 func (o *Once) doSlow(f func()) bool {
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 	o.m.Lock()
 	defer o.m.Unlock()
 	if o.done == 0 {
 		defer atomic.StoreUint32(&o.done, 1)
 		f()
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		return true
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 	}
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	return false
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 }

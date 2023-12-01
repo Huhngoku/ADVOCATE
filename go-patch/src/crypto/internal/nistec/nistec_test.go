@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 func TestAllocations(t *testing.T) {
 	testenv.SkipIfOptimizationOff(t)
@@ -97,7 +97,7 @@ func TestAllocations(t *testing.T) {
 	})
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END
 
 type nistPoint[T any] interface {
 	Bytes() []byte

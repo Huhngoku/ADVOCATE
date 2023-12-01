@@ -6,7 +6,7 @@ package runtime_test
 
 // Assert that the size of important structures do not change unexpectedly.
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 func TestSizeof(t *testing.T) {
 	const _64bit = unsafe.Sizeof(uintptr(0)) == 8
@@ -32,4 +32,4 @@ func TestSizeof(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END

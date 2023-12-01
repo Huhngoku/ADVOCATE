@@ -4438,7 +4438,7 @@ func newproc(fn *funcval) {
 	gp := getg()
 	pc := getcallerpc()
 
-	// COBUFI-CHANGE-START
+	// ADVOCATE-CHANGE-START
 	f := findfunc(pc)
 	tracepc := pc
 	if pc > f.entry() {
@@ -4448,17 +4448,17 @@ func newproc(fn *funcval) {
 
 	_, _ = WaitForReplayPath(AdvocateReplaySpawn, file, int(line))
 
-	// COBUFI-CHANGE-END
+	// ADVOCATE-CHANGE-END
 
 	systemstack(func() {
 		newg := newproc1(fn, gp, pc)
 
-		// COBUFI-CHANGE-START
+		// ADVOCATE-CHANGE-START
 		newg.goInfo = newAdvocateRoutine(newg, file, line)
 		if gp != nil && gp.goInfo != nil {
 			AdvocateSpawn(gp.goInfo, newg.goInfo.id, file, line)
 		}
-		// COBUFI-CHANGE-END
+		// ADVOCATE-CHANGE-END
 
 		pp := getg().m.p.ptr()
 		runqput(pp, newg, true)

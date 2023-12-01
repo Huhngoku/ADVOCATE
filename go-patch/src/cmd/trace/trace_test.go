@@ -14,10 +14,10 @@ import (
 	rtrace "runtime/trace"
 	"strings"
 
-	/* COBUFI-REMOVE_TEST-START
+	/* ADVOCATE-REMOVE_TEST-START
 	"sync"
 	"time"
-	COBUFI-REMOVE_TEST-END */
+	ADVOCATE-REMOVE_TEST-END */
 	"testing"
 )
 
@@ -240,7 +240,7 @@ func TestFoo(t *testing.T) {
 
 }
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 func TestDirectSemaphoreHandoff(t *testing.T) {
 	prog0 := func() {
@@ -273,4 +273,4 @@ func TestDirectSemaphoreHandoff(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END

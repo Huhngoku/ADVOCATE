@@ -1,6 +1,6 @@
 # Changed files
 
-The following is a list of all files in the Go runtime that have been 
+The following is a list of all files in the Go runtime that have been
 added or changed.
 
 Added files:
@@ -11,9 +11,9 @@ Added files:
 - src/runtime/advocate_replay.go
 - src/runtime/internal/atomic/advocate_atomic.go
 - src/advocate/advocate.go
-- 
+-
 
-Changed files (marked with COBUFI-CHANGE, außer in .s):
+Changed files (marked with ADVOCATE-CHANGE, außer in .s):
 
 - src/runtime/proc.go
 - src/runtime/runtime2.go

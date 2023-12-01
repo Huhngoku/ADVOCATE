@@ -4,7 +4,7 @@
 
 package types
 
-// COBUFI-REMOVE_TEST-START
+// ADVOCATE-REMOVE_TEST-START
 /*
 import (
 	"reflect"
@@ -63,4 +63,4 @@ func TestSizeof(t *testing.T) {
 	}
 }
 */
-// COBUFI-REMOVE_TEST-END
+// ADVOCATE-REMOVE_TEST-END
