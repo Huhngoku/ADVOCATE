@@ -1,4 +1,4 @@
-# Analysis of Go programs for the automatic detection of potential concurrency bugs
+# ADVOCATE: Automated Detection and Verification Of Concurrency bugs through Analysis of Trace recordings in a modified go Environment."
 
 This program is still under development and may return no or wrong results.
 
