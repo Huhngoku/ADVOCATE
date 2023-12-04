@@ -206,12 +206,12 @@ The trace replay reruns a given program as given in the recorded trace. Please b
 that only the recorded elements are considered for the trace replay. This means, that 
 the order of non-recorded operations between two or more routines can still very. 
 
-The implementation of the trace replay is not finished yet. The following is a short overview over the current state.
+<!-- The implementation of the trace replay is not finished yet. The following is a short overview over the current state.
 - order enforcement for most elements.
 	- The operations are started in same global order as in the recorded trace. 
 	- This is not yet implemented for the spawn of new routines and atomic operations
 - correct channel partner
-	- Communication partner of (most) channel operations are identical to the partners in the trace. For selects this cannot be guarantied yet.
+	- Communication partner of (most) channel operations are identical to the partners in the trace. For selects this cannot be guarantied yet. -->
 
 ### How
 To start the replay, add the following header at the beginning of the 
@@ -249,3 +249,4 @@ the program, including e.g. API calls are equal for the recording and the
 tracing. Otherwise the replay is likely to get stuck.
 
 Do not change the program code between trace recording and replay. The identification of the operations is based on the file names and lines, where the operations occur. If they get changed, the program will most likely block without terminating. If you need to change the program, you must either rerun the trace recording or change the effected trace elements in the recorded trace.
+This also includes the adding of the replay header. Make sure, that it is already in the program (but commented out), when you run the recording.

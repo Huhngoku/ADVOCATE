@@ -24,9 +24,9 @@ const (
  *   id (int): The id of the atomic variable
  *   operation (int, enum): The operation on the atomic variable
  */
-type traceElementAtomic struct {
+type TraceElementAtomic struct {
 	routine int
-	tpost   int
+	tPost   int
 	id      int
 	opA     opAtomic
 }
@@ -67,9 +67,9 @@ func AddTraceElementAtomic(routine int, tpost string,
 		return errors.New("operation is not a valid operation")
 	}
 
-	elem := traceElementAtomic{
+	elem := TraceElementAtomic{
 		routine: routine,
-		tpost:   tPostInt,
+		tPost:   tPostInt,
 		id:      idInt,
 		opA:     opAInt,
 	}
@@ -82,7 +82,7 @@ func AddTraceElementAtomic(routine int, tpost string,
  * Returns:
  *   int: The routine of the element
  */
-func (at *traceElementAtomic) getRoutine() int {
+func (at *TraceElementAtomic) GetRoutine() int {
 	return at.routine
 }
 
@@ -91,8 +91,8 @@ func (at *traceElementAtomic) getRoutine() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *traceElementAtomic) getTpre() int {
-	return at.tpost
+func (at *TraceElementAtomic) getTpre() int {
+	return at.tPost
 }
 
 /*
@@ -100,8 +100,8 @@ func (at *traceElementAtomic) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *traceElementAtomic) getTpost() int {
-	return at.tpost
+func (at *TraceElementAtomic) getTpost() int {
+	return at.tPost
 }
 
 /*
@@ -109,8 +109,38 @@ func (at *traceElementAtomic) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (at *traceElementAtomic) getTsort() int {
-	return at.tpost
+func (at *TraceElementAtomic) GetTSort() int {
+	return at.tPost
+}
+
+/*
+ * Get the position of the operation. For atomic elements, the position is always empty
+ * Returns:
+ *   string: The file of the element
+ */
+func (at *TraceElementAtomic) GetPos() string {
+	return ""
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (te *TraceElementAtomic) SetTsort(tSort int) {
+	te.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (te *TraceElementAtomic) SetTsortWithoutNotExecuted(tSort int) {
+	if te.tPost != 0 {
+		te.tPost = tSort
+	}
 }
 
 /*
@@ -118,7 +148,7 @@ func (at *traceElementAtomic) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (at *traceElementAtomic) ToString() string {
-	return "A," + strconv.Itoa(at.tpost) + "," + strconv.Itoa(at.id) + "," +
+func (at *TraceElementAtomic) ToString() string {
+	return "A," + strconv.Itoa(at.tPost) + "," + strconv.Itoa(at.id) + "," +
 		strconv.Itoa(int(at.opA))
 }

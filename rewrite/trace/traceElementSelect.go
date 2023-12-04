@@ -8,7 +8,7 @@ import (
 )
 
 /*
- * traceElementSelect is a trace element for a select statement
+ * TraceElementSelect is a trace element for a select statement
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -21,13 +21,13 @@ import (
  *   chosenDefault (bool): if the default case was chosen
  *   pos (string): The position of the select statement in the code
  */
-type traceElementSelect struct {
+type TraceElementSelect struct {
 	routine         int
 	tpre            int
-	tpost           int
+	tPost           int
 	id              int
-	cases           []traceElementChannel
-	chosenCase      traceElementChannel
+	cases           []TraceElementChannel
+	chosenCase      TraceElementChannel
 	chosenIndex     int
 	containsDefault bool
 	chosenDefault   bool
@@ -62,16 +62,16 @@ func AddTraceElementSelect(routine int, tPre string,
 		return errors.New("id is not an integer")
 	}
 
-	elem := traceElementSelect{
+	elem := TraceElementSelect{
 		routine: routine,
 		tpre:    tPreInt,
-		tpost:   tPostInt,
+		tPost:   tPostInt,
 		id:      idInt,
 		pos:     pos,
 	}
 
 	cs := strings.Split(cases, "~")
-	casesList := make([]traceElementChannel, 0)
+	casesList := make([]TraceElementChannel, 0)
 	containsDefault := false
 	chosenDefault := false
 	for _, c := range cs {
@@ -120,10 +120,10 @@ func AddTraceElementSelect(routine int, tPre string,
 			return errors.New("c_oSize is not an integer")
 		}
 
-		elemCase := traceElementChannel{
+		elemCase := TraceElementChannel{
 			routine: routine,
 			tpre:    cTPre,
-			tpost:   cTPost,
+			tPost:   cTPost,
 			id:      cID,
 			opC:     cOpC,
 			cl:      cCl,
@@ -134,7 +134,7 @@ func AddTraceElementSelect(routine int, tPre string,
 		}
 
 		casesList = append(casesList, elemCase)
-		if elemCase.tpost != 0 {
+		if elemCase.tPost != 0 {
 			elem.chosenCase = elemCase
 		}
 	}
@@ -155,7 +155,7 @@ func AddTraceElementSelect(routine int, tPre string,
  * Returns:
  *   int: The routine of the element
  */
-func (se *traceElementSelect) getRoutine() int {
+func (se *TraceElementSelect) GetRoutine() int {
 	return se.routine
 }
 
@@ -164,7 +164,7 @@ func (se *traceElementSelect) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (se *traceElementSelect) getTpre() int {
+func (se *TraceElementSelect) getTpre() int {
 	return se.tpre
 }
 
@@ -173,8 +173,8 @@ func (se *traceElementSelect) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (se *traceElementSelect) getTpost() int {
-	return se.tpost
+func (se *TraceElementSelect) getTpost() int {
+	return se.tPost
 }
 
 /*
@@ -182,12 +182,42 @@ func (se *traceElementSelect) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (se *traceElementSelect) getTsort() int {
-	if se.tpost == 0 {
+func (se *TraceElementSelect) GetTSort() int {
+	if se.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return se.tpost
+	return se.tPost
+}
+
+/*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (at *TraceElementSelect) GetPos() string {
+	return at.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (te *TraceElementSelect) SetTsort(tSort int) {
+	te.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (te *TraceElementSelect) SetTsortWithoutNotExecuted(tSort int) {
+	if te.tPost != 0 {
+		te.tPost = tSort
+	}
 }
 
 /*
@@ -195,9 +225,9 @@ func (se *traceElementSelect) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (se *traceElementSelect) ToString() string {
+func (se *TraceElementSelect) ToString() string {
 	res := "S" + "," + strconv.Itoa(se.tpre) + "," +
-		strconv.Itoa(se.tpost) + "," + strconv.Itoa(se.id) + ","
+		strconv.Itoa(se.tPost) + "," + strconv.Itoa(se.id) + ","
 
 	for i, c := range se.cases {
 		if i != 0 {

@@ -1,6 +1,7 @@
 package bugs
 
 import (
+	"rewrite/trace"
 	"strconv"
 	"strings"
 )
@@ -13,11 +14,11 @@ const (
 )
 
 type Bug struct {
-	Type  BugType
-	File1 string
-	File2 string
-	Line1 int
-	Line2 int
+	Type          BugType
+	TraceElement1 *trace.TraceElement
+	Pos1          string
+	TraceElement2 *trace.TraceElement
+	Pos2          string
 }
 
 /*
@@ -41,8 +42,8 @@ func (b Bug) ToString() string {
 	default:
 		panic("Unknown bug type: " + strconv.Itoa(int(b.Type)))
 	}
-	return typeStr + "\n\t" + arg1Str + b.File1 + ":" + strconv.Itoa(b.Line1) +
-		"\n\t" + arg2Str + b.File2 + ":" + strconv.Itoa(b.Line2)
+	return typeStr + "\n\t" + arg1Str + b.Pos1 +
+		"\n\t" + arg2Str + b.Pos2
 }
 
 /*
@@ -79,14 +80,20 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 	}
 
 	elems := strings.Split(arg1, ": ")
-	elems = strings.Split(elems[1], ":")
-	bug.File1 = elems[0]
-	bug.Line1, _ = strconv.Atoi(elems[1])
+	bug.Pos1 = elems[1]
+	elem, err := trace.GetTraceElementFromPos(bug.Pos1)
+	if err != nil {
+		println("Error: " + err.Error())
+	}
+	bug.TraceElement1 = elem
 
 	elems = strings.Split(arg2, ": ")
-	elems = strings.Split(elems[1], ":")
-	bug.File2 = elems[0]
-	bug.Line2, _ = strconv.Atoi(elems[1])
+	bug.Pos2 = elems[1]
+	elem, err = trace.GetTraceElementFromPos(bug.Pos2)
+	if err != nil {
+		println("Error: " + err.Error())
+	}
+	bug.TraceElement2 = elem
 
 	bug.Println()
 

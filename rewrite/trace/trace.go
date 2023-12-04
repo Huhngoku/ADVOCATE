@@ -1,10 +1,11 @@
 package trace
 
 import (
+	"errors"
 	"sort"
 )
 
-var traces = make(map[int][]traceElement)
+var traces = make(map[int][]TraceElement)
 
 /*
 * Add an element to the trace
@@ -14,25 +15,25 @@ var traces = make(map[int][]traceElement)
 * Returns:
 *   error: An error if the routine does not exist
  */
-func addElementToTrace(element traceElement) error {
-	routine := element.getRoutine()
+func addElementToTrace(element TraceElement) error {
+	routine := element.GetRoutine()
 	traces[routine] = append(traces[routine], element)
 	return nil
 }
 
 func AddEmptyRoutine(routine int) {
-	traces[routine] = make([]traceElement, 0)
+	traces[routine] = make([]TraceElement, 0)
 }
 
 /*
  * Sort the trace by tsort
  */
-type sortByTSort []traceElement
+type sortByTSort []TraceElement
 
 func (a sortByTSort) Len() int      { return len(a) }
 func (a sortByTSort) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a sortByTSort) Less(i, j int) bool {
-	return a[i].getTsort() < a[j].getTsort()
+	return a[i].GetTSort() < a[j].GetTSort()
 }
 
 /*
@@ -42,7 +43,7 @@ func (a sortByTSort) Less(i, j int) bool {
  * Returns:
  *   ([]traceElement): The sorted trace
  */
-func sortTrace(trace []traceElement) []traceElement {
+func sortTrace(trace []TraceElement) []TraceElement {
 	sort.Sort(sortByTSort(trace))
 	return trace
 }
@@ -56,6 +57,55 @@ func Sort() {
 	}
 }
 
-func GetTraces() *map[int][]traceElement {
+func GetTraces() *map[int][]TraceElement {
 	return &traces
+}
+
+/*
+ * Given the file and line info, return the routine and index of the element
+ * in trace.
+ * Args:
+ *   pos (string): The position of the element
+ * Returns:
+ *   error: An error if the element does not exist
+ *   int: The routine of the element
+ *   int: The index of the element in the trace of the routine
+ */
+func GetTraceElementFromPos(pos string) (*TraceElement, error) {
+	for routine := 0; routine < len(traces); routine++ {
+		for j := 0; j < len(traces[routine]); j++ {
+			if traces[routine][j].GetPos() == pos {
+				return &traces[routine][j], nil
+			}
+		}
+	}
+	return nil, errors.New("Element " + pos + " does not exist")
+}
+
+/*
+ * Move the time of elements back by steps, excluding the routines in
+ * excludedRoutines
+ * Args:
+ *   startTime (int): The time to start moving back from
+ *   steps (int): The number of steps to move back
+ *   excludedRoutines ([]int): The routines to exclude
+ */
+func MoveTimeBack(startTime int, steps int, excludedRoutines []int) {
+	for routine, localTrace := range traces {
+		for _, elem := range localTrace {
+			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
+				elem.SetTsortWithoutNotExecuted(elem.GetTSort() + steps)
+			}
+		}
+	}
+	Sort()
+}
+
+func contains(slice []int, elem int) bool {
+	for _, e := range slice {
+		if e == elem {
+			return true
+		}
+	}
+	return false
 }

@@ -15,7 +15,7 @@ const (
 )
 
 /*
-* traceElementWait is a trace element for a wait group statement
+* TraceElementWait is a trace element for a wait group statement
 * Fields:
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
@@ -25,10 +25,10 @@ const (
 *   val (int): The value of the wait group
 *   pos (string): The position of the wait group in the code
  */
-type traceElementWait struct {
+type TraceElementWait struct {
 	routine int
 	tpre    int
-	tpost   int
+	tPost   int
 	id      int
 	opW     opW
 	delta   int
@@ -83,10 +83,10 @@ func AddTraceElementWait(routine int, tpre string,
 		return errors.New("val is not an integer")
 	}
 
-	elem := traceElementWait{
+	elem := TraceElementWait{
 		routine: routine,
 		tpre:    tpre_int,
-		tpost:   tpost_int,
+		tPost:   tpost_int,
 		id:      id_int,
 		opW:     opW_op,
 		delta:   delta_int,
@@ -101,7 +101,7 @@ func AddTraceElementWait(routine int, tpre string,
  * Returns:
  *   int: The routine of the element
  */
-func (wa *traceElementWait) getRoutine() int {
+func (wa *TraceElementWait) GetRoutine() int {
 	return wa.routine
 }
 
@@ -110,7 +110,7 @@ func (wa *traceElementWait) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (wa *traceElementWait) getTpre() int {
+func (wa *TraceElementWait) getTpre() int {
 	return wa.tpre
 }
 
@@ -119,8 +119,8 @@ func (wa *traceElementWait) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (wa *traceElementWait) getTpost() int {
-	return wa.tpost
+func (wa *TraceElementWait) getTpost() int {
+	return wa.tPost
 }
 
 /*
@@ -128,12 +128,42 @@ func (wa *traceElementWait) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (wa *traceElementWait) getTsort() int {
-	if wa.tpost == 0 {
+func (wa *TraceElementWait) GetTSort() int {
+	if wa.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return wa.tpost
+	return wa.tPost
+}
+
+/*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (at *TraceElementWait) GetPos() string {
+	return at.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (te *TraceElementWait) SetTsort(tSort int) {
+	te.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (te *TraceElementWait) SetTsortWithoutNotExecuted(tSort int) {
+	if te.tPost != 0 {
+		te.tPost = tSort
+	}
 }
 
 /*
@@ -141,8 +171,8 @@ func (wa *traceElementWait) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (wa *traceElementWait) ToString() string {
+func (wa *TraceElementWait) ToString() string {
 	return "W" + strconv.Itoa(wa.id) + "," + strconv.Itoa(wa.tpre) + "," +
-		strconv.Itoa(wa.tpost) + "," + "," +
+		strconv.Itoa(wa.tPost) + "," + "," +
 		strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val) + "," + wa.pos
 }

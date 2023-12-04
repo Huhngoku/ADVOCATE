@@ -15,11 +15,11 @@ const (
 	close
 )
 
-var waitingReceive = make([]*traceElementChannel, 0)
+var waitingReceive = make([]*TraceElementChannel, 0)
 var maxOpID = make(map[int]int)
 
 /*
-* traceElementChannel is a trace element for a channel
+* TraceElementChannel is a trace element for a channel
 * Fields:
 *   routine (int): The routine id
 *   tpre (int): The timestamp at the start of the event
@@ -32,19 +32,19 @@ var maxOpID = make(map[int]int)
 *   qCount (int): The number of elements in the queue after the operation
 *   pos (string): The position of the channel operation in the code
 *   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
-*   partner (*traceElementChannel): The partner of the channel operation
+*   partner (*TraceElementChannel): The partner of the channel operation
  */
-type traceElementChannel struct {
+type TraceElementChannel struct {
 	routine int
 	tpre    int
-	tpost   int
+	tPost   int
 	id      int
 	opC     opChannel
 	cl      bool
 	oID     int
 	qSize   int
 	pos     string
-	sel     *traceElementSelect
+	sel     *TraceElementSelect
 }
 
 /*
@@ -105,10 +105,10 @@ func AddTraceElementChannel(routine int, tPre string,
 		return errors.New("qSize is not an integer")
 	}
 
-	elem := traceElementChannel{
+	elem := TraceElementChannel{
 		routine: routine,
 		tpre:    tPreInt,
-		tpost:   tPostInt,
+		tPost:   tPostInt,
 		id:      idInt,
 		opC:     opCInt,
 		cl:      clBool,
@@ -125,7 +125,7 @@ func AddTraceElementChannel(routine int, tPre string,
  * Returns:
  *   int: The routine of the element
  */
-func (ch *traceElementChannel) getRoutine() int {
+func (ch *TraceElementChannel) GetRoutine() int {
 	return ch.routine
 }
 
@@ -134,7 +134,7 @@ func (ch *traceElementChannel) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (ch *traceElementChannel) getTpre() int {
+func (ch *TraceElementChannel) getTpre() int {
 	return ch.tpre
 }
 
@@ -143,8 +143,8 @@ func (ch *traceElementChannel) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (ch *traceElementChannel) getTpost() int {
-	return ch.tpost
+func (ch *TraceElementChannel) getTpost() int {
+	return ch.tPost
 }
 
 /*
@@ -152,29 +152,50 @@ func (ch *traceElementChannel) getTpost() int {
  * Returns:
  *   float32: The time of the element
  */
-func (ch *traceElementChannel) getTsort() int {
-	if ch.tpost == 0 {
+func (ch *TraceElementChannel) GetTSort() int {
+	if ch.tPost == 0 {
 		// add to the end of the trace
 		return math.MaxInt
 	}
-	return ch.tpost
+	return ch.tPost
 }
 
 /*
- * Get the vector clock at the begin of the event
+ * Get the position of the operation.
  * Returns:
- *   vectorClock: The vector clock at the begin of the event
+ *   string: The position of the element
  */
-// func (ch *traceElementChannel) getVpre() *vc.VectorClock {
-// 	return &ch.vpre
-// }
+func (at *TraceElementChannel) GetPos() string {
+	return at.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (te *TraceElementChannel) SetTsort(tpost int) {
+	te.tPost = tpost
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (te *TraceElementChannel) SetTsortWithoutNotExecuted(tsort int) {
+	if te.tPost != 0 {
+		te.tPost = tsort
+	}
+}
 
 /*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ch *traceElementChannel) ToString() string {
+func (ch *TraceElementChannel) ToString() string {
 	return ch.toStringSep(",", true)
 }
 
@@ -186,8 +207,8 @@ func (ch *traceElementChannel) ToString() string {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
-	res := "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tpost) + sep +
+func (ch *TraceElementChannel) toStringSep(sep string, pos bool) string {
+	res := "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tPost) + sep +
 		strconv.Itoa(ch.id) + sep + strconv.Itoa(int(ch.opC)) + sep +
 		strconv.Itoa(ch.oID) + sep + strconv.Itoa(ch.qSize)
 	if pos {

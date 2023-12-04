@@ -6,14 +6,14 @@ import (
 )
 
 /*
-* traceElementFork is a trace element for a go statement
+* TraceElementFork is a trace element for a go statement
 * Fields:
 *   routine (int): The routine id
 *   tpost (int): The timestamp at the end of the event
 *   id (int): The id of the new go statement
 *  pos (string): The position of the trace element in the file
  */
-type traceElementFork struct {
+type TraceElementFork struct {
 	routine int
 	tPost   int
 	id      int
@@ -39,7 +39,7 @@ func AddTraceElementFork(routine int, tPost string, id string, pos string) error
 		return errors.New("id is not an integer")
 	}
 
-	elem := traceElementFork{
+	elem := TraceElementFork{
 		routine: routine,
 		tPost:   tPostInt,
 		id:      idInt,
@@ -52,7 +52,7 @@ func AddTraceElementFork(routine int, tPost string, id string, pos string) error
  * Returns:
  *   int: The routine of the element
  */
-func (ro *traceElementFork) getRoutine() int {
+func (ro *TraceElementFork) GetRoutine() int {
 	return ro.routine
 }
 
@@ -61,7 +61,7 @@ func (ro *traceElementFork) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (ro *traceElementFork) getTpre() int {
+func (ro *TraceElementFork) getTpre() int {
 	return ro.tPost
 }
 
@@ -70,7 +70,7 @@ func (ro *traceElementFork) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (ro *traceElementFork) getTpost() int {
+func (ro *TraceElementFork) getTpost() int {
 	return ro.tPost
 }
 
@@ -79,8 +79,38 @@ func (ro *traceElementFork) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (ro *traceElementFork) getTsort() int {
+func (ro *TraceElementFork) GetTSort() int {
 	return ro.tPost
+}
+
+/*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (at *TraceElementFork) GetPos() string {
+	return at.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (te *TraceElementFork) SetTsort(tpost int) {
+	te.tPost = tpost
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (te *TraceElementFork) SetTsortWithoutNotExecuted(tsort int) {
+	if te.tPost != 0 {
+		te.tPost = tsort
+	}
 }
 
 /*
@@ -88,6 +118,6 @@ func (ro *traceElementFork) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ro *traceElementFork) ToString() string {
+func (ro *TraceElementFork) ToString() string {
 	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id)
 }

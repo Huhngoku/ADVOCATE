@@ -1,6 +1,9 @@
 package rewriter
 
-import "rewrite/bugs"
+import (
+	"rewrite/bugs"
+	"rewrite/trace"
+)
 
 /*
  * Create a new trace from the given bug
@@ -25,7 +28,8 @@ func RewriteTrace(bug bugs.Bug) {
  *   bug (Bug): The bug to create a trace for
  */
 func rewriteTraceSendOnClose(bug bugs.Bug) {
-	panic("Not implemented")
+	skip := (*bug.TraceElement2).GetTSort() - (*bug.TraceElement1).GetTSort() + 1
+	trace.MoveTimeBack((*bug.TraceElement1).GetTSort(), skip, []int{(*bug.TraceElement2).GetRoutine()})
 }
 
 /*

@@ -1,10 +1,13 @@
 package trace
 
 // Interface for trace elements
-type traceElement interface {
+type TraceElement interface {
 	getTpre() int
 	getTpost() int
-	getTsort() int
-	getRoutine() int
+	GetTSort() int
+	SetTsortWithoutNotExecuted(tsort int)
+	SetTsort(tsort int)
+	GetRoutine() int
+	GetPos() string
 	ToString() string
 }
