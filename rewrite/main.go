@@ -45,7 +45,7 @@ func main() {
 
 	numberRoutines := io.ReadTrace(*tracePath)
 
-	rewriter.CreateNewTrace(bug)
+	rewriter.RewriteTrace(bug)
 
 	io.WriteTrace(*outputPath, numberRoutines)
 
