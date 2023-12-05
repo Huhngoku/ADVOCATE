@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	filePath := flag.String("l", "trace.log", "Path to the log file")
+	filePath := flag.String("t", "trace.log", "Path to the trace file")
 	level := flag.Int("d", 1, "Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1)")
 	result := flag.Bool("r", false, "Show the result immediately when found (default false)")
 	noSummary := flag.Bool("s", false, "Do not show a summary at the end (default false)")

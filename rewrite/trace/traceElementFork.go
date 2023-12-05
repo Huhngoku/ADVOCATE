@@ -119,5 +119,6 @@ func (te *TraceElementFork) SetTsortWithoutNotExecuted(tsort int) {
  *   string: The simple string representation of the element
  */
 func (ro *TraceElementFork) ToString() string {
-	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id)
+	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id) +
+		"," + ro.pos
 }

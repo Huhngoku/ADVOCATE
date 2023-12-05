@@ -190,10 +190,38 @@ func (te *TraceElementMutex) SetTsortWithoutNotExecuted(tSort int) {
  *   string: The simple string representation of the element
  */
 func (mu *TraceElementMutex) ToString() string {
-	return "M" + "," + strconv.Itoa(mu.tPre) + "," + strconv.Itoa(mu.tPost) + "," +
-		strconv.Itoa(mu.id) + "," + strconv.FormatBool(mu.rw) + "," +
-		strconv.Itoa(int(mu.opM)) + "," + strconv.FormatBool(mu.suc) + "," +
-		mu.pos
+	res := "M,"
+	res += strconv.Itoa(mu.tPre) + "," + strconv.Itoa(mu.tPost) + ","
+	res += strconv.Itoa(mu.id) + ","
+
+	if mu.rw {
+		res += "R,"
+	} else {
+		res += "-,"
+	}
+
+	switch mu.opM {
+	case LockOp:
+		res += "L"
+	case RLockOp:
+		res += "R"
+	case TryLockOp:
+		res += "T"
+	case TryRLockOp:
+		res += "Y"
+	case UnlockOp:
+		res += "U"
+	case RUnlockOp:
+		res += "N"
+	}
+
+	if mu.suc {
+		res += ",t"
+	} else {
+		res += ",f"
+	}
+	res += "," + mu.pos
+	return res
 }
 
 // mutex operations, for which no partner has been found yet

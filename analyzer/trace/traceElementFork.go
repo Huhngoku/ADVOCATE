@@ -90,12 +90,12 @@ func (ro *traceElementFork) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (ro *traceElementFork) toString() string {
-	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id)
+	return "G" + "," + strconv.Itoa(ro.tPost) + "," + strconv.Itoa(ro.id) +
+		"," + ro.pos
 }
 
 /*
  * Update and calculate the vector clock of the element
- * TODO: implement
  */
 func (ro *traceElementFork) updateVectorClock() {
 	analysis.Fork(ro.routine, ro.id, currentVectorClocks)

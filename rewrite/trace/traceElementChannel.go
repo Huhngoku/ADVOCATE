@@ -36,7 +36,7 @@ var maxOpID = make(map[int]int)
  */
 type TraceElementChannel struct {
 	routine int
-	tpre    int
+	tPre    int
 	tPost   int
 	id      int
 	opC     opChannel
@@ -107,7 +107,7 @@ func AddTraceElementChannel(routine int, tPre string,
 
 	elem := TraceElementChannel{
 		routine: routine,
-		tpre:    tPreInt,
+		tPre:    tPreInt,
 		tPost:   tPostInt,
 		id:      idInt,
 		opC:     opCInt,
@@ -135,7 +135,7 @@ func (ch *TraceElementChannel) GetRoutine() int {
  *   int: The tpre of the element
  */
 func (ch *TraceElementChannel) getTpre() int {
-	return ch.tpre
+	return ch.tPre
 }
 
 /*
@@ -165,8 +165,8 @@ func (ch *TraceElementChannel) GetTSort() int {
  * Returns:
  *   string: The position of the element
  */
-func (at *TraceElementChannel) GetPos() string {
-	return at.pos
+func (ch *TraceElementChannel) GetPos() string {
+	return ch.pos
 }
 
 /*
@@ -174,19 +174,19 @@ func (at *TraceElementChannel) GetPos() string {
  * Args:
  *   tsort (int): The timer of the element
  */
-func (te *TraceElementChannel) SetTsort(tpost int) {
-	te.tPost = tpost
+func (ch *TraceElementChannel) SetTsort(tpost int) {
+	ch.tPost = tpost
 }
 
 /*
  * Set the timer, that is used for the sorting of the trace, only if the original
  * value was not 0
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
-func (te *TraceElementChannel) SetTsortWithoutNotExecuted(tsort int) {
-	if te.tPost != 0 {
-		te.tPost = tsort
+func (ch *TraceElementChannel) SetTsortWithoutNotExecuted(tsSort int) {
+	if ch.tPost != 0 {
+		ch.tPost = tsSort
 	}
 }
 
@@ -208,9 +208,25 @@ func (ch *TraceElementChannel) ToString() string {
  *   string: The simple string representation of the element
  */
 func (ch *TraceElementChannel) toStringSep(sep string, pos bool) string {
-	res := "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tPost) + sep +
-		strconv.Itoa(ch.id) + sep + strconv.Itoa(int(ch.opC)) + sep +
-		strconv.Itoa(ch.oID) + sep + strconv.Itoa(ch.qSize)
+	res := "C" + sep
+	res += strconv.Itoa(ch.tPre) + sep + strconv.Itoa(ch.tPost) + sep
+	res += strconv.Itoa(ch.id) + sep
+
+	switch ch.opC {
+	case send:
+		res += "S"
+	case recv:
+		res += "R"
+	case close:
+		res += "C"
+	default:
+		panic("Unknown channel operation" + strconv.Itoa(int(ch.opC)))
+	}
+
+	res += sep + "f"
+
+	res += sep + strconv.Itoa(ch.oID)
+	res += sep + strconv.Itoa(ch.qSize)
 	if pos {
 		res += sep + ch.pos
 	}

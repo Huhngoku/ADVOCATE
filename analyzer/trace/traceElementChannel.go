@@ -39,8 +39,8 @@ var maxOpID = make(map[int]int)
  */
 type traceElementChannel struct {
 	routine int
-	tpre    int
-	tpost   int
+	tPre    int
+	tPost   int
 	id      int
 	opC     opChannel
 	cl      bool
@@ -110,8 +110,8 @@ func AddTraceElementChannel(routine int, tPre string,
 
 	elem := traceElementChannel{
 		routine: routine,
-		tpre:    tPreInt,
-		tpost:   tPostInt,
+		tPre:    tPreInt,
+		tPost:   tPostInt,
 		id:      idInt,
 		opC:     opCInt,
 		cl:      clBool,
@@ -138,7 +138,7 @@ func (ch *traceElementChannel) getRoutine() int {
  *   int: The tpre of the element
  */
 func (ch *traceElementChannel) getTpre() int {
-	return ch.tpre
+	return ch.tPre
 }
 
 /*
@@ -147,7 +147,7 @@ func (ch *traceElementChannel) getTpre() int {
  *   int: The tpost of the element
  */
 func (ch *traceElementChannel) getTpost() int {
-	return ch.tpost
+	return ch.tPost
 }
 
 /*
@@ -156,11 +156,11 @@ func (ch *traceElementChannel) getTpost() int {
  *   float32: The time of the element
  */
 func (ch *traceElementChannel) getTsort() int {
-	if ch.tpost == 0 {
+	if ch.tPost == 0 {
 		// add to the end of the trace
 		return math.MaxInt
 	}
-	return ch.tpost
+	return ch.tPost
 }
 
 /*
@@ -190,9 +190,25 @@ func (ch *traceElementChannel) toString() string {
  *   string: The simple string representation of the element
  */
 func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
-	res := "C," + strconv.Itoa(ch.tpre) + sep + strconv.Itoa(ch.tpost) + sep +
-		strconv.Itoa(ch.id) + sep + strconv.Itoa(int(ch.opC)) + sep +
-		strconv.Itoa(ch.oID) + sep + strconv.Itoa(ch.qSize)
+	res := "C" + sep
+	res += strconv.Itoa(ch.tPre) + sep + strconv.Itoa(ch.tPost) + sep
+	res += strconv.Itoa(ch.id) + sep
+
+	switch ch.opC {
+	case send:
+		res += "S"
+	case recv:
+		res += "R"
+	case close:
+		res += "C"
+	default:
+		panic("Unknown channel operation" + strconv.Itoa(int(ch.opC)))
+	}
+
+	res += sep + "f"
+
+	res += sep + strconv.Itoa(ch.oID)
+	res += sep + strconv.Itoa(ch.qSize)
 	if pos {
 		res += sep + ch.pos
 	}

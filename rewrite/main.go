@@ -8,7 +8,7 @@ import (
 
 func main() {
 	tracePath := flag.String("t", "", "Path to the trace file")
-	resultPath := flag.String("e", "", "Path to the file containing the analysis results")
+	resultPath := flag.String("r", "", "Path to the file containing the analysis results")
 	resultIndex := flag.Int("i", 1, "Index of the result to create a trace for, 1 based")
 	outputPath := flag.String("o", "new_trace.log", "Path to the file to write the trace to")
 	flag.Parse()
@@ -35,6 +35,8 @@ func main() {
 		return
 	}
 
+	numberRoutines := io.ReadTrace(*tracePath)
+
 	actual, bug := io.ReadAnalysisResults(*resultPath, *resultIndex)
 	if actual {
 		// copy the file of the tracePath to the outputPath
@@ -42,8 +44,6 @@ func main() {
 		println("Trace created")
 		return
 	}
-
-	numberRoutines := io.ReadTrace(*tracePath)
 
 	rewriter.RewriteTrace(bug)
 

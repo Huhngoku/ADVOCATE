@@ -84,6 +84,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 				if elem == "" {
 					continue
 				}
+				var time int
 				var op runtime.ReplayOperation
 				var file string
 				var line int
@@ -93,13 +94,13 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 				var suc = true
 				var selIndex int
 				fields := strings.Split(elem, ",")
-				time, _ := strconv.Atoi(fields[1])
 				if time == 39 {
 					println(elem + "\n\n")
 				}
 				switch fields[0] {
 				case "G":
 					op = runtime.AdvocateReplaySpawn
+					time, _ = strconv.Atoi(fields[1])
 					pos := strings.Split(fields[3], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
@@ -112,9 +113,10 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					case "C":
 						op = runtime.AdvocateReplayChannelClose
 					default:
-						panic("Unknown channel operation")
+						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + file_name + ".")
 					}
-					if fields[2] == "0" {
+					time, _ = strconv.Atoi(fields[2])
+					if time == 0 {
 						blocked = true
 					}
 					pos := strings.Split(fields[8], ":")
@@ -146,6 +148,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					default:
 						panic("Unknown mutex operation")
 					}
+					time, _ = strconv.Atoi(fields[2])
 					if fields[2] == "0" {
 						blocked = true
 					}
@@ -157,7 +160,8 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					line, _ = strconv.Atoi(pos[1])
 				case "O":
 					op = runtime.AdvocateReplayOnce
-					if fields[2] == "0" {
+					time, _ = strconv.Atoi(fields[2])
+					if time == 0 {
 						blocked = true
 					}
 					if fields[4] == "f" {
@@ -175,7 +179,8 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					default:
 						panic("Unknown waitgroup operation")
 					}
-					if fields[2] == "0" {
+					time, _ = strconv.Atoi(fields[2])
+					if time == 0 {
 						blocked = true
 					}
 					pos := strings.Split(fields[7], ":")
@@ -188,7 +193,8 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					} else {
 						op = runtime.AdvocateReplaySelectCase
 					}
-					if fields[2] == "0" {
+					time, _ = strconv.Atoi(fields[2])
+					if time == 0 {
 						blocked = true
 					}
 					selIndex, _ = strconv.Atoi(fields[5])

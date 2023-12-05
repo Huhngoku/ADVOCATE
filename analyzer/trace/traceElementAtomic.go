@@ -28,7 +28,7 @@ const (
  */
 type traceElementAtomic struct {
 	routine int
-	tpost   int
+	tPost   int
 	id      int
 	opA     opAtomic
 }
@@ -71,7 +71,7 @@ func AddTraceElementAtomic(routine int, tpost string,
 
 	elem := traceElementAtomic{
 		routine: routine,
-		tpost:   tPostInt,
+		tPost:   tPostInt,
 		id:      idInt,
 		opA:     opAInt,
 	}
@@ -94,7 +94,7 @@ func (at *traceElementAtomic) getRoutine() int {
  *   int: The tpost of the element
  */
 func (at *traceElementAtomic) getTpre() int {
-	return at.tpost
+	return at.tPost
 }
 
 /*
@@ -103,7 +103,7 @@ func (at *traceElementAtomic) getTpre() int {
  *   int: The tpost of the element
  */
 func (at *traceElementAtomic) getTpost() int {
-	return at.tpost
+	return at.tPost
 }
 
 /*
@@ -112,7 +112,7 @@ func (at *traceElementAtomic) getTpost() int {
  *   int: The timer of the element
  */
 func (at *traceElementAtomic) getTsort() int {
-	return at.tpost
+	return at.tPost
 }
 
 /*
@@ -121,8 +121,25 @@ func (at *traceElementAtomic) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (at *traceElementAtomic) toString() string {
-	return "A," + strconv.Itoa(at.tpost) + "," + strconv.Itoa(at.id) + "," +
-		strconv.Itoa(int(at.opA))
+	res := "A," + strconv.Itoa(at.tPost) + "," +
+		strconv.Itoa(at.id) + ","
+
+	switch at.opA {
+	case LoadOp:
+		res += "L"
+	case StoreOp:
+		res += "S"
+	case AddOp:
+		res += "A"
+	case SwapOp:
+		res += "W"
+	case CompSwapOp:
+		res += "C"
+	default:
+		res += "U"
+	}
+
+	return res
 }
 
 /*

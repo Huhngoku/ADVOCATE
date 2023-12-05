@@ -29,8 +29,8 @@ const (
  */
 type traceElementWait struct {
 	routine int
-	tpre    int
-	tpost   int
+	tPre    int
+	tPost   int
 	id      int
 	opW     opW
 	delta   int
@@ -87,8 +87,8 @@ func AddTraceElementWait(routine int, tpre string,
 
 	elem := traceElementWait{
 		routine: routine,
-		tpre:    tpre_int,
-		tpost:   tpost_int,
+		tPre:    tpre_int,
+		tPost:   tpost_int,
 		id:      id_int,
 		opW:     opW_op,
 		delta:   delta_int,
@@ -113,7 +113,7 @@ func (wa *traceElementWait) getRoutine() int {
  *   int: The timestamp at the start of the event
  */
 func (wa *traceElementWait) getTpre() int {
-	return wa.tpre
+	return wa.tPre
 }
 
 /*
@@ -122,7 +122,7 @@ func (wa *traceElementWait) getTpre() int {
  *   int: The timestamp at the end of the event
  */
 func (wa *traceElementWait) getTpost() int {
-	return wa.tpost
+	return wa.tPost
 }
 
 /*
@@ -131,11 +131,11 @@ func (wa *traceElementWait) getTpost() int {
  *   int: The timer of the element
  */
 func (wa *traceElementWait) getTsort() int {
-	if wa.tpost == 0 {
+	if wa.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return wa.tpost
+	return wa.tPost
 }
 
 /*
@@ -144,9 +144,19 @@ func (wa *traceElementWait) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (wa *traceElementWait) toString() string {
-	return "W" + strconv.Itoa(wa.id) + "," + strconv.Itoa(wa.tpre) + "," +
-		strconv.Itoa(wa.tpost) + "," + "," +
-		strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val) + "," + wa.pos
+	res := "W,"
+	res += strconv.Itoa(wa.tPre) + "," + strconv.Itoa(wa.tPost) + ","
+	res += strconv.Itoa(wa.id) + ","
+	switch wa.opW {
+	case ChangeOp:
+		res += "A,"
+	case WaitOp:
+		res += "W,"
+	}
+
+	res += strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val)
+	res += "," + wa.pos
+	return res
 }
 
 /*

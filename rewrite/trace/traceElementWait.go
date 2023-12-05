@@ -27,7 +27,7 @@ const (
  */
 type TraceElementWait struct {
 	routine int
-	tpre    int
+	tPre    int
 	tPost   int
 	id      int
 	opW     opW
@@ -85,7 +85,7 @@ func AddTraceElementWait(routine int, tpre string,
 
 	elem := TraceElementWait{
 		routine: routine,
-		tpre:    tpre_int,
+		tPre:    tpre_int,
 		tPost:   tpost_int,
 		id:      id_int,
 		opW:     opW_op,
@@ -111,7 +111,7 @@ func (wa *TraceElementWait) GetRoutine() int {
  *   int: The timestamp at the start of the event
  */
 func (wa *TraceElementWait) getTpre() int {
-	return wa.tpre
+	return wa.tPre
 }
 
 /*
@@ -172,7 +172,17 @@ func (te *TraceElementWait) SetTsortWithoutNotExecuted(tSort int) {
  *   string: The simple string representation of the element
  */
 func (wa *TraceElementWait) ToString() string {
-	return "W" + strconv.Itoa(wa.id) + "," + strconv.Itoa(wa.tpre) + "," +
-		strconv.Itoa(wa.tPost) + "," + "," +
-		strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val) + "," + wa.pos
+	res := "W,"
+	res += strconv.Itoa(wa.tPre) + "," + strconv.Itoa(wa.tPost) + ","
+	res += strconv.Itoa(wa.id) + ","
+	switch wa.opW {
+	case ChangeOp:
+		res += "A,"
+	case WaitOp:
+		res += "W,"
+	}
+
+	res += strconv.Itoa(wa.delta) + "," + strconv.Itoa(wa.val)
+	res += "," + wa.pos
+	return res
 }

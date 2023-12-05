@@ -83,7 +83,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 	bug.Pos1 = elems[1]
 	elem, err := trace.GetTraceElementFromPos(bug.Pos1)
 	if err != nil {
-		println("Error: " + err.Error())
+		panic("Error: " + err.Error())
 	}
 	bug.TraceElement1 = elem
 

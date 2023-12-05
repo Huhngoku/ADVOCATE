@@ -122,8 +122,8 @@ func AddTraceElementSelect(routine int, tPre string,
 
 		elemCase := traceElementChannel{
 			routine: routine,
-			tpre:    cTPre,
-			tpost:   cTPost,
+			tPre:    cTPre,
+			tPost:   cTPost,
 			id:      cID,
 			opC:     cOpC,
 			cl:      cCl,
@@ -134,7 +134,7 @@ func AddTraceElementSelect(routine int, tPre string,
 		}
 
 		casesList = append(casesList, elemCase)
-		if elemCase.tpost != 0 {
+		if elemCase.tPost != 0 {
 			elem.chosenCase = elemCase
 		}
 	}
@@ -199,11 +199,15 @@ func (se *traceElementSelect) toString() string {
 	res := "S" + "," + strconv.Itoa(se.tpre) + "," +
 		strconv.Itoa(se.tpost) + "," + strconv.Itoa(se.id) + ","
 
-	for i, c := range se.cases {
-		if i != 0 {
-			res += "~"
+	notNil := 0
+	for _, ca := range se.cases { // cases
+		if ca.tPre != 0 { // ignore nil cases
+			if notNil != 0 {
+				res += "~"
+			}
+			res += ca.toStringSep(".", false)
+			notNil++
 		}
-		res += c.toStringSep(".", false)
 	}
 
 	if se.containsDefault {

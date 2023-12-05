@@ -72,10 +72,10 @@ func GetTraces() *map[int][]TraceElement {
  *   int: The index of the element in the trace of the routine
  */
 func GetTraceElementFromPos(pos string) (*TraceElement, error) {
-	for routine := 0; routine < len(traces); routine++ {
-		for j := 0; j < len(traces[routine]); j++ {
-			if traces[routine][j].GetPos() == pos {
-				return &traces[routine][j], nil
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if elem.GetPos() == pos {
+				return &traces[routine][index], nil
 			}
 		}
 	}
@@ -91,6 +91,9 @@ func GetTraceElementFromPos(pos string) (*TraceElement, error) {
  *   excludedRoutines ([]int): The routines to exclude
  */
 func MoveTimeBack(startTime int, steps int, excludedRoutines []int) {
+	println("Move Time Back")
+	println("Start Time: ", startTime)
+	println("Steps: ", steps)
 	for routine, localTrace := range traces {
 		for _, elem := range localTrace {
 			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {

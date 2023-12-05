@@ -149,6 +149,23 @@ func (te *TraceElementAtomic) SetTsortWithoutNotExecuted(tSort int) {
  *   string: The simple string representation of the element
  */
 func (at *TraceElementAtomic) ToString() string {
-	return "A," + strconv.Itoa(at.tPost) + "," + strconv.Itoa(at.id) + "," +
-		strconv.Itoa(int(at.opA))
+	res := "A," + strconv.Itoa(at.tPost) + "," +
+		strconv.Itoa(at.id) + ","
+
+	switch at.opA {
+	case LoadOp:
+		res += "L"
+	case StoreOp:
+		res += "S"
+	case AddOp:
+		res += "A"
+	case SwapOp:
+		res += "W"
+	case CompSwapOp:
+		res += "C"
+	default:
+		res += "U"
+	}
+
+	return res
 }

@@ -28,8 +28,9 @@ func RewriteTrace(bug bugs.Bug) {
  *   bug (Bug): The bug to create a trace for
  */
 func rewriteTraceSendOnClose(bug bugs.Bug) {
-	skip := (*bug.TraceElement2).GetTSort() - (*bug.TraceElement1).GetTSort() + 1
-	trace.MoveTimeBack((*bug.TraceElement1).GetTSort(), skip, []int{(*bug.TraceElement2).GetRoutine()})
+	skip := (*bug.TraceElement1).GetTSort() - (*bug.TraceElement2).GetTSort() + 1
+	println("Skip: ", skip)
+	trace.MoveTimeBack((*bug.TraceElement2).GetTSort(), skip, []int{(*bug.TraceElement1).GetRoutine()})
 }
 
 /*

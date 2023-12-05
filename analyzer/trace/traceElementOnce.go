@@ -116,9 +116,17 @@ func (on *traceElementOnce) getTsort() int {
  *   string: The simple string representation of the element
  */
 func (on *traceElementOnce) toString() string {
-	return "O" + "," + strconv.Itoa(on.tPre) + "," + strconv.Itoa(on.tPost) +
-		strconv.Itoa(on.id) + "," + strconv.FormatBool(on.suc) + "," +
-		on.pos
+	res := "O,"
+	res += strconv.Itoa(on.tPre) + ","
+	res += strconv.Itoa(on.tPost) + ","
+	res += strconv.Itoa(on.id) + ","
+	if on.suc {
+		res += "t"
+	} else {
+		res += "f"
+	}
+	res += "," + on.pos
+	return res
 }
 
 /*
