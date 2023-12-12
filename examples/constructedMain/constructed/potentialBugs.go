@@ -485,7 +485,7 @@ func main() {
 	// defer advocate.CreateTrace("trace_constructed.log")
 
 	// init replay
-	trace := advocate.ReadTrace("rewritten_trace.log")
+	trace := advocate.ReadTrace("trace_constructed.log")
 	runtime.EnableReplay(trace)
 	defer runtime.WaitForReplayFinish()
 

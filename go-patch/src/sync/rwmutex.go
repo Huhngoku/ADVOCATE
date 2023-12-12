@@ -295,11 +295,11 @@ func (rw *RWMutex) TryLock() bool {
 			_ = runtime.AdvocateMutexLockTry(rw.id, true, false)
 			runtime.BlockForever()
 		}
-		if !replayElem.Suc {
-			advocateIndex := runtime.AdvocateMutexLockTry(rw.id, true, false)
-			runtime.AdvocatePostTry(advocateIndex, false)
-			return false
-		}
+		// if !replayElem.Suc {
+		// 	advocateIndex := runtime.AdvocateMutexLockTry(rw.id, true, false)
+		// 	runtime.AdvocatePostTry(advocateIndex, false)
+		// 	return false
+		// }
 	}
 	// RWMutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a RWMutex

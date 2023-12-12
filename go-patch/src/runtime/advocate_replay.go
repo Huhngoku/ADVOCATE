@@ -49,6 +49,7 @@ const (
  */
 type ReplayElement struct {
 	Op       ReplayOperation
+	Routine  int
 	Time     int
 	File     string
 	Line     int
@@ -128,7 +129,19 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		next := getNextReplayElement()
 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
-		if next.Time != 0 { // if next == ReplayElement{}
+		// TODO: replace with better solution, this is a hack
+		if op == AdvocateReplaySpawn {
+			println("Replay: ", next.Time, op, file, line)
+			return true, next
+		}
+		if next.Op == AdvocateReplaySpawn {
+			lock(&replayLock)
+			replayIndex++
+			unlock(&replayLock)
+			continue
+		}
+
+		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
 				// TODO: sleep here to not waste CPU
