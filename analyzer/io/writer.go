@@ -1,9 +1,9 @@
 package io
 
 import (
+	"analyzer/trace"
 	"io"
 	"os"
-	"rewrite/trace"
 )
 
 /*

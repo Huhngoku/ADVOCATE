@@ -2,8 +2,6 @@
 We want to be able to replay a program as it was recorded in a trace file. 
 
 ## Usage
-The trace replay is currently not in the main branch jey, but in its separate
-`replay` and `replayDev` branches.
 
 To start the replay, add the following header at the beginning of the
 main function:

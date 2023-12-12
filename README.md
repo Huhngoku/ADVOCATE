@@ -146,59 +146,44 @@ as internal operations used by the go runtime. An explanation of the trace
 file including the explanations for all elements can be found in the `doc`
 directory.
 
-## Analysis
-
+## Analysis and Reorder
 
 We can now analyze the created file using the program in the `analyzer`
-folder. For now we only support the search for potential send on a closed channel, but we plan to expand the use cases in the future. 
+folder. For now we only support the search for potential send on a closed channel, but we plan to expand the use cases in the future.
+The analyzer can also create a new reordered trace, in which a detected possible bug actually occurs. This new trace can then used in the replay, to confirm and simplify the removal of the bug.
+
+> [!Caution]
+> The Reorder is still in development and may result in incorrect traces
 
 The analyzer can take the following command line arguments:
 
-- -t [file]: path to the trace file, default: ./trace.log
+- -t [file]: path to the trace file
 - -d [level]: output level, 0: silent, 1: results, 2: errors, 3: info, 4: debug, default: 2
-- -b [buffer_size]: if the trace file is to big, it can be necessary to increase the size of the reader buffer. The size is given in MB, default: 25
 - -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
-- -o [file_name]: set the name of the output file. If it is not set, or set to "", no output file will be created.
-- -m [file_name]: set the name of the machine readable output file. This can be used in the trace reordering (not implemented jet). If it is not set, or set to "", no output file will be created.
-- -r: show the result immediately when found (default false)
-- -s: do not show the summary at the end
+- -n: If an analysis is run, a rewritten trace can be direcly created in the program. If the rewrite should not be done based on the direct analysis, but on a given trace and result file, -n must be set. In this case no analysis is run. -r and -i must be set.
+- -r [file]: Path to the analysis result file. Only needed if -n is set. The analysis will create two result files `result_readable.log` and `result_machine.log`. Here `result_machine.log` must be used.
+- -i [index]: Index of the bug that will be reproduced. Only needed if n is set. 1 based.
 
 If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
 ```
-./analyzer -f -l "trace.log" -o "result.log"
+./analyzer -t "trace.log"
 ```
-it will create the following result, show it in the terminal and print it into 
-an `result.log` file: 
+it will create the following result, show it in the terminal and print it into an `result_readable.log` file: 
 ```txt
 ==================== Summary ====================
 
 -------------------- Critical -------------------
-Possible send on closed channel:
+1 Possible send on closed channel:
 	close: .../main.go:56
 	send: .../main.go:48
 -------------------- Warning --------------------
-Possible receive on closed channel:
+2 Possible receive on closed channel:
 	close: .../main.go:56
 	recv: .../main.go:42
 ```
 The send can cause a panic of the program, if it occurs. It is therefor an error message (in terminal red).
 
 A receive on a closed channel does not cause a panic, but returns a default value. It can therefor be a desired behavior. For this reason it is only considered a warning (in terminal orange, can be silenced with -w).
-
-## Trace Reorder
-We wand to be able to produce a new valid trace, based on the recorded one, 
-in which a detected possible bug actually occurs. This new trace can then used
-in the replay, to confirm and simplify the removal of the bug.
-For this we use the rewriter in the `rewrite` directory. 
-It takes the following arguments:
-- -t [file_path]: path to the recorded trace
-- -e [file_path]: path to the result file form the analyzer. Make sure to use the one 
-created with `-m` and not `-o`.
-- -i [index]: index of the bug in the result file, which should be occur in the 
-new trace (1 based).
-- o [file_path]: path to the new trace file
-
-**The reorder is still in developement and does not work yet**
 
 
 ## Trace Replay

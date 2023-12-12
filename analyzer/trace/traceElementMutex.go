@@ -22,7 +22,7 @@ const (
 )
 
 /*
- * traceElementMutex is a trace element for a mutex
+ * TraceElementMutex is a trace element for a mutex
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -32,9 +32,9 @@ const (
  *   opM (opMutex): The operation on the mutex
  *   suc (bool): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
- *   partner (*traceElementMutex): The partner of the mutex operation
+ *   partner (*TraceElementMutex): The partner of the mutex operation
  */
-type traceElementMutex struct {
+type TraceElementMutex struct {
 	routine int
 	tPre    int
 	tPost   int
@@ -43,7 +43,7 @@ type traceElementMutex struct {
 	opM     opMutex
 	suc     bool
 	pos     string
-	partner *traceElementMutex
+	partner *TraceElementMutex
 }
 
 /*
@@ -104,7 +104,7 @@ func AddTraceElementMutex(routine int, tPre string,
 		return errors.New("suc is not a boolean")
 	}
 
-	elem := traceElementMutex{
+	elem := TraceElementMutex{
 		routine: routine,
 		tPre:    tPreInt,
 		tPost:   tPostInt,
@@ -122,7 +122,7 @@ func AddTraceElementMutex(routine int, tPre string,
  * Returns:
  *   int: The routine of the element
  */
-func (mu *traceElementMutex) getRoutine() int {
+func (mu *TraceElementMutex) GetRoutine() int {
 	return mu.routine
 }
 
@@ -131,7 +131,7 @@ func (mu *traceElementMutex) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (mu *traceElementMutex) getTpre() int {
+func (mu *TraceElementMutex) getTpre() int {
 	return mu.tPre
 }
 
@@ -140,7 +140,7 @@ func (mu *traceElementMutex) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (mu *traceElementMutex) getTpost() int {
+func (mu *TraceElementMutex) getTpost() int {
 	return mu.tPost
 }
 
@@ -149,7 +149,7 @@ func (mu *traceElementMutex) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (mu *traceElementMutex) getTsort() int {
+func (mu *TraceElementMutex) GetTSort() int {
 	if mu.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
@@ -158,11 +158,41 @@ func (mu *traceElementMutex) getTsort() int {
 }
 
 /*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (mu *TraceElementMutex) GetPos() string {
+	return mu.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (mu *TraceElementMutex) SetTsort(tSort int) {
+	mu.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (mu *TraceElementMutex) SetTsortWithoutNotExecuted(tSort int) {
+	if mu.tPost != 0 {
+		mu.tPost = tSort
+	}
+}
+
+/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
  */
-func (mu *traceElementMutex) toString() string {
+func (mu *TraceElementMutex) ToString() string {
 	res := "M,"
 	res += strconv.Itoa(mu.tPre) + "," + strconv.Itoa(mu.tPost) + ","
 	res += strconv.Itoa(mu.id) + ","
@@ -198,12 +228,12 @@ func (mu *traceElementMutex) toString() string {
 }
 
 // mutex operations, for which no partner has been found yet
-var mutexNoPartner []*traceElementMutex
+var mutexNoPartner []*TraceElementMutex
 
 /*
  * Update the vector clock of the trace and element
  */
-func (mu *traceElementMutex) updateVectorClock() {
+func (mu *TraceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
 		analysis.Lock(mu.routine, mu.id, currentVectorClocks)
@@ -222,7 +252,7 @@ func (mu *traceElementMutex) updateVectorClock() {
 	case RUnlockOp:
 		analysis.RUnlock(mu.routine, mu.id, currentVectorClocks)
 	default:
-		err := "Unknown mutex operation: " + mu.toString()
+		err := "Unknown mutex operation: " + mu.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
 }

@@ -3,11 +3,12 @@ package trace
 import (
 	"analyzer/analysis"
 	"analyzer/logging"
+	"errors"
 	"sort"
 	"strconv"
 )
 
-var traces map[int][]traceElement = make(map[int][]traceElement)
+var traces map[int][]TraceElement = make(map[int][]TraceElement)
 var currentVectorClocks map[int]analysis.VectorClock = make(map[int]analysis.VectorClock)
 var currentIndex map[int]int = make(map[int]int)
 var numberOfRoutines int = 0
@@ -22,21 +23,30 @@ var result string
 * Returns:
 *   error: An error if the routine does not exist
  */
-func addElementToTrace(element traceElement) error {
-	routine := element.getRoutine()
+func addElementToTrace(element TraceElement) error {
+	routine := element.GetRoutine()
 	traces[routine] = append(traces[routine], element)
 	return nil
 }
 
 /*
+* Add an empty routine to the trace
+* Args:
+*   routine (int): The routine id
+ */
+func AddEmptyRoutine(routine int) {
+	traces[routine] = make([]TraceElement, 0)
+}
+
+/*
  * Sort the trace by tsort
  */
-type sortByTSort []traceElement
+type sortByTSort []TraceElement
 
 func (a sortByTSort) Len() int      { return len(a) }
 func (a sortByTSort) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a sortByTSort) Less(i, j int) bool {
-	return a[i].getTsort() < a[j].getTsort()
+	return a[i].GetTSort() < a[j].GetTSort()
 }
 
 /*
@@ -46,15 +56,79 @@ func (a sortByTSort) Less(i, j int) bool {
  * Returns:
  *   ([]traceElement): The sorted trace
  */
-func sortTrace(trace []traceElement) []traceElement {
+func sortTrace(trace []TraceElement) []TraceElement {
 	sort.Sort(sortByTSort(trace))
 	return trace
 }
 
+/*
+ * Sort all traces by tpost
+ */
 func Sort() {
 	for routine, trace := range traces {
 		traces[routine] = sortTrace(trace)
 	}
+}
+
+/*
+ * Get the traces
+ * Returns:
+ *   map[int][]traceElement: The traces
+ */
+func GetTraces() *map[int][]TraceElement {
+	return &traces
+}
+
+/*
+ * Given the file and line info, return the routine and index of the element
+ * in trace.
+ * Args:
+ *   pos (string): The position of the element
+ * Returns:
+ *   error: An error if the element does not exist
+ *   int: The routine of the element
+ *   int: The index of the element in the trace of the routine
+ */
+func GetTraceElementFromPos(pos string) (*TraceElement, error) {
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if elem.GetPos() == pos {
+				return &traces[routine][index], nil
+			}
+		}
+	}
+	return nil, errors.New("Element " + pos + " does not exist")
+}
+
+/*
+ * Move the time of elements back by steps, excluding the routines in
+ * excludedRoutines
+ * Args:
+ *   startTime (int): The time to start moving back from
+ *   steps (int): The number of steps to move back
+ *   excludedRoutines ([]int): The routines to exclude
+ */
+func MoveTimeBack(startTime int, steps int, excludedRoutines []int) {
+	println("Move Time Back")
+	println("Start Time: ", startTime)
+	println("Steps: ", steps)
+	for routine, localTrace := range traces {
+		for _, elem := range localTrace {
+			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
+				elem.SetTsortWithoutNotExecuted(elem.GetTSort() + steps)
+			}
+		}
+	}
+	Sort()
+}
+
+func contains(slice []int, elem int) bool {
+	for _, e := range slice {
+		if e == elem {
+			return true
+		}
+	}
+	return false
 }
 
 /*
@@ -85,34 +159,34 @@ func RunAnalysis(assume_fifo bool) string {
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// ignore non executed operations
 		if elem.getTpost() == 0 {
-			logging.Debug("Skip vector clock calculation for "+elem.toString(), logging.DEBUG)
+			logging.Debug("Skip vector clock calculation for "+elem.ToString(), logging.DEBUG)
 			continue
 		}
 
 		switch e := elem.(type) {
-		case *traceElementAtomic:
-			logging.Debug("Update vector clock for atomic operation "+e.toString()+
-				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
+		case *TraceElementAtomic:
+			logging.Debug("Update vector clock for atomic operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
-		case *traceElementChannel:
-			logging.Debug("Update vector clock for channel operation "+e.toString()+
-				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
+		case *TraceElementChannel:
+			logging.Debug("Update vector clock for channel operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
-		case *traceElementMutex:
-			logging.Debug("Update vector clock for mutex operation "+e.toString()+
-				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
+		case *TraceElementMutex:
+			logging.Debug("Update vector clock for mutex operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
-		case *traceElementFork:
-			logging.Debug("Update vector clock for routine operation "+e.toString()+
-				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
+		case *TraceElementFork:
+			logging.Debug("Update vector clock for routine operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
-		case *traceElementSelect:
-			logging.Debug("Update vector clock for select operation "+e.toString()+
-				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
+		case *TraceElementSelect:
+			logging.Debug("Update vector clock for select operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
-		case *traceElementWait:
-			logging.Debug("Update vector clock for go operation "+e.toString()+
-				" for routine "+strconv.Itoa(e.getRoutine()), logging.DEBUG)
+		case *TraceElementWait:
+			logging.Debug("Update vector clock for go operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		}
 
@@ -122,7 +196,7 @@ func RunAnalysis(assume_fifo bool) string {
 	return result
 }
 
-func getNextElement() traceElement {
+func getNextElement() TraceElement {
 	// find the local trace, where the element on which currentIndex points to
 	// has the smallest tpost
 	var minTSort int = -1
@@ -133,11 +207,11 @@ func getNextElement() traceElement {
 			continue
 		}
 		// ignore non executed operations
-		if trace[currentIndex[routine]].getTsort() == 0 {
+		if trace[currentIndex[routine]].GetTSort() == 0 {
 			continue
 		}
-		if minTSort == -1 || trace[currentIndex[routine]].getTsort() < minTSort {
-			minTSort = trace[currentIndex[routine]].getTsort()
+		if minTSort == -1 || trace[currentIndex[routine]].GetTSort() < minTSort {
+			minTSort = trace[currentIndex[routine]].GetTSort()
 			minRoutine = routine
 		}
 	}

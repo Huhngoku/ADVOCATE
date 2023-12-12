@@ -1,9 +1,9 @@
 package io
 
 import (
+	"analyzer/bugs"
 	"bufio"
 	"os"
-	"rewrite/bugs"
 	"strconv"
 )
 

@@ -17,7 +17,7 @@ const (
 )
 
 /*
-* traceElementWait is a trace element for a wait group statement
+* TraceElementWait is a trace element for a wait group statement
 * Fields:
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
@@ -27,7 +27,7 @@ const (
 *   val (int): The value of the wait group
 *   pos (string): The position of the wait group in the code
  */
-type traceElementWait struct {
+type TraceElementWait struct {
 	routine int
 	tPre    int
 	tPost   int
@@ -85,7 +85,7 @@ func AddTraceElementWait(routine int, tpre string,
 		return errors.New("val is not an integer")
 	}
 
-	elem := traceElementWait{
+	elem := TraceElementWait{
 		routine: routine,
 		tPre:    tpre_int,
 		tPost:   tpost_int,
@@ -103,7 +103,7 @@ func AddTraceElementWait(routine int, tpre string,
  * Returns:
  *   int: The routine of the element
  */
-func (wa *traceElementWait) getRoutine() int {
+func (wa *TraceElementWait) GetRoutine() int {
 	return wa.routine
 }
 
@@ -112,7 +112,7 @@ func (wa *traceElementWait) getRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (wa *traceElementWait) getTpre() int {
+func (wa *TraceElementWait) getTpre() int {
 	return wa.tPre
 }
 
@@ -121,7 +121,7 @@ func (wa *traceElementWait) getTpre() int {
  * Returns:
  *   int: The timestamp at the end of the event
  */
-func (wa *traceElementWait) getTpost() int {
+func (wa *TraceElementWait) getTpost() int {
 	return wa.tPost
 }
 
@@ -130,7 +130,7 @@ func (wa *traceElementWait) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (wa *traceElementWait) getTsort() int {
+func (wa *TraceElementWait) GetTSort() int {
 	if wa.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
@@ -139,11 +139,41 @@ func (wa *traceElementWait) getTsort() int {
 }
 
 /*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (wa *TraceElementWait) GetPos() string {
+	return wa.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (wa *TraceElementWait) SetTsort(tSort int) {
+	wa.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (wa *TraceElementWait) SetTsortWithoutNotExecuted(tSort int) {
+	if wa.tPost != 0 {
+		wa.tPost = tSort
+	}
+}
+
+/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
  */
-func (wa *traceElementWait) toString() string {
+func (wa *TraceElementWait) ToString() string {
 	res := "W,"
 	res += strconv.Itoa(wa.tPre) + "," + strconv.Itoa(wa.tPost) + ","
 	res += strconv.Itoa(wa.id) + ","
@@ -162,14 +192,14 @@ func (wa *traceElementWait) toString() string {
 /*
  * Update and calculate the vector clock of the element
  */
-func (wa *traceElementWait) updateVectorClock() {
+func (wa *TraceElementWait) updateVectorClock() {
 	switch wa.opW {
 	case ChangeOp:
 		analysis.Change(wa.routine, wa.id, currentVectorClocks)
 	case WaitOp:
 		analysis.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:
-		err := "Unknown operation on wait group: " + wa.toString()
+		err := "Unknown operation on wait group: " + wa.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
 }

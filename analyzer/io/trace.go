@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"rewrite/trace"
+	"analyzer/trace"
 )
 
 /*

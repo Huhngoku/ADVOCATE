@@ -26,7 +26,7 @@ const (
  *   id (int): The id of the atomic variable
  *   operation (int, enum): The operation on the atomic variable
  */
-type traceElementAtomic struct {
+type TraceElementAtomic struct {
 	routine int
 	tPost   int
 	id      int
@@ -69,7 +69,7 @@ func AddTraceElementAtomic(routine int, tpost string,
 		return errors.New("operation is not a valid operation")
 	}
 
-	elem := traceElementAtomic{
+	elem := TraceElementAtomic{
 		routine: routine,
 		tPost:   tPostInt,
 		id:      idInt,
@@ -84,7 +84,7 @@ func AddTraceElementAtomic(routine int, tpost string,
  * Returns:
  *   int: The routine of the element
  */
-func (at *traceElementAtomic) getRoutine() int {
+func (at *TraceElementAtomic) GetRoutine() int {
 	return at.routine
 }
 
@@ -93,7 +93,7 @@ func (at *traceElementAtomic) getRoutine() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *traceElementAtomic) getTpre() int {
+func (at *TraceElementAtomic) getTpre() int {
 	return at.tPost
 }
 
@@ -102,7 +102,7 @@ func (at *traceElementAtomic) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *traceElementAtomic) getTpost() int {
+func (at *TraceElementAtomic) getTpost() int {
 	return at.tPost
 }
 
@@ -111,8 +111,38 @@ func (at *traceElementAtomic) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (at *traceElementAtomic) getTsort() int {
+func (at *TraceElementAtomic) GetTSort() int {
 	return at.tPost
+}
+
+/*
+ * Get the position of the operation. For atomic elements, the position is always empty
+ * Returns:
+ *   string: The file of the element
+ */
+func (at *TraceElementAtomic) GetPos() string {
+	return ""
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (at *TraceElementAtomic) SetTsort(tSort int) {
+	at.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (at *TraceElementAtomic) SetTsortWithoutNotExecuted(tSort int) {
+	if at.tPost != 0 {
+		at.tPost = tSort
+	}
 }
 
 /*
@@ -120,7 +150,7 @@ func (at *traceElementAtomic) getTsort() int {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (at *traceElementAtomic) toString() string {
+func (at *TraceElementAtomic) ToString() string {
 	res := "A," + strconv.Itoa(at.tPost) + "," +
 		strconv.Itoa(at.id) + ","
 
@@ -145,7 +175,7 @@ func (at *traceElementAtomic) toString() string {
 /*
  * Update and calculate the vector clock of the element
  */
-func (at *traceElementAtomic) updateVectorClock() {
+func (at *TraceElementAtomic) updateVectorClock() {
 	switch at.opA {
 	case LoadOp:
 		analysis.Read(at.routine, at.id, currentVectorClocks)
@@ -154,7 +184,7 @@ func (at *traceElementAtomic) updateVectorClock() {
 	case SwapOp, CompSwapOp:
 		analysis.Swap(at.routine, at.id, currentVectorClocks)
 	default:
-		err := "Unknown operation: " + at.toString()
+		err := "Unknown operation: " + at.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
 }

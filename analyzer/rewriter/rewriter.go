@@ -1,8 +1,8 @@
 package rewriter
 
 import (
-	"rewrite/bugs"
-	"rewrite/trace"
+	"analyzer/bugs"
+	"analyzer/trace"
 )
 
 /*

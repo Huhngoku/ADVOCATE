@@ -480,8 +480,14 @@ const n = 22
 
 func main() {
 
-	runtime.InitAdvocate(0)
-	defer advocate.CreateTrace("constructed.log")
+	// init tracing
+	// runtime.InitAdvocate(0)
+	// defer advocate.CreateTrace("trace_constructed.log")
+
+	// init replay
+	trace := advocate.ReadTrace("rewritten_trace.log")
+	runtime.EnableReplay(trace)
+	defer runtime.WaitForReplayFinish()
 
 	ns := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12,
 		n13, n14, n15, n16, n17, n18, n19, n20, n21, n22}

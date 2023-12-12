@@ -1,7 +1,7 @@
 package bugs
 
 import (
-	"rewrite/trace"
+	"analyzer/trace"
 	"strconv"
 	"strings"
 )
