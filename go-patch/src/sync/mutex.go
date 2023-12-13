@@ -133,21 +133,21 @@ func (m *Mutex) TryLock() bool {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexTryLock, 2)
 	if enabled {
-		if !replayElem.Blocked {
+		if replayElem.Blocked {
 			if m.id == 0 {
 				m.id = runtime.GetAdvocateObjectId()
 			}
 			_ = runtime.AdvocateMutexLockTry(m.id, false, false)
 			runtime.BlockForever()
 		}
-		if !replayElem.Suc {
-			if m.id == 0 {
-				m.id = runtime.GetAdvocateObjectId()
-			}
-			advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
-			runtime.AdvocatePostTry(advocateIndex, false)
-			return false
-		}
+		// if !replayElem.Suc {
+		// 	if m.id == 0 {
+		// 		m.id = runtime.GetAdvocateObjectId()
+		// 	}
+		// 	advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
+		// 	runtime.AdvocatePostTry(advocateIndex, false)
+		// 	return false
+		// }
 	}
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex

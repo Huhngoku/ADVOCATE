@@ -2,7 +2,6 @@ package advocate
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"runtime"
 	"sort"
@@ -97,9 +96,6 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 				var suc = true
 				var selIndex int
 				fields := strings.Split(elem, ",")
-				if time == 39 {
-					println(elem + "\n\n")
-				}
 				switch fields[0] {
 				case "G":
 					op = runtime.AdvocateReplaySpawn
@@ -251,31 +247,23 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
-	// remove the first 10 elements from the trace. They are part of the go init
-	// and are therefore always called, before the program starts.
-	// Because we enable the replay in the program, we must ignore them.
-	for elem := range replayData {
-		println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
-	}
-	println("\n\n")
+	// for elem := range replayData {
+	// 	println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
+	// }
+	// println("\n\n")
 	return replayData
 }
 
 // TODO: swap timer for rwmutix.Trylock
 func swapTimerRwMutex(op string, time int, file string, line int, replayData *runtime.AdvocateReplayTrace) int {
 	if op == "L" {
-		println(file, line)
 		if !strings.HasSuffix(file, "sync/rwmutex.go") || line != 266 {
 			return time
 		}
-		println("swap timer")
 
 		for i := len(*replayData) - 1; i >= 0; i-- {
-			fmt.Println(time, (*replayData)[i].Time)
-
 			timeNew := (*replayData)[i].Time
 			(*replayData)[i].Time = time
-			fmt.Println(timeNew, (*replayData)[i].Time)
 			return timeNew
 		}
 	} else if op == "U" {

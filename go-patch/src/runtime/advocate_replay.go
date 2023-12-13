@@ -124,14 +124,14 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return false, ReplayElement{}
 	}
 
-	println("WaitForReplayPath", op, file, line)
+	// println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		// TODO: replace with better solution, this is a hack
 		if op == AdvocateReplaySpawn {
-			println("Replay: ", next.Time, op, file, line)
+			// println("Replay Spawn: ", next.Time, op, file, line)
 			return true, next
 		}
 		if next.Op == AdvocateReplaySpawn {
@@ -152,7 +152,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		lock(&replayLock)
 		replayIndex++
 		unlock(&replayLock)
-		println("Replay: ", next.Time, op, file, line)
+		// println("Replay: ", next.Time, op, file, line)
 		return true, next
 	}
 }

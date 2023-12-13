@@ -151,6 +151,7 @@ if enabled {  // replay is running
 }
 ```
 
+<!--
 ### Making sure, that successful operations are successful and unsuccessful once are not
 This is only relevant for Try(R)Lock operations and Once. For operations that
 were not successful we will, after the necessary steps to record the operation
@@ -172,6 +173,7 @@ if envable {  // replay is running
 Operations that were successful in the trace can now not be blocked by incorrectly
 executed unsuccessful operations and therefor do not need any additional
 change.
+-->
 
 ### Making sure, that channel partners are correct
 As described in Trace Reading, we direly store in each trace element of the

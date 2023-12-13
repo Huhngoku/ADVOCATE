@@ -61,8 +61,7 @@ advocate
 
 Autocompletion often includes "std/runtime" instead of "runtime". Make sure to include the correct one.
 
-For some reason, `fmt.Print` and similar can lead to `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)`
-until the problem disappears.
+For some reason, `fmt.Print` and similar can lead to `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)` until the problem disappears.
 
 After that run the program with `./go run main.go` or `./go build && ./main`,
 using the new runtime.

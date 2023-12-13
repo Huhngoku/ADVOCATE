@@ -176,7 +176,9 @@ func full(c *hchan) bool {
 //
 //go:nosplit
 func chansend1(c *hchan, elem unsafe.Pointer) {
-	chansend(c, elem, true, getcallerpc())
+	// ADVOCATE-CHANGE-START
+	chansend(c, elem, true, getcallerpc(), false)
+	// ADVOCATE-CHANGE-END
 }
 
 /*
@@ -191,7 +193,10 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
  * been closed.  it is easiest to loop and re-run
  * the operation; we'll see that it's now closed.
  */
-func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+// ADVOCATE-CHANGE-START
+// set ignored to true, if it is used in a one case + default select. In this case, it is recorded and replayed in the select
+func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored bool) bool {
+	// ADVOCATE-CHANGE-END
 	if c == nil {
 		if !block {
 			return false
@@ -212,7 +217,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
-	if !c.advocateIgnore {
+	if !ignored && !c.advocateIgnore {
 		enabled, replayElem = WaitForReplay(AdvocateReplayChannelSend, 3)
 		if enabled {
 			if replayElem.Blocked {
@@ -266,7 +271,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	// advocateIndex is used to connect the post event to the correct
 	// pre envent in the trace.
 	var advocateIndex int
-	if !c.advocateIgnore {
+	if !ignored && !c.advocateIgnore {
 		lock(&c.numberSendMutex)
 		c.numberSend++
 		unlock(&c.numberSendMutex)
@@ -283,7 +288,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		// Found a waiting receiver. We pass the value we want to send
 		// directly to the receiver, bypassing the channel buffer (if any).
 		// ADVOCATE-CHANGE-START
-		if !c.advocateIgnore {
+		if !ignored && !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
 		// ADVOCATE-CHANGE-END
@@ -294,7 +299,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	if c.qcount < c.dataqsiz {
 		// Space is available in the channel buffer. Enqueue the element to send.
 		// ADVOCATE-CHANGE-START
-		if !c.advocateIgnore {
+		if !ignored && !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
 		// ADVOCATE-CHANGE-END
@@ -315,7 +320,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 	if !block {
 		// ADVOCATE-CHANGE-START
-		if !c.advocateIgnore {
+		if !ignored && !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
 		// ADVOCATE-CHANGE-END
@@ -339,7 +344,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	mysg.c = c
 	// ADVOCATE-CHANGE-START
 	// save partner file and line in sudog
-	if replayEnabled && !c.advocateIgnore {
+	if replayEnabled && !ignored && !c.advocateIgnore {
 		mysg.replayEnabled = true
 		mysg.pFile = replayElem.PFile
 		mysg.pLine = replayElem.PLine
@@ -369,7 +374,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 		throw("G waiting list is corrupted")
 	}
 	// ADVOCATE-CHANGE-START
-	if !c.advocateIgnore {
+	if !ignored && !c.advocateIgnore {
 		AdvocateChanPost(advocateIndex)
 	}
 	// ADVOCATE-CHANGE-END
@@ -384,7 +389,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	releaseSudog(mysg)
 	if closed {
 		// ADVOCATE-CHANGE-START
-		if !c.advocateIgnore {
+		if !ignored && !c.advocateIgnore {
 			AdvocateChanPostCausedByClose(advocateIndex)
 		}
 		// ADVOCATE-CHANGE-END
@@ -560,12 +565,12 @@ func empty(c *hchan) bool {
 //
 //go:nosplit
 func chanrecv1(c *hchan, elem unsafe.Pointer) {
-	chanrecv(c, elem, true)
+	chanrecv(c, elem, true, false)
 }
 
 //go:nosplit
 func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
-	_, received = chanrecv(c, elem, true)
+	_, received = chanrecv(c, elem, true, false)
 	return
 }
 
@@ -575,7 +580,10 @@ func chanrecv2(c *hchan, elem unsafe.Pointer) (received bool) {
 // Otherwise, if c is closed, zeros *ep and returns (true, false).
 // Otherwise, fills in *ep with an element and returns (true, true).
 // A non-nil ep must point to the heap or the caller's stack.
-func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
+// ADVOCATE-CHANGE-START
+// set ignored to true, if it is used in a one case + default select. In this case, it is recorded and replayed in the select
+func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, received bool) {
+	// ADVOCATE-CHANGE-END
 	// raceenabled: don't need to check ep, as it is always on the stack
 	// or is new memory allocated by reflect.
 
@@ -595,7 +603,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
-	if !c.advocateIgnore {
+	if !ignored && !c.advocateIgnore {
 		enabled, replayElem = WaitForReplay(AdvocateReplayChannelRecv, 3)
 		if enabled {
 			if replayElem.Blocked {
@@ -662,7 +670,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	// advocateIndex is used to connect the post event to the correct
 	// pre envent in the trace.
 	var advocateIndex int
-	if !c.advocateIgnore {
+	if !ignored && !c.advocateIgnore {
 		lock(&c.numberRecvMutex)
 		c.numberRecv++
 		unlock(&c.numberRecvMutex)
@@ -681,7 +689,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 				typedmemclr(c.elemtype, ep)
 			}
 			// ADVOCATE-CHANGE-START
-			if !c.advocateIgnore {
+			if !ignored && !c.advocateIgnore {
 				AdvocateChanPostCausedByClose(advocateIndex)
 			}
 			// ADVOCATE-CHANGE-END
@@ -741,7 +749,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	mysg.c = c
 	// ADVOCATE-CHANGE-START
 	// save partner file and line in sudog
-	if replayEnabled && !c.advocateIgnore {
+	if replayEnabled && !ignored && !c.advocateIgnore {
 		mysg.replayEnabled = true
 		mysg.pFile = replayElem.PFile
 		mysg.pLine = replayElem.PLine
@@ -772,7 +780,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	}
 	success := mysg.success
 	// ADVOCATE-CHANGE-START
-	if !success && !c.advocateIgnore {
+	if !success && !ignored && !c.advocateIgnore {
 		AdvocateChanPostCausedByClose(advocateIndex)
 	}
 	// ADVOCATE-CHANGE-END
@@ -885,14 +893,28 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 		if c == nil {
 			return false
 		}
-		// advocateIndex := AdvocateSelectPreOneNonDef(c, true)
-		res := chansend(c, elem, false, getcallerpc())
+		var replayElem ReplayElement
+		var enabled bool
+		if !c.advocateIgnore {
+			enabled, replayElem = WaitForReplay(AdvocateReplaySelect, 2)
+			if enabled {
+				if replayElem.Blocked {
+					lock(&c.numberSendMutex)
+					c.numberSend++
+					unlock(&c.numberSendMutex)
+					_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
+					BlockForever()
+				}
+			}
+		}
+		advocateIndex := AdvocateSelectPreOneNonDef(c, true)
+		res := chansend(c, elem, false, getcallerpc(), true)
 		lock(&c.numberSendMutex)
 		defer unlock(&c.numberSendMutex)
-		// AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberSend)
+		AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberSend)
 		return res
 	}
-	return chansend(c, elem, false, getcallerpc())
+	return chansend(c, elem, false, getcallerpc(), false)
 
 	// ADVOCATE-CHANGE-END
 }
@@ -920,27 +942,41 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 		if c == nil {
 			return false, false
 		}
-		// advocateIndex := AdvocateSelectPreOneNonDef(c, false)
-		res, recv := chanrecv(c, elem, false)
+		var replayElem ReplayElement
+		var enabled bool
+		if !c.advocateIgnore {
+			enabled, replayElem = WaitForReplay(AdvocateReplaySelect, 2)
+			if enabled {
+				if replayElem.Blocked {
+					lock(&c.numberSendMutex)
+					c.numberSend++
+					unlock(&c.numberSendMutex)
+					_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
+					BlockForever()
+				}
+			}
+		}
+		advocateIndex := AdvocateSelectPreOneNonDef(c, false)
+		res, recv := chanrecv(c, elem, false, true)
 		lock(&c.numberRecvMutex)
 		defer unlock(&c.numberRecvMutex)
-		// AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberRecv)
+		AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberRecv)
 		return res, recv
 	}
 
-	return chanrecv(c, elem, false)
+	return chanrecv(c, elem, false, false)
 
 	// ADVOCATE-CHANGE-END
 }
 
 //go:linkname reflect_chansend reflect.chansend0
 func reflect_chansend(c *hchan, elem unsafe.Pointer, nb bool) (selected bool) {
-	return chansend(c, elem, !nb, getcallerpc())
+	return chansend(c, elem, !nb, getcallerpc(), false)
 }
 
 //go:linkname reflect_chanrecv reflect.chanrecv
 func reflect_chanrecv(c *hchan, nb bool, elem unsafe.Pointer) (selected bool, received bool) {
-	return chanrecv(c, elem, !nb)
+	return chanrecv(c, elem, !nb, false)
 }
 
 //go:linkname reflect_chanlen reflect.chanlen
