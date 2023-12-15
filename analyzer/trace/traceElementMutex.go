@@ -158,6 +158,39 @@ func (mu *traceElementMutex) getTsort() int {
 }
 
 /*
+<<<<<<< Updated upstream
+=======
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (mu *TraceElementMutex) GetPos() string {
+	return mu.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (mu *TraceElementMutex) SetTsort(tSort int) {
+	mu.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (mu *TraceElementMutex) SetTSortWithoutNotExecuted(tSort int) {
+	if mu.tPost != 0 {
+		mu.tPost = tSort
+	}
+}
+
+/*
+>>>>>>> Stashed changes
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element

@@ -13,7 +13,9 @@ In the main routine (routine 1) a new routine (routine 2) is spawned using the
 This is recorded in the trace of routine 1.
 
 ## Trace element
-The trace element has the following form 
+This will create 2 trace elements.
+
+In the routine, where the new routine is created, the following element is added.
 ```
 G,[tpost],[id],[pos]
 ```
@@ -23,10 +25,25 @@ where `G` identifies the element as an routine creation element.\
 the line number, where the trace of this new routine is saved in the trace.
 - [pos]: Position in the program, where the spawn was created.
 
+In the new routine, the following element is added
+```
+g,[tpost],[id],[pos]
+```
+where `g` identifies the element as an routine created element.\
+- [tpost] $\in \mathbb N$: This is the time. It is replaced by the integer value of the global counter at the moment of the routines creation.
+- [id] $\in \mathbb N$: This is the id of the newly created routine. This integer id corresponds with
+the line number, where the trace of this new routine is saved in the trace.
+- [pos]: Position in the program, where the spawn was created.
+
+The position lines between the too elements can be different, because the 
+first one saves the line of the `go` keyword, and the second one the line of 
+the `AdvocateSpawn` inserted by the instrumenter.
+
 If we ignore all other internal elements regarding the counter, the element for 
 the given example would be stored in the trace in line 1 as
 ```txt
 G,1,2,.../main.go:2
+g,1,2,.../main.go:3
 ```
 meaning, in routine 1 a new routine with id 2 was created at time 1. The path here is shortened for readability. The actual trace file contains the whole path.
 

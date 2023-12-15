@@ -8,12 +8,10 @@ var AdvocateRoutinesLock mutex = mutex{}
 var projectPath string
 
 type AdvocateRoutine struct {
-	id          uint64
-	G           *g
-	Trace       []advocateTraceElement
-	lock        *mutex
-	createdFile string
-	createdLine int32
+	id    uint64
+	G     *g
+	Trace []advocateTraceElement
+	lock  *mutex
 }
 
 /*
@@ -23,12 +21,10 @@ type AdvocateRoutine struct {
  * Return:
  * 	the new advocate routine
  */
-func newAdvocateRoutine(g *g, file string, line int32) *AdvocateRoutine {
+func newAdvocateRoutine(g *g) *AdvocateRoutine {
 	routine := &AdvocateRoutine{id: GetAdvocateRoutineId(), G: g,
-		Trace:       make([]advocateTraceElement, 0),
-		lock:        &mutex{},
-		createdFile: file,
-		createdLine: line}
+		Trace: make([]advocateTraceElement, 0),
+		lock:  &mutex{}}
 
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)

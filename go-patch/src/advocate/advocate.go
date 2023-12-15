@@ -98,8 +98,14 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					println(elem + "\n\n")
 				}
 				switch fields[0] {
-				case "G":
-					op = runtime.AdvocateReplaySpawn
+				// case "G":
+				// 	op = runtime.AdvocateReplaySpawn
+				// 	time, _ = strconv.Atoi(fields[1])
+				// 	pos := strings.Split(fields[3], ":")
+				// 	file = pos[0]
+				// 	line, _ = strconv.Atoi(pos[1])
+				case "g":
+					op = runtime.AdvocateReplaySpawned
 					time, _ = strconv.Atoi(fields[1])
 					pos := strings.Split(fields[3], ":")
 					file = pos[0]
@@ -132,6 +138,17 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 						}
 					}
 				case "M":
+					pos := strings.Split(fields[7], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
+					rw := false
+					if fields[4] == "R" {
+						rw = true
+					}
+					time, _ = strconv.Atoi(fields[2])
+					if fields[6] == "f" {
+						suc = false
+					}
 					switch fields[5] {
 					case "L":
 						op = runtime.AdvocateReplayMutexLock
@@ -152,12 +169,6 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					if fields[2] == "0" {
 						blocked = true
 					}
-					if fields[6] == "f" {
-						suc = false
-					}
-					pos := strings.Split(fields[7], ":")
-					file = pos[0]
-					line, _ = strconv.Atoi(pos[1])
 				case "O":
 					op = runtime.AdvocateReplayOnce
 					time, _ = strconv.Atoi(fields[2])
@@ -202,7 +213,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				}
-				if op != runtime.AdvocateNone {
+				if op != runtime.AdvocateNone && !runtime.IgnoreInReplay(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{
 						Op: op, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
@@ -228,9 +239,6 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
-	// remove the first 10 elements from the trace. They are part of the go init
-	// and are therefore always called, before the program starts.
-	// Because we enable the replay in the program, we must ignore them.
 	for elem := range replayData {
 		println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
 	}

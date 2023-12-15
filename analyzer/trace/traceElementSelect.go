@@ -187,7 +187,41 @@ func (se *traceElementSelect) getTsort() int {
 		// add at the end of the trace
 		return math.MaxInt
 	}
+<<<<<<< Updated upstream
 	return se.tpost
+=======
+	return se.tPost
+}
+
+/*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (se *TraceElementSelect) GetPos() string {
+	return se.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (se *TraceElementSelect) SetTsort(tSort int) {
+	se.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
+	if se.tPost != 0 {
+		se.tPost = tSort
+	}
+>>>>>>> Stashed changes
 }
 
 /*

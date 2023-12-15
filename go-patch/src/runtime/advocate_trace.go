@@ -248,10 +248,30 @@ func (elem advocateTraceSpawnElement) toString() string {
  * 	file: file where the routine was created
  * 	line: line where the routine was created
  */
-func AdvocateSpawn(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
+func AdvocateSpawnCaller(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
 	timer := GetAdvocateCounter()
 	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
 		file: file, line: line})
+}
+
+// type to save in the trace for routines
+type advocateTraceSpawnedElement struct {
+	id    uint64 // id of the routine
+	timer uint64 // global timer
+	file  string // file where the routine was created
+	line  int    // line where the routine was created
+}
+
+func (elem advocateTraceSpawnedElement) isAdvocateTraceElement() {}
+
+/*
+ * Get a string representation of the element
+ * Return:
+ * 	string representation of the element "G,'id'"
+ *    'id' (number): id of the routine
+ */
+func (elem advocateTraceSpawnedElement) toString() string {
+	return "g," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + int32ToString(elem.line)
 }
 
 // ============================= Mutex =============================

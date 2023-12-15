@@ -139,6 +139,39 @@ func (wa *traceElementWait) getTsort() int {
 }
 
 /*
+<<<<<<< Updated upstream
+=======
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (wa *TraceElementWait) GetPos() string {
+	return wa.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (wa *TraceElementWait) SetTsort(tSort int) {
+	wa.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (wa *TraceElementWait) SetTSortWithoutNotExecuted(tSort int) {
+	if wa.tPost != 0 {
+		wa.tPost = tSort
+	}
+}
+
+/*
+>>>>>>> Stashed changes
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element

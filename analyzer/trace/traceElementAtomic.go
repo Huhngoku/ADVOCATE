@@ -116,6 +116,39 @@ func (at *traceElementAtomic) getTsort() int {
 }
 
 /*
+<<<<<<< Updated upstream
+=======
+ * Get the position of the operation. For atomic elements, the position is always empty
+ * Returns:
+ *   string: The file of the element
+ */
+func (at *TraceElementAtomic) GetPos() string {
+	return ""
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (at *TraceElementAtomic) SetTsort(tSort int) {
+	at.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (at *TraceElementAtomic) SetTSortWithoutNotExecuted(tSort int) {
+	if at.tPost != 0 {
+		at.tPost = tSort
+	}
+}
+
+/*
+>>>>>>> Stashed changes
  * Get the simple string representation of the element.
  * Returns:
  *   string: The simple string representation of the element

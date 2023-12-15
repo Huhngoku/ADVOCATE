@@ -168,9 +168,36 @@ func (ch *traceElementChannel) getTsort() int {
  * Returns:
  *   vectorClock: The vector clock at the begin of the event
  */
+<<<<<<< Updated upstream
 // func (ch *traceElementChannel) getVpre() *vc.VectorClock {
 // 	return &ch.vpre
 // }
+=======
+func (ch *TraceElementChannel) GetPos() string {
+	return ch.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (ch *TraceElementChannel) SetTsort(tpost int) {
+	ch.tPost = tpost
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tsSort int) {
+	if ch.tPost != 0 {
+		ch.tPost = tsSort
+	}
+}
+>>>>>>> Stashed changes
 
 /*
  * Get the simple string representation of the element

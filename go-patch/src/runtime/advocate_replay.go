@@ -5,6 +5,7 @@ type ReplayOperation int
 const (
 	AdvocateNone ReplayOperation = iota
 	AdvocateReplaySpawn
+	AdvocateReplaySpawned
 
 	AdvocateReplayChannelSend
 	AdvocateReplayChannelRecv
@@ -169,7 +170,47 @@ func getNextReplayElement() ReplayElement {
 	defer unlock(&replayLock)
 	if replayIndex >= len(replayData) {
 		return ReplayElement{}
-		panic("Tace to short. The Program was most likely altered between recording and replay.")
+		// panic("Tace to short. The Program was most likely altered between recording and replay.")
 	}
 	return replayData[replayIndex]
+}
+
+/*
+ * Some operations, like garbage collection, can cause the replay to get stuck.
+ * For this reason, we ignore them.
+ * Arguments:
+ * 	operation: operation that is about to be executed
+ * 	file: file in which the operation is executed
+ * 	line: line number of the operation
+ * Return:
+ * 	bool: true if the operation should be ignored, false otherwise
+ */
+func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
+	switch operation {
+	case AdvocateReplaySpawn:
+		// garbage collection can cause the replay to get stuck
+		if hasSuffix(file, "runtime/mgc.go") && line == 1215 {
+			return true
+		}
+	case AdvocateReplayMutexLock, AdvocateReplayMutexUnlock:
+		// mutex operations in the once can cause the replay to get stuck,
+		// if the once was called by the poll/fd_poll_runtime.go init.
+		if hasSuffix(file, "sync/once.go") && (line == 114 || line == 120 || line == 124) {
+			return true
+		}
+		// pools
+		if hasSuffix(file, "sync/pool.go") && (line == 216 || line == 223 || line == 233) {
+			return true
+		}
+	case AdvocateReplayOnce:
+		// once operations in the poll/fd_poll_runtime.go init can cause the replay to get stuck.
+		if hasSuffix(file, "internal/poll/fd_poll_runtime.go") && line == 39 {
+			return true
+		}
+	}
+	return false
+}
+
+func firstInRoutine() {
+	print("firstInRoutine\n")
 }

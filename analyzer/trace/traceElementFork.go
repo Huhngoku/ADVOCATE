@@ -80,8 +80,43 @@ func (ro *traceElementFork) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
+<<<<<<< Updated upstream
 func (ro *traceElementFork) getTsort() int {
 	return ro.tPost
+=======
+func (fo *TraceElementFork) GetTSort() int {
+	return fo.tPost
+}
+
+/*
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (fo *TraceElementFork) GetPos() string {
+	return fo.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (fo *TraceElementFork) SetTsort(tpost int) {
+	fo.tPost = tpost
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tsort (int): The timer of the element
+ */
+func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tsort int) {
+	if fo.tPost != 0 {
+		fo.tPost = tsort
+	}
+>>>>>>> Stashed changes
 }
 
 /*

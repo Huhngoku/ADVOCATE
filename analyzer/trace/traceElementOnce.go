@@ -111,6 +111,39 @@ func (on *traceElementOnce) getTsort() int {
 }
 
 /*
+<<<<<<< Updated upstream
+=======
+ * Get the position of the operation.
+ * Returns:
+ *   string: The position of the element
+ */
+func (on *TraceElementOnce) GetPos() string {
+	return on.pos
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (on *TraceElementOnce) SetTsort(tSort int) {
+	on.tPost = tSort
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (on *TraceElementOnce) SetTSortWithoutNotExecuted(tSort int) {
+	if on.tPost != 0 {
+		on.tPost = tSort
+	}
+}
+
+/*
+>>>>>>> Stashed changes
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element

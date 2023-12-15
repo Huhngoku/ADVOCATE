@@ -58,6 +58,70 @@ func Sort() {
 }
 
 /*
+<<<<<<< Updated upstream
+=======
+ * Get the traces
+ * Returns:
+ *   map[int][]traceElement: The traces
+ */
+func GetTraces() *map[int][]TraceElement {
+	return &traces
+}
+
+/*
+ * Given the file and line info, return the routine and index of the element
+ * in trace.
+ * Args:
+ *   pos (string): The position of the element
+ * Returns:
+ *   error: An error if the element does not exist
+ *   int: The routine of the element
+ *   int: The index of the element in the trace of the routine
+ */
+func GetTraceElementFromPos(pos string) (*TraceElement, error) {
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if elem.GetPos() == pos {
+				return &traces[routine][index], nil
+			}
+		}
+	}
+	return nil, errors.New("Element " + pos + " does not exist")
+}
+
+/*
+ * Move the time of elements back by steps, excluding the routines in
+ * excludedRoutines
+ * Args:
+ *   startTime (int): The time to start moving back from
+ *   steps (int): The number of steps to move back
+ *   excludedRoutines ([]int): The routines to exclude
+ */
+func MoveTimeBack(startTime int, steps int, excludedRoutines []int) {
+	println("Move Time Back")
+	println("Start Time: ", startTime)
+	println("Steps: ", steps)
+	for routine, localTrace := range traces {
+		for _, elem := range localTrace {
+			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
+				elem.SetTSortWithoutNotExecuted(elem.GetTSort() + steps)
+			}
+		}
+	}
+	Sort()
+}
+
+func contains(slice []int, elem int) bool {
+	for _, e := range slice {
+		if e == elem {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+>>>>>>> Stashed changes
  * Set the number of routines
  * Args:
  *   n (int): The number of routines
