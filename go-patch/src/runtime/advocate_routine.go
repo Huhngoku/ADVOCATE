@@ -33,7 +33,7 @@ func newAdvocateRoutine(g *g) *AdvocateRoutine {
 		AdvocateRoutines = make(map[uint64]*[]advocateTraceElement)
 	}
 
-	AdvocateRoutines[routine.id] = &routine.Trace // Todo: causes warning in race detector
+	AdvocateRoutines[routine.id] = &routine.Trace
 
 	return routine
 }
