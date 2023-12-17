@@ -65,6 +65,8 @@ type AdvocateReplayTrace []ReplayElement
 var replayEnabled bool = false
 var replayLock mutex
 var replayIndex int = 0
+var replayDoneLock mutex
+var replayDone int = 0 // number of operations that have finished
 
 var replayData AdvocateReplayTrace = make(AdvocateReplayTrace, 0)
 
@@ -82,7 +84,7 @@ func EnableReplay(trace AdvocateReplayTrace) {
 func WaitForReplayFinish() {
 	for {
 		lock(&replayLock)
-		if replayIndex >= len(replayData) {
+		if replayDone >= len(replayData) {
 			unlock(&replayLock)
 			break
 		}
@@ -128,7 +130,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return true, ReplayElement{}
 	}
 
-	println("WaitForReplayPath", op, file, line)
+	// println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
@@ -144,9 +146,24 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		lock(&replayLock)
 		replayIndex++
 		unlock(&replayLock)
-		println("Replay: ", next.Time, op, file, line)
+		// println("Replay: ", next.Time, op, file, line)
 		return true, next
 	}
+}
+
+/*
+ * Notify that the operation is done.
+ * This function should be called after a waiting operation is done.
+ * Used to prevent the program to terminate before the trace is finished, if
+ * the main routine would terminate.
+ */
+func ReplayDone() {
+	if !replayEnabled {
+		return
+	}
+	lock(&replayDoneLock)
+	replayDone++
+	unlock(&replayDoneLock)
 }
 
 func correctSelect(next ReplayOperation, op ReplayOperation) bool {

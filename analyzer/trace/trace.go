@@ -129,13 +129,11 @@ func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 	routine1 := (*element1).GetRoutine()
 	routine2 := (*element2).GetRoutine()
 	tSort1 := (*element1).GetTSort()
-	print("tSort1: ", tSort1, "\n")
 	for index, elem := range traces[routine1] {
 		if elem.GetTSort() == (*element1).GetTSort() {
 			traces[routine1][index].SetTsort((*element2).GetTSort())
 		}
 	}
-	print("tSort1: ", tSort1, "\n")
 	for index, elem := range traces[routine2] {
 		if elem.GetTSort() == (*element2).GetTSort() {
 			traces[routine2][index].SetTsort(tSort1)

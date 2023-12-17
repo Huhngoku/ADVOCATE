@@ -100,7 +100,6 @@ func InitLogging(level int, outReadable string, outMachine string) {
 *   int: number of bugs found
  */
 func PrintSummary() int {
-	fmt.Println("Print Summary")
 	counter := 1
 	resMachine := ""
 	resReadable := "==================== Summary ====================\n\n"
