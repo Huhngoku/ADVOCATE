@@ -1,6 +1,7 @@
 # ADVOCATE: Automated Detection and Verification Of Concurrency bugs through Analysis of Trace recordings in a modified go Environment."
 
-This program is still under development and may return no or wrong results.
+> [!WARNING]
+> This program is still under development and may return no or wrong results.
 
 ## What
 We want to analyze concurrent Go programs to automatically find potential concurrency bug. The different analysis scenarios can be found in `doc/Analysis.md`.
@@ -151,7 +152,7 @@ We can now analyze the created file using the program in the `analyzer`
 folder. For now we only support the search for potential send on a closed channel, but we plan to expand the use cases in the future.
 The analyzer can also create a new reordered trace, in which a detected possible bug actually occurs. This new trace can then used in the replay, to confirm and simplify the removal of the bug.
 
-> [!Caution]
+> [!WARNING]
 > The Reorder is still in development and may result in incorrect traces
 
 The analyzer can take the following command line arguments:
