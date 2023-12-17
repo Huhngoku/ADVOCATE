@@ -28,6 +28,10 @@ func main() {
 		println("Routine 2")
 	}()
 
+	println("Main routine")
+
 	time.Sleep(1 * time.Second)
+
+	println("Main routine exit")
 
 }

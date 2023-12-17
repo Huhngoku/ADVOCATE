@@ -221,7 +221,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				}
-				if op != runtime.AdvocateNone {
+				if op != runtime.AdvocateNone && !runtime.IgnoreInReplay(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{
 						Op: op, Routine: routine, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,

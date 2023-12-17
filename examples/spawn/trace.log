@@ -1,7 +1,7 @@
-G,1,2,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/proc.go:310;G,2,3,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgc.go:178;G,3,4,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgc.go:179;C,4,9,1,R,f,1,2,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgc.go:180;C,10,11,1,R,f,2,2,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgc.go:181;G,12,5,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mfinal.go:163;C,13,13,2,C,f,0,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/proc.go:256;G,14,6,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/advocate_trace.go:201;G,15,7,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/spawn/main.go:23;G,16,8,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/spawn/main.go:27
+G,11,7,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/spawn/main.go:23;G,12,8,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/spawn/main.go:27
 
-C,5,6,1,S,f,1,2,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgcsweep.go:279
-C,7,8,1,S,f,2,2,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/runtime/mgcscavenge.go:652
+
+
 
 
 

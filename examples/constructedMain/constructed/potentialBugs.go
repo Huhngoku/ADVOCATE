@@ -494,8 +494,11 @@ func main() {
 	ns := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22}
+	// ns := [n]func(){n13}
 
 	for i := 0; i < n; i++ {
 		ns[i]()
+		println("Done: ", i+1, " of ", n)
+		time.Sleep(1 * time.Second)
 	}
 }
