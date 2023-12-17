@@ -248,8 +248,7 @@ func (elem advocateTraceSpawnElement) toString() string {
  * 	file: file where the routine was created
  * 	line: line where the routine was created
  */
-func AdvocateSpawn(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
-	timer := GetAdvocateCounter()
+func AdvocateSpawn(timer uint64, callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
 	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
 		file: file, line: line})
 }

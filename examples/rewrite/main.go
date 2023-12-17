@@ -10,7 +10,7 @@ func main() {
 	// runtime.InitAdvocate(0)
 	// defer advocate.CreateTrace("trace_rewrite.log")
 
-	trace := advocate.ReadTrace("new_trace.log")
+	trace := advocate.ReadTrace("rewritten_trace.log")
 	runtime.EnableReplay(trace)
 	defer runtime.WaitForReplayFinish()
 

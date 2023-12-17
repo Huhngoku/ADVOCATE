@@ -131,7 +131,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
-		print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
@@ -144,7 +144,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		lock(&replayLock)
 		replayIndex++
 		unlock(&replayLock)
-		// println("Replay: ", next.Time, op, file, line)
+		println("Replay: ", next.Time, op, file, line)
 		return true, next
 	}
 }
@@ -211,11 +211,6 @@ func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
 		if hasSuffix(file, "internal/poll/fd_poll_runtime.go") && line == 39 {
 			return true
 		}
-		// case AdvocateReplaySelect:
-		// 	// sleep
-		// 	if hasSuffix(file, "time/sleep.go") && line == 145 {
-		// 		return true
-		// 	}
 	}
 	return false
 }

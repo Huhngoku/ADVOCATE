@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"analyzer/io"
 	"analyzer/logging"
@@ -17,31 +19,28 @@ func main() {
 	fifo := flag.Bool("f", false, "Assume a FIFO ordering for buffered channels (default false)")
 	rewrite := flag.Bool("n", false, "Create a reordered trace file from a given analysis "+
 		"result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results")
-	pathResult := flag.String("r", "", "Path to the analysis result file. Only needed if -n is set")
 	bugIndex := flag.Int("i", -1, "Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based")
 	flag.Parse()
-
-	outMachine := "results_machine.log"
-	outReadable := "results_readable.log"
-	newTrace := "rewritten_trace.log"
 
 	if *pathTrace == "" {
 		fmt.Println("Please provide a path to the trace file. Set with -t [file]")
 		return
 	}
 
+	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
+
+	outMachine := folder + "/results_machine.log"
+	outReadable := folder + "/results_readable.log"
+	newTrace := folder + "/rewritten_trace.log"
+
 	// rewrite the trace file based on given analysis results. No analysis is run
 	if *rewrite {
-		if *pathResult == "" {
-			fmt.Println("Please provide a path to analysis result file. Set with -r [file]")
-			return
-		}
 		if *bugIndex == -1 {
 			fmt.Println("Please provide the index of the result to use for the reordered trace file. Set with -i [file]")
 			return
 		}
 		numberOfRoutines := reader.CreateTraceFromFile(*pathTrace)
-		rewriteTrace(*pathResult, newTrace, *bugIndex, numberOfRoutines)
+		rewriteTrace(*pathTrace, newTrace, *bugIndex, numberOfRoutines)
 		return
 	}
 

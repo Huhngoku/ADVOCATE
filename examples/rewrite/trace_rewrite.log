@@ -1,8 +1,8 @@
-G,11,7,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:18;G,12,8,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:22;C,17,17,4,C,f,0,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:27
+G,12,7,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:18;G,13,8,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:22;C,18,18,4,C,f,0,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:27
 
 
 
 
 
-C,14,15,4,S,f,1,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:19
-C,13,16,4,R,f,1,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:23
+C,15,16,4,S,f,1,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:19
+C,14,17,4,R,f,1,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:23

@@ -1,0 +1,6 @@
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:27
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:19
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:27
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/rewrite/main.go:23

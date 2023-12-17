@@ -178,6 +178,7 @@ func (ch *TraceElementChannel) GetPos() string {
  *   tsort (int): The timer of the element
  */
 func (ch *TraceElementChannel) SetTsort(tpost int) {
+	ch.tPre = tpost
 	ch.tPost = tpost
 }
 
@@ -187,9 +188,10 @@ func (ch *TraceElementChannel) SetTsort(tpost int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (ch *TraceElementChannel) SetTsortWithoutNotExecuted(tsSort int) {
+func (ch *TraceElementChannel) SetTsortWithoutNotExecuted(tSort int) {
 	if ch.tPost != 0 {
-		ch.tPost = tsSort
+		ch.tPre = tSort
+		ch.tPost = tSort
 	}
 }
 

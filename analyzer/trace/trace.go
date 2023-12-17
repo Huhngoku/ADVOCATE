@@ -101,6 +101,51 @@ func GetTraceElementFromPos(pos string) (*TraceElement, error) {
 }
 
 /*
+ * Shorten the trace of the given routine by removing all elements after
+ * the given element
+ * Args:
+ *   routine (int): The routine to shorten
+ *   element (traceElement): The element to shorten the trace after
+ */
+func ShortenTrace(routine int, element TraceElement) {
+	if routine != element.GetRoutine() {
+		panic("Routine of element does not match routine")
+	}
+	for index, elem := range traces[routine] {
+		if elem.GetTSort() == element.GetTSort() {
+			traces[routine] = traces[routine][:index+1]
+			break
+		}
+	}
+}
+
+/*
+ * Switch the timer of two elements
+ * Args:
+ *   element1 (traceElement): The first element
+ *   element2 (traceElement): The second element
+ */
+func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
+	routine1 := (*element1).GetRoutine()
+	routine2 := (*element2).GetRoutine()
+	tSort1 := (*element1).GetTSort()
+	print("tSort1: ", tSort1, "\n")
+	for index, elem := range traces[routine1] {
+		if elem.GetTSort() == (*element1).GetTSort() {
+			traces[routine1][index].SetTsort((*element2).GetTSort())
+		}
+	}
+	print("tSort1: ", tSort1, "\n")
+	for index, elem := range traces[routine2] {
+		if elem.GetTSort() == (*element2).GetTSort() {
+			traces[routine2][index].SetTsort(tSort1)
+			break
+		}
+	}
+
+}
+
+/*
  * Move the time of elements back by steps, excluding the routines in
  * excludedRoutines
  * Args:
@@ -108,19 +153,19 @@ func GetTraceElementFromPos(pos string) (*TraceElement, error) {
  *   steps (int): The number of steps to move back
  *   excludedRoutines ([]int): The routines to exclude
  */
-func MoveTimeBack(startTime int, steps int, excludedRoutines []int) {
-	println("Move Time Back")
-	println("Start Time: ", startTime)
-	println("Steps: ", steps)
-	for routine, localTrace := range traces {
-		for _, elem := range localTrace {
-			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
-				elem.SetTsortWithoutNotExecuted(elem.GetTSort() + steps)
-			}
-		}
-	}
-	Sort()
-}
+// func MoveTimeBack(startTime int, steps int, excludedRoutines []int) {
+// 	println("Move Time Back")
+// 	println("Start Time: ", startTime)
+// 	println("Steps: ", steps)
+// 	for routine, localTrace := range traces {
+// 		for _, elem := range localTrace {
+// 			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
+// 				elem.SetTsortWithoutNotExecuted(elem.GetTSort() + steps)
+// 			}
+// 		}
+// 	}
+// 	Sort()
+// }
 
 func contains(slice []int, elem int) bool {
 	for _, e := range slice {

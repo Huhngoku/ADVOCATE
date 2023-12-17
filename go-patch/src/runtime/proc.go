@@ -4439,6 +4439,7 @@ func newproc(fn *funcval) {
 	pc := getcallerpc()
 
 	// ADVOCATE-CHANGE-START
+	timer := GetAdvocateCounter()
 	f := findfunc(pc)
 	tracepc := pc
 	if pc > f.entry() {
@@ -4455,7 +4456,7 @@ func newproc(fn *funcval) {
 		_, _ = WaitForReplayPath(AdvocateReplaySpawn, file, int(line))
 		newg.goInfo = newAdvocateRoutine(newg, file, line)
 		if gp != nil && gp.goInfo != nil {
-			AdvocateSpawn(gp.goInfo, newg.goInfo.id, file, line)
+			AdvocateSpawn(timer, gp.goInfo, newg.goInfo.id, file, line)
 		}
 		// ADVOCATE-CHANGE-END
 
