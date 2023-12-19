@@ -1,9 +1,5 @@
 package runtime
 
-import (
-	at "runtime/internal/atomic"
-)
-
 type ReplayOperation int
 
 const (
@@ -59,6 +55,7 @@ const (
  * SelIndex: index of the select case (only for select, otherwise)
  */
 type ReplayElement struct {
+	Routine  int
 	Op       ReplayOperation
 	Time     int
 	File     string
@@ -75,6 +72,8 @@ type AdvocateReplayTrace []ReplayElement
 var replayEnabled bool = false
 var replayLock mutex
 var replayIndex int = 0
+var replayDone int = 0
+var replayDoneLock mutex
 
 var replayData AdvocateReplayTrace = make(AdvocateReplayTrace, 0)
 
@@ -92,12 +91,12 @@ func EnableReplay(trace AdvocateReplayTrace) {
 
 func WaitForReplayFinish() {
 	for {
-		lock(&replayLock)
-		if replayIndex >= len(replayData) {
+		lock(&replayDoneLock)
+		if replayDone >= len(replayData) {
 			unlock(&replayLock)
 			break
 		}
-		unlock(&replayLock)
+		unlock(&replayDoneLock)
 	}
 }
 
@@ -129,7 +128,7 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
  * 	bool: true if trace replay is enabled, false otherwise
  * 	ReplayElement: the next replay element
  */
-func WaitForReplayAtomic(op at.Operation, index uint64) (bool, ReplayElement) {
+func WaitForReplayAtomic(op int, index uint64) (bool, ReplayElement) {
 	lock(&advocateAtomicMapLock)
 	routine := advocateAtomicMapRoutine[index]
 	unlock(&advocateAtomicMapLock)
@@ -143,7 +142,7 @@ func WaitForReplayAtomic(op at.Operation, index uint64) (bool, ReplayElement) {
 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		if next.Time != 0 {
-			if next.Op != op || uint64(next.Routine) != routine {
+			if int(next.Op) != op || uint64(next.Routine) != routine {
 				continue
 			}
 		}

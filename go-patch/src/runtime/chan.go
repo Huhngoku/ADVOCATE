@@ -214,6 +214,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 	var enabled bool
 	if !c.advocateIgnore {
 		enabled, replayElem = WaitForReplay(AdvocateReplayChannelSend, 3)
+		defer ReplayDone()
 		if enabled {
 			if replayElem.Blocked {
 				lock(&c.numberSendMutex)
@@ -477,6 +478,7 @@ func closechan(c *hchan) {
 	// in the trace.
 	if !c.advocateIgnore {
 		_, _ = WaitForReplay(AdvocateReplayChannelClose, 2)
+		defer ReplayDone()
 		AdvocateChanClose(c.id, c.dataqsiz)
 	}
 	// ADVOCATE-CHANGE-END
@@ -597,6 +599,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 	var enabled bool
 	if !c.advocateIgnore {
 		enabled, replayElem = WaitForReplay(AdvocateReplayChannelRecv, 3)
+		defer ReplayDone()
 		if enabled {
 			if replayElem.Blocked {
 				lock(&c.numberRecvMutex)

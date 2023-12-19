@@ -70,6 +70,7 @@ const rwmutexMaxReaders = 1 << 30
 func (rw *RWMutex) RLock() {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexRLock, 2)
+	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
@@ -119,6 +120,7 @@ func (rw *RWMutex) RLock() {
 func (rw *RWMutex) TryRLock() bool {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexTryRLock, 2)
+	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
@@ -187,6 +189,7 @@ func (rw *RWMutex) TryRLock() bool {
 func (rw *RWMutex) RUnlock() {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexRUnlock, 2)
+	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			_ = runtime.AdvocateUnlockPre(rw.id, true, true)
@@ -232,6 +235,7 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 func (rw *RWMutex) Lock() {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexLock, 2)
+	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
@@ -285,6 +289,7 @@ func (rw *RWMutex) Lock() {
 func (rw *RWMutex) TryLock() bool {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayRWMutexTryLock, 2)
+	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
@@ -362,6 +367,7 @@ func (rw *RWMutex) TryLock() bool {
 func (rw *RWMutex) Unlock() {
 	// ADVOCATE-CHANGE-START
 	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayRWMutexUnlock, 2)
+	defer runtime.ReplayDone()
 	// AdvocateUnlockPre is used to record the unlocking of a mutex.
 	// AdvocatePost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not

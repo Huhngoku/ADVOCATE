@@ -74,7 +74,9 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 0, maxTokenSize*mb), maxTokenSize*mb)
 
+		routine := 0
 		for scanner.Scan() {
+			routine++
 			l := scanner.Text()
 			if l == "" {
 				continue
@@ -197,7 +199,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					pos := strings.Split(fields[7], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
-				case "S": // TODO: (advocate) get correct select case
+				case "S":
 					cases := strings.Split(fields[4], "~")
 					if cases[len(cases)-1] == "D" {
 						op = runtime.AdvocateReplaySelectDefault
@@ -212,10 +214,28 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					pos := strings.Split(fields[6], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
+				case "A":
+					time, _ = strconv.Atoi(fields[1])
+					switch fields[3] {
+					case "L":
+						op = runtime.AdvocateReplayAtomicLoad
+					case "S":
+						op = runtime.AdvocateReplayAtomicStore
+					case "A":
+						op = runtime.AdvocateReplayAtomicAdd
+					case "W":
+						op = runtime.AdvocateReplayAtomicSwap
+					case "C":
+						op = runtime.AdvocateReplayAtomicCompareAndSwap
+					default:
+						panic("Unknown atomic operation")
+					}
+
 				}
 				if op != runtime.AdvocateNone && !runtime.IgnoreInReplay(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{
-						Op: op, Time: time, File: file, Line: line,
+						Routine: routine,
+						Op:      op, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
 						SelIndex: selIndex})
 				}

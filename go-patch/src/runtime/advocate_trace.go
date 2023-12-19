@@ -208,8 +208,9 @@ func InitAdvocate(size int) {
 			}
 			unlock(&advocateAtomicMapLock)
 			go func() {
-				WaitForReplayAtomic(operation, atomic.Index)
+				WaitForReplayAtomic(atomic.Operation, atomic.Index)
 				atomic.ChanReturn <- true
+				ReplayDone()
 			}()
 		}
 	}()
@@ -257,6 +258,7 @@ func AdvocateSpawnCaller(callerRoutine *AdvocateRoutine, newID uint64, file stri
 	timer := GetAdvocateCounter()
 	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
 		file: file, line: line})
+	ReplayDone()
 }
 
 // type to save in the trace for routines
@@ -276,7 +278,7 @@ func (elem advocateTraceSpawnedElement) isAdvocateTraceElement() {}
  *    'id' (number): id of the routine
  */
 func (elem advocateTraceSpawnedElement) toString() string {
-	return "g," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + int32ToString(elem.line)
+	return "g," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + intToString(elem.line)
 }
 
 // ============================= Mutex =============================

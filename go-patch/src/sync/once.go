@@ -68,6 +68,7 @@ func (o *Once) Do(f func()) {
 
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayOnce, 2)
+	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if o.id == 0 {
