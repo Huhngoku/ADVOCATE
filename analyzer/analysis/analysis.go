@@ -163,24 +163,24 @@ func checkForDoneBeforeAddDone(routine int, id int, delta int, pos string, vc Ve
  */
 
 func checkForDoneBeforeAdd(routine int, id int, vc VectorClock) {
-	numberDonePre := lastDoneValue[id][routine] - 1
-	numberTotal := doneCount[id]
+	// TODO: does not work yet
+
+	// numberDonePre := lastDoneValue[id][routine] - 1
+	// numberTotal := doneCount[id]
 	// max value in lastAddValue[id]
-	numberAddPre := 0
-	for _, value := range lastAddValue[id] {
-		if value > numberAddPre && GetHappensBefore(lastAddVc[id][routine], vc) == Before {
-			numberAddPre = value
-		}
-	}
+	// numberAddPre := 0
+	// for _, value := range lastAddValue[id] {
+	// 	if value > numberAddPre && GetHappensBefore(lastAddVc[id][routine], vc) == Before {
+	// 		numberAddPre = value
+	// 	}
+	// }
 
-	if numberAddPre < numberTotal {
-		found := "Possible done before add:\n"
-		found += "\tdone: " + lastDonePos[id][routine] + "\n"
-		found += "\tadd : " // TODO: add position of add
-		logging.Result(found, logging.CRITICAL)
-	}
-
-	println("checkForDoneBeforeWait: ", numberAddPre, numberDonePre, numberTotal)
+	// if numberAddPre < numberTotal {
+	// 	found := "Possible done before add:\n"
+	// 	found += "\tdone: " + lastDonePos[id][routine] + "\n"
+	// 	found += "\tadd : "
+	// 	logging.Result(found, logging.CRITICAL)
+	// }
 }
 
 /*

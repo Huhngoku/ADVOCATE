@@ -1,12 +1,13 @@
 package logging
 
 import (
+	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
 var levelDebug int = 0
-var levelResult int = 0
 
 var reset = "\033[0m"
 var red = "\033[31m"
@@ -32,11 +33,8 @@ const (
 )
 
 var outputReadableFile string
-var outputReadable = false
 var outputMachineFile string
-var outputMachine = false
 var foundBug = false
-var no_sum = false
 var resultsWarning []string
 var resultCritical []string
 
@@ -77,15 +75,6 @@ func Result(message string, level resultLevel) {
 			resultCritical = append(resultCritical, message)
 		}
 	}
-	if int(level) <= levelResult {
-		if level == CRITICAL {
-			println(red + message + reset)
-		} else if level == WARNING {
-			println(orange + message + reset)
-		} else {
-			println(message)
-		}
-	}
 }
 
 /*
@@ -94,101 +83,79 @@ func Result(message string, level resultLevel) {
 *   level: level of the debug
 *   outReadable: path to the output file, no output file if empty
 *   outMachine: path to the output file for the reordered trace, no output file if empty
-*   noResult: true if no result should be printed
-*   noWarn: true if no warnings should be printed
-*   NoSum: true if no summary should be printed
  */
-func InitLogging(level int, outReadable string, outMachine string, result bool, noSum bool) {
+func InitLogging(level int, outReadable string, outMachine string) {
 	if level < 0 {
 		level = 0
 	}
 	levelDebug = level
 
-	if outReadable != "" {
-		outputReadableFile = outReadable
-		outputReadable = true
-	}
-
-	if outMachine != "" {
-		outputMachineFile = outMachine
-		outputMachine = true
-	}
-
-	if result {
-		levelResult = int(WARNING)
-	} else {
-		levelResult = int(NONE)
-	}
-
-	no_sum = noSum
+	outputReadableFile = outReadable
+	outputMachineFile = outMachine
 }
 
 /*
-* Disable the output to a file
+* Print the summary of the analysis
+* Returns:
+*   int: number of bugs found
  */
-func DisableOutput() {
-	outputReadable = false
-}
-
-func PrintSummary() {
-	res := "==================== Summary ====================\n\n"
+func PrintSummary() int {
+	counter := 1
+	resMachine := ""
+	resReadable := "==================== Summary ====================\n\n"
+	fmt.Print("==================== Summary ====================\n\n")
 	found := false
 	if len(resultCritical) > 0 {
 		found = true
-		res += "-------------------- Critical -------------------\n"
+		resReadable += "-------------------- Critical -------------------\n"
+		fmt.Print("-------------------- Critical -------------------\n")
 		for _, result := range resultCritical {
-			res += red + result + reset + "\n"
+			resReadable += strconv.Itoa(counter) + " " + result + "\n"
+			resMachine += result + "\n"
+			fmt.Println(strconv.Itoa(counter) + " " + red + result + reset)
+			counter++
 		}
 	}
 	if len(resultsWarning) > 0 {
 		found = true
-		res += "-------------------- Warning --------------------\n"
+		resReadable += "-------------------- Warning --------------------\n"
+		fmt.Print("-------------------- Warning --------------------\n")
 		for _, result := range resultsWarning {
-			res += orange + result + reset + "\n"
+			resReadable += strconv.Itoa(counter) + " " + result + "\n"
+			resMachine += result + "\n"
+			fmt.Println(strconv.Itoa(counter) + " " + orange + result + reset)
+			counter++
 		}
 	}
 	if !found {
-		res += red + "No bugs found" + reset + "\n"
+		resReadable += "No bugs found" + "\n"
+		fmt.Println(green + "No bugs found" + reset)
 	}
 
-	if !no_sum {
-		print("\n\n")
-		println(res)
+	// write output readable
+	file, err := os.OpenFile(outputReadableFile, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(resReadable); err != nil {
+		panic(err)
 	}
 
-	res = strings.ReplaceAll(res, red, "")
-	res = strings.ReplaceAll(res, orange, "")
-	res = strings.ReplaceAll(res, reset, "")
+	// write output machine
+	resReadable = strings.ReplaceAll(resReadable, "\n\n", "\n")
+	file, err = os.OpenFile(outputMachineFile, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-	if outputReadable {
-		file, err := os.OpenFile(outputReadableFile, os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		if _, err := file.WriteString(res); err != nil {
-			panic(err)
-		}
+	if _, err := file.WriteString(resMachine); err != nil {
+		panic(err)
 	}
 
-	// remove a given line from res
-	res = strings.ReplaceAll(res, "-------------------- Critical -------------------\n", "")
-	res = strings.ReplaceAll(res, "-------------------- Warning --------------------\n", "")
-	res = strings.ReplaceAll(res, "==================== Summary ====================\n\n", "")
-	res = strings.ReplaceAll(res, "\n\n", "\n")
-
-	if outputMachine {
-		file, err := os.OpenFile(outputMachineFile, os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			panic(err)
-		}
-		defer file.Close()
-
-		if _, err := file.WriteString(res); err != nil {
-			panic(err)
-		}
-	}
+	return len(resultCritical) + len(resultsWarning)
 }
 
 /*

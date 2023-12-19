@@ -86,14 +86,14 @@ func (t AdvocateReplayTrace) Print() {
 func EnableReplay(trace AdvocateReplayTrace) {
 	replayData = trace
 	replayEnabled = true
-	trace.Print()
+	// trace.Print()
 }
 
 func WaitForReplayFinish() {
 	for {
 		lock(&replayDoneLock)
 		if replayDone >= len(replayData) {
-			unlock(&replayLock)
+			unlock(&replayDoneLock)
 			break
 		}
 		unlock(&replayDoneLock)

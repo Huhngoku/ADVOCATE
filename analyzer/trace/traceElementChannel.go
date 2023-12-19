@@ -18,11 +18,11 @@ const (
 	close
 )
 
-var waitingReceive = make([]*traceElementChannel, 0)
+var waitingReceive = make([]*TraceElementChannel, 0)
 var maxOpID = make(map[int]int)
 
 /*
-* traceElementChannel is a trace element for a channel
+* TraceElementChannel is a trace element for a channel
 * Fields:
 *   routine (int): The routine id
 *   tpre (int): The timestamp at the start of the event
@@ -35,9 +35,9 @@ var maxOpID = make(map[int]int)
 *   qCount (int): The number of elements in the queue after the operation
 *   pos (string): The position of the channel operation in the code
 *   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
-*   partner (*traceElementChannel): The partner of the channel operation
+*   partner (*TraceElementChannel): The partner of the channel operation
  */
-type traceElementChannel struct {
+type TraceElementChannel struct {
 	routine int
 	tPre    int
 	tPost   int
@@ -47,7 +47,7 @@ type traceElementChannel struct {
 	oID     int
 	qSize   int
 	pos     string
-	sel     *traceElementSelect
+	sel     *TraceElementSelect
 }
 
 /*
@@ -108,7 +108,7 @@ func AddTraceElementChannel(routine int, tPre string,
 		return errors.New("qSize is not an integer")
 	}
 
-	elem := traceElementChannel{
+	elem := TraceElementChannel{
 		routine: routine,
 		tPre:    tPreInt,
 		tPost:   tPostInt,
@@ -128,7 +128,7 @@ func AddTraceElementChannel(routine int, tPre string,
  * Returns:
  *   int: The routine of the element
  */
-func (ch *traceElementChannel) getRoutine() int {
+func (ch *TraceElementChannel) GetRoutine() int {
 	return ch.routine
 }
 
@@ -137,7 +137,7 @@ func (ch *traceElementChannel) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (ch *traceElementChannel) getTpre() int {
+func (ch *TraceElementChannel) getTpre() int {
 	return ch.tPre
 }
 
@@ -146,7 +146,7 @@ func (ch *traceElementChannel) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (ch *traceElementChannel) getTpost() int {
+func (ch *TraceElementChannel) getTpost() int {
 	return ch.tPost
 }
 
@@ -155,7 +155,7 @@ func (ch *traceElementChannel) getTpost() int {
  * Returns:
  *   float32: The time of the element
  */
-func (ch *traceElementChannel) getTsort() int {
+func (ch *TraceElementChannel) GetTSort() int {
 	if ch.tPost == 0 {
 		// add to the end of the trace
 		return math.MaxInt
@@ -164,15 +164,10 @@ func (ch *traceElementChannel) getTsort() int {
 }
 
 /*
- * Get the vector clock at the begin of the event
+ * Get the position of the operation.
  * Returns:
- *   vectorClock: The vector clock at the begin of the event
+ *   string: The position of the element
  */
-<<<<<<< Updated upstream
-// func (ch *traceElementChannel) getVpre() *vc.VectorClock {
-// 	return &ch.vpre
-// }
-=======
 func (ch *TraceElementChannel) GetPos() string {
 	return ch.pos
 }
@@ -183,6 +178,7 @@ func (ch *TraceElementChannel) GetPos() string {
  *   tsort (int): The timer of the element
  */
 func (ch *TraceElementChannel) SetTsort(tpost int) {
+	ch.tPre = tpost
 	ch.tPost = tpost
 }
 
@@ -192,19 +188,19 @@ func (ch *TraceElementChannel) SetTsort(tpost int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tsSort int) {
+func (ch *TraceElementChannel) SetTsortWithoutNotExecuted(tSort int) {
 	if ch.tPost != 0 {
-		ch.tPost = tsSort
+		ch.tPre = tSort
+		ch.tPost = tSort
 	}
 }
->>>>>>> Stashed changes
 
 /*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ch *traceElementChannel) toString() string {
+func (ch *TraceElementChannel) ToString() string {
 	return ch.toStringSep(",", true)
 }
 
@@ -216,7 +212,7 @@ func (ch *traceElementChannel) toString() string {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
+func (ch *TraceElementChannel) toStringSep(sep string, pos bool) string {
 	res := "C" + sep
 	res += strconv.Itoa(ch.tPre) + sep + strconv.Itoa(ch.tPost) + sep
 	res += strconv.Itoa(ch.id) + sep
@@ -245,7 +241,7 @@ func (ch *traceElementChannel) toStringSep(sep string, pos bool) string {
 /*
  * Update and calculate the vector clock of the element
  */
-func (ch *traceElementChannel) updateVectorClock() {
+func (ch *TraceElementChannel) updateVectorClock() {
 	// hold back receive operations, until the send operation is processed
 	for _, elem := range waitingReceive {
 		if elem.oID <= maxOpID[ch.id] {
@@ -271,9 +267,9 @@ func (ch *traceElementChannel) updateVectorClock() {
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
 				logging.Debug("Update vector clock of channel operation: "+
-					traces[partner][currentIndex[partner]].toString(),
+					traces[partner][currentIndex[partner]].ToString(),
 					logging.DEBUG)
-				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
+				pos := traces[partner][currentIndex[partner]].(*TraceElementChannel).pos
 				analysis.Unbuffered(ch.routine, partner, ch.id, ch.pos,
 					pos, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
@@ -281,7 +277,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 			} else {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
-						ch.toString(), logging.DEBUG)
+						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				} else {
@@ -292,8 +288,8 @@ func (ch *traceElementChannel) updateVectorClock() {
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
 				logging.Debug("Update vector clock of channel operation: "+
-					traces[partner][currentIndex[partner]].toString(), logging.DEBUG)
-				pos := traces[partner][currentIndex[partner]].(*traceElementChannel).pos
+					traces[partner][currentIndex[partner]].ToString(), logging.DEBUG)
+				pos := traces[partner][currentIndex[partner]].(*TraceElementChannel).pos
 				analysis.Unbuffered(partner, ch.routine, ch.id, pos,
 					ch.pos, currentVectorClocks)
 				// advance index of receive routine, send routine is already advanced
@@ -301,7 +297,7 @@ func (ch *traceElementChannel) updateVectorClock() {
 			} else {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
-						ch.toString(), logging.DEBUG)
+						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.pos,
 						currentVectorClocks)
 				} else {
@@ -311,39 +307,39 @@ func (ch *traceElementChannel) updateVectorClock() {
 		case close:
 			analysis.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
-			err := "Unknown operation: " + ch.toString()
+			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)
 		}
 	} else { // buffered channel
 		switch ch.opC {
 		case send:
 			logging.Debug("Update vector clock of channel operation: "+
-				ch.toString(), logging.DEBUG)
+				ch.ToString(), logging.DEBUG)
 			analysis.Send(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
 				currentVectorClocks, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
 				logging.Debug("Update vector clock of channel operation: "+
-					ch.toString(), logging.DEBUG)
+					ch.ToString(), logging.DEBUG)
 				analysis.RecvC(ch.routine, ch.id, ch.pos, currentVectorClocks)
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
-					ch.toString(), logging.DEBUG)
+					ch.ToString(), logging.DEBUG)
 				analysis.Recv(ch.routine, ch.id, ch.oID, ch.qSize, ch.pos,
 					currentVectorClocks, fifo)
 			}
 		case close:
 			logging.Debug("Update vector clock of channel operation: "+
-				ch.toString(), logging.DEBUG)
+				ch.ToString(), logging.DEBUG)
 			analysis.Close(ch.routine, ch.id, ch.pos, currentVectorClocks)
 		default:
-			err := "Unknown operation: " + ch.toString()
+			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)
 		}
 	}
 }
 
-func (ch *traceElementChannel) findUnbufferedPartner() int {
+func (ch *TraceElementChannel) findUnbufferedPartner() int {
 	// return -1 if closed by channel
 	if ch.cl {
 		return -1
@@ -358,11 +354,11 @@ func (ch *traceElementChannel) findUnbufferedPartner() int {
 		}
 		elem := trace[currentIndex[routine]]
 		switch e := elem.(type) {
-		case *traceElementChannel:
+		case *TraceElementChannel:
 			if e.id == ch.id && e.oID == ch.oID {
 				return routine
 			}
-		case *traceElementSelect:
+		case *TraceElementSelect:
 			if e.chosenCase.oID == ch.id &&
 				e.chosenCase.oID == ch.oID {
 				return routine

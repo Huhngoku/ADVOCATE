@@ -18,7 +18,7 @@ import (
  *   suc (bool): Whether the operation was successful
  *   pos (string): The position of the mutex operation in the code
  */
-type traceElementOnce struct {
+type TraceElementOnce struct {
 	routine int
 	tPre    int
 	tPost   int
@@ -59,7 +59,7 @@ func AddTraceElementOnce(routine int, tPre string,
 		return errors.New("suc is not a boolean")
 	}
 
-	elem := traceElementOnce{
+	elem := TraceElementOnce{
 		routine: routine,
 		tPre:    tPreInt,
 		tPost:   tPostInt,
@@ -75,7 +75,7 @@ func AddTraceElementOnce(routine int, tPre string,
  * Returns:
  *   int: The routine of the element
  */
-func (on *traceElementOnce) getRoutine() int {
+func (on *TraceElementOnce) GetRoutine() int {
 	return on.routine
 }
 
@@ -84,7 +84,7 @@ func (on *traceElementOnce) getRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (on *traceElementOnce) getTpre() int {
+func (on *TraceElementOnce) getTpre() int {
 	return on.tPre
 }
 
@@ -93,7 +93,7 @@ func (on *traceElementOnce) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (on *traceElementOnce) getTpost() int {
+func (on *TraceElementOnce) getTpost() int {
 	return on.tPost
 }
 
@@ -102,7 +102,7 @@ func (on *traceElementOnce) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (on *traceElementOnce) getTsort() int {
+func (on *TraceElementOnce) GetTSort() int {
 	if on.tPost == 0 {
 		// add at the end of the trace
 		return math.MaxInt
@@ -111,8 +111,6 @@ func (on *traceElementOnce) getTsort() int {
 }
 
 /*
-<<<<<<< Updated upstream
-=======
  * Get the position of the operation.
  * Returns:
  *   string: The position of the element
@@ -136,19 +134,18 @@ func (on *TraceElementOnce) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (on *TraceElementOnce) SetTSortWithoutNotExecuted(tSort int) {
+func (on *TraceElementOnce) SetTsortWithoutNotExecuted(tSort int) {
 	if on.tPost != 0 {
 		on.tPost = tSort
 	}
 }
 
 /*
->>>>>>> Stashed changes
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
  */
-func (on *traceElementOnce) toString() string {
+func (on *TraceElementOnce) ToString() string {
 	res := "O,"
 	res += strconv.Itoa(on.tPre) + ","
 	res += strconv.Itoa(on.tPost) + ","
@@ -165,7 +162,7 @@ func (on *traceElementOnce) toString() string {
 /*
  * Update the vector clock of the trace and element
  */
-func (on *traceElementOnce) updateVectorClock() {
+func (on *TraceElementOnce) updateVectorClock() {
 	if on.suc {
 		analysis.DoSuc(on.routine, on.id, currentVectorClocks)
 	} else {
