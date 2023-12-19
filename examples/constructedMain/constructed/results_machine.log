@@ -1,0 +1,42 @@
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:131
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:123
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:145
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:140
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:182
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:188
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:183
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:198
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:315
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:303
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:363
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:353
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:439
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:431
+Found concurrent Recv on same channel:
+	recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:449
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:453
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:131
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:127
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:145
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:141
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:170
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:167
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:183
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:193
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:341
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:335
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:363
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructedMain/constructed/potentialBugs.go:359

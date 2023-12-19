@@ -20,13 +20,20 @@ func newWg(index int, nRout int) {
  * Args:
  *   routine (int): The routine id
  *   id (int): The id of the wait group
+ *   delta (int): The delta of the wait group
  *   numberOfRoutines (int): The number of routines in the trace
  *   vc (map[int]VectorClock): The vector clocks
  */
-func Change(routine int, id int, vc map[int]VectorClock) {
+func Change(routine int, id int, delta int, pos string, vc map[int]VectorClock) {
 	newWg(id, vc[id].size)
 	wg[id] = wg[id].Sync(vc[routine])
 	vc[routine] = vc[routine].Inc(routine)
+
+	if delta > 0 {
+		checkForDoneBeforeAddAdd(routine, id, delta, pos, vc[routine])
+	} else {
+		checkForDoneBeforeAddDone(routine, id, -delta, pos, vc[routine])
+	}
 }
 
 /*

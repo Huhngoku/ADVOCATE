@@ -43,6 +43,7 @@ type advocateAtomicMapElem struct {
 
 var advocateDisabled = true
 var advocateAtomicMap = make(map[uint64]advocateAtomicMapElem)
+var advocateAtomicMapRoutine = make(map[uint64]uint64)
 var advocateAtomicMapToID = make(map[uint64]uint64)
 var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
@@ -206,6 +207,11 @@ func InitAdvocate(size int) {
 				operation: atomic.Operation,
 			}
 			unlock(&advocateAtomicMapLock)
+			// go func() {
+			// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
+			// 	atomic.ChanReturn <- true
+			// 	ReplayDone()
+			// }()
 		}
 	}()
 
@@ -248,9 +254,31 @@ func (elem advocateTraceSpawnElement) toString() string {
  * 	file: file where the routine was created
  * 	line: line where the routine was created
  */
-func AdvocateSpawn(timer uint64, callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
+func AdvocateSpawnCaller(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
+	timer := GetAdvocateCounter()
 	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
 		file: file, line: line})
+	ReplayDone()
+}
+
+// type to save in the trace for routines
+type advocateTraceSpawnedElement struct {
+	id    uint64 // id of the routine
+	timer uint64 // global timer
+	file  string // file where the routine was created
+	line  int    // line where the routine was created
+}
+
+func (elem advocateTraceSpawnedElement) isAdvocateTraceElement() {}
+
+/*
+ * Get a string representation of the element
+ * Return:
+ * 	string representation of the element "G,'id'"
+ *    'id' (number): id of the routine
+ */
+func (elem advocateTraceSpawnedElement) toString() string {
+	return "g," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + intToString(elem.line)
 }
 
 // ============================= Mutex =============================
@@ -603,8 +631,12 @@ func AdvocateChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
-		advocateCounterAtomic += 1
+		lock(&advocateAtomicMapLock)
+		advocateCounterAtomic++
+		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineId()
 		AdvocateAtomic(advocateCounterAtomic)
+		unlock(&advocateAtomicMapLock)
+
 		// they are not recorded in the trace
 		return -1
 	}

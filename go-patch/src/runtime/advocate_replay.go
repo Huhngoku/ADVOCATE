@@ -5,6 +5,7 @@ type ReplayOperation int
 const (
 	AdvocateNone ReplayOperation = iota
 	AdvocateReplaySpawn
+	AdvocateReplaySpawned
 
 	AdvocateReplayChannelSend
 	AdvocateReplayChannelRecv
@@ -28,6 +29,12 @@ const (
 	AdvocateReplaySelect
 	AdvocateReplaySelectCase
 	AdvocateReplaySelectDefault
+
+	// AdvocateReplayAtomicLoad
+	// AdvocateReplayAtomicStore
+	// AdvocateReplayAtomicAdd
+	// AdvocateReplayAtomicSwap
+	// AdvocateReplayAtomicCompareAndSwap
 )
 
 /*
@@ -48,8 +55,8 @@ const (
  * SelIndex: index of the select case (only for select, otherwise)
  */
 type ReplayElement struct {
-	Op       ReplayOperation
 	Routine  int
+	Op       ReplayOperation
 	Time     int
 	File     string
 	Line     int
@@ -65,8 +72,8 @@ type AdvocateReplayTrace []ReplayElement
 var replayEnabled bool = false
 var replayLock mutex
 var replayIndex int = 0
+var replayDone int = 0
 var replayDoneLock mutex
-var replayDone int = 0 // number of operations that have finished
 
 var replayData AdvocateReplayTrace = make(AdvocateReplayTrace, 0)
 
@@ -79,16 +86,17 @@ func (t AdvocateReplayTrace) Print() {
 func EnableReplay(trace AdvocateReplayTrace) {
 	replayData = trace
 	replayEnabled = true
+	// trace.Print()
 }
 
 func WaitForReplayFinish() {
 	for {
-		lock(&replayLock)
+		lock(&replayDoneLock)
 		if replayDone >= len(replayData) {
-			unlock(&replayLock)
+			unlock(&replayDoneLock)
 			break
 		}
-		unlock(&replayLock)
+		unlock(&replayDoneLock)
 	}
 }
 
@@ -110,6 +118,42 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
 
 	return WaitForReplayPath(op, file, line)
 }
+
+/*
+ * Wait until the correct atomic operation is about to be executed.
+ * Args:
+ * 	op: the operation type that is about to be executed
+ * 	index: index of the atomic operation
+ * Return:
+ * 	bool: true if trace replay is enabled, false otherwise
+ * 	ReplayElement: the next replay element
+ */
+// func WaitForReplayAtomic(op int, index uint64) (bool, ReplayElement) {
+// 	lock(&advocateAtomicMapLock)
+// 	routine := advocateAtomicMapRoutine[index]
+// 	unlock(&advocateAtomicMapLock)
+
+// 	if !replayEnabled {
+// 		return false, ReplayElement{}
+// 	}
+
+// 	for {
+// 		next := getNextReplayElement()
+// 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+
+// 		if next.Time != 0 {
+// 			if int(next.Op) != op || uint64(next.Routine) != routine {
+// 				continue
+// 			}
+// 		}
+
+// 		lock(&replayLock)
+// 		replayIndex++
+// 		unlock(&replayLock)
+// 		// println("Replay: ", next.Time, op, file, line)
+// 		return true, next
+// 	}
+// }
 
 /*
  * Wait until the correct operation is about to be executed.
@@ -162,8 +206,8 @@ func ReplayDone() {
 		return
 	}
 	lock(&replayDoneLock)
+	defer unlock(&replayDoneLock)
 	replayDone++
-	unlock(&replayDoneLock)
 }
 
 func correctSelect(next ReplayOperation, op ReplayOperation) bool {
@@ -191,7 +235,7 @@ func getNextReplayElement() ReplayElement {
 	defer unlock(&replayLock)
 	if replayIndex >= len(replayData) {
 		return ReplayElement{}
-		panic("Tace to short. The Program was most likely altered between recording and replay.")
+		// panic("Tace to short. The Program was most likely altered between recording and replay.")
 	}
 	return replayData[replayIndex]
 }
@@ -206,7 +250,11 @@ func getNextReplayElement() ReplayElement {
  * Return:
  * 	bool: true if the operation should be ignored, false otherwise
  */
+// TODO: check if all of them are necessary
 func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
+	if hasSuffix(file, "syscall/env_unix.go") {
+		return true
+	}
 	switch operation {
 	case AdvocateReplaySpawn:
 		// garbage collection can cause the replay to get stuck
@@ -216,11 +264,15 @@ func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
 	case AdvocateReplayMutexLock, AdvocateReplayMutexUnlock:
 		// mutex operations in the once can cause the replay to get stuck,
 		// if the once was called by the poll/fd_poll_runtime.go init.
-		if hasSuffix(file, "sync/once.go") && (line == 114 || line == 120 || line == 124) {
+		if hasSuffix(file, "sync/once.go") && (line == 115 || line == 121 || line == 125) {
 			return true
 		}
 		// pools
 		if hasSuffix(file, "sync/pool.go") && (line == 216 || line == 223 || line == 233) {
+			return true
+		}
+		// mutex in rwmutex
+		if hasSuffix(file, "sync/rwmutex.go") && (line == 270 || line == 396) {
 			return true
 		}
 	case AdvocateReplayOnce:

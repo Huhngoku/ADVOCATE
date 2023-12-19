@@ -337,8 +337,9 @@ func n15() {
 		}
 	}()
 
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(600 * time.Millisecond)
 	close(c)
+	time.Sleep(300 * time.Millisecond)
 }
 
 // TP
@@ -486,7 +487,7 @@ func main() {
 		defer advocate.CreateTrace("trace_constructed.log")
 	} else {
 		// init replay
-		trace := advocate.ReadTrace("trace_constructed.log")
+		trace := advocate.ReadTrace("rewritten_trace.log")
 		runtime.EnableReplay(trace)
 		defer runtime.WaitForReplayFinish()
 	}

@@ -12,7 +12,7 @@ We also implement a trace replay mechanism, to replay a trace as recorded.
 To analyze the program, we first need
 to record it. To do this, we modify the go runtime
 to automatically record a program while it runs. The modified runtime can 
-be found in the `go-patch` directory. Running a program with this modified 
+be found in the `advocate-go-patch` directory. Running a program with this modified 
 go runtime will create a trace of the program including 
 
 - spawning of new routines
@@ -27,8 +27,8 @@ The following is a short explanation about how to build and run the
 new runtime and create the trace. A full explanation of the created trace can be found in the 
 `doc` directory. 
 
-### Warning
-The recording of atomic operations is only tested with `amd64`. For `arm64` an untested implementation exists. 
+> [!WARNING]
+> The recording of atomic operations is only tested with `amd64`. For `arm64` an untested implementation exists. 
 
 ### How
 The go-patch folder contains a modified version of the go runtime.
@@ -41,9 +41,9 @@ This executable can be used as your new go environment e.g. with
 
 WARNING: It can currently happen, that `make.bash` command result in a `fatal error: runtime: releaseSudog with non-nil gp.param`. It can normally be fixed by just running `make.bash` again. I'm working on fixing it.
 
-It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
+It is necessary to set the GOROOT environment variable to the path of `advocate-go-patch`, e.g. with 
 ```
-export GOROOT=$HOME/ADVOCATE/go-patch/
+export GOROOT=$HOME/ADVOCATE/advocate-go-patch/
 ```
 
 To create a trace, add

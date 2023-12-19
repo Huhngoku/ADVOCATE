@@ -241,12 +241,16 @@ func (se *TraceElementSelect) ToString() string {
 	}
 
 	if se.containsDefault {
+		if notNil != 0 {
+			res += "~"
+		}
 		if se.chosenDefault {
-			res += ".D"
+			res += "D"
 		} else {
-			res += ".d"
+			res += "d"
 		}
 	}
+	res += "," + strconv.Itoa(se.chosenIndex)
 	res += "," + se.pos
 	return res
 }
