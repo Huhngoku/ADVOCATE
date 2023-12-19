@@ -479,14 +479,32 @@ func n22() {
 const n = 22
 
 func main() {
+<<<<<<< Updated upstream:examples/potentialBugs/constructed/potentialBugs.go
 
 	runtime.InitAdvocate(0)
 	defer advocate.CreateTrace("constructed.log")
+=======
+	if true {
+		// init tracing
+		runtime.InitAdvocate(0)
+		defer advocate.CreateTrace("trace_constructed.log")
+	} else {
+		// init replay
+		trace := advocate.ReadTrace("trace_constructed.log")
+		runtime.EnableReplay(trace)
+		defer runtime.WaitForReplayFinish()
+	}
+>>>>>>> Stashed changes:examples/constructedMain/constructed/potentialBugs.go
 
 	ns := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10, n11, n12,
 		n13, n14, n15, n16, n17, n18, n19, n20, n21, n22}
 
 	for i := 0; i < n; i++ {
 		ns[i]()
+<<<<<<< Updated upstream:examples/potentialBugs/constructed/potentialBugs.go
+=======
+		println("Done: ", i+1, " of ", n)
+		// time.Sleep(300 * time.Millisecond)
+>>>>>>> Stashed changes:examples/constructedMain/constructed/potentialBugs.go
 	}
 }

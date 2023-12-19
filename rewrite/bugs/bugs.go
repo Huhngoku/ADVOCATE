@@ -11,6 +11,7 @@ type BugType int
 const (
 	SendOnClosed BugType = iota
 	RecvOnClosed
+	DoneBeforeAdd
 )
 
 type Bug struct {

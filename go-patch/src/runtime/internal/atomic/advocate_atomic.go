@@ -19,9 +19,10 @@ const (
 )
 
 type AtomicElem struct {
-	Index     uint64
-	Addr      uint64
-	Operation int
+	Index      uint64
+	Addr       uint64
+	Operation  int
+	ChanReturn chan bool
 }
 
 func AdvocateAtomicLink(cRecording chan<- AtomicElem) {
@@ -36,97 +37,120 @@ func AdvocateAtomicUnlink() {
 
 func AdvocateAtomic64Load(addr *uint64) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: LoadOp}
+			Operation: LoadOp, ChanReturn: chanRet}
 	}
 }
 
 func AdvocateAtomic64Store(addr *uint64) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: StoreOp}
+			Operation: StoreOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic64Add(addr *uint64) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: AddOp}
+			Operation: AddOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic64Swap(addr *uint64) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: SwapOp}
+			Operation: SwapOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic64CompSwap(addr *uint64) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: CompSwapOp}
+			Operation: CompSwapOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic32Load(addr *uint32) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: LoadOp}
+			Operation: LoadOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic32Store(addr *uint32) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: StoreOp}
+			Operation: StoreOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic32Add(addr *uint32) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: AddOp}
+			Operation: AddOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic32Swap(addr *uint32) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: SwapOp}
+			Operation: SwapOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomic32CompSwap(addr *uint32) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: CompSwapOp}
+			Operation: CompSwapOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomicUIntPtr(addr *uintptr) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(unsafe.Pointer(addr))),
-			Operation: LoadOp}
+			Operation: LoadOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 
 func AdvocateAtomicPtr(addr unsafe.Pointer) {
 	if linked {
-		counter += 1
+		counter++
+		chanRet := make(chan bool)
 		chanRecording <- AtomicElem{Index: counter, Addr: uint64(uintptr(addr)),
-			Operation: LoadOp}
+			Operation: LoadOp, ChanReturn: chanRet}
+		<-chanRet
 	}
 }
 

@@ -1,0 +1,16 @@
+==================== Summary ====================
+
+No bugs found
+------ Critical -------------------
+1 Possible done before add:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
+	add : 
+2 Possible done before add:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+	add : 
+3 Possible done before add:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:33
+	add : 
+4 Possible done before add:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+	add : 

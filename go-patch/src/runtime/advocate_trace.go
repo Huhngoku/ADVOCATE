@@ -43,6 +43,7 @@ type advocateAtomicMapElem struct {
 
 var advocateDisabled = true
 var advocateAtomicMap = make(map[uint64]advocateAtomicMapElem)
+var advocateAtomicMapRoutine = make(map[uint64]uint64)
 var advocateAtomicMapToID = make(map[uint64]uint64)
 var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
@@ -206,6 +207,10 @@ func InitAdvocate(size int) {
 				operation: atomic.Operation,
 			}
 			unlock(&advocateAtomicMapLock)
+			go func() {
+				WaitForReplayAtomic(operation, atomic.Index)
+				atomic.ChanReturn <- true
+			}()
 		}
 	}()
 
@@ -624,8 +629,12 @@ func AdvocateChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
-		advocateCounterAtomic += 1
+		lock(&advocateAtomicMapLock)
+		advocateCounterAtomic++
+		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineId()
 		AdvocateAtomic(advocateCounterAtomic)
+		unlock(&advocateAtomicMapLock)
+
 		// they are not recorded in the trace
 		return -1
 	}

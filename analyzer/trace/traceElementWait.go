@@ -198,7 +198,7 @@ func (wa *traceElementWait) toString() string {
 func (wa *traceElementWait) updateVectorClock() {
 	switch wa.opW {
 	case ChangeOp:
-		analysis.Change(wa.routine, wa.id, currentVectorClocks)
+		analysis.Change(wa.routine, wa.id, wa.delta, wa.pos, currentVectorClocks)
 	case WaitOp:
 		analysis.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:
