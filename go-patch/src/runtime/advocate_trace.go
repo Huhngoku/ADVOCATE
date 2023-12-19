@@ -207,11 +207,11 @@ func InitAdvocate(size int) {
 				operation: atomic.Operation,
 			}
 			unlock(&advocateAtomicMapLock)
-			go func() {
-				WaitForReplayAtomic(atomic.Operation, atomic.Index)
-				atomic.ChanReturn <- true
-				ReplayDone()
-			}()
+			// go func() {
+			// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
+			// 	atomic.ChanReturn <- true
+			// 	ReplayDone()
+			// }()
 		}
 	}()
 
@@ -524,7 +524,7 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 		_, file, line, _ = Caller(3)
 	}
 	timer := GetAdvocateCounter()
-	elem := advocateTraceWaitGroupElement{id: id, op: opWgWait, delta: delta,
+	elem := advocateTraceWaitGroupElement{id: id, op: opWgAdd, delta: delta,
 		val: val, file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 

@@ -30,11 +30,11 @@ const (
 	AdvocateReplaySelectCase
 	AdvocateReplaySelectDefault
 
-	AdvocateReplayAtomicLoad
-	AdvocateReplayAtomicStore
-	AdvocateReplayAtomicAdd
-	AdvocateReplayAtomicSwap
-	AdvocateReplayAtomicCompareAndSwap
+	// AdvocateReplayAtomicLoad
+	// AdvocateReplayAtomicStore
+	// AdvocateReplayAtomicAdd
+	// AdvocateReplayAtomicSwap
+	// AdvocateReplayAtomicCompareAndSwap
 )
 
 /*
@@ -86,7 +86,7 @@ func (t AdvocateReplayTrace) Print() {
 func EnableReplay(trace AdvocateReplayTrace) {
 	replayData = trace
 	replayEnabled = true
-	// trace.Print()
+	trace.Print()
 }
 
 func WaitForReplayFinish() {
@@ -128,32 +128,32 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
  * 	bool: true if trace replay is enabled, false otherwise
  * 	ReplayElement: the next replay element
  */
-func WaitForReplayAtomic(op int, index uint64) (bool, ReplayElement) {
-	lock(&advocateAtomicMapLock)
-	routine := advocateAtomicMapRoutine[index]
-	unlock(&advocateAtomicMapLock)
+// func WaitForReplayAtomic(op int, index uint64) (bool, ReplayElement) {
+// 	lock(&advocateAtomicMapLock)
+// 	routine := advocateAtomicMapRoutine[index]
+// 	unlock(&advocateAtomicMapLock)
 
-	if !replayEnabled {
-		return false, ReplayElement{}
-	}
+// 	if !replayEnabled {
+// 		return false, ReplayElement{}
+// 	}
 
-	for {
-		next := getNextReplayElement()
-		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+// 	for {
+// 		next := getNextReplayElement()
+// 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
-		if next.Time != 0 {
-			if int(next.Op) != op || uint64(next.Routine) != routine {
-				continue
-			}
-		}
+// 		if next.Time != 0 {
+// 			if int(next.Op) != op || uint64(next.Routine) != routine {
+// 				continue
+// 			}
+// 		}
 
-		lock(&replayLock)
-		replayIndex++
-		unlock(&replayLock)
-		// println("Replay: ", next.Time, op, file, line)
-		return true, next
-	}
-}
+// 		lock(&replayLock)
+// 		replayIndex++
+// 		unlock(&replayLock)
+// 		// println("Replay: ", next.Time, op, file, line)
+// 		return true, next
+// 	}
+// }
 
 /*
  * Wait until the correct operation is about to be executed.
@@ -170,14 +170,19 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return false, ReplayElement{}
 	}
 
-	println("WaitForReplayPath", op, file, line)
+	if IgnoreInReplay(op, file, line) {
+		return true, ReplayElement{}
+	}
+
+	// println("WaitForReplayPath", op, file, line)
 	for {
 		next := getNextReplayElement()
 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
-		if next.Time != 0 { // if next == ReplayElement{}
+		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
+				// TODO: sleep here to not waste CPU
 				continue
 			}
 		}
@@ -185,7 +190,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		lock(&replayLock)
 		replayIndex++
 		unlock(&replayLock)
-		println("Replay: ", next.Time, op, file, line)
+		// println("Replay: ", next.Time, op, file, line)
 		return true, next
 	}
 }
@@ -277,8 +282,4 @@ func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
 		}
 	}
 	return false
-}
-
-func firstInRoutine() {
-	print("firstInRoutine\n")
 }

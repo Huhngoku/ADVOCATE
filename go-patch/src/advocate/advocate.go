@@ -64,6 +64,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 
 	replayData := make(runtime.AdvocateReplayTrace, 0)
 	chanWithoutPartner := make(map[string]int)
+	var routine = 0
 
 	for {
 		file, err := os.Open(file_name)
@@ -74,9 +75,8 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 0, maxTokenSize*mb), maxTokenSize*mb)
 
-		routine := 0
 		for scanner.Scan() {
-			routine++
+			routine += 1
 			l := scanner.Text()
 			if l == "" {
 				continue
@@ -96,18 +96,9 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 				var suc = true
 				var selIndex int
 				fields := strings.Split(elem, ",")
-				if time == 39 {
-					println(elem + "\n\n")
-				}
 				switch fields[0] {
-				// case "G":
-				// 	op = runtime.AdvocateReplaySpawn
-				// 	time, _ = strconv.Atoi(fields[1])
-				// 	pos := strings.Split(fields[3], ":")
-				// 	file = pos[0]
-				// 	line, _ = strconv.Atoi(pos[1])
-				case "g":
-					op = runtime.AdvocateReplaySpawned
+				case "G":
+					op = runtime.AdvocateReplaySpawn
 					time, _ = strconv.Atoi(fields[1])
 					pos := strings.Split(fields[3], ":")
 					file = pos[0]
@@ -140,9 +131,6 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 						}
 					}
 				case "M":
-					pos := strings.Split(fields[7], ":")
-					file = pos[0]
-					line, _ = strconv.Atoi(pos[1])
 					rw := false
 					if fields[4] == "R" {
 						rw = true
@@ -151,13 +139,31 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					if fields[6] == "f" {
 						suc = false
 					}
+					pos := strings.Split(fields[7], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
 					switch fields[5] {
 					case "L":
-						op = runtime.AdvocateReplayMutexLock
+						if rw {
+							op = runtime.AdvocateReplayRWMutexLock
+						} else {
+							op = runtime.AdvocateReplayMutexLock
+							time = swapTimerRwMutex("L", time, file, line, &replayData)
+						}
 					case "U":
-						op = runtime.AdvocateReplayMutexUnlock
+						if rw {
+							op = runtime.AdvocateReplayRWMutexUnlock
+						} else {
+							op = runtime.AdvocateReplayMutexUnlock
+							time = swapTimerRwMutex("U", time, file, line, &replayData)
+						}
 					case "T":
-						op = runtime.AdvocateReplayMutexTryLock
+						if rw {
+							op = runtime.AdvocateReplayRWMutexTryLock
+						} else {
+							op = runtime.AdvocateReplayMutexTryLock
+							time = swapTimerRwMutex("T", time, file, line, &replayData)
+						}
 					case "R":
 						op = runtime.AdvocateReplayRWMutexRLock
 					case "N":
@@ -167,13 +173,13 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					default:
 						panic("Unknown mutex operation")
 					}
-					time, _ = strconv.Atoi(fields[2])
 					if fields[2] == "0" {
 						blocked = true
 					}
+
 				case "O":
 					op = runtime.AdvocateReplayOnce
-					time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[1]) // read tpre to prevent false order
 					if time == 0 {
 						blocked = true
 					}
@@ -214,28 +220,10 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					pos := strings.Split(fields[6], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
-				case "A":
-					time, _ = strconv.Atoi(fields[1])
-					switch fields[3] {
-					case "L":
-						op = runtime.AdvocateReplayAtomicLoad
-					case "S":
-						op = runtime.AdvocateReplayAtomicStore
-					case "A":
-						op = runtime.AdvocateReplayAtomicAdd
-					case "W":
-						op = runtime.AdvocateReplayAtomicSwap
-					case "C":
-						op = runtime.AdvocateReplayAtomicCompareAndSwap
-					default:
-						panic("Unknown atomic operation")
-					}
-
 				}
 				if op != runtime.AdvocateNone && !runtime.IgnoreInReplay(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{
-						Routine: routine,
-						Op:      op, Time: time, File: file, Line: line,
+						Op: op, Routine: routine, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
 						SelIndex: selIndex})
 				}
@@ -259,11 +247,41 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
-	for elem := range replayData {
-		println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
-	}
-	println("\n\n")
+	// for elem := range replayData {
+	// 	println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
+	// }
+	// println("\n\n")
 	return replayData
+}
+
+// TODO: swap timer for rwmutix.Trylock
+func swapTimerRwMutex(op string, time int, file string, line int, replayData *runtime.AdvocateReplayTrace) int {
+	if op == "L" {
+		if !strings.HasSuffix(file, "sync/rwmutex.go") || line != 266 {
+			return time
+		}
+
+		for i := len(*replayData) - 1; i >= 0; i-- {
+			timeNew := (*replayData)[i].Time
+			(*replayData)[i].Time = time
+			return timeNew
+		}
+	} else if op == "U" {
+		if !strings.HasSuffix(file, "sync/rwmutex.go") {
+			return time
+		}
+
+		if line == 390 {
+			for i := len(*replayData) - 1; i >= 0; i-- {
+
+				timeNew := (*replayData)[i].Time
+				(*replayData)[i].Time = time
+				return timeNew
+			}
+		}
+	}
+
+	return time
 }
 
 /*
@@ -294,42 +312,4 @@ func sortReplayDataByTime(replayData runtime.AdvocateReplayTrace) runtime.Advoca
 		return replayData[i].Time < replayData[j].Time
 	})
 	return replayData
-}
-
-/*
- * For reading a file, a global once in `internal/poll/fd_poll_runtime.go` is
- * used. This once is already called by the trace reader for the replay. Because
- * of the mutexes in the once, this can caused a block in the replay, if
- * the once was, in the recorded run, called by the program. To prevent this,
- * we adapt the trace data by removing the mutex operations in the once from
- * the recorded trace.
- * TODO: (advocate) does this work when we replay ans simultaneously record?
- */
-func fixOnceFdPollRuntime(replayData runtime.AdvocateReplayTrace) {
-	for i := 0; i < len(replayData); i++ {
-		if !(replayData[i].Op == runtime.AdvocateReplayOnce &&
-			strings.HasSuffix(replayData[i].File, "internal/poll/fd_poll_runtime.go") &&
-			replayData[i].Line == 39 &&
-			replayData[i].Suc) {
-			continue
-		}
-		replayData[i].Suc = false
-		for j := i + 1; j < len(replayData); j++ {
-			if !(replayData[j].Op == runtime.AdvocateReplayMutexLock &&
-				strings.HasSuffix(replayData[j].File, "sync/once.go") &&
-				replayData[j].Line == 111) {
-				continue
-			}
-			replayData = append(replayData[:j], replayData[j+1:]...)
-			for k := j; k < len(replayData); k++ {
-				if !(replayData[j].Op == runtime.AdvocateReplayMutexUnlock &&
-					strings.HasSuffix(replayData[j].File, "sync/once.go") &&
-					(replayData[j].Line == 117 || replayData[j].Line == 121)) {
-					continue
-				}
-				replayData = append(replayData[:k], replayData[k+1:]...)
-				return
-			}
-		}
-	}
 }

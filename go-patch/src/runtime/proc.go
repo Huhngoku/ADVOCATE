@@ -4452,6 +4452,7 @@ func newproc(fn *funcval) {
 		newg := newproc1(fn, gp, pc)
 
 		// ADVOCATE-CHANGE-START
+		_, _ = WaitForReplayPath(AdvocateReplaySpawn, file, int(line))
 		newg.goInfo = newAdvocateRoutine(newg)
 		if gp != nil && gp.goInfo != nil {
 			AdvocateSpawnCaller(gp.goInfo, newg.goInfo.id, file, line)
