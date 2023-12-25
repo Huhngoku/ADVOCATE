@@ -161,6 +161,10 @@ The analyzer can take the following command line arguments:
 - -d [level]: output level, 0: silent, 1: results, 2: errors, 3: info, 4: debug, default: 2
 - -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
 - -n: If an analysis is run, a rewritten trace can be direcly created in the program. If the rewrite should not be done based on the direct analysis, but on a given trace and result file, -n must be set. In this case no analysis is run. -r and -i must be set.
+- -c: Normally, we assume the order of critical sections as fixed. By setting -c, we 
+ignore this, and assume we can reorder critical sections of different routines.
+This can help us to find bugs, that cannot be found without it, but it can also lead to 
+false positives.
 - -r [file]: Path to the analysis result file. Only needed if -n is set. The analysis will create two result files `result_readable.log` and `result_machine.log`. Here `result_machine.log` must be used.
 - -i [index]: Index of the bug that will be reproduced. Only needed if n is set. 1 based.
 

@@ -20,6 +20,7 @@ func main() {
 	rewrite := flag.Bool("n", false, "Create a reordered trace file from a given analysis "+
 		"result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results")
 	bugIndex := flag.Int("i", -1, "Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based")
+	ignoreCriticalSection := flag.Bool("c", false, "Ignore happens before relations of critical sections (default false)")
 	flag.Parse()
 
 	if *pathTrace == "" {
@@ -46,50 +47,49 @@ func main() {
 
 	// run the analysis and, if requested, create a reordered trace file
 	// based on the analysis results
-	if !*rewrite {
-		logging.InitLogging(*level, outReadable, outMachine)
-		numberOfRoutines := reader.CreateTraceFromFile(*pathTrace)
-		trace.SetNumberOfRoutines(numberOfRoutines)
-		trace.RunAnalysis(*fifo)
 
-		numberOfResults := logging.PrintSummary()
+	logging.InitLogging(*level, outReadable, outMachine)
+	numberOfRoutines := reader.CreateTraceFromFile(*pathTrace)
+	trace.SetNumberOfRoutines(numberOfRoutines)
+	trace.RunAnalysis(*fifo, *ignoreCriticalSection)
 
-		if numberOfResults != 0 {
-			fmt.Println("\n\n\n")
-			fmt.Print("Do you want to create a reordered trace file? (y/n): ")
+	numberOfResults := logging.PrintSummary()
 
-			var answer string
-			var createRewrittenFile bool
-			resultIndex := -1
+	if numberOfResults != 0 {
+		fmt.Println("\n\n\n")
+		fmt.Print("Do you want to create a reordered trace file? (y/n): ")
 
+		var answer string
+		var createRewrittenFile bool
+		resultIndex := -1
+
+		fmt.Scanln(&answer)
+		for answer != "y" && answer != "Y" && answer != "n" && answer != "N" {
+			fmt.Print("Please enter y or n: ")
 			fmt.Scanln(&answer)
-			for answer != "y" && answer != "Y" && answer != "n" && answer != "N" {
-				fmt.Print("Please enter y or n: ")
-				fmt.Scanln(&answer)
-			}
+		}
 
-			if answer == "y" || answer == "Y" {
-				createRewrittenFile = true
-				for {
-					fmt.Print("Enter the index of the result to use for the reordered trace file: ")
-					_, err := fmt.Scanf("%d", &resultIndex)
-					if err != nil {
-						fmt.Print("Please enter a valid number: ")
-						continue
-					}
-					if resultIndex < 1 || resultIndex > numberOfResults {
-						fmt.Print("Please enter a valid number: ")
-						continue
-					}
-					break
+		if answer == "y" || answer == "Y" {
+			createRewrittenFile = true
+			for {
+				fmt.Print("Enter the index of the result to use for the reordered trace file: ")
+				_, err := fmt.Scanf("%d", &resultIndex)
+				if err != nil {
+					fmt.Print("Please enter a valid number: ")
+					continue
 				}
-			} else {
-				createRewrittenFile = false
+				if resultIndex < 1 || resultIndex > numberOfResults {
+					fmt.Print("Please enter a valid number: ")
+					continue
+				}
+				break
 			}
+		} else {
+			createRewrittenFile = false
+		}
 
-			if createRewrittenFile {
-				rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines)
-			}
+		if createRewrittenFile {
+			rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines)
 		}
 	}
 }
