@@ -5,6 +5,9 @@
 package sync
 
 import (
+	// ADVOCATE-CHANGE-START
+	"runtime"
+	// ADVOCATE-CHANGE-END
 	"sync/atomic"
 	"unsafe"
 )
@@ -41,6 +44,10 @@ type Cond struct {
 
 	notify  notifyList
 	checker copyChecker
+
+	// ADVOCATE-CHANGE-START
+	id uint64
+	// ADVOCATE-CHANGE-END
 }
 
 // NewCond returns a new Cond with Locker l.
@@ -64,6 +71,13 @@ func NewCond(l Locker) *Cond {
 //	... make use of condition ...
 //	c.L.Unlock()
 func (c *Cond) Wait() {
+	// ADVOCATE-CHANGE-START
+	if c.id == 0 {
+		c.id = runtime.GetAdvocateObjectId()
+	}
+	advocateIndex := runtime.AdvocateCondPre(c.id, 0)
+	defer runtime.AdvocateCondPost(advocateIndex)
+	// ADVOCATE-CHANGE-END
 	c.checker.check()
 	t := runtime_notifyListAdd(&c.notify)
 	c.L.Unlock()
@@ -79,6 +93,13 @@ func (c *Cond) Wait() {
 // Signal() does not affect goroutine scheduling priority; if other goroutines
 // are attempting to lock c.L, they may be awoken before a "waiting" goroutine.
 func (c *Cond) Signal() {
+	// ADVOCATE-CHANGE-START
+	if c.id == 0 {
+		c.id = runtime.GetAdvocateObjectId()
+	}
+	advocateIndex := runtime.AdvocateCondPre(c.id, 1)
+	defer runtime.AdvocateCondPost(advocateIndex)
+	// ADVOCATE-CHANGE-END
 	c.checker.check()
 	runtime_notifyListNotifyOne(&c.notify)
 }
@@ -88,6 +109,13 @@ func (c *Cond) Signal() {
 // It is allowed but not required for the caller to hold c.L
 // during the call.
 func (c *Cond) Broadcast() {
+	// ADVOCATE-CHANGE-START
+	if c.id == 0 {
+		c.id = runtime.GetAdvocateObjectId()
+	}
+	advocateIndex := runtime.AdvocateCondPre(c.id, 2)
+	defer runtime.AdvocateCondPost(advocateIndex)
+	// ADVOCATE-CHANGE-END
 	c.checker.check()
 	runtime_notifyListNotifyAll(&c.notify)
 }
