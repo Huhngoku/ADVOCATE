@@ -114,11 +114,15 @@ func (co *TraceElementCond) getTpost() int {
  * TODO: check if tPre is correct
  */
 func (co *TraceElementCond) GetTSort() int {
-	if co.tPre == 0 {
+	t := co.tPre
+	if co.opC == WaitCondOp {
+		t = co.tPost
+	}
+	if t == 0 {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return co.tPost
+	return t
 }
 
 /*
@@ -137,6 +141,10 @@ func (co *TraceElementCond) GetPos() string {
  * TODO: check if tPre is correct
  */
 func (co *TraceElementCond) SetTsort(tSort int) {
+	if co.opC == WaitCondOp {
+		co.tPost = tSort
+		return
+	}
 	co.tPre = tSort
 }
 
@@ -147,9 +155,16 @@ func (co *TraceElementCond) SetTsort(tSort int) {
  *   tsort (int): The timer of the element
  */
 func (co *TraceElementCond) SetTsortWithoutNotExecuted(tSort int) {
+	if co.opC == WaitCondOp {
+		if co.tPost != 0 {
+			co.tPost = tSort
+		}
+		return
+	}
 	if co.tPre != 0 {
 		co.tPre = tSort
 	}
+	return
 }
 
 /*
