@@ -183,9 +183,11 @@ func (co *TraceElementCond) updateVectorClock() {
 	case WaitCondOp:
 		currentWaits[co.id] = append(currentWaits[co.id], co.routine)
 	case SignalOp:
-		waitRoutine := currentWaits[co.id][0]
-		currentWaits[co.id] = currentWaits[co.id][1:]
-		currentVectorClocks[waitRoutine].Sync(currentVectorClocks[co.routine])
+		if len(currentWaits[co.id]) != 0 {
+			waitRoutine := currentWaits[co.id][0]
+			currentWaits[co.id] = currentWaits[co.id][1:]
+			currentVectorClocks[waitRoutine].Sync(currentVectorClocks[co.routine])
+		}
 	case BroadcastOp:
 		for _, waitRoutine := range currentWaits[co.id] {
 			currentVectorClocks[waitRoutine].Sync(currentVectorClocks[co.routine])
