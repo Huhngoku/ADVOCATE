@@ -187,8 +187,10 @@ func SetNumberOfRoutines(n int) {
 * Calculate vector clocks
 * Args:
 *   assume_fifo (bool): True to assume fifo ordering in buffered channels
+*   ignoreCriticalSections (bool): True to ignore critical sections when updating
+*   	vector clocks
  */
-func RunAnalysis(assume_fifo bool) string {
+func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 	logging.Debug("Analyze the trace...", logging.INFO)
 
 	fifo = assume_fifo
@@ -216,9 +218,15 @@ func RunAnalysis(assume_fifo bool) string {
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
 		case *TraceElementMutex:
-			logging.Debug("Update vector clock for mutex operation "+e.ToString()+
-				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
-			e.updateVectorClock()
+			if ignoreCriticalSections {
+				logging.Debug("Ignore critical section "+e.ToString()+
+					" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
+				e.updateVectorClockAlt()
+			} else {
+				logging.Debug("Update vector clock for mutex operation "+e.ToString()+
+					" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
+				e.updateVectorClock()
+			}
 		case *TraceElementFork:
 			logging.Debug("Update vector clock for routine operation "+e.ToString()+
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)

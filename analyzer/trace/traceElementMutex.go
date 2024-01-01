@@ -256,3 +256,7 @@ func (mu *TraceElementMutex) updateVectorClock() {
 		logging.Debug(err, logging.ERROR)
 	}
 }
+
+func (mu *TraceElementMutex) updateVectorClockAlt() {
+	currentVectorClocks[mu.routine] = currentVectorClocks[mu.routine].Inc(mu.routine)
+}

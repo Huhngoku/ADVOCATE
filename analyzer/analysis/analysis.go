@@ -118,125 +118,78 @@ func checkForClosedOnClosed(id int, pos string) {
 	}
 }
 
-var lastAddValue = make(map[int]map[int]int)      // map[id]map[routine]value
-var lastAddPos = make(map[int]map[int]string)     // map[id]map[routine]pos
-var lastAddVc = make(map[int]map[int]VectorClock) // map[id]map[routine]vc
+var addVcs = make(map[int]map[int][]VectorClock) // id -> routine -> []vc
+var addPos = make(map[int]map[int][]string)      // id -> routine -> []pos
 
-var lastDoneValue = make(map[int]map[int]int)      // map[id]map[routine]value
-var lastDonePos = make(map[int]map[int]string)     // map[id]map[routine]pos
-var lastDoneVc = make(map[int]map[int]VectorClock) // map[id]map[routine]vc
+var doneVcs = make(map[int]map[int][]VectorClock) // id -> routine -> []vc
+var donePos = make(map[int]map[int][]string)      // id > routine -> []pos
 
-var doneCount = make(map[int]int)
-
-/*
- * Update the last value of a wait group for an add operation
- * Args:
- *   routine (int): The routine id
- *   id (int): The id of the wait group
- *   delta (int): The delta of the operation
- *   pos (string): The position of the operation
- *   vc (VectorClock): The vector clock of the operation
- */
-func checkForDoneBeforeAddAdd(routine int, id int, delta int, pos string, vc VectorClock) {
-	updateDoneBeforeAdd(lastAddValue, lastAddPos, lastAddVc, routine, id, delta, pos, vc)
+func checkForDoneBeforeAdd(routine int, id int, delta int, pos string, vc VectorClock) {
+	if delta > 0 {
+		checkForDoneBeforeAddAdd(routine, id, pos, vc)
+	} else if delta < 0 {
+		checkForDoneBeforeAddDone(routine, id, pos, vc)
+	} else {
+		// checkForImpossibleWait(routine, id, pos, vc)
+	}
 }
 
-/*
- * Update the last value of a wait group for a done operation and check if a done before add can happen
- * Args:
- *   routine (int): The routine id
- *   id (int): The id of the wait group
- *   delta (int): The delta of the operation (made positive)
- *   pos (string): The position of the operation
- *   vc (VectorClock): The vector clock of the operation
- */
-func checkForDoneBeforeAddDone(routine int, id int, delta int, pos string, vc VectorClock) {
-	updateDoneBeforeAdd(lastDoneValue, lastDonePos, lastDoneVc, routine, id, delta, pos, vc)
-	doneCount[id] += delta
-	checkForDoneBeforeAdd(routine, id, vc)
-}
-
-/*
- * Check if a wg counter can become negative.
- * This can happen if #(delta add pre) < #(delta done pre) + #(delta done concurrent)
- * Args:
- */
-
-func checkForDoneBeforeAdd(routine int, id int, vc VectorClock) {
-	// TODO: does not work yet
-
-	// numberDonePre := lastDoneValue[id][routine] - 1
-	// numberTotal := doneCount[id]
-	// max value in lastAddValue[id]
-	// numberAddPre := 0
-	// for _, value := range lastAddValue[id] {
-	// 	if value > numberAddPre && GetHappensBefore(lastAddVc[id][routine], vc) == Before {
-	// 		numberAddPre = value
-	// 	}
-	// }
-
-	// if numberAddPre < numberTotal {
-	// 	found := "Possible done before add:\n"
-	// 	found += "\tdone: " + lastDonePos[id][routine] + "\n"
-	// 	found += "\tadd : "
-	// 	logging.Result(found, logging.CRITICAL)
-	// }
-}
-
-/*
- * Update the last value of a wait group for a add or done operation for counting
- * the number of
- * Args:
- * lastValue (map[int]map[int]int): The last value map of a wait group
- * lastPos (map[int]map[int]string): The last position map of a wait group
- * lastVc (map[int]map[int]VectorClock): The last vector clock map of a wait group
- * routine (int): The routine id
- * id (int): The id of the wait group
- * delta (int): The delta of the operation
- * pos (string): The position of the operation
- * vc (VectorClock): The vector clock of the operation
- */
-func updateDoneBeforeAdd(lastValue map[int]map[int]int,
-	lastPos map[int]map[int]string, lastVc map[int]map[int]VectorClock,
-	routine int, id int, delta int, pos string, vc VectorClock) {
-	// create map if not exists
-	if _, ok := lastValue[id]; !ok {
-		lastValue[id] = make(map[int]int)
-		lastPos[id] = make(map[int]string)
-		lastVc[id] = make(map[int]VectorClock)
+func checkForDoneBeforeAddAdd(routine int, id int, pos string, vc VectorClock) {
+	// if necessary, create maps and lists
+	if _, ok := addVcs[id]; !ok {
+		addVcs[id] = make(map[int][]VectorClock)
+		addPos[id] = make(map[int][]string)
+	}
+	if _, ok := addVcs[id][routine]; !ok {
+		addVcs[id][routine] = make([]VectorClock, 0)
+		addPos[id][routine] = make([]string, 0)
 	}
 
-	// get max value of map[id]
-	max := 0
-	for _, value := range lastValue[id] {
-		if value > max && GetHappensBefore(lastVc[id][routine], vc) == Before {
-			max = value
+	// add the vector clock and position to the list
+	addVcs[id][routine] = append(addVcs[id][routine], vc.Copy())
+	addPos[id][routine] = append(addPos[id][routine], pos)
+
+	// for now, test new vector clock against all done vector clocks
+	// TODO: make this more efficient
+	for r, vcs := range doneVcs[id] {
+		for i, vcDone := range vcs {
+			happensBefore := GetHappensBefore(vcDone, vc)
+			if happensBefore == Concurrent {
+				found := "Found concurrent Add and Done on same waitgroup:\n"
+				found += "\tdone: " + donePos[id][r][i] + "\n"
+				found += "\tadd: " + addPos[id][routine][len(addPos[id][routine])-1]
+				logging.Result(found, logging.CRITICAL)
+			}
 		}
 	}
-	lastPos[id][routine] = pos
-	lastVc[id][routine] = vc.Copy()
-	lastValue[id][routine] = max + delta
 }
 
-// /*
-//  * Update the last list of concurrent done operations for a wait group
-//  * Args:
-//  *   id (int): The id of the wait group
-//  *   vc (VectorClock): The vector clock of the operation
-//  * Returns:
-//  *   int: The number of concurrent done operations
-//  */
-// func updateDoneBeforeWaitCon(id int, vc VectorClock) int {
+func checkForDoneBeforeAddDone(routine int, id int, pos string, vc VectorClock) {
+	// if necessary, create maps and lists
+	if _, ok := doneVcs[id]; !ok {
+		doneVcs[id] = make(map[int][]VectorClock)
+		donePos[id] = make(map[int][]string)
+	}
+	if _, ok := doneVcs[id][routine]; !ok {
+		doneVcs[id][routine] = make([]VectorClock, 0)
+		donePos[id][routine] = make([]string, 0)
+	}
 
-// for i, elem := range contDoneGroupes[id] {
-// 	if GetHappensBefore(elem.VectorClock, vc) == Concurrent {
-// 		contDoneGroupes[id][i].int++
-// 		return contDoneGroupes[id][i].int
-// 	}
-// }
-// contDoneGroupes[id] = append(contDoneGroupes[id], struct {
-// 	VectorClock
-// 	int
-// }{vc.Copy(), 0})
-// return 0
-// }
+	// add the vector clock and position to the list
+	doneVcs[id][routine] = append(doneVcs[id][routine], vc.Copy())
+	donePos[id][routine] = append(donePos[id][routine], pos)
+
+	// for now, test new vector clock against all add vector clocks
+	// TODO: make this more efficient
+	for r, vcs := range addVcs[id] {
+		for i, vcAdd := range vcs {
+			happensBefore := GetHappensBefore(vcAdd, vc)
+			if happensBefore == Concurrent {
+				found := "Found concurrent Add and Done on same waitgroup:\n"
+				found += "\tdone: " + donePos[id][routine][len(donePos[id][routine])-1] + "\n"
+				found += "\tadd: " + addPos[id][r][i]
+				logging.Result(found, logging.CRITICAL)
+			}
+		}
+	}
+}
