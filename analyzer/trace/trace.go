@@ -243,6 +243,8 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 
 	}
 
+	analysis.CheckForDoneBeforeAdd()
+
 	logging.Debug("Analysis completed", logging.INFO)
 	return result
 }

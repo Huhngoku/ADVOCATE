@@ -1,12 +1,38 @@
-Possible done before add:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
-	add : 
-Possible done before add:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-	add : 
-Possible done before add:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:33
-	add : 
-Possible done before add:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-	add : 
+Possible negative waitgroup counter:
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31;/home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+
+Possible negative waitgroup counter:
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25;/home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+
+oreDone/main.go:26
+
+e/main.go:26
+
+done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
+
+Found possible negative counter for waitgroup:
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
+
+Found possible negative counter for waitgroup:
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+
+eforeDone/main.go:19
+
+Found possible negative counter for waitgroup:
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
+

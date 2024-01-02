@@ -15,7 +15,8 @@ func main() {
 	w := sync.WaitGroup{}
 
 	go func() {
-		w.Done()
+		time.Sleep(1 * time.Second)
+		// w.Done()
 	}()
 
 	go func() {
@@ -25,9 +26,11 @@ func main() {
 		w.Done()
 	}()
 
-	time.Sleep(1 * time.Second)
+	w.Add(1)
 	w.Add(1)
 	w.Done() // 1 < 1 + 1 - 2 = 0
+	w.Done()
 
 	w.Wait()
+	time.Sleep(2 * time.Second)
 }

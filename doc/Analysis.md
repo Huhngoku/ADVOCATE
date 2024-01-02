@@ -70,7 +70,7 @@ fork(t1,t2) {
 ~~~~~~~~~
 
 
-## RW Mutex
+## (RW)-Mutex
 
 RW Mutex = multiple readers but only single writers
 
@@ -158,6 +158,16 @@ Example
 Note. There is a valid reordering under which the events in thread #3 are executed before the other events.
 As we over-approximate, the happens-before relation orders critical sections based on their "textual" order
 in the trace. Hence, we find that `runlock(y)_3 <HB lock(y)_5` and `runlock(y)_4 <HB lock(y)_5`.
+
+This ordering based on "textual" order can be turned of. In this case all operations are replaced by
+
+~~~~
+op(t, x) {
+  inc(Th(t), t)
+}
+~~~~
+
+This can lead to more bugs being detected, but can also introduce false positives.
 
 ## Atomic
 
@@ -474,8 +484,53 @@ onceF(t,x) {
 
 ## Condition variables
 
-Not supported by the tracer yet.
+Events:
 
+~~~
+Wait(t, x)          -- Wait
+Signal(t, x)        -- Release on wait
+Broadcast(t, x)     -- Release all 
+~~~
+
+[Conditional variables description](https://pkg.go.dev/sync#Cond)
+
+* Broadcast: Broadcast wakes all goroutines waiting on x.
+* Signal: Signal wakes one goroutine waiting on x, if there is any. The routine that is woken is decided by a ticketing system (longest waiting).
+* Wait: Wait atomically unlocks c.L and suspends execution of the calling goroutine.
+
+In terms of the happens-before we find the following.
+
+~~~
+   signal(_,x) <HB wait(_,x) [0]  -- first not considered wait
+   broadcast(_,x) <HB wait(_,x)   -- all not considered wait
+~~~
+
+For each conditional variable we save the currently waiting routines in Cond(x).
+The update of the vector clocks is implemented as follows:
+
+~~~~
+condWait(t, x) {
+  Cond(x).append(t)
+  inc(Th(t), t)
+}
+
+condSignal(t, x) {
+  if len(Cond(x)) != 0 {
+    tWait = cond(x).Pop(0)  -- remove and return the first element
+    sync(Th(tWait), Th(t))
+  }
+    inc(Th(t), t)
+}
+
+condBroadcast(t, x) {
+  for tWait in Cond(x) {
+    sync(Th(tWait), Th(t))
+  }
+  Cond(x).Clear()  -- remove all element from Cond(x)
+  inc(Th(t), t)
+}
+
+~~~~
 
 ## Examples
 
@@ -643,20 +698,27 @@ close(t,x) {
 }
 ~~~~~~~~~
 
-### Analysis scenario: "Close on closed channel"
-A close on a closed channel will cause the program to panic. For this reason 
-it would be interesting to detect potential close on closed channels. 
-Unfortunately this is only partially possible. We only use the recorded trace 
-to detect potential problems. For a close on a closed channel, we need to record 
-both close operations. This will directly result in a panic of the program, 
-and is therefore detectable without the help of the analyzer. For completeness 
-we want to show the problem anyways. For this, we record each close event. When 
-a new close event is processed, we check if the channel was already closed before. 
-If this is the case, we show a warning.
+### Analysis scenario: "done before add"
+
+Similar to "send on closed".
+
+If "done" happens before "add", the waitgroup counter may become negative => panic.
+
+To detect this, we look at each done and count the number of add a, that 
+happen before the done, and the number of done, that happen before (d) or
+concurrent with (d') the done.
+If `a < d + d'`, a "done before add" is possible. In this case, we return a warning.
+This method can result in false positives. To prevent those, we
+
+1. Reconstruct the trace such that the concurrent done happen directly after 
+the done
+
+2. Replay the trace
+
 
 ### Analysis scenario: "Concurrent Receive"
-Having multiple potentially concurrent receives on the same channel can cause 
-nondeterministic behavior, which is rarely desired. We therefor want to detect 
+Having multiple potentially concurrent receives on the same channel can cause
+nondeterministic behavior, which is rarely desired. We therefor want to detect
 such situations.
 
 For this, we save the vector clock of the last receive for each combination of
@@ -666,8 +728,8 @@ Elements in L(R', x'), with R != R' and x == x'. If one of these vector clocks
 is concurrent with our current VC, we have found a concurrent receive on the
 same channel and will therefore return a warning.
 
-Summarized that means, that the sendRcvU(tS, tR, x) and rcv(t, x, i) functions 
-are changed to 
+Summarized that means, that the sendRcvU(tS, tR, x) and rcv(t, x, i) functions
+are changed to
 
 ~~~
 sendRcvU(tS, tR, x) {
@@ -681,7 +743,7 @@ rcv(t, x, i) {
 }
 ~~~
 
-with 
+with
 
 ~~~
 checkForConcurrentRecv(t, x) {   -- t: current routine, x: id of channel
@@ -697,5 +759,19 @@ checkForConcurrentRecv(t, x) {   -- t: current routine, x: id of channel
 ~~~
 
 This allows us to find concurrent receives on the same channel. It is not necessary to
-search for concurrent send on the same channel, because this can behavior 
+search for concurrent send on the same channel, because this can behavior
 can and often is useful, e.g. as a form of wait group.
+
+
+### Analysis scenario: Goroutine leak
+
+A goroutine leak is an indefinitely blocked goroutine.
+
+The [goleak](https://github.com/uber-go/goleak) checks for goroutine leaks.
+
+In our approach, we can identify potential leaks by checking for goroutines
+where the last recorded event is a "pre" event.
+
+1. We could check if there is a potential partner. Can be done based on HB analysis.
+
+2. Reorder the trace so that we can enable the "pre" event.

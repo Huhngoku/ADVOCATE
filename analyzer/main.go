@@ -31,8 +31,8 @@ func main() {
 	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
 
 	outMachine := folder + "/results_machine.log"
-  outReadable := folder + "/results_readable.log"
-  newTrace := folder + "/rewritten_trace.log"
+	outReadable := folder + "/results_readable.log"
+	newTrace := folder + "/rewritten_trace.log"
 
 	// rewrite the trace file based on given analysis results. No analysis is run
 	if *rewrite {
@@ -116,4 +116,3 @@ func rewriteTrace(outMachine string, newTrace string, resultIndex int,
 
 	io.WriteTrace(newTrace, numberOfRoutines)
 }
-
