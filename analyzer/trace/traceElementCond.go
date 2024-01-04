@@ -81,6 +81,15 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (co *TraceElementCond) GetID() int {
+	return co.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   (int): The routine id

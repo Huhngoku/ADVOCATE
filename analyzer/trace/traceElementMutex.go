@@ -118,6 +118,15 @@ func AddTraceElementMutex(routine int, tPre string,
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (mu *TraceElementMutex) GetID() int {
+	return mu.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element
@@ -237,20 +246,26 @@ func (mu *TraceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
 		analysis.Lock(mu.routine, mu.id, currentVectorClocks)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false)
 	case RLockOp:
 		analysis.RLock(mu.routine, mu.id, currentVectorClocks)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true)
 	case TryLockOp:
 		if mu.suc {
 			analysis.Lock(mu.routine, mu.id, currentVectorClocks)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false)
 		}
 	case TryRLockOp:
 		if mu.suc {
 			analysis.RLock(mu.routine, mu.id, currentVectorClocks)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true)
 		}
 	case UnlockOp:
 		analysis.Unlock(mu.routine, mu.id, currentVectorClocks)
+		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine)
 	case RUnlockOp:
 		analysis.RUnlock(mu.routine, mu.id, currentVectorClocks)
+		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine)
 	default:
 		err := "Unknown mutex operation: " + mu.ToString()
 		logging.Debug(err, logging.ERROR)

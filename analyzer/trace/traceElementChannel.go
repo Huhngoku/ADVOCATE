@@ -124,6 +124,15 @@ func AddTraceElementChannel(routine int, tPre string,
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (ch *TraceElementChannel) GetID() int {
+	return ch.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element

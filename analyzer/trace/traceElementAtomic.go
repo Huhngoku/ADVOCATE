@@ -80,6 +80,15 @@ func AddTraceElementAtomic(routine int, tpost string,
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (at *TraceElementAtomic) GetID() int {
+	return at.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element

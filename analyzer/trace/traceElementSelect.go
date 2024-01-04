@@ -151,6 +151,15 @@ func AddTraceElementSelect(routine int, tPre string,
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (se *TraceElementSelect) GetID() int {
+	return se.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element

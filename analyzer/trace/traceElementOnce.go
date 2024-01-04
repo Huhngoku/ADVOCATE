@@ -71,6 +71,15 @@ func AddTraceElementOnce(routine int, tPre string,
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (on *TraceElementOnce) GetID() int {
+	return on.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element

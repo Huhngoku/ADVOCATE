@@ -49,6 +49,15 @@ func AddTraceElementFork(routine int, tPost string, id string, pos string) error
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (fo *TraceElementFork) GetID() int {
+	return fo.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element

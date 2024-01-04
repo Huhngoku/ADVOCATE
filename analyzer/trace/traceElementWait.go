@@ -99,6 +99,15 @@ func AddTraceElementWait(routine int, tpre string,
 }
 
 /*
+ * Get the id of the element
+ * Returns:
+ *   int: The id of the element
+ */
+func (wa *TraceElementWait) GetID() int {
+	return wa.id
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element
