@@ -210,11 +210,14 @@ func CheckForDoneBeforeAdd() {
 			for op, vcDone := range vcs { // for all done operations
 				// count the number of add operations a that happen before or concurrent to the done operation
 				countAdd := 0
-				for _, vcs := range addVcs[id] { // for all routines
-					for _, vcAdd := range vcs { // for all add operations
+				addPosList := []string{}
+				for routineAdd, vcs := range addVcs[id] { // for all routines
+					for opAdd, vcAdd := range vcs { // for all add operations
 						happensBefore := GetHappensBefore(vcAdd, vcDone)
 						if happensBefore == Before {
 							countAdd++
+						} else if happensBefore == Concurrent {
+							addPosList = append(addPosList, addPos[id][routineAdd][opAdd])
 						}
 					}
 				}
@@ -239,14 +242,20 @@ func CheckForDoneBeforeAdd() {
 				if countAdd < countDone {
 					found := "Possible negative waitgroup counter:\n"
 					found += "\tdone: " + donePos[id][routine][op] + "\n"
-					found += "\tdone: "
+					found += "\tdone/add: "
 					for i, pos := range donePosList {
 						if i != 0 {
 							found += ";"
 						}
 						found += pos
 					}
-					found += "\n"
+					found += ";"
+					for i, pos := range addPosList {
+						if i != 0 {
+							found += ";"
+						}
+						found += pos
+					}
 					logging.Result(found, logging.CRITICAL)
 				}
 			}

@@ -2,7 +2,6 @@ package bugs
 
 import (
 	"analyzer/trace"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -44,7 +43,7 @@ func (b Bug) ToString() string {
 	case DoneBeforeAdd:
 		typeStr = "Possible negative waitgroup counter:"
 		arg1Str = "done: "
-		arg2Str = "done: "
+		arg2Str = "add/done: "
 	default:
 		panic("Unknown bug type: " + strconv.Itoa(int(b.Type)))
 	}
@@ -90,7 +89,6 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 		bug.Type = RecvOnClosed
 	case "Possible negative waitgroup counter:":
 		bug.Type = DoneBeforeAdd
-		panic("Not implemented yet")
 	default:
 		panic("Unknown bug type: " + typeStr)
 	}
@@ -106,7 +104,6 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 	bug.Pos2 = make([]string, 1)
 
 	elems := strings.Split(arg2, ": ")[1]
-	fmt.Println(strings.Split(elems, ";"))
 	for _, pos := range strings.Split(elems, ";") {
 		elem, err = trace.GetTraceElementFromPos(pos)
 		if err != nil {
@@ -116,7 +113,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 		bug.Pos2 = append(bug.Pos2, pos)
 	}
 
-	bug.Println()
+	// bug.Println()
 
 	return false, bug
 }

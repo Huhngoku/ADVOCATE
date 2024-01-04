@@ -32,7 +32,7 @@ func main() {
 
 	outMachine := folder + "/results_machine.log"
 	outReadable := folder + "/results_readable.log"
-	newTrace := folder + "/rewritten_trace.log"
+	newTrace := folder + "rewritten_trace.log"
 
 	// rewrite the trace file based on given analysis results. No analysis is run
 	if *rewrite {

@@ -16,7 +16,9 @@ func main() {
 
 	go func() {
 		time.Sleep(1 * time.Second)
-		// w.Done()
+		w.Done()
+		w.Add(1)
+		w.Done()
 	}()
 
 	go func() {
@@ -28,7 +30,8 @@ func main() {
 
 	w.Add(1)
 	w.Add(1)
-	w.Done() // 1 < 1 + 1 - 2 = 0
+	w.Add(1)
+	w.Done()
 	w.Done()
 
 	w.Wait()

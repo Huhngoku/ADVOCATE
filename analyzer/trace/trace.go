@@ -286,3 +286,13 @@ func increaseIndex(routine int) {
 		currentIndex[routine] = -1
 	}
 }
+
+func ShiftTrace(startTSort int, shift int) {
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if elem.GetTSort() >= startTSort {
+				traces[routine][index].SetTsortWithoutNotExecuted(elem.GetTSort() + shift)
+			}
+		}
+	}
+}

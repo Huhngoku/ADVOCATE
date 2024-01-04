@@ -2,40 +2,16 @@
 
 -------------------- Critical -------------------
 1 Possible negative waitgroup counter:
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31;/home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:33;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:29;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:30;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
 2 Possible negative waitgroup counter:
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25;/home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
-
-oreDone/main.go:26
-
-e/main.go:26
-
-done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
-
-3 Found possible negative counter for waitgroup:
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
-
-4 Found possible negative counter for waitgroup:
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-
-oreDone/main.go:19
-
-4 Found possible negative counter for waitgroup:
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:33;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:29;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:30;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
+3 Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:33
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:23;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:24
+4 Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:19
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:25;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:26;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:32;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:33;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:23;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:24;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:29;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:30;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/addBeforeDone/main.go:31
+31
 
