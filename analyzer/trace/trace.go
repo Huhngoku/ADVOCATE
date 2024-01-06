@@ -244,7 +244,7 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 	}
 
 	analysis.CheckForDoneBeforeAdd()
-	analysis.PrintTrees()
+	analysis.CheckForCyclicDeadlock()
 
 	logging.Debug("Analysis completed", logging.INFO)
 	return result

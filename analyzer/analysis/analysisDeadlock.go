@@ -13,6 +13,7 @@ type lockGraphNode struct {
 	rLock    bool             // true if the lock was a read lock
 	children []*lockGraphNode // children of the node
 	parent   *lockGraphNode   // parent of the node
+	visited  bool             // true if the node was already visited by the deadlock detection algorithm  // TODO: can we find the actual path with that or only that there is a circle
 }
 
 /*
@@ -34,7 +35,7 @@ func newLockGraph() *lockGraphNode {
 func (node *lockGraphNode) addChild(childID int, childRw bool, childRLock bool) *lockGraphNode {
 	child := &lockGraphNode{id: childID, parent: node, rw: childRw, rLock: childRLock}
 	node.children = append(node.children, child)
-	return child
+	return node.children[len(node.children)-1]
 }
 
 func (node *lockGraphNode) print() {
@@ -62,7 +63,7 @@ func (node *lockGraphNode) toStringTraverse(depth int) string {
 
 	result := ""
 	for i := 0; i < depth; i++ {
-		result += "    "
+		result += "  "
 	}
 	result += strconv.Itoa(node.id) + "\n"
 
@@ -72,7 +73,7 @@ func (node *lockGraphNode) toStringTraverse(depth int) string {
 	return result
 }
 
-func PrintTrees() {
+func printTrees() {
 	for routine, node := range lockGraphs {
 		println("Routine " + strconv.Itoa(routine))
 		node.print()
@@ -91,16 +92,15 @@ var lockGraphs = make(map[int]*lockGraphNode)    // routine -> lockGraphNode
  *   routine (int): The id of the routine
  */
 func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool) {
-	// add the lock element into the map of currently hold locks
+	// create new lock tree if it does not exist yet
 	if _, ok := lockGraphs[routine]; !ok {
 		lockGraphs[routine] = newLockGraph()
 		currentNode[routine] = []*lockGraphNode{lockGraphs[routine]}
 	}
 
-	// TODO: does not work yet
 	// add the lock element to the lock tree
 	// update the current lock
-	node := currentNode[routine][len(currentNode)-1].addChild(id, rw, rLock)
+	node := currentNode[routine][len(currentNode[routine])-1].addChild(id, rw, rLock)
 	currentNode[routine] = append(currentNode[routine], node)
 }
 
@@ -117,4 +117,13 @@ func AnalysisDeadlockMutexUnLock(id int, routine int) {
 			return
 		}
 	}
+}
+
+/*
+ * Check if the lock graph created by connecting all lock trees is cyclic
+ * If there are cycles, log the results
+ */
+func CheckForCyclicDeadlock() {
+	printTrees()
+	panic("Not implemented yet")
 }
