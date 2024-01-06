@@ -140,8 +140,23 @@ func AnalysisDeadlockMutexUnLock(id int, routine int) {
  */
 func CheckForCyclicDeadlock() {
 	printTrees()
+
 	findOutsideConnections()
-	findCicles()
+	cycles := findCycles()
+
+	if len(cycles) == 0 {
+		return
+	}
+
+	// TODO: remove duplicate cycles
+
+	for _, cycle := range cycles {
+		res := isCycleDeadlock(cycle)
+		if res {
+			// TODO: log the cycle
+			println("Deadlock detected")
+		}
+	}
 }
 
 /*
@@ -183,8 +198,23 @@ func traverseTreeAndAddOutsideConnections(node *lockGraphNode) {
 /*
  * Find all unique cycles in the lock graph formed by connecting all lock trees
  * using the outside connections.
- * For each cycle, log the result
+ * Return all the cycles as a list of nodes
+ * Returns:
+ *   ([][]*lockGraphNode): A list of cycles, where each cycle is a list of nodes
  */
-func findCicles() {
+func findCycles() [][]*lockGraphNode {
+	// TODO: implement using a DFS search
+	panic("Not implemented yet")
+}
+
+/*
+ * Check if a cycle can create a deadlock
+ * Args:
+ *   cycle ([]*lockGraphNode): The cycle to check
+ * Returns:
+ *   (bool): True if the cycle can create a deadlock
+ */
+func isCycleDeadlock(cycle []*lockGraphNode) bool {
+	// TODO: implement
 	panic("Not implemented yet")
 }
