@@ -9,9 +9,11 @@ import (
  */
 type lockGraphNode struct {
 	id       int              // id of the mutex represented by the node
+	routine  int              // id of the routine that holds the lock
 	rw       bool             // true if the mutex is a read-write lock
 	rLock    bool             // true if the lock was a read lock
 	children []*lockGraphNode // children of the node
+	outside  []*lockGraphNode // nodes with the same lock ID that are in the tree of another routine
 	parent   *lockGraphNode   // parent of the node
 	visited  bool             // true if the node was already visited by the deadlock detection algorithm  // TODO: can we find the actual path with that or only that there is a circle
 }
@@ -21,8 +23,8 @@ type lockGraphNode struct {
  * Returns:
  *   (*lockGraphNode): The new node
  */
-func newLockGraph() *lockGraphNode {
-	return &lockGraphNode{id: -1}
+func newLockGraph(routine int) *lockGraphNode {
+	return &lockGraphNode{id: -1, routine: routine}
 }
 
 /*
@@ -33,7 +35,7 @@ func newLockGraph() *lockGraphNode {
  *   childRLock (bool): True if the child is a read lock
  */
 func (node *lockGraphNode) addChild(childID int, childRw bool, childRLock bool) *lockGraphNode {
-	child := &lockGraphNode{id: childID, parent: node, rw: childRw, rLock: childRLock}
+	child := &lockGraphNode{id: childID, parent: node, rw: childRw, rLock: childRLock, routine: node.routine}
 	node.children = append(node.children, child)
 	return node.children[len(node.children)-1]
 }
@@ -47,7 +49,7 @@ func (node *lockGraphNode) toString() string {
 	if node == nil {
 		return ""
 	}
-	result := "root\n"
+	result := ""
 
 	for _, child := range node.children {
 		result += child.toStringTraverse(1)
@@ -62,7 +64,7 @@ func (node *lockGraphNode) toStringTraverse(depth int) string {
 	}
 
 	result := ""
-	for i := 0; i < depth; i++ {
+	for i := 0; i < depth-1; i++ {
 		result += "  "
 	}
 	result += strconv.Itoa(node.id) + "\n"
@@ -81,8 +83,12 @@ func printTrees() {
 
 }
 
+// currend node for each routine
 var currentNode = make(map[int][]*lockGraphNode) // routine -> []*lockGraphNode
-var lockGraphs = make(map[int]*lockGraphNode)    // routine -> lockGraphNode
+// lock graph for each routine
+var lockGraphs = make(map[int]*lockGraphNode) // routine -> lockGraphNode
+// all nodes for each id
+var nodesPerID = make(map[int]map[int][]*lockGraphNode) // id -> routine -> []*lockGraphNode
 
 /*
  * Add the lock to the currently hold locks
@@ -94,14 +100,23 @@ var lockGraphs = make(map[int]*lockGraphNode)    // routine -> lockGraphNode
 func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool) {
 	// create new lock tree if it does not exist yet
 	if _, ok := lockGraphs[routine]; !ok {
-		lockGraphs[routine] = newLockGraph()
+		lockGraphs[routine] = newLockGraph(routine)
 		currentNode[routine] = []*lockGraphNode{lockGraphs[routine]}
+	}
+
+	// create empty map for nodesPerID if it does not exist yet
+	if _, ok := nodesPerID[id]; !ok {
+		nodesPerID[id] = make(map[int][]*lockGraphNode)
+	}
+	if _, ok := nodesPerID[id][routine]; !ok {
+		nodesPerID[id][routine] = []*lockGraphNode{}
 	}
 
 	// add the lock element to the lock tree
 	// update the current lock
 	node := currentNode[routine][len(currentNode[routine])-1].addChild(id, rw, rLock)
 	currentNode[routine] = append(currentNode[routine], node)
+	nodesPerID[id][routine] = append(nodesPerID[id][routine], node)
 }
 
 /*
@@ -125,5 +140,51 @@ func AnalysisDeadlockMutexUnLock(id int, routine int) {
  */
 func CheckForCyclicDeadlock() {
 	printTrees()
+	findOutsideConnections()
+	findCicles()
+}
+
+/*
+ * Find all connections between lock trees for different routines
+ * A connection exists iff both nodes have the same id but different routines
+ */
+func findOutsideConnections() {
+	for _, tree := range lockGraphs { // for each lock tree
+		traverseTreeAndAddOutsideConnections(tree)
+	}
+}
+
+/*
+ * Traverse all nodes of the tree recursively.
+ * For each node, add all nodes with the same id but different routine to the outside connections
+ * Args:
+ *   node (*lockGraphNode): The node to start the traversal
+ */
+func traverseTreeAndAddOutsideConnections(node *lockGraphNode) {
+	if node == nil {
+		return
+	}
+
+	for routine, outsideNode := range nodesPerID[node.id] {
+		if routine == node.routine {
+			continue
+		}
+
+		for _, node := range outsideNode {
+			node.outside = append(node.outside, node)
+		}
+	}
+
+	for _, child := range node.children {
+		traverseTreeAndAddOutsideConnections(child)
+	}
+}
+
+/*
+ * Find all unique cycles in the lock graph formed by connecting all lock trees
+ * using the outside connections.
+ * For each cycle, log the result
+ */
+func findCicles() {
 	panic("Not implemented yet")
 }

@@ -253,8 +253,8 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 func getNextElement() TraceElement {
 	// find the local trace, where the element on which currentIndex points to
 	// has the smallest tpost
-	var minTSort int = -1
-	var minRoutine int = -1
+	var minTSort = -1
+	var minRoutine = -1
 	for routine, trace := range traces {
 		// no more elements in the routine trace
 		if currentIndex[routine] == -1 {
