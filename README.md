@@ -1,4 +1,4 @@
-# ADVOCATE: Automated Detection and Verification Of Concurrency bugs through Analysis of Trace recordings in a modified go Environment."
+# AdvocateGo: Automated Detection and Verification Of Concurrency bugs through Analysis of Trace recordings of program Executions in Go."
 
 > [!WARNING]
 > This program is still under development and may return no or wrong results.
