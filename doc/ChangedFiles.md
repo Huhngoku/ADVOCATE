@@ -28,5 +28,5 @@ Changed files (marked with ADVOCATE-CHANGE, außer in .s):
 - src/sync/rwmutex.go
 - src/sync/waitgroup.go
 - src/sync/once.go
-- src/sync/cond/go
+- src/sync/cond.go
 - cmd/compile/internal/ssagen

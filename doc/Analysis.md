@@ -707,7 +707,7 @@ If "done" happens before "add", the waitgroup counter may become negative => pan
 To detect this, we look at each done and count the number of add a, that 
 happen before the done, and the number of done, that happen before (d) or
 concurrent with (d') the done.
-If `a < d + d'`, a "done before add" is possible. In this case, we return a warning.
+If a < d + d', a "done before add" is possible. In this case, we return a warning.
 This method can result in false positives. To prevent those, we
 
 1. Reconstruct the trace such that the concurrent done happen directly after 

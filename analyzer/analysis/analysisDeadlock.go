@@ -15,7 +15,7 @@ type lockGraphNode struct {
 	children []*lockGraphNode // children of the node
 	outside  []*lockGraphNode // nodes with the same lock ID that are in the tree of another routine
 	parent   *lockGraphNode   // parent of the node
-	visited  bool             // true if the node was already visited by the deadlock detection algorithm  // TODO: can we find the actual path with that or only that there is a circle
+	visited  map[int]struct{} // map to store the routine, for which the node was already visited when starting the DFS from the routines lock tree root
 }
 
 /*
@@ -142,19 +142,24 @@ func CheckForCyclicDeadlock() {
 	printTrees()
 
 	findOutsideConnections()
-	cycles := findCycles()
+	found, cycles := findCycles() // find all cycles in the lock graph
 
-	if len(cycles) == 0 {
+	if !found { // no cycles
 		return
 	}
 
-	// TODO: remove duplicate cycles
+	// remove duplicate cycles, is that necessary
+	removeDuplicates(cycles)
 
 	for _, cycle := range cycles {
 		res := isCycleDeadlock(cycle)
 		if res {
 			// TODO: log the cycle
 			println("Deadlock detected")
+			for _, node := range cycle {
+				print("  " + strconv.Itoa(node.id) + "|" + strconv.Itoa(node.routine))
+			}
+			println()
 		}
 	}
 }
@@ -180,13 +185,13 @@ func traverseTreeAndAddOutsideConnections(node *lockGraphNode) {
 		return
 	}
 
-	for routine, outsideNode := range nodesPerID[node.id] {
+	for routine, outsideNodes := range nodesPerID[node.id] {
 		if routine == node.routine {
 			continue
 		}
 
-		for _, node := range outsideNode {
-			node.outside = append(node.outside, node)
+		for _, outsideNode := range outsideNodes {
+			node.outside = append(node.outside, outsideNode)
 		}
 	}
 
@@ -196,15 +201,160 @@ func traverseTreeAndAddOutsideConnections(node *lockGraphNode) {
 }
 
 /*
- * Find all unique cycles in the lock graph formed by connecting all lock trees
+ * Find all cycles in the lock graph formed by connecting all lock trees
  * using the outside connections.
  * Return all the cycles as a list of nodes
  * Returns:
- *   ([][]*lockGraphNode): A list of cycles, where each cycle is a list of nodes
+ *  (bool): True if there are cycles
+ *  ([][]*lockGraphNode): A list of cycles, where each cycle is a list of nodes
  */
-func findCycles() [][]*lockGraphNode {
-	// TODO: implement using a DFS search
-	panic("Not implemented yet")
+func findCycles() (bool, [][]*lockGraphNode) {
+	cycles := [][]*lockGraphNode{}
+	for routine, tree := range lockGraphs { // for each lock tree
+		findCyclesDFS(tree, &([]*lockGraphNode{}), &cycles, routine, nil)
+	}
+
+	if len(cycles) == 0 {
+		return false, nil
+	}
+	return true, cycles
+}
+
+func findCyclesDFS(node *lockGraphNode, currentPath *([]*lockGraphNode),
+	cycles *([][]*lockGraphNode), routine int, last *lockGraphNode) {
+	if node == nil {
+		return
+	}
+
+	// make node.visited if it does not exist yet
+	if node.visited == nil {
+		node.visited = make(map[int]struct{})
+	}
+
+	if _, ok := node.visited[routine]; ok { // node was already visited
+		cycle, index := isInCurrentPath(node, currentPath)
+		if cycle {
+			copySlice := make([]*lockGraphNode, len(*currentPath)-index)
+			copy(copySlice, (*currentPath)[index:])
+			*cycles = append(*cycles, copySlice)
+		}
+		return
+	}
+
+	if node.id != -1 { // not for root
+		node.visited[routine] = struct{}{}
+		*currentPath = append(*currentPath, node)
+	}
+
+	// recursion step for each child
+	for _, child := range node.children {
+		findCyclesDFS(child, currentPath, cycles, routine, nil)
+	}
+
+	// recursion step for each outside connection
+	for _, outside := range node.outside {
+		if outside == last {
+			continue
+		}
+		findCyclesDFS(outside, currentPath, cycles, routine, node)
+	}
+
+	// remove node from current path
+	if node.id != -1 {
+		*currentPath = (*currentPath)[:len(*currentPath)-1]
+	}
+
+}
+
+func isInCurrentPath(node *lockGraphNode, currentPath *([]*lockGraphNode)) (bool, int) {
+	for i, pathNode := range *currentPath {
+		if pathNode == node {
+			return true, i
+		}
+	}
+	return false, -1
+}
+
+/*
+ * Remove duplicate cycles. The following are considered duplicates:
+ * - cyclic permutations (same cycle but different starting point)
+ * - subcyles (we can remove nodes from on cycle to get the other cycle
+ *   e.g. [1,2,3,4] and [2,3,4] are the same cycle)
+ * Args:
+ *   cycles ([][]*lockGraphNode): The cycles to remove duplicates from
+ * TODO: does not work yet
+ */
+func removeDuplicates(cycles [][]*lockGraphNode) {
+	// remove cyclic permutations (same cycle but different starting point)
+	for i := 0; i < len(cycles); i++ {
+		for j := i + 1; j < len(cycles); j++ {
+			if len(cycles[i]) == len(cycles[j]) {
+				if isCyclicPermutation(cycles[i], cycles[j]) {
+					cycles = append(cycles[:j], cycles[j+1:]...)
+					j--
+				}
+			} else {
+				if len(cycles[i]) > len(cycles[j]) {
+					if isSubCycle(cycles[i], cycles[j]) {
+						cycles = append(cycles[:j], cycles[j+1:]...)
+						j--
+					}
+				} else {
+					if isSubCycle(cycles[j], cycles[i]) {
+						cycles = append(cycles[:i], cycles[i+1:]...)
+						j = i
+					}
+				}
+			}
+		}
+	}
+}
+
+/*
+ * Check if two cycles are cyclic permutations of each other. The function
+ * assumes that the cycles have the same length.
+ * Args:
+ *   cycle1 ([]*lockGraphNode): The first cycle
+ *   cycle2 ([]*lockGraphNode): The second cycle
+ * Returns:
+ *   (bool): True if the cycles are cyclic permutations of each other
+ */
+func isCyclicPermutation(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool {
+	for i := 0; i < len(cycle1); i++ {
+		if cycle1[0] == cycle2[i] {
+			for j := 0; j < len(cycle1); j++ {
+				if cycle1[j] != cycle2[(i+j)%len(cycle1)] {
+					return false
+				}
+			}
+			return true
+		}
+	}
+	return false
+}
+
+/*
+* Check if the cycle2 is a subcycle of cycle1
+* This is the case, if we can remove nodes from cycle1 to get cycle2, while
+* keeping the order of the nodes the same.
+* The function assumes, that cycle1 is longer than cycle2.
+* Args:
+*   cycle1 ([]*lockGraphNode): The longer cycle
+*   cycle2 ([]*lockGraphNode): The shorter cycle
+* Returns:
+*   (bool): True if cycle2 is a subcycle of cycle1
+ */
+func isSubCycle(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool {
+	j := 0
+	for i := 0; i < len(cycle1); i++ {
+		if cycle1[i] == cycle2[j] {
+			j++
+			if j == len(cycle2) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 /*
@@ -215,6 +365,17 @@ func findCycles() [][]*lockGraphNode {
  *   (bool): True if the cycle can create a deadlock
  */
 func isCycleDeadlock(cycle []*lockGraphNode) bool {
-	// TODO: implement
-	panic("Not implemented yet")
+	// does the cycle consists of more than one different lock? (R1)
+	moreThanOneMutexIndex := -1
+	moreThanOneMutexBool := false
+
+	for _, node := range cycle {
+		if moreThanOneMutexIndex == -1 {
+			moreThanOneMutexIndex = node.id
+		} else if moreThanOneMutexIndex != node.id {
+			moreThanOneMutexBool = true
+		}
+	}
+
+	return moreThanOneMutexBool
 }

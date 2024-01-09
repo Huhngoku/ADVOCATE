@@ -9,15 +9,20 @@ import (
 
 func main() {
 	// init tracing
-	runtime.InitAdvocate(0)
-	defer advocate.CreateTrace("trace_constructed.log")
+	if false {
+		runtime.InitAdvocate(0)
+		defer advocate.CreateTrace("trace_new.log")
+	} else {
+		// init replay
+		trace := advocate.ReadTrace("rewritten_trace.log")
+		runtime.EnableReplay(trace)
+		defer runtime.WaitForReplayFinish()
+	}
 
 	w := sync.WaitGroup{}
 
 	go func() {
 		time.Sleep(1 * time.Second)
-		w.Done()
-		w.Add(1)
 		w.Done()
 	}()
 
