@@ -244,7 +244,7 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 	}
 
 	analysis.CheckForDoneBeforeAdd()
-	analysis.CheckForCyclicDeadlock()
+	// analysis.CheckForCyclicDeadlock() TODO: add back in when working
 
 	logging.Debug("Analysis completed", logging.INFO)
 	return result

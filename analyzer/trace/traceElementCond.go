@@ -1,6 +1,7 @@
 package trace
 
 import (
+	"analyzer/analysis"
 	"errors"
 	"math"
 	"strconv"
@@ -197,26 +198,16 @@ func (co *TraceElementCond) ToString() string {
 	return res
 }
 
-var currentWaits = make(map[int][]int) // -> id -> routine
-
 /*
  * Update the vector clock of the trace and element
  */
 func (co *TraceElementCond) updateVectorClock() {
 	switch co.opC {
 	case WaitCondOp:
-		currentWaits[co.id] = append(currentWaits[co.id], co.routine)
+		analysis.CondWait(co.id, co.routine, currentVectorClocks)
 	case SignalOp:
-		if len(currentWaits[co.id]) != 0 {
-			waitRoutine := currentWaits[co.id][0]
-			currentWaits[co.id] = currentWaits[co.id][1:]
-			currentVectorClocks[waitRoutine].Sync(currentVectorClocks[co.routine])
-		}
+		analysis.CondSignal(co.id, co.routine, currentVectorClocks)
 	case BroadcastOp:
-		for _, waitRoutine := range currentWaits[co.id] {
-			currentVectorClocks[waitRoutine].Sync(currentVectorClocks[co.routine])
-		}
-		currentWaits[co.id] = []int{}
+		analysis.CondBroadcast(co.id, co.routine, currentVectorClocks)
 	}
-	currentVectorClocks[co.routine].Inc(co.routine)
 }
