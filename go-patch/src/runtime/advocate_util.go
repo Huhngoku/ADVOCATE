@@ -89,12 +89,12 @@ func intToString(n int) string {
 	}
 }
 
-var advocateCurrentRoutineId uint64
-var advocateCurrentObjectId uint64
+var advocateCurrentRoutineID uint64
+var advocateCurrentObjectID uint64
 var advocateGlobalCounter uint64
 
-var advocateCurrentRoutineIdMutex mutex
-var advocateCurrentObjectIdMutex mutex
+var advocateCurrentRoutineIDMutex mutex
+var advocateCurrentObjectIDMutex mutex
 var advocateGlobalCounterMutex mutex
 
 /*
@@ -102,11 +102,11 @@ var advocateGlobalCounterMutex mutex
  * Return:
  * 	new id
  */
-func GetAdvocateRoutineId() uint64 {
-	lock(&advocateCurrentRoutineIdMutex)
-	defer unlock(&advocateCurrentRoutineIdMutex)
-	advocateCurrentRoutineId += 1
-	return advocateCurrentRoutineId
+func GetAdvocateRoutineID() uint64 {
+	lock(&advocateCurrentRoutineIDMutex)
+	defer unlock(&advocateCurrentRoutineIDMutex)
+	advocateCurrentRoutineID++
+	return advocateCurrentRoutineID
 }
 
 /*
@@ -114,11 +114,11 @@ func GetAdvocateRoutineId() uint64 {
  * Return:
  * 	new id
  */
-func GetAdvocateObjectId() uint64 {
-	lock(&advocateCurrentObjectIdMutex)
-	defer unlock(&advocateCurrentObjectIdMutex)
-	advocateCurrentObjectId += 1
-	return advocateCurrentObjectId
+func GetAdvocateObjectID() uint64 {
+	lock(&advocateCurrentObjectIDMutex)
+	defer unlock(&advocateCurrentObjectIDMutex)
+	advocateCurrentObjectID++
+	return advocateCurrentObjectID
 }
 
 /*
@@ -129,7 +129,7 @@ func GetAdvocateObjectId() uint64 {
 func GetAdvocateCounter() uint64 {
 	lock(&advocateGlobalCounterMutex)
 	defer unlock(&advocateGlobalCounterMutex)
-	advocateGlobalCounter += 1
+	advocateGlobalCounter++
 	return advocateGlobalCounter
 }
 
@@ -166,6 +166,32 @@ func stringToInt(s string) int {
 		}
 	}
 	return result * sign
+}
+
+/*
+ * Check if a list of integers contains an element
+ * Args:
+ * 	list: list of integers
+ * 	elem: element to check
+ * Return:
+ * 	true if the list contains the element, false otherwise
+ */
+func containsInt(list []int, elem int) bool {
+	for _, e := range list {
+		if e == elem {
+			return true
+		}
+	}
+	return false
+}
+
+/*
+ * Slow down the execution of the program
+ */
+func slowExecution() {
+	for i := 0; i < 1e8; i++ {
+		// do nothing
+	}
 }
 
 // ADVOCATE-FILE-END

@@ -133,7 +133,7 @@ func makechan(t *chantype, size int) *hchan {
 	// get and save a new id for the channel
 	c.advocateIgnore = advocateIgnored
 	if !c.advocateIgnore {
-		c.id = GetAdvocateObjectId()
+		c.id = GetAdvocateObjectID()
 	}
 	// ADVOCATE-CHANGE-END
 

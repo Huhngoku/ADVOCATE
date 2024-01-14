@@ -246,19 +246,19 @@ func (mu *TraceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
 		analysis.Lock(mu.routine, mu.id, currentVectorClocks)
-		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVectorClocks[mu.routine])
 	case RLockOp:
 		analysis.RLock(mu.routine, mu.id, currentVectorClocks)
-		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVectorClocks[mu.routine])
 	case TryLockOp:
 		if mu.suc {
 			analysis.Lock(mu.routine, mu.id, currentVectorClocks)
-			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVectorClocks[mu.routine])
 		}
 	case TryRLockOp:
 		if mu.suc {
 			analysis.RLock(mu.routine, mu.id, currentVectorClocks)
-			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVectorClocks[mu.routine])
 		}
 	case UnlockOp:
 		analysis.Unlock(mu.routine, mu.id, currentVectorClocks)

@@ -53,7 +53,7 @@ const rwmutexMaxReaders = 1 << 30
 // - Unlock  -> Lock:  readerSem
 // - Unlock  -> RLock: readerSem
 // - RUnlock -> Lock:  writerSem
-//GetAdvocateObjectId
+//GetAdvocateObjectID
 // The methods below temporarily disable handling of race synchronization
 // events in order to provide the more precise model above to the race
 // detector.
@@ -74,7 +74,7 @@ func (rw *RWMutex) RLock() {
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetAdvocateObjectId()
+				rw.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateMutexLockPre(rw.id, true, true)
 			runtime.BlockForever()
@@ -86,7 +86,7 @@ func (rw *RWMutex) RLock() {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetAdvocateObjectId()
+		rw.id = runtime.GetAdvocateObjectID()
 	}
 
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
@@ -124,14 +124,14 @@ func (rw *RWMutex) TryRLock() bool {
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetAdvocateObjectId()
+				rw.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateMutexLockTry(rw.id, true, true)
 			runtime.BlockForever()
 		}
 		// if !replayElem.Suc {
 		// 	if rw.id == 0 {
-		// 		rw.id = runtime.GetAdvocateObjectId()
+		// 		rw.id = runtime.GetAdvocateObjectID()
 		// 	}
 		// 	advocateIndex := runtime.AdvocateMutexLockTry(rw.id, true, true)
 		// 	runtime.AdvocatePostTry(advocateIndex, false)
@@ -143,7 +143,7 @@ func (rw *RWMutex) TryRLock() bool {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetAdvocateObjectId()
+		rw.id = runtime.GetAdvocateObjectID()
 	}
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
 	// advocateIndex is used for AdvocatePostTry to find the pre event.
@@ -239,7 +239,7 @@ func (rw *RWMutex) Lock() {
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetAdvocateObjectId()
+				rw.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateMutexLockPre(rw.id, true, false)
 			runtime.BlockForever()
@@ -250,7 +250,7 @@ func (rw *RWMutex) Lock() {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetAdvocateObjectId()
+		rw.id = runtime.GetAdvocateObjectID()
 	}
 
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
@@ -293,7 +293,7 @@ func (rw *RWMutex) TryLock() bool {
 	if enabled {
 		if replayElem.Blocked {
 			if rw.id == 0 {
-				rw.id = runtime.GetAdvocateObjectId()
+				rw.id = runtime.GetAdvocateObjectID()
 			}
 			// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
 			// advocateIndex is used for AdvocatePostTry to find the pre event.
@@ -311,7 +311,7 @@ func (rw *RWMutex) TryLock() bool {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if rw.id == 0 {
-		rw.id = runtime.GetAdvocateObjectId()
+		rw.id = runtime.GetAdvocateObjectID()
 	}
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
 	// advocateIndex is used for AdvocatePostTry to find the pre event.

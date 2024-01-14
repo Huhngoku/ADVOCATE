@@ -75,7 +75,7 @@ func (wg *WaitGroup) Add(delta int) {
 	// is directly in it's functions. If the id of the wg is the default
 	// value, it is set to a new, unique object id
 	if wg.id == 0 {
-		wg.id = runtime.GetAdvocateObjectId()
+		wg.id = runtime.GetAdvocateObjectID()
 	}
 	// Record the add or done of a wait group in the routine's trace.
 	// If delta > 0, it is an add, if it's -1, it's a done.
@@ -130,7 +130,7 @@ func (wg *WaitGroup) Wait() {
 	if enabled {
 		if replayElem.Blocked {
 			if wg.id == 0 {
-				wg.id = runtime.GetAdvocateObjectId()
+				wg.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateWaitGroupWaitPre(wg.id)
 			runtime.BlockForever()
@@ -148,7 +148,7 @@ func (wg *WaitGroup) Wait() {
 	// is directly in it's functions. If the id of the wg is the default
 	// value, it is set to a new, unique object id
 	if wg.id == 0 {
-		wg.id = runtime.GetAdvocateObjectId()
+		wg.id = runtime.GetAdvocateObjectID()
 	}
 
 	// Record the wait of a wait group in the routine's trace.

@@ -72,7 +72,7 @@ func (o *Once) Do(f func()) {
 	if enabled {
 		if replayElem.Blocked {
 			if o.id == 0 {
-				o.id = runtime.GetAdvocateObjectId()
+				o.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateOncePre(o.id)
 			runtime.BlockForever()
@@ -80,7 +80,7 @@ func (o *Once) Do(f func()) {
 
 		// if !replayElem.Suc {
 		// 	if o.id == 0 {
-		// 		o.id = runtime.GetAdvocateObjectId()
+		// 		o.id = runtime.GetAdvocateObjectID()
 		// 	}
 		// 	index := runtime.AdvocateOncePre(o.id)
 		// 	runtime.AdvocateOncePost(index, false)
@@ -89,7 +89,7 @@ func (o *Once) Do(f func()) {
 	}
 	// ADVOCATE-CHANGE-END
 	if o.id == 0 {
-		o.id = runtime.GetAdvocateObjectId()
+		o.id = runtime.GetAdvocateObjectID()
 	}
 	index := runtime.AdvocateOncePre(o.id)
 	res := false

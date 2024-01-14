@@ -90,7 +90,7 @@ func (m *Mutex) Lock() {
 	defer runtime.ReplayDone()
 	if enabled {
 		if m.id == 0 {
-			m.id = runtime.GetAdvocateObjectId()
+			m.id = runtime.GetAdvocateObjectID()
 		}
 		if reaplayElem.Blocked {
 			_ = runtime.AdvocateMutexLockPre(m.id, false, false)
@@ -102,7 +102,7 @@ func (m *Mutex) Lock() {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id.
 	if m.id == 0 {
-		m.id = runtime.GetAdvocateObjectId()
+		m.id = runtime.GetAdvocateObjectID()
 	}
 
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
@@ -137,14 +137,14 @@ func (m *Mutex) TryLock() bool {
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {
-				m.id = runtime.GetAdvocateObjectId()
+				m.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateMutexLockTry(m.id, false, false)
 			runtime.BlockForever()
 		}
 		// if !replayElem.Suc {
 		// 	if m.id == 0 {
-		// 		m.id = runtime.GetAdvocateObjectId()
+		// 		m.id = runtime.GetAdvocateObjectID()
 		// 	}
 		// 	advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
 		// 	runtime.AdvocatePostTry(advocateIndex, false)
@@ -156,7 +156,7 @@ func (m *Mutex) TryLock() bool {
 	// is directly in the lock function. If the id of the channel is the default
 	// value, it is set to a new, unique object id
 	if m.id == 0 {
-		m.id = runtime.GetAdvocateObjectId()
+		m.id = runtime.GetAdvocateObjectID()
 	}
 
 	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
@@ -296,7 +296,7 @@ func (m *Mutex) Unlock() {
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {
-				m.id = runtime.GetAdvocateObjectId()
+				m.id = runtime.GetAdvocateObjectID()
 			}
 			_ = runtime.AdvocateUnlockPre(m.id, false, false)
 			runtime.BlockForever()

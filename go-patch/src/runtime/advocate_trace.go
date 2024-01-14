@@ -804,7 +804,7 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
 		return -1
 	}
 
-	id := GetAdvocateObjectId()
+	id := GetAdvocateObjectID()
 	caseElements := make([]advocateTraceChannelElement, len(*cases))
 	_, file, line, _ := Caller(2)
 
@@ -890,7 +890,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 		return -1
 	}
 
-	id := GetAdvocateObjectId()
+	id := GetAdvocateObjectID()
 	timer := GetAdvocateCounter()
 
 	opChan := opChanRecv

@@ -69,13 +69,16 @@ type ReplayElement struct {
 
 type AdvocateReplayTrace []ReplayElement
 
-var replayEnabled bool = false
+var replayEnabled bool
 var replayLock mutex
-var replayIndex int = 0
-var replayDone int = 0
+var replayIndex int
+var replayDone int
 var replayDoneLock mutex
 
-var replayData AdvocateReplayTrace = make(AdvocateReplayTrace, 0)
+var replayData = make(AdvocateReplayTrace, 0)
+var traceElementPositions = make(map[string][]int) // file -> []line
+
+var timeoutMessageCycle = 500 // approx. 10s
 
 func (t AdvocateReplayTrace) Print() {
 	for _, e := range t {
@@ -85,18 +88,58 @@ func (t AdvocateReplayTrace) Print() {
 
 func EnableReplay(trace AdvocateReplayTrace) {
 	replayData = trace
+
+	// extract and save positions
+	for _, e := range replayData {
+		if _, ok := traceElementPositions[e.File]; !ok {
+			traceElementPositions[e.File] = make([]int, 1)
+		}
+
+		if !containsInt(traceElementPositions[e.File], e.Line) {
+			traceElementPositions[e.File] = append(traceElementPositions[e.File], e.Line)
+		}
+	}
+
 	replayEnabled = true
 	// trace.Print()
 }
 
+/*
+ * Wait until all operations in the trace are executed.
+ * This function should be called after the main routine is finished, to prevent
+ * the program to terminate before the trace is finished.
+ */
 func WaitForReplayFinish() {
+	timeoutCounter := 0
 	for {
+		timeoutCounter++
 		lock(&replayDoneLock)
 		if replayDone >= len(replayData) {
 			unlock(&replayDoneLock)
 			break
 		}
 		unlock(&replayDoneLock)
+
+		// check for timeout
+		if timeoutCounter%timeoutMessageCycle == 0 {
+			waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
+			warningMessage := "\nReplayWarning: Long wait time for finishing replay."
+			warningMessage += "The main routine has already finished approx. "
+			warningMessage += waitTime
+			warningMessage += "s ago, but the trace still contains not executed operations.\n"
+			warningMessage += "This can be caused by a stuck replay.\n"
+			warningMessage += "Possible causes are:\n"
+			warningMessage += "    - The program was altered between recording and replay\n"
+			warningMessage += "    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n"
+			warningMessage += "    - The program execution path depends on the order of not tracked operations\n"
+			warningMessage += "    - The program execution depends on outside input, that was not exactly reproduced\n"
+			warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
+			warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
+			warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
+			warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+		}
+
+		slowExecution()
 	}
 }
 
@@ -175,6 +218,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	}
 
 	// println("WaitForReplayPath", op, file, line)
+	timeoutCounter := 0
 	for {
 		next := getNextReplayElement()
 		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
@@ -182,7 +226,10 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
-				// TODO: sleep here to not waste CPU
+				timeoutCounter++
+
+				checkForTimeout(timeoutCounter, file, line)
+				slowExecution()
 				continue
 			}
 		}
@@ -193,6 +240,77 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		// println("Replay: ", next.Time, op, file, line)
 		return true, next
 	}
+}
+
+/*
+ * At specified timeoutCounter values, do some checks or messages.
+ * At the first timeout, check if the position is in the trace.
+ * At following timeouts, print a warning message.
+ * At the last timeout, panic.
+ * Args:
+ * 	timeoutCounter: the current timeout counter
+ * 	file: file in which the operation is executed
+ * 	line: line number of the operation
+ */
+func checkForTimeout(timeoutCounter int, file string, line int) bool {
+	messageCauses := "Possible causes are:\n"
+	messageCauses += "    - The program was altered between recording and replay\n"
+	messageCauses += "    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n"
+	messageCauses += "    - The program execution path depends on the order of not tracked operations\n"
+	messageCauses += "    - The program execution depends on outside input, that was not exactly reproduced\n"
+
+	if timeoutCounter == 250 { // ca. 5s
+		res := isPositionInTrace(file, line)
+		if !res {
+			errorMessage := "ReplayError: Program tried to execute an operation that is not in the trace:\n"
+			errorMessage += "    File: " + file + "\n"
+			errorMessage += "    Line: " + intToString(line) + "\n"
+			errorMessage += "This means, that the program replay was not successful.\n"
+			errorMessage += messageCauses
+			errorMessage += "If you suspect, that one of these causes is the reason for the error, you can try to change the program to avoid the problem.\n"
+			errorMessage += "If this is not possible, you can try to rerun the replay, hoping the error does not occur again.\n"
+			errorMessage += "If this is not possible or does not work, the program replay is currently not possible.\n\n"
+
+			panic(errorMessage)
+		}
+	} else if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 10s
+		waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
+		warningMessage := "\nReplayWarning: Long wait time of approx. "
+		warningMessage += waitTime + "s.\n"
+		warningMessage += "The following operation is taking a long time to execute:\n"
+		warningMessage += "    File: " + file + "\n"
+		warningMessage += "    Line: " + intToString(line) + "\n"
+		warningMessage += "This can be caused by a stuck replay.\n"
+		warningMessage += messageCauses
+		warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
+		warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
+		warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
+		warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+
+		println(warningMessage)
+	}
+
+	return false
+}
+
+/*
+ * Check if the position is in the trace.
+ * Args:
+ * 	file: file in which the operation is executed
+ * 	line: line number of the operation
+ * Return:
+ * 	bool: true if the position is in the trace, false otherwise
+ */
+func isPositionInTrace(file string, line int) bool {
+	if _, ok := traceElementPositions[file]; !ok {
+		return false
+	}
+
+	if !containsInt(traceElementPositions[file], line) {
+		return false
+	}
+
+	return true
 }
 
 /*

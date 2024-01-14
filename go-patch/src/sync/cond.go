@@ -73,7 +73,7 @@ func NewCond(l Locker) *Cond {
 func (c *Cond) Wait() {
 	// ADVOCATE-CHANGE-START
 	if c.id == 0 {
-		c.id = runtime.GetAdvocateObjectId()
+		c.id = runtime.GetAdvocateObjectID()
 	}
 	advocateIndex := runtime.AdvocateCondPre(c.id, 0)
 	defer runtime.AdvocateCondPost(advocateIndex)
@@ -95,7 +95,7 @@ func (c *Cond) Wait() {
 func (c *Cond) Signal() {
 	// ADVOCATE-CHANGE-START
 	if c.id == 0 {
-		c.id = runtime.GetAdvocateObjectId()
+		c.id = runtime.GetAdvocateObjectID()
 	}
 	advocateIndex := runtime.AdvocateCondPre(c.id, 1)
 	defer runtime.AdvocateCondPost(advocateIndex)
@@ -111,7 +111,7 @@ func (c *Cond) Signal() {
 func (c *Cond) Broadcast() {
 	// ADVOCATE-CHANGE-START
 	if c.id == 0 {
-		c.id = runtime.GetAdvocateObjectId()
+		c.id = runtime.GetAdvocateObjectID()
 	}
 	advocateIndex := runtime.AdvocateCondPre(c.id, 2)
 	defer runtime.AdvocateCondPost(advocateIndex)

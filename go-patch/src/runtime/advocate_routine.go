@@ -22,7 +22,7 @@ type AdvocateRoutine struct {
  * 	the new advocate routine
  */
 func newAdvocateRoutine(g *g) *AdvocateRoutine {
-	routine := &AdvocateRoutine{id: GetAdvocateRoutineId(), G: g,
+	routine := &AdvocateRoutine{id: GetAdvocateRoutineID(), G: g,
 		Trace: make([]advocateTraceElement, 0),
 		lock:  &mutex{}}
 

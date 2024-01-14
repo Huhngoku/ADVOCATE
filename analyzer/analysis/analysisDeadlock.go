@@ -14,6 +14,7 @@ type lockGraphNode struct {
 	rLock    bool             // true if the lock was a read lock
 	children []*lockGraphNode // children of the node
 	outside  []*lockGraphNode // nodes with the same lock ID that are in the tree of another routine
+	vc       VectorClock      // vector clock of the node, is equal to the vector clock of the lock event
 	parent   *lockGraphNode   // parent of the node
 	visited  map[int]struct{} // map to store the routine, for which the node was already visited when starting the DFS from the routines lock tree root
 }
@@ -33,9 +34,11 @@ func newLockGraph(routine int) *lockGraphNode {
  *   childID (int): The id of the child
  *   childRw (bool): True if the child is a read-write lock
  *   childRLock (bool): True if the child is a read lock
+ *   vc (VectorClock): The vector clock of the childs lock operation
  */
-func (node *lockGraphNode) addChild(childID int, childRw bool, childRLock bool) *lockGraphNode {
-	child := &lockGraphNode{id: childID, parent: node, rw: childRw, rLock: childRLock, routine: node.routine}
+func (node *lockGraphNode) addChild(childID int, childRw bool, childRLock bool, vc VectorClock) *lockGraphNode {
+	child := &lockGraphNode{id: childID, parent: node, rw: childRw,
+		rLock: childRLock, routine: node.routine, vc: vc}
 	node.children = append(node.children, child)
 	return node.children[len(node.children)-1]
 }
@@ -96,8 +99,11 @@ var nodesPerID = make(map[int]map[int][]*lockGraphNode) // id -> routine -> []*l
  * Args:
  *   id (int): The id of the lock
  *   routine (int): The id of the routine
+ *   rw (bool): True if the lock is a read-write lock
+ *   rLock (bool): True if the lock is a read lock
+ *   vc (VectorClock): The vector clock of the lock event
  */
-func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool) {
+func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc VectorClock) {
 	// create new lock tree if it does not exist yet
 	if _, ok := lockGraphs[routine]; !ok {
 		lockGraphs[routine] = newLockGraph(routine)
@@ -114,7 +120,7 @@ func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool) {
 
 	// add the lock element to the lock tree
 	// update the current lock
-	node := currentNode[routine][len(currentNode[routine])-1].addChild(id, rw, rLock)
+	node := currentNode[routine][len(currentNode[routine])-1].addChild(id, rw, rLock, vc.Copy())
 	currentNode[routine] = append(currentNode[routine], node)
 	nodesPerID[id][routine] = append(nodesPerID[id][routine], node)
 }
@@ -148,10 +154,11 @@ func CheckForCyclicDeadlock() {
 		return
 	}
 
-	// remove duplicate cycles, is that necessary
-	removeDuplicates(cycles)
+	// remove duplicate cycles
+	cycles = removeDuplicates(cycles)
 
 	for _, cycle := range cycles {
+		// check if the cycle can create a deadlock
 		res := isCycleDeadlock(cycle)
 		if res {
 			// TODO: log the cycle
@@ -282,9 +289,11 @@ func isInCurrentPath(node *lockGraphNode, currentPath *([]*lockGraphNode)) (bool
  *   e.g. [1,2,3,4] and [2,3,4] are the same cycle)
  * Args:
  *   cycles ([][]*lockGraphNode): The cycles to remove duplicates from
+ * Returns:
+ *   ([][]*lockGraphNode): The cycles without duplicates
  * TODO: does not work yet
  */
-func removeDuplicates(cycles [][]*lockGraphNode) {
+func removeDuplicates(cycles [][]*lockGraphNode) [][]*lockGraphNode {
 	// remove cyclic permutations (same cycle but different starting point)
 	for i := 0; i < len(cycles); i++ {
 		for j := i + 1; j < len(cycles); j++ {
@@ -293,21 +302,24 @@ func removeDuplicates(cycles [][]*lockGraphNode) {
 					cycles = append(cycles[:j], cycles[j+1:]...)
 					j--
 				}
-			} else {
-				if len(cycles[i]) > len(cycles[j]) {
-					if isSubCycle(cycles[i], cycles[j]) {
-						cycles = append(cycles[:j], cycles[j+1:]...)
-						j--
-					}
-				} else {
-					if isSubCycle(cycles[j], cycles[i]) {
-						cycles = append(cycles[:i], cycles[i+1:]...)
-						j = i
-					}
-				}
 			}
+			// TODO: add back in when subcycles work
+			// else {
+			// 	if len(cycles[i]) > len(cycles[j]) {
+			// 		if isSubCycle(cycles[i], cycles[j]) {
+			// 			cycles = append(cycles[:j], cycles[j+1:]...)
+			// 			j--
+			// 		}
+			// 	} else {
+			// 		if isSubCycle(cycles[j], cycles[i]) {
+			// 			cycles = append(cycles[:i], cycles[i+1:]...)
+			// 			j = i
+			// 		}
+			// 	}
+			// }
 		}
 	}
+	return cycles
 }
 
 /*
@@ -335,8 +347,8 @@ func isCyclicPermutation(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool 
 
 /*
 * Check if the cycle2 is a subcycle of cycle1
-* This is the case, if we can remove nodes from cycle1 to get cycle2, while
-* keeping the order of the nodes the same.
+* This is the case, if we can remove nodes from cycle1 to get a cyclic
+* permutation of cycle2, keeping the order of the nodes the same.
 * The function assumes, that cycle1 is longer than cycle2.
 * Args:
 *   cycle1 ([]*lockGraphNode): The longer cycle
@@ -344,21 +356,27 @@ func isCyclicPermutation(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool 
 * Returns:
 *   (bool): True if cycle2 is a subcycle of cycle1
  */
-func isSubCycle(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool {
-	j := 0
-	for i := 0; i < len(cycle1); i++ {
-		if cycle1[i] == cycle2[j] {
-			j++
-			if j == len(cycle2) {
-				return true
-			}
-		}
-	}
-	return false
-}
+// func isSubCycle(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool {
+// 	j := 0
+// 	for i := 0; i < len(cycle1); i++ {
+// 		if cycle1[i] == cycle2[j] {
+// 			j++
+// 			if j == len(cycle2) {
+// 				return true
+// 			}
+// 		}
+// 	}
+// 	return false
+// }
 
 /*
  * Check if a cycle can create a deadlock
+ * It can not be a deadlock, if at least on of the following is false:
+ * - the cycle consists of more than one different lock (R1)
+ * - the lock operations in the cycle for different routines are concurrent (R2)
+ * - TODO: 5.3.d
+ * - TODO: 5.3.e
+ * - TODO: 5.3.f
  * Args:
  *   cycle ([]*lockGraphNode): The cycle to check
  * Returns:
@@ -366,6 +384,26 @@ func isSubCycle(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool {
  */
 func isCycleDeadlock(cycle []*lockGraphNode) bool {
 	// does the cycle consists of more than one different lock? (R1)
+	if !isCycleMoreThanOneMutex(cycle) {
+		return false
+	}
+
+	// are the lock operation int the cycle for different routines concurrent? (R2)
+	if !isCycleConcurrent(cycle) {
+		return false
+	}
+
+	return true
+}
+
+/*
+ * Check if the cycle consists of more than one different lock
+ * Args:
+ *   cycle ([]*lockGraphNode): The cycle to check
+ * Returns:
+ *   (bool): True if the cycle consists of more than one different lock
+ */
+func isCycleMoreThanOneMutex(cycle []*lockGraphNode) bool {
 	moreThanOneMutexIndex := -1
 	moreThanOneMutexBool := false
 
@@ -378,4 +416,27 @@ func isCycleDeadlock(cycle []*lockGraphNode) bool {
 	}
 
 	return moreThanOneMutexBool
+}
+
+/*
+ * Check if all lock operations in the cycle are concurrent
+ * Args:
+ *   cycle ([]*lockGraphNode): The cycle to check
+ * Returns:
+ *   (bool): True if all lock operations in the cycle are concurrent
+ */
+func isCycleConcurrent(cycle []*lockGraphNode) bool {
+	for i := 0; i < len(cycle); i++ {
+		for j := i + 1; j < len(cycle); j++ {
+			if cycle[i].routine == cycle[j].routine {
+				continue
+			}
+
+			happensBefore := GetHappensBefore(cycle[i].vc, cycle[j].vc)
+			if happensBefore != Concurrent {
+				return false
+			}
+		}
+	}
+	return true
 }
