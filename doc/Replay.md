@@ -222,3 +222,83 @@ select {
 }
 ```
 this will still select one of this cases by random. To make sure, that those select statements will also be replayed correctly, we use the internal index `casi` for the cases, used in the implementation of the select statement. This case is not identical to the ordering of the select cases but is still deterministic. For this reason it is possible to use this index as an identifier for a specific case. From this, when the select determines, if a select case is usable, we reject every case, for which the index is not correct.
+
+## Timeout
+
+For multiple reasons, including 
+- nondeterministic execution paths, e.g. if the execution path depends on random numbers
+- the program execution path depends on the order of not tracked operations
+- the program execution pats depends on outside input, that has not been reproduced exactly
+- the program was altered between recording and replay
+- the trace/replay mechanism can contain bugs (hopefully not)
+
+the replay can get stuck. In this case, the replay is waiting at an event, 
+that is not in trace, or is waiting for a trace element, that is not part of 
+the current execution path. 
+
+One example would be the following program
+```go
+package main
+
+import( 
+    "math/rand"
+)
+
+func main() {
+	c := make(chan int)
+	d := make(chan int)
+
+    rand.Seed(time.Now().UnixNano())
+    r := rand.Float64()
+
+	if r >= 0.5 {
+		close(c)
+	}
+
+	close(d)
+}
+
+```
+
+### Element is not in trace
+If in the recording run `r < 0.5`, meaning `close(c)` was not
+executed, but in the replay run `r > 0.5`, meaning the program will try to
+execute `close(c)`, the program will get stuck, because `close(c)` is
+not in the trace.
+
+To detect this, we record the positions of all possible events in the trace in a
+`map[string][]int` (file -> []line) when reading the trace.
+If a waiting element has not been executed after a certain time (approx 5s),
+it is checked, if the position of the waiting element is somewhere in the
+trace using the map. If it is not, the program determines, that a different path than in the recording is being executed and the program panics.
+
+### Additional elements in trace
+If we assume the opposite case, that `r > 0.5` during the recording, meaning
+`close(c)` was executed and recorded, but in the replay it is not, the
+replay will wait at `close(d)` indefinitely, because it assumes, that `close(c)`
+has to be executed before. To detect such cases, we approximate how long
+a operation is already waiting. If this wait time exceeds approx. 10s, the
+program will print a warning to the user. This warning will be repeated every
+10s. In this case the user can decide, whether they want to cancel the program
+execution, or continue letting it run, hoping the execution will resume.
+
+### Additional time after finishing main routine
+In a normal program run, the program is terminated as soon as the main 
+routine terminates, even if other routines are still running. To prevent recorded 
+trace elements in other routines from not being replayed, the replay stops
+the main routine from terminating before all trace elements have been replayed.
+If the wait time after the main routine has terminated exceeds approx. 10s, 
+the program will also print a warning. In this case it is again the decision of
+the user, whether they want to terminate the program or continue its execution, 
+hoping it will resume.
+
+### Measuring time
+Unfortunately it is not possible to use the time package in the replay (leads
+to cyclic import). For this reason, the elapsed time must be approximated
+in a different way. A waiting operation uses a loop in a go routine, to check
+periodically whether it is the next element to be played. After the check, it
+waits for a short time by running an empty counting loop. The waiting time
+is approximated by counting the number of checks (approx. 50 checks per second).
+This means, that the actual waiting time is dependent on the execution speed
+of the computer. Because the length of the waiting time is not really important,
+this works, but it is not an accurate measure of time.
