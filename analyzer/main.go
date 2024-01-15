@@ -21,6 +21,7 @@ func main() {
 		"result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results")
 	bugIndex := flag.Int("i", -1, "Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based")
 	ignoreCriticalSection := flag.Bool("c", false, "Ignore happens before relations of critical sections (default false)")
+	noRewrite := flag.Bool("x", false, "Do not ask to create a reordered trace file after the analysis (default false)")
 	flag.Parse()
 
 	if *pathTrace == "" {
@@ -55,7 +56,7 @@ func main() {
 
 	numberOfResults := logging.PrintSummary()
 
-	if numberOfResults != 0 {
+	if numberOfResults != 0 && !*noRewrite {
 		fmt.Println("\n\n\n")
 		fmt.Print("Do you want to create a reordered trace file? (y/n): ")
 

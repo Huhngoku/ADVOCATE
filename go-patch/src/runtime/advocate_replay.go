@@ -30,6 +30,10 @@ const (
 	AdvocateReplaySelectCase
 	AdvocateReplaySelectDefault
 
+	AdvocateReplayCondSignal
+	AdvocateReplayCondBroadcast
+	AdvocateReplayCondWait
+
 	// AdvocateReplayAtomicLoad
 	// AdvocateReplayAtomicStore
 	// AdvocateReplayAtomicAdd
@@ -221,7 +225,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	timeoutCounter := 0
 	for {
 		next := getNextReplayElement()
-		// print("Replay: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+		print("Replay1: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
 
 		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
@@ -237,7 +241,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		lock(&replayLock)
 		replayIndex++
 		unlock(&replayLock)
-		// println("Replay: ", next.Time, op, file, line)
+		println("Replay: ", next.Time, op, file, line)
 		return true, next
 	}
 }

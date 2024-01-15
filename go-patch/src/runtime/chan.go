@@ -915,7 +915,7 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 		res := chansend(c, elem, false, getcallerpc(), true)
 		lock(&c.numberSendMutex)
 		defer unlock(&c.numberSendMutex)
-		AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberSend)
+		AdvocateSelectPostOneNonDef(advocateIndex, res, c)
 		return res
 	}
 	return chansend(c, elem, false, getcallerpc(), false)
@@ -965,7 +965,7 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 		res, recv := chanrecv(c, elem, false, true)
 		lock(&c.numberRecvMutex)
 		defer unlock(&c.numberRecvMutex)
-		AdvocateSelectPostOneNonDef(advocateIndex, res, c.numberRecv)
+		AdvocateSelectPostOneNonDef(advocateIndex, res, c)
 		return res, recv
 	}
 

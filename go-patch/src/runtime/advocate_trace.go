@@ -856,14 +856,9 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 	} else {
 		elem.cases[chosenIndex].tPost = timer
 		elem.cases[chosenIndex].closed = rClosed
-		send := false
-		if elem.cases[chosenIndex].op == opChanSend {
-			send = true
-		} else if elem.cases[chosenIndex].op == opChanRecv {
-			send = false
-		}
+
 		// set oId
-		if send {
+		if elem.cases[chosenIndex].op == opChanSend {
 			c.numberSend++
 			elem.cases[chosenIndex].opId = c.numberSend
 		} else {
@@ -919,7 +914,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
  * 	index: index of the operation in the trace
  * 	res: 0 for the non-default case, -1 for the default case
  */
-func AdvocateSelectPostOneNonDef(index int, res bool, oId uint64) {
+func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	if index == -1 {
 		return
 	}
@@ -930,7 +925,13 @@ func AdvocateSelectPostOneNonDef(index int, res bool, oId uint64) {
 	if res {
 		elem.chosen = 0
 		elem.cases[0].tPost = timer
-		elem.cases[0].opId = oId
+		if elem.cases[0].op == opChanSend {
+			c.numberSend++
+			elem.cases[0].opId = c.numberSend
+		} else {
+			c.numberRecv++
+			elem.cases[0].opId = c.numberRecv
+		}
 	} else {
 		elem.chosen = -1
 		elem.defaSel = true
