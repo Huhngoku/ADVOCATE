@@ -133,6 +133,9 @@ func processElement(element string, routine int) {
 	case "O":
 		err = trace.AddTraceElementOnce(routine, fields[1], fields[2], fields[3],
 			fields[4], fields[5])
+	case "N":
+		err = trace.AddTraceElementCond(routine, fields[1], fields[2], fields[3],
+			fields[4], fields[5])
 	default:
 		panic("Unknown element type in: " + element)
 	}

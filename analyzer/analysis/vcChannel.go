@@ -69,6 +69,9 @@ func Send(rout int, id int, oID int, size int, pos string,
 
 	count := bufferedVCsCount[id]
 
+	if id == 42 {
+		println("SEND: ", id, len(bufferedVCs[id]))
+	}
 	if count > size || bufferedVCs[id][count].occupied {
 		logging.Debug("Write to occupied buffer position or to big count", logging.ERROR)
 	}
@@ -106,7 +109,6 @@ func Send(rout int, id int, oID int, size int, pos string,
  */
 func Recv(rout int, id int, oID, size int, pos string, vc map[int]VectorClock, fifo bool) {
 	newBufferedVCs(id, size, vc[rout].size)
-
 	checkForConcurrentRecv(rout, id, pos, vc)
 
 	if bufferedVCsCount[id] == 0 {
@@ -115,7 +117,19 @@ func Recv(rout int, id int, oID, size int, pos string, vc map[int]VectorClock, f
 	bufferedVCsCount[id]--
 
 	if bufferedVCs[id][0].oId != oID {
-		logging.Debug("Read operation on wrong buffer position", logging.ERROR)
+		found := false
+		for i := 1; i < size; i++ {
+			if bufferedVCs[id][i].oId == oID {
+				found = true
+				bufferedVCs[id][0] = bufferedVCs[id][i]
+				bufferedVCs[id][i] = bufferedVC{false, 0, vc[rout].Copy()}
+				break
+			}
+		}
+		if !found {
+			err := "Read operation on wrong buffer position - ID: " + strconv.Itoa(id) + ", OID: " + strconv.Itoa(oID) + ", SIZE: " + strconv.Itoa(size)
+			logging.Debug(err, logging.ERROR)
+		}
 	}
 	v := bufferedVCs[id][0].vc
 

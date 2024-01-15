@@ -145,7 +145,7 @@ func AnalysisDeadlockMutexUnLock(id int, routine int) {
  * If there are cycles, log the results
  */
 func CheckForCyclicDeadlock() {
-	printTrees()
+	// printTrees()
 
 	findOutsideConnections()
 	found, cycles := findCycles() // find all cycles in the lock graph
