@@ -122,7 +122,7 @@ func (c *Cond) Broadcast() {
 		c.id = runtime.GetAdvocateObjectID()
 	}
 	// replay
-	_, _ := runtime.WaitForReplay(runtime.AdvocateReplayCondBroadcast, 2)
+	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayCondBroadcast, 2)
 	defer runtime.ReplayDone()
 	//recording
 	advocateIndex := runtime.AdvocateCondPre(c.id, 2)
