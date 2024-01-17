@@ -69,9 +69,10 @@ func Send(rout int, id int, oID int, size int, pos string,
 
 	count := bufferedVCsCount[id]
 
-	if id == 42 {
-		println("SEND: ", id, len(bufferedVCs[id]))
+	if len(bufferedVCs[id]) <= count {
+		panic("BufferedVCsCount is bigger than the buffer size")
 	}
+
 	if count > size || bufferedVCs[id][count].occupied {
 		logging.Debug("Write to occupied buffer position or to big count", logging.ERROR)
 	}

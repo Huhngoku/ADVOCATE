@@ -42,6 +42,66 @@ const (
 )
 
 /*
+ * String representation of the replay operation.
+ * Return:
+ * 	string: string representation of the replay operation
+ */
+func (ro ReplayOperation) ToString() string {
+	switch ro {
+	case AdvocateNone:
+		return "AdvocateNone"
+	case AdvocateReplaySpawn:
+		return "AdvocateReplaySpawn"
+	case AdvocateReplaySpawned:
+		return "AdvocateReplaySpawned"
+	case AdvocateReplayChannelSend:
+		return "AdvocateReplayChannelSend"
+	case AdvocateReplayChannelRecv:
+		return "AdvocateReplayChannelRecv"
+	case AdvocateReplayChannelClose:
+		return "AdvocateReplayChannelClose"
+	case AdvocateReplayMutexLock:
+		return "AdvocateReplayMutexLock"
+	case AdvocateReplayMutexUnlock:
+		return "AdvocateReplayMutexUnlock"
+	case AdvocateReplayMutexTryLock:
+		return "AdvocateReplayMutexTryLock"
+	case AdvocateReplayRWMutexLock:
+		return "AdvocateReplayRWMutexLock"
+	case AdvocateReplayRWMutexUnlock:
+		return "AdvocateReplayRWMutexUnlock"
+	case AdvocateReplayRWMutexTryLock:
+		return "AdvocateReplayRWMutexTryLock"
+	case AdvocateReplayRWMutexRLock:
+		return "AdvocateReplayRWMutexRLock"
+	case AdvocateReplayRWMutexRUnlock:
+		return "AdvocateReplayRWMutexRUnlock"
+	case AdvocateReplayRWMutexTryRLock:
+		return "AdvocateReplayRWMutexTryRLock"
+	case AdvocateReplayOnce:
+		return "AdvocateReplayOnce"
+	case AdvocateReplayWaitgroupAddDone:
+		return "AdvocateReplayWaitgroupAddDone"
+	case AdvocateReplayWaitgroupWait:
+		return "AdvocateReplayWaitgroupWait"
+	case AdvocateReplaySelect:
+		return "AdvocateReplaySelect"
+	case AdvocateReplaySelectCase:
+		return "AdvocateReplaySelectCase"
+	case AdvocateReplaySelectDefault:
+		return "AdvocateReplaySelectDefault"
+	case AdvocateReplayCondSignal:
+		return "AdvocateReplayCondSignal"
+	case AdvocateReplayCondBroadcast:
+		return "AdvocateReplayCondBroadcast"
+	case AdvocateReplayCondWait:
+		return "AdvocateReplayCondWait"
+	default:
+		return "Unknown"
+	}
+}
+
+/*
  * The replay data structure.
  * The replay data structure is used to store the trace of the program.
  * op: identifier of the operation
@@ -79,6 +139,8 @@ var replayIndex int
 var replayDone int
 var replayDoneLock mutex
 
+var timeoutLock mutex
+
 var replayData = make(AdvocateReplayTrace, 0)
 var traceElementPositions = make(map[string][]int) // file -> []line
 
@@ -86,7 +148,7 @@ var timeoutMessageCycle = 500 // approx. 10s
 
 func (t AdvocateReplayTrace) Print() {
 	for _, e := range t {
-		println(e.Op, e.Time, e.File, e.Line, e.Blocked, e.Suc)
+		println(e.Op.ToString(), e.Time, e.File, e.Line, e.Blocked, e.Suc)
 	}
 }
 
@@ -104,8 +166,12 @@ func EnableReplay(trace AdvocateReplayTrace) {
 		}
 	}
 
+	// run a background routine to check for timeout if no operation is executed
+	go checkForTimeoutNoOperation()
+
 	replayEnabled = true
-	// trace.Print()
+	trace.Print()
+	println("Replay enabled\n")
 }
 
 /*
@@ -225,11 +291,13 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	timeoutCounter := 0
 	for {
 		next := getNextReplayElement()
-		print("Replay1: ", next.Time, " ", next.Op, " ", op, " ", next.File, " ", file, " ", next.Line, " ", line, "\n")
+		print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
+			"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
 
 		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
+				println("Continue")
 				timeoutCounter++
 
 				checkForTimeout(timeoutCounter, file, line)
@@ -238,10 +306,17 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 			}
 		}
 
+		// update replay index
 		lock(&replayLock)
 		replayIndex++
 		unlock(&replayLock)
-		println("Replay: ", next.Time, op, file, line)
+
+		// reset timeout counter
+		lock(&timeoutLock)
+		timeoutCounter = 0
+		unlock(&timeoutLock)
+
+		println("Replay Run : ", next.Time, op, file, line)
 		return true, next
 	}
 }
@@ -295,6 +370,36 @@ func checkForTimeout(timeoutCounter int, file string, line int) bool {
 	}
 
 	return false
+}
+
+func checkForTimeoutNoOperation() {
+	timeoutCounter := 0
+	waitTime := 500 // approx. 10s
+	warningMessage := "No traced operation has been executed for approx. 10s.\n"
+	warningMessage += "This can be caused by a stuck replay.\n"
+	warningMessage += "Possible causes are:\n"
+	warningMessage += "    - The program was altered between recording and replay\n"
+	warningMessage += "    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n"
+	warningMessage += "    - The program execution path depends on the order of not tracked operations\n"
+	warningMessage += "    - The program execution depends on outside input, that was not exactly reproduced\n"
+	warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
+	warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
+	warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
+	warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+
+	for {
+		lock(&timeoutLock)
+		timeoutCounter++
+		if timeoutCounter%waitTime == 0 {
+			message := "\nReplayWarning: Long wait time of approx. "
+			message += intToString(int(10*timeoutCounter/waitTime)) + "s.\n"
+			message += warningMessage
+
+			println(message)
+		}
+		unlock(&timeoutLock)
+		slowExecution()
+	}
 }
 
 /*
