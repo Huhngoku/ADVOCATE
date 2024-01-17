@@ -10,6 +10,7 @@ type TraceElement interface {
 	SetTsortWithoutNotExecuted(tsort int)
 	GetRoutine() int
 	GetPos() string
+	GetTID() string
 	ToString() string
 	updateVectorClock()
 }

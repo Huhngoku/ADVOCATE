@@ -32,6 +32,7 @@ const (
  *   opM (opMutex): The operation on the mutex
  *   suc (bool): Whether the operation was successful (only for trylock else always true)
  *   pos (string): The position of the mutex operation in the code
+ *   tID (string): The id of the trace element, contains the position and the tpre
  *   partner (*TraceElementMutex): The partner of the mutex operation
  */
 type TraceElementMutex struct {
@@ -43,6 +44,7 @@ type TraceElementMutex struct {
 	opM     opMutex
 	suc     bool
 	pos     string
+	tID     string
 	partner *TraceElementMutex
 }
 
@@ -104,6 +106,8 @@ func AddTraceElementMutex(routine int, tPre string,
 		return errors.New("suc is not a boolean")
 	}
 
+	tIDStr := pos + "@" + strconv.Itoa(tPreInt)
+
 	elem := TraceElementMutex{
 		routine: routine,
 		tPre:    tPreInt,
@@ -112,7 +116,9 @@ func AddTraceElementMutex(routine int, tPre string,
 		rw:      rwBool,
 		opM:     opMInt,
 		suc:     sucBool,
-		pos:     pos}
+		pos:     pos,
+		tID:     tIDStr,
+	}
 
 	return addElementToTrace(&elem)
 }
@@ -173,6 +179,15 @@ func (mu *TraceElementMutex) GetTSort() int {
  */
 func (mu *TraceElementMutex) GetPos() string {
 	return mu.pos
+}
+
+/*
+ * Get the tID of the element.
+ * Returns:
+ *   string: The tID of the element
+ */
+func (mu *TraceElementMutex) GetTID() string {
+	return mu.tID
 }
 
 /*

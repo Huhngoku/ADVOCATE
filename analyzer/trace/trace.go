@@ -83,21 +83,21 @@ func GetTraces() *map[int][]TraceElement {
  * Given the file and line info, return the routine and index of the element
  * in trace.
  * Args:
- *   pos (string): The position of the element
+ *   tID (string): The tID of the element
  * Returns:
  *   error: An error if the element does not exist
  *   int: The routine of the element
  *   int: The index of the element in the trace of the routine
  */
-func GetTraceElementFromPos(pos string) (*TraceElement, error) {
+func GetTraceElementFromTID(tID string) (*TraceElement, error) {
 	for routine, trace := range traces {
 		for index, elem := range trace {
-			if elem.GetPos() == pos {
+			if elem.GetTID() == tID {
 				return &traces[routine][index], nil
 			}
 		}
 	}
-	return nil, errors.New("Element " + pos + " does not exist")
+	return nil, errors.New("Element " + tID + " does not exist")
 }
 
 /*

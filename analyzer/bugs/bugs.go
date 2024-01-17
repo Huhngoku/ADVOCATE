@@ -17,7 +17,7 @@ const (
 type Bug struct {
 	Type          BugType
 	TraceElement1 *trace.TraceElement
-	Pos1          string
+	tID1          string
 	TraceElement2 []*trace.TraceElement
 	Pos2          []string
 }
@@ -47,7 +47,7 @@ func (b Bug) ToString() string {
 	default:
 		panic("Unknown bug type: " + strconv.Itoa(int(b.Type)))
 	}
-	res := typeStr + "\n\t" + arg1Str + b.Pos1 +
+	res := typeStr + "\n\t" + arg1Str + b.tID1 +
 		"\n\t" + arg2Str
 	for i, pos := range b.Pos2 {
 		if i != 0 {
@@ -93,8 +93,8 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 		panic("Unknown bug type: " + typeStr)
 	}
 
-	bug.Pos1 = strings.Split(arg1, ": ")[1]
-	elem, err := trace.GetTraceElementFromPos(bug.Pos1)
+	bug.tID1 = strings.Split(arg1, ": ")[1]
+	elem, err := trace.GetTraceElementFromTID(bug.tID1)
 	if err != nil {
 		panic("Error: " + err.Error())
 	}
@@ -104,13 +104,13 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 	bug.Pos2 = make([]string, 1)
 
 	elems := strings.Split(arg2, ": ")[1]
-	for _, pos := range strings.Split(elems, ";") {
-		elem, err = trace.GetTraceElementFromPos(pos)
+	for _, tID := range strings.Split(elems, ";") {
+		elem, err = trace.GetTraceElementFromTID(tID)
 		if err != nil {
 			println("Error: " + err.Error())
 		}
 		bug.TraceElement2 = append(bug.TraceElement2, elem)
-		bug.Pos2 = append(bug.Pos2, pos)
+		bug.Pos2 = append(bug.Pos2, tID)
 	}
 
 	// bug.Println()

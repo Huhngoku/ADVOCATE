@@ -110,7 +110,8 @@ func CheckForDoneBeforeAdd() {
 				}
 				// count the number of done operations d that happen before the done operation
 				countDone := 0
-				donePosList := []string{}
+				donePosListConc := []string{}
+				donePosListBefore := []string{}
 				for routine2, vcs := range doneVcs[id] { // for all routines
 					for op2, vcDone2 := range vcs { // for all done operations
 						if routine2 == routine && op2 == op {
@@ -119,30 +120,33 @@ func CheckForDoneBeforeAdd() {
 						happensBefore := GetHappensBefore(vcDone2, vcDone)
 						if happensBefore == Before {
 							countDone++
+							donePosListBefore = append(donePosListBefore, donePos[id][routine2][op2])
 						} else if happensBefore == Concurrent {
 							countDone++
-							donePosList = append(donePosList, donePos[id][routine2][op2])
+							donePosListConc = append(donePosListConc, donePos[id][routine2][op2])
 						}
 					}
 				}
 
 				if countAdd < countDone {
-					createDoneBeforeAddMessage(id, routine, op, addPosList, donePosList)
+					createDoneBeforeAddMessage(id, routine, op, addPosList, donePosListConc, donePosListBefore)
 				}
 			}
 		}
 	}
 }
 
-func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string, donePosList []string) {
+func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string, donePosListConc []string, donePosListBefore []string) {
 	uniquePos := make(map[string]bool)
 	sort.Strings(addPosList)
-	sort.Strings(donePosList)
+	sort.Strings(donePosListConc)
+	sort.Strings(donePosListBefore)
 
 	found := "Possible negative waitgroup counter:\n"
 	found += "\tdone: " + donePos[id][routine][op] + "\n"
 	found += "\tdone/add: "
-	for i, pos := range donePosList {
+
+	for i, pos := range donePosListConc {
 		if uniquePos[pos] {
 			continue
 		}
@@ -152,7 +156,26 @@ func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string
 		found += pos
 		uniquePos[pos] = true
 	}
-	found += ";"
+
+	if len(donePosListConc) > 0 && (len(donePosListBefore) > 0 || len(addPosList) > 0) {
+		found += ";"
+	}
+
+	for i, pos := range donePosListBefore {
+		if uniquePos[pos] {
+			continue
+		}
+		if i != 0 {
+			found += ";"
+		}
+		found += pos
+		uniquePos[pos] = true
+	}
+
+	if len(donePosListBefore) > 0 && len(addPosList) > 0 {
+		found += ";"
+	}
+
 	for i, pos := range addPosList {
 		if uniquePos[pos] {
 			continue

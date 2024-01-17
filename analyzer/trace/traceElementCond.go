@@ -24,6 +24,7 @@ const (
  *   id (int): The id of the condition variable
  *   opC (opCond): The operation on the condition variable
  *   pos (string): The position of the condition variable operation in the code
+ *   tID (string): The id of the trace element, contains the position and the tpre
  */
 type TraceElementCond struct {
 	routine int
@@ -32,6 +33,7 @@ type TraceElementCond struct {
 	id      int
 	opC     opCond
 	pos     string
+	tID     string
 }
 
 /*
@@ -43,6 +45,7 @@ type TraceElementCond struct {
  *   id (string): The id of the condition variable
  *   opC (string): The operation on the condition variable
  *   pos (string): The position of the condition variable operation in the code
+ *   tID (string): The id of the trace element, contains the position and the tpre
  */
 func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN string, pos string) error {
 	tPreInt, err := strconv.Atoi(tPre)
@@ -69,6 +72,8 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 		return errors.New("op is not a valid operation")
 	}
 
+	tIDStr := pos + "@" + strconv.Itoa(tPreInt)
+
 	elem := TraceElementCond{
 		routine: routine,
 		tPre:    tPreInt,
@@ -76,6 +81,7 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 		id:      idInt,
 		opC:     op,
 		pos:     pos,
+		tID:     tIDStr,
 	}
 
 	return addElementToTrace(&elem)
@@ -142,6 +148,15 @@ func (co *TraceElementCond) GetTSort() int {
  */
 func (co *TraceElementCond) GetPos() string {
 	return co.pos
+}
+
+/*
+ * Get the tID of the element.
+ * Returns:
+ *   string: The tID of the element
+ */
+func (co *TraceElementCond) GetTID() string {
+	return co.tID
 }
 
 /*

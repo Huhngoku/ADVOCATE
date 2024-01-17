@@ -134,6 +134,15 @@ func (at *TraceElementAtomic) GetPos() string {
 }
 
 /*
+ * Get the tID of the element. For atomic elements, the tID is always empty
+ * Returns:
+ *   string: The tID of the element
+ */
+func (at *TraceElementAtomic) GetTID() string {
+	return ""
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element

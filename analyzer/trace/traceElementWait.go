@@ -26,6 +26,7 @@ const (
 *   delta (int): The delta of the wait group
 *   val (int): The value of the wait group
 *   pos (string): The position of the wait group in the code
+*   tID (string): The id of the trace element, contains the position and the tpre
  */
 type TraceElementWait struct {
 	routine int
@@ -36,6 +37,7 @@ type TraceElementWait struct {
 	delta   int
 	val     int
 	pos     string
+	tID     string
 }
 
 /*
@@ -93,7 +95,9 @@ func AddTraceElementWait(routine int, tpre string,
 		opW:     opW_op,
 		delta:   delta_int,
 		val:     val_int,
-		pos:     pos}
+		pos:     pos,
+		tID:     pos + "@" + tpre,
+	}
 
 	return addElementToTrace(&elem)
 }
@@ -157,6 +161,15 @@ func (wa *TraceElementWait) GetPos() string {
 }
 
 /*
+ * Get the tID of the element.
+ * Returns:
+ *   string: The tID of the element
+ */
+func (wa *TraceElementWait) GetTID() string {
+	return wa.tID
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -204,7 +217,7 @@ func (wa *TraceElementWait) ToString() string {
 func (wa *TraceElementWait) updateVectorClock() {
 	switch wa.opW {
 	case ChangeOp:
-		analysis.Change(wa.routine, wa.id, wa.delta, wa.pos, currentVectorClocks)
+		analysis.Change(wa.routine, wa.id, wa.delta, wa.tID, currentVectorClocks)
 	case WaitOp:
 		analysis.Wait(wa.routine, wa.id, currentVectorClocks)
 	default:

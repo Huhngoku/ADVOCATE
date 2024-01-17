@@ -20,6 +20,7 @@ import (
  *   chosenCase (traceElementSelectCase): The chosen case, nil if default case chosen
  *   chosenDefault (bool): if the default case was chosen
  *   pos (string): The position of the select statement in the code
+ *   tID (string): The id of the trace element, contains the position and the tpre
  */
 type TraceElementSelect struct {
 	routine         int
@@ -32,6 +33,7 @@ type TraceElementSelect struct {
 	containsDefault bool
 	chosenDefault   bool
 	pos             string
+	tID             string
 }
 
 /*
@@ -120,6 +122,8 @@ func AddTraceElementSelect(routine int, tPre string,
 			return errors.New("c_oSize is not an integer")
 		}
 
+		tIDStr := pos + "@" + strconv.Itoa(cTPre)
+
 		elemCase := TraceElementChannel{
 			routine: routine,
 			tPre:    cTPre,
@@ -131,6 +135,7 @@ func AddTraceElementSelect(routine int, tPre string,
 			qSize:   cOSize,
 			sel:     &elem,
 			pos:     pos,
+			tID:     tIDStr,
 		}
 
 		casesList = append(casesList, elemCase)
@@ -210,6 +215,15 @@ func (se *TraceElementSelect) GetTSort() int {
  */
 func (se *TraceElementSelect) GetPos() string {
 	return se.pos
+}
+
+/*
+ * Get the tID of the element.
+ * Returns:
+ *   string: The tID of the element
+ */
+func (se *TraceElementSelect) GetTID() string {
+	return se.tID
 }
 
 /*
