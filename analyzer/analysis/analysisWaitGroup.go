@@ -1,6 +1,9 @@
 package analysis
 
-import "analyzer/logging"
+import (
+	"analyzer/logging"
+	"sort"
+)
 
 var addVcs = make(map[int]map[int][]VectorClock) // id -> routine -> []vc
 var addPos = make(map[int]map[int][]string)      // id -> routine -> []pos
@@ -124,34 +127,41 @@ func CheckForDoneBeforeAdd() {
 				}
 
 				if countAdd < countDone {
-					uniquePos := make(map[string]bool)
-					found := "Possible negative waitgroup counter:\n"
-					found += "\tdone: " + donePos[id][routine][op] + "\n"
-					found += "\tdone/add: "
-					for i, pos := range donePosList {
-						if uniquePos[pos] {
-							continue
-						}
-						if i != 0 {
-							found += ";"
-						}
-						found += pos
-						uniquePos[pos] = true
-					}
-					found += ";"
-					for i, pos := range addPosList {
-						if uniquePos[pos] {
-							continue
-						}
-						if i != 0 {
-							found += ";"
-						}
-						found += pos
-						uniquePos[pos] = true
-					}
-					logging.Result(found, logging.CRITICAL)
+					createDoneBeforeAddMessage(id, routine, op, addPosList, donePosList)
 				}
 			}
 		}
 	}
+}
+
+func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string, donePosList []string) {
+	uniquePos := make(map[string]bool)
+	sort.Strings(addPosList)
+	sort.Strings(donePosList)
+
+	found := "Possible negative waitgroup counter:\n"
+	found += "\tdone: " + donePos[id][routine][op] + "\n"
+	found += "\tdone/add: "
+	for i, pos := range donePosList {
+		if uniquePos[pos] {
+			continue
+		}
+		if i != 0 {
+			found += ";"
+		}
+		found += pos
+		uniquePos[pos] = true
+	}
+	found += ";"
+	for i, pos := range addPosList {
+		if uniquePos[pos] {
+			continue
+		}
+		if i != 0 {
+			found += ";"
+		}
+		found += pos
+		uniquePos[pos] = true
+	}
+	logging.Result(found, logging.CRITICAL)
 }
