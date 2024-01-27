@@ -152,5 +152,5 @@ func (fo *TraceElementFork) ToString() string {
  * Update and calculate the vector clock of the element
  */
 func (fo *TraceElementFork) updateVectorClock() {
-	analysis.Fork(fo.routine, fo.id, currentVectorClocks)
+	analysis.Fork(fo.routine, fo.id, currentVCHb, currentVCWmhb)
 }

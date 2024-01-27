@@ -294,7 +294,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*TraceElementChannel).tID
 				analysis.Unbuffered(ch.routine, partner, ch.id, ch.tID,
-					pos, currentVectorClocks)
+					pos, currentVCHb)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
@@ -302,7 +302,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVectorClocks)
+						currentVCHb)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 				}
@@ -314,7 +314,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					traces[partner][currentIndex[partner]].ToString(), logging.DEBUG)
 				tID := traces[partner][currentIndex[partner]].(*TraceElementChannel).tID
 				analysis.Unbuffered(partner, ch.routine, ch.id, tID,
-					ch.tID, currentVectorClocks)
+					ch.tID, currentVCHb)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
@@ -322,13 +322,13 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVectorClocks)
+						currentVCHb)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 				}
 			}
 		case close:
-			analysis.Close(ch.routine, ch.id, ch.tID, currentVectorClocks)
+			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb)
 		default:
 			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)
@@ -339,22 +339,22 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.ToString(), logging.DEBUG)
 			analysis.Send(ch.routine, ch.id, ch.oID, ch.qSize, ch.tID,
-				currentVectorClocks, fifo)
+				currentVCHb, fifo)
 		case recv:
 			if ch.cl { // recv on closed channel
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.ToString(), logging.DEBUG)
-				analysis.RecvC(ch.routine, ch.id, ch.tID, currentVectorClocks)
+				analysis.RecvC(ch.routine, ch.id, ch.tID, currentVCHb)
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.ToString(), logging.DEBUG)
 				analysis.Recv(ch.routine, ch.id, ch.oID, ch.qSize, ch.tID,
-					currentVectorClocks, fifo)
+					currentVCHb, fifo)
 			}
 		case close:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.ToString(), logging.DEBUG)
-			analysis.Close(ch.routine, ch.id, ch.tID, currentVectorClocks)
+			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb)
 		default:
 			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)

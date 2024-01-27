@@ -7,17 +7,11 @@ import (
 
 // elements for buffered channel internal vector clock
 type bufferedVC struct {
-	occupied bool
-	oId      int
-	vc       VectorClock
+	occupied    bool
+	oID         int
+	vc          VectorClock
+	routineSend int
 }
-
-// vector clock for each buffer place in vector clock
-// the map key is the channel id. The slice is used for the buffer positions
-var bufferedVCs map[int]([]bufferedVC) = make(map[int]([]bufferedVC))
-
-// the current buffer position
-var bufferedVCsCount map[int]int = make(map[int]int)
 
 /*
  * Update and calculate the vector clocks given a send/receive pair on a unbuffered
@@ -30,8 +24,8 @@ var bufferedVCsCount map[int]int = make(map[int]int)
  * 	tID_recv (string): the position of the receive in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  */
-func Unbuffered(routSend int, routRecv int, id int, tID_send string, tID_recv string, vc map[int]VectorClock) {
-	checkForConcurrentRecv(routRecv, id, tID_recv, vc)
+func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv string, vc map[int]VectorClock) {
+	checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
 
 	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 	vc[routSend] = vc[routRecv].Copy()
@@ -39,17 +33,19 @@ func Unbuffered(routSend int, routRecv int, id int, tID_send string, tID_recv st
 	// for detection of send on closed
 	hasSend[id] = true
 	mostRecentSend[id] = mostRecentSend[id].Sync(vc[routSend]).Copy()
-	mostRecentSendPosition[id] = tID_send
+	mostRecentSendPosition[id] = tIDSend
 
 	// for detection of receive on closed
 	hasReceived[id] = true
 	mostRecentReceive[id] = mostRecentReceive[id].Sync(vc[routRecv]).Copy()
-	mostRecentReceivePosition[id] = tID_recv
+	mostRecentReceivePosition[id] = tIDRecv
 
 	logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].ToString(), logging.DEBUG)
 
 	vc[routSend] = vc[routSend].Inc(routSend)
 	vc[routRecv] = vc[routRecv].Inc(routRecv)
+
+	checkForMixedDeadlock(routSend, routRecv)
 }
 
 /*
@@ -81,11 +77,11 @@ func Send(rout int, id int, oID int, size int, tID string,
 	vc[rout] = vc[rout].Sync(v)
 
 	if fifo {
-		vc[rout] = vc[rout].Sync(lastSend[id])
-		lastSend[id] = vc[rout].Copy()
+		vc[rout] = vc[rout].Sync(mostRecentSend[id])
+		mostRecentSend[id] = vc[rout].Copy()
 	}
 
-	bufferedVCs[id][count] = bufferedVC{true, oID, vc[rout].Copy()}
+	bufferedVCs[id][count] = bufferedVC{true, oID, vc[rout].Copy(), rout}
 
 	bufferedVCsCount[id]++
 
@@ -117,13 +113,13 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock, f
 	}
 	bufferedVCsCount[id]--
 
-	if bufferedVCs[id][0].oId != oID {
+	if bufferedVCs[id][0].oID != oID {
 		found := false
 		for i := 1; i < size; i++ {
-			if bufferedVCs[id][i].oId == oID {
+			if bufferedVCs[id][i].oID == oID {
 				found = true
 				bufferedVCs[id][0] = bufferedVCs[id][i]
-				bufferedVCs[id][i] = bufferedVC{false, 0, vc[rout].Copy()}
+				bufferedVCs[id][i] = bufferedVC{false, 0, vc[rout].Copy(), 0}
 				break
 			}
 		}
@@ -133,15 +129,16 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock, f
 		}
 	}
 	v := bufferedVCs[id][0].vc
+	routSend := bufferedVCs[id][0].routineSend
 
 	vc[rout] = vc[rout].Sync(v)
 	if fifo {
-		vc[rout] = vc[rout].Sync(lastRecv[id])
-		lastRecv[id] = vc[rout].Copy()
+		vc[rout] = vc[rout].Sync(mostRecentReceive[id])
+		mostRecentReceive[id] = vc[rout].Copy()
 	}
 
 	bufferedVCs[id] = bufferedVCs[id][1:]
-	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, 0, vc[rout].Copy()})
+	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, 0, vc[rout].Copy(), 0})
 
 	// for detection of receive on closed
 	hasReceived[id] = true
@@ -149,6 +146,8 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock, f
 	mostRecentReceivePosition[id] = tID
 
 	vc[rout] = vc[rout].Inc(rout)
+
+	checkForMixedDeadlock(routSend, rout)
 }
 
 /*
@@ -198,7 +197,7 @@ func newBufferedVCs(id int, size int, numRout int) {
 		bufferedVCs[id] = make([]bufferedVC, size)
 		for i := 0; i < size; i++ {
 			bufferedVCsCount[id] = 0
-			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout)}
+			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout), 0}
 		}
 	}
 }

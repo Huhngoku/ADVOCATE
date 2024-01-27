@@ -21,6 +21,8 @@ func RewriteTrace(bug bugs.Bug) {
 	case bugs.DoneBeforeAdd:
 		println("Start rewriting trace for negative waitgroup counter...")
 		rewriteTraceMultiple(bug)
+	default:
+		println("For the given bug type no trace rewriting is implemented")
 	}
 }
 

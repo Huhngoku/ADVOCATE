@@ -5,10 +5,15 @@ package analysis
  * Args:
  *   oldRout (int): The id of the old routine
  *   newRout (int): The id of the new routine
- *   vc (VectorClock): The current vector clocks
+ *   vcHb (map[int]VectorClock): The current hb vector clocks
+ *   vcMhb (map[int]VectorClock): The current mhb vector clocks
  */
-func Fork(oldRout int, newRout int, vc map[int]VectorClock) {
-	vc[newRout] = vc[oldRout].Copy()
-	vc[newRout] = vc[newRout].Inc(newRout)
-	vc[oldRout] = vc[oldRout].Inc(oldRout)
+func Fork(oldRout int, newRout int, vcHb map[int]VectorClock, vcMhb map[int]VectorClock) {
+	vcHb[newRout] = vcHb[oldRout].Copy()
+	vcHb[newRout] = vcHb[newRout].Inc(newRout)
+	vcHb[oldRout] = vcHb[oldRout].Inc(oldRout)
+
+	vcMhb[newRout] = vcMhb[oldRout].Copy()
+	vcMhb[newRout] = vcMhb[newRout].Inc(newRout)
+	vcMhb[oldRout] = vcMhb[oldRout].Inc(oldRout)
 }

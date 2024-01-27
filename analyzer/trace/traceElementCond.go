@@ -219,10 +219,10 @@ func (co *TraceElementCond) ToString() string {
 func (co *TraceElementCond) updateVectorClock() {
 	switch co.opC {
 	case WaitCondOp:
-		analysis.CondWait(co.id, co.routine, currentVectorClocks)
+		analysis.CondWait(co.id, co.routine, currentVCHb)
 	case SignalOp:
-		analysis.CondSignal(co.id, co.routine, currentVectorClocks)
+		analysis.CondSignal(co.id, co.routine, currentVCHb)
 	case BroadcastOp:
-		analysis.CondBroadcast(co.id, co.routine, currentVectorClocks)
+		analysis.CondBroadcast(co.id, co.routine, currentVCHb)
 	}
 }

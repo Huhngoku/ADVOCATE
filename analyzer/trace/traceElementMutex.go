@@ -260,26 +260,26 @@ var mutexNoPartner []*TraceElementMutex
 func (mu *TraceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
-		analysis.Lock(mu.routine, mu.id, currentVectorClocks)
-		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVectorClocks[mu.routine])
+		analysis.Lock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVCHb[mu.routine])
 	case RLockOp:
-		analysis.RLock(mu.routine, mu.id, currentVectorClocks)
-		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVectorClocks[mu.routine])
+		analysis.RLock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVCHb[mu.routine])
 	case TryLockOp:
 		if mu.suc {
-			analysis.Lock(mu.routine, mu.id, currentVectorClocks)
-			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVectorClocks[mu.routine])
+			analysis.Lock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVCHb[mu.routine])
 		}
 	case TryRLockOp:
 		if mu.suc {
-			analysis.RLock(mu.routine, mu.id, currentVectorClocks)
-			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVectorClocks[mu.routine])
+			analysis.RLock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVCHb[mu.routine])
 		}
 	case UnlockOp:
-		analysis.Unlock(mu.routine, mu.id, currentVectorClocks)
+		analysis.Unlock(mu.routine, mu.id, currentVCHb)
 		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine)
 	case RUnlockOp:
-		analysis.RUnlock(mu.routine, mu.id, currentVectorClocks)
+		analysis.RUnlock(mu.routine, mu.id, currentVCHb)
 		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine)
 	default:
 		err := "Unknown mutex operation: " + mu.ToString()
@@ -288,5 +288,5 @@ func (mu *TraceElementMutex) updateVectorClock() {
 }
 
 func (mu *TraceElementMutex) updateVectorClockAlt() {
-	currentVectorClocks[mu.routine] = currentVectorClocks[mu.routine].Inc(mu.routine)
+	currentVCHb[mu.routine] = currentVCHb[mu.routine].Inc(mu.routine)
 }

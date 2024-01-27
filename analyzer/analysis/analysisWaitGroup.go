@@ -5,12 +5,6 @@ import (
 	"sort"
 )
 
-var addVcs = make(map[int]map[int][]VectorClock) // id -> routine -> []vc
-var addPos = make(map[int]map[int][]string)      // id -> routine -> []pos
-
-var doneVcs = make(map[int]map[int][]VectorClock) // id -> routine -> []vc
-var donePos = make(map[int]map[int][]string)      // id > routine -> []pos
-
 func checkForDoneBeforeAdd(routine int, id int, delta int, pos string, vc VectorClock) {
 	if delta > 0 {
 		checkForDoneBeforeAddAdd(routine, id, pos, vc, delta)
@@ -37,20 +31,6 @@ func checkForDoneBeforeAddAdd(routine int, id int, pos string, vc VectorClock, d
 		addVcs[id][routine] = append(addVcs[id][routine], vc.Copy())
 		addPos[id][routine] = append(addPos[id][routine], pos)
 	}
-
-	// for now, test new vector clock against all done vector clocks
-	// TODO: make this more efficient
-	// for r, vcs := range doneVcs[id] {
-	// 	for i, vcDone := range vcs {
-	// 		happensBefore := GetHappensBefore(vcDone, vc)
-	// 		if happensBefore == Concurrent {
-	// 			found := "Found concurrent Add and Done on same waitgroup:\n"
-	// 			found += "\tdone: " + donePos[id][r][i] + "\n"
-	// 			found += "\tadd: " + addPos[id][routine][len(addPos[id][routine])-1]
-	// 			logging.Result(found, logging.CRITICAL)
-	// 		}
-	// 	}
-	// }
 }
 
 func checkForDoneBeforeAddDone(routine int, id int, pos string, vc VectorClock) {

@@ -5,28 +5,6 @@ import (
 	"strconv"
 )
 
-// vc of close on channel
-var closeVC = make(map[int]VectorClock)
-var closePos = make(map[int]string)
-
-// last send and receive on channel
-var lastSend = make(map[int]VectorClock)
-var lastRecv = make(map[int]VectorClock)
-
-// last receive for each routine and each channel
-var lastRecvRoutine = make(map[int]map[int]VectorClock)
-var lastRecvRoutinePos = make(map[int]map[int]string)
-
-// most recent send, used for detection of send on closed
-var hasSend = make(map[int]bool)
-var mostRecentSend = make(map[int]VectorClock)
-var mostRecentSendPosition = make(map[int]string)
-
-// most recent send, used for detection of received on closed
-var hasReceived = make(map[int]bool)
-var mostRecentReceive = make(map[int]VectorClock)
-var mostRecentReceivePosition = make(map[int]string)
-
 /*
 Check if a send or receive on a closed channel is possible
 It it is possible, print a warning or error
@@ -72,34 +50,6 @@ func foundReceiveOnClosedChannel(posClose string, posRecv string) {
 	found += "\tclose: " + posClose + "\n"
 	found += "\trecv : " + posRecv
 	logging.Result(found, logging.WARNING)
-}
-
-func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorClock) {
-	if _, ok := lastRecvRoutine[routine]; !ok {
-		lastRecvRoutine[routine] = make(map[int]VectorClock)
-		lastRecvRoutinePos[routine] = make(map[int]string)
-	}
-
-	lastRecvRoutine[routine][id] = vc[routine].Copy()
-	lastRecvRoutinePos[routine][id] = pos
-
-	for r, elem := range lastRecvRoutine {
-		if r == routine {
-			continue
-		}
-
-		if elem[id].clock == nil {
-			continue
-		}
-
-		happensBefore := GetHappensBefore(elem[id], vc[routine])
-		if happensBefore == Concurrent {
-			found := "Found concurrent Recv on same channel:\n"
-			found += "\trecv: " + pos + "\n"
-			found += "\trecv : " + lastRecvRoutinePos[r][id]
-			logging.Result(found, logging.CRITICAL)
-		}
-	}
 }
 
 /*

@@ -8,12 +8,20 @@ import (
 	"strconv"
 )
 
-var traces map[int][]TraceElement = make(map[int][]TraceElement)
-var currentVectorClocks map[int]analysis.VectorClock = make(map[int]analysis.VectorClock)
-var currentIndex map[int]int = make(map[int]int)
-var numberOfRoutines int = 0
-var fifo bool
-var result string
+var (
+	traces map[int][]TraceElement = make(map[int][]TraceElement)
+
+	// current happens before vector clocks
+	currentVCHb = make(map[int]analysis.VectorClock)
+
+	// current must happens before vector clocks
+	currentVCWmhb = make(map[int]analysis.VectorClock)
+
+	currentIndex     = make(map[int]int)
+	numberOfRoutines = 0
+	fifo             bool
+	result           string
+)
 
 /*
 * Add an element to the trace
@@ -196,10 +204,12 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 	fifo = assume_fifo
 
 	for i := 1; i <= numberOfRoutines; i++ {
-		currentVectorClocks[i] = analysis.NewVectorClock(numberOfRoutines)
+		currentVCHb[i] = analysis.NewVectorClock(numberOfRoutines)
+		currentVCWmhb[i] = analysis.NewVectorClock(numberOfRoutines)
 	}
 
-	currentVectorClocks[1] = currentVectorClocks[1].Inc(1)
+	currentVCHb[1] = currentVCHb[1].Inc(1)
+	currentVCWmhb[1] = currentVCWmhb[1].Inc(1)
 
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// ignore non executed operations
@@ -244,7 +254,7 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 	}
 
 	analysis.CheckForDoneBeforeAdd()
-	analysis.CheckForCyclicDeadlock()
+	// analysis.CheckForCyclicDeadlock()
 
 	logging.Debug("Analysis completed", logging.INFO)
 	return result

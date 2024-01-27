@@ -188,8 +188,8 @@ func (on *TraceElementOnce) ToString() string {
  */
 func (on *TraceElementOnce) updateVectorClock() {
 	if on.suc {
-		analysis.DoSuc(on.routine, on.id, currentVectorClocks)
+		analysis.DoSuc(on.routine, on.id, currentVCHb)
 	} else {
-		analysis.DoFail(on.routine, on.id, currentVectorClocks)
+		analysis.DoFail(on.routine, on.id, currentVCHb)
 	}
 }
