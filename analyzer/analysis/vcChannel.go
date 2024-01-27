@@ -23,27 +23,30 @@ type bufferedVC struct {
  * 	tID_send (string): the position of the send in the program
  * 	tID_recv (string): the position of the receive in the program
  * 	vc (map[int]VectorClock): the current vector clocks
+ *  tPost (int): the timestamp at the end of the event
  */
-func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv string, vc map[int]VectorClock) {
-	checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
+func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv string, vc map[int]VectorClock, tPost int) {
+	if tPost != 0 {
+		checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
 
-	vc[routRecv] = vc[routRecv].Sync(vc[routSend])
-	vc[routSend] = vc[routRecv].Copy()
+		vc[routRecv] = vc[routRecv].Sync(vc[routSend])
+		vc[routSend] = vc[routRecv].Copy()
 
-	// for detection of send on closed
-	hasSend[id] = true
-	mostRecentSend[id] = mostRecentSend[id].Sync(vc[routSend]).Copy()
-	mostRecentSendPosition[id] = tIDSend
+		// for detection of send on closed
+		hasSend[id] = true
+		mostRecentSend[id] = mostRecentSend[id].Sync(vc[routSend]).Copy()
+		mostRecentSendPosition[id] = tIDSend
 
-	// for detection of receive on closed
-	hasReceived[id] = true
-	mostRecentReceive[id] = mostRecentReceive[id].Sync(vc[routRecv]).Copy()
-	mostRecentReceivePosition[id] = tIDRecv
+		// for detection of receive on closed
+		hasReceived[id] = true
+		mostRecentReceive[id] = mostRecentReceive[id].Sync(vc[routRecv]).Copy()
+		mostRecentReceivePosition[id] = tIDRecv
 
-	logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].ToString(), logging.DEBUG)
+		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].ToString(), logging.DEBUG)
 
-	vc[routSend] = vc[routSend].Inc(routSend)
-	vc[routRecv] = vc[routRecv].Inc(routRecv)
+		vc[routSend] = vc[routSend].Inc(routSend)
+		vc[routRecv] = vc[routRecv].Inc(routRecv)
+	}
 
 	checkForMixedDeadlock(routSend, routRecv)
 }
@@ -58,9 +61,15 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv stri
  *  tId (string): the position of the send in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
+ *  tPost (int): the timestamp at the end of the event
  */
 func Send(rout int, id int, oID int, size int, tID string,
-	vc map[int]VectorClock, fifo bool) {
+	vc map[int]VectorClock, fifo bool, tPost int) {
+
+	if tPost == 0 {
+		return
+	}
+
 	newBufferedVCs(id, size, vc[rout].size)
 
 	count := bufferedVCsCount[id]
@@ -103,8 +112,14 @@ func Send(rout int, id int, oID int, size int, tID string,
  *  tID (string): the position of the send in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  fifo (bool): true if the channel buffer is assumed to be fifo
+ *  tPost (int): the timestamp at the end of the event
  */
-func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock, fifo bool) {
+func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
+	fifo bool, tPost int) {
+	if tPost == 0 {
+		return
+	}
+
 	newBufferedVCs(id, size, vc[rout].size)
 	checkForConcurrentRecv(rout, id, tID, vc)
 
@@ -157,12 +172,18 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock, f
  * 	id (int): the id of the channel
  * 	tID (string): the position of the close in the program
  * 	vc (map[int]VectorClock): the current vector clocks
+ *  tPost (int): the timestamp at the end of the event
  */
-func Close(rout int, id int, tID string, vc map[int]VectorClock) {
+func Close(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
+	if tPost == 0 {
+		return
+	}
+
 	checkForClosedOnClosed(id, tID) // must be called before closePos is updated
 
 	closeVC[id] = vc[rout].Copy()
 	closePos[id] = tID
+	closeRout[id] = rout
 
 	checkForPotentialCommunicationOnClosedChannel(id, tID)
 
@@ -176,12 +197,19 @@ func Close(rout int, id int, tID string, vc map[int]VectorClock) {
  * 	id (int): the id of the sender
  * 	tID (string): the position of the close in the program
  * 	vc (map[int]VectorClock): the current vector clocks
+ *  tPost (int): the timestamp at the end of the event
  */
-func RecvC(rout int, id int, tID string, vc map[int]VectorClock) {
+func RecvC(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
+	if tPost == 0 {
+		return
+	}
+
 	foundReceiveOnClosedChannel(closePos[id], tID)
 
 	vc[rout] = vc[rout].Sync(closeVC[id])
 	vc[rout] = vc[rout].Inc(rout)
+
+	checkForMixedDeadlock(closeRout[id], rout)
 }
 
 /*

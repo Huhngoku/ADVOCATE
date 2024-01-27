@@ -102,8 +102,13 @@ var nodesPerID = make(map[int]map[int][]*lockGraphNode) // id -> routine -> []*l
  *   rw (bool): True if the lock is a read-write lock
  *   rLock (bool): True if the lock is a read lock
  *   vc (VectorClock): The vector clock of the lock event
+ *   tPre (int): The timestamp at the end of the event
  */
-func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc VectorClock) {
+func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc VectorClock, tPost int) {
+	if tPost == 0 {
+		return
+	}
+
 	// create new lock tree if it does not exist yet
 	if _, ok := lockGraphs[routine]; !ok {
 		lockGraphs[routine] = newLockGraph(routine)
@@ -130,8 +135,13 @@ func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc Vect
  * Args:
  *   id (int): The id of the lock
  *   routine (int): The id of the routine
+ *   tPost (int): The timestamp at the end of the event
  */
-func AnalysisDeadlockMutexUnLock(id int, routine int) {
+func AnalysisDeadlockMutexUnLock(id int, routine int, tPost int) {
+	if tPost == 0 {
+		return
+	}
+
 	for i := len(currentNode[routine]) - 1; i >= 0; i-- {
 		if currentNode[routine][i].id == id {
 			currentNode[routine] = currentNode[routine][:i]

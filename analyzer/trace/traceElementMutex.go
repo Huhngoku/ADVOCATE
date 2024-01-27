@@ -260,27 +260,27 @@ var mutexNoPartner []*TraceElementMutex
 func (mu *TraceElementMutex) updateVectorClock() {
 	switch mu.opM {
 	case LockOp:
-		analysis.Lock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
-		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVCHb[mu.routine])
+		analysis.Lock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.tID, mu.tPost)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVCHb[mu.routine], mu.tPost)
 	case RLockOp:
-		analysis.RLock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
-		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVCHb[mu.routine])
+		analysis.RLock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.tID, mu.tPost)
+		analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVCHb[mu.routine], mu.tPost)
 	case TryLockOp:
 		if mu.suc {
-			analysis.Lock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
-			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVCHb[mu.routine])
+			analysis.Lock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.tID, mu.tPost)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, false, currentVCHb[mu.routine], mu.tPost)
 		}
 	case TryRLockOp:
 		if mu.suc {
-			analysis.RLock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.pos)
-			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVCHb[mu.routine])
+			analysis.RLock(mu.routine, mu.id, currentVCHb, currentVCWmhb, mu.tID, mu.tPost)
+			analysis.AnalysisDeadlockMutexLock(mu.id, mu.routine, mu.rw, true, currentVCHb[mu.routine], mu.tPost)
 		}
 	case UnlockOp:
-		analysis.Unlock(mu.routine, mu.id, currentVCHb)
-		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine)
+		analysis.Unlock(mu.routine, mu.id, currentVCHb, mu.tPost)
+		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine, mu.tPost)
 	case RUnlockOp:
-		analysis.RUnlock(mu.routine, mu.id, currentVCHb)
-		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine)
+		analysis.RUnlock(mu.routine, mu.id, currentVCHb, mu.tPost)
+		analysis.AnalysisDeadlockMutexUnLock(mu.id, mu.routine, mu.tPost)
 	default:
 		err := "Unknown mutex operation: " + mu.ToString()
 		logging.Debug(err, logging.ERROR)

@@ -10,12 +10,16 @@ import (
  * Args:
  *   routine (int): The routine id
  *   lock (int): The id of the mutex
- *   pos (string): The position of the mutex operation
+ *   tId (string): The trace id of the mutex operation
  *   vc (VectorClock): The current vector clock
  */
-func lockSetAddLock(routine int, lock int, pos string, vc VectorClock) {
+func lockSetAddLock(routine int, lock int, tID string, vc VectorClock) {
 	if _, ok := lockSet[routine]; !ok {
 		lockSet[routine] = make(map[int]string)
+	}
+	if _, ok := mostRecentAcquire[routine]; !ok {
+		mostRecentAcquire[routine] = make(map[int]VectorClock)
+		mostRecentAcquireTID[routine] = make(map[int]string)
 	}
 
 	if posOld, ok := lockSet[routine][lock]; ok {
@@ -26,12 +30,13 @@ func lockSetAddLock(routine int, lock int, pos string, vc VectorClock) {
 		// this is a double locking
 		found := "Double locking:\n"
 		found += "\tlock1: " + posOld + "\n"
-		found += "\tlock2: " + pos
+		found += "\tlock2: " + tID
 		logging.Result(found, logging.CRITICAL)
 	}
 
-	lockSet[routine][lock] = pos
+	lockSet[routine][lock] = tID
 	mostRecentAcquire[routine][lock] = vc
+	mostRecentAcquireTID[routine][lock] = tID
 }
 
 /*
@@ -51,25 +56,62 @@ func lockSetRemoveLock(routine int, lock int) {
 }
 
 func checkForMixedDeadlock(routineSend int, routineRevc int) {
-	for mSend, posSend := range lockSet[routineSend] {
-		if _, ok := mostRecentAcquire[routineSend][mSend]; !ok { // Acq(tS, y) not defined
-			continue
-		}
-		for mRecv, posRecv := range lockSet[routineRevc] {
-			if _, ok := mostRecentAcquire[routineRevc][mRecv]; !ok { // Acq(tR, y) not defined
-				continue
-			}
-
-			// no mixed deadlock possible if Acq(tS, y) <wmhb Acq(tR, y)
-			weakHappensBefore := GetHappensBefore(mostRecentAcquire[routineSend][mSend], mostRecentAcquire[routineRevc][mRecv])
-			if weakHappensBefore != Concurrent {
-				continue
-			}
-
+	for m := range lockSet[routineSend] {
+		_, ok1 := mostRecentAcquire[routineRevc][m]
+		_, ok2 := mostRecentAcquire[routineSend][m]
+		if ok1 && ok2 {
 			// found potential mixed deadlock
 			found := "Potential mixed deadlock:\n"
-			found += "\tlock1: " + posSend + "\n"
-			found += "\tlock2: " + posRecv
+			found += "\tlock1: " + mostRecentAcquireTID[routineSend][m] + "\n"
+			found += "\tlock2: " + mostRecentAcquireTID[routineRevc][m]
+
+			logging.Result(found, logging.CRITICAL)
+		}
+	}
+
+	for m := range lockSet[routineRevc] {
+		_, ok1 := mostRecentAcquire[routineRevc][m]
+		_, ok2 := mostRecentAcquire[routineSend][m]
+		if ok1 && ok2 {
+			// found potential mixed deadlock
+			found := "Potential mixed deadlock:\n"
+			found += "\tlock1: " + mostRecentAcquireTID[routineSend][m] + "\n"
+			found += "\tlock2: " + mostRecentAcquireTID[routineRevc][m]
+
+			logging.Result(found, logging.CRITICAL)
 		}
 	}
 }
+
+/*
+func checkForMixedDeadlock2(routine int) {
+	for m := range lockSet[routine] {
+		// if the lock was not acquired by the routine, continue. Should not happen
+		vc1, okS := mostRecentAcquire[routine][m]
+		if !okS {
+			continue
+		}
+
+		for routine2, acquire := range mostRecentAcquire {
+			if routine == routine2 {
+				continue
+			}
+
+			if vc2, ok := acquire[m]; ok {
+				weakHappensBefore := GetHappensBefore(vc1, vc2)
+				if weakHappensBefore != Concurrent {
+					continue
+				}
+
+				// found potential mixed deadlock
+				found := "Potential mixed deadlock:\n"
+				found += "\tlock1: " + lockSet[routine][m] + "\n"
+				found += "\tlock2: " + lockSet[routine2][m]
+
+				logging.Result(found, logging.CRITICAL)
+			}
+
+		}
+	}
+}
+*/

@@ -2,7 +2,6 @@ package trace
 
 import (
 	"errors"
-	"math"
 	"strconv"
 
 	"analyzer/analysis"
@@ -171,8 +170,8 @@ func (ch *TraceElementChannel) getTpost() int {
  */
 func (ch *TraceElementChannel) GetTSort() int {
 	if ch.tPost == 0 {
-		// add to the end of the trace
-		return math.MaxInt
+		// if operation was not executed, return tPre. When updating vc, check that tPre is not 0
+		return ch.tPre
 	}
 	return ch.tPost
 }
@@ -294,7 +293,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.DEBUG)
 				pos := traces[partner][currentIndex[partner]].(*TraceElementChannel).tID
 				analysis.Unbuffered(ch.routine, partner, ch.id, ch.tID,
-					pos, currentVCHb)
+					pos, currentVCHb, ch.tPost)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
@@ -302,11 +301,12 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVCHb)
+						currentVCHb, ch.tPost)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 				}
 			}
+
 		case recv: // should not occur, but better save than sorry
 			partner := ch.findUnbufferedPartner()
 			if partner != -1 {
@@ -314,7 +314,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					traces[partner][currentIndex[partner]].ToString(), logging.DEBUG)
 				tID := traces[partner][currentIndex[partner]].(*TraceElementChannel).tID
 				analysis.Unbuffered(partner, ch.routine, ch.id, tID,
-					ch.tID, currentVCHb)
+					ch.tID, currentVCHb, ch.tPost)
 				// advance index of receive routine, send routine is already advanced
 				increaseIndex(partner)
 			} else {
@@ -322,13 +322,13 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVCHb)
+						currentVCHb, ch.tPost)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 				}
 			}
 		case close:
-			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb)
+			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost)
 		default:
 			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)
@@ -339,22 +339,22 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.ToString(), logging.DEBUG)
 			analysis.Send(ch.routine, ch.id, ch.oID, ch.qSize, ch.tID,
-				currentVCHb, fifo)
+				currentVCHb, fifo, ch.tPost)
 		case recv:
 			if ch.cl { // recv on closed channel
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.ToString(), logging.DEBUG)
-				analysis.RecvC(ch.routine, ch.id, ch.tID, currentVCHb)
+				analysis.RecvC(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost)
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.ToString(), logging.DEBUG)
 				analysis.Recv(ch.routine, ch.id, ch.oID, ch.qSize, ch.tID,
-					currentVCHb, fifo)
+					currentVCHb, fifo, ch.tPost)
 			}
 		case close:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.ToString(), logging.DEBUG)
-			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb)
+			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost)
 		default:
 			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)

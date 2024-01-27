@@ -22,15 +22,18 @@ func newRel(index int, nRout int) {
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
  *   wVc (map[int]VectorClock): The current weak vector clocks
- *   pos (string): The position of the lock operation
+ *   tID (string): The trace id of the lock operation
+ *   tPost (int): The timestamp at the end of the event
  */
-func Lock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, pos string) {
-	newRel(id, vc[routine].size)
-	vc[routine] = vc[routine].Sync(relW[id])
-	vc[routine] = vc[routine].Sync(relR[id])
-	vc[routine] = vc[routine].Inc(routine)
+func Lock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, tID string, tPost int) {
+	if tPost != 0 {
+		newRel(id, vc[routine].size)
+		vc[routine] = vc[routine].Sync(relW[id])
+		vc[routine] = vc[routine].Sync(relR[id])
+		vc[routine] = vc[routine].Inc(routine)
+	}
 
-	lockSetAddLock(routine, id, pos, wVc[routine])
+	lockSetAddLock(routine, id, tID, wVc[routine])
 }
 
 /*
@@ -40,7 +43,11 @@ func Lock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, 
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func Unlock(routine int, id int, vc map[int]VectorClock) {
+func Unlock(routine int, id int, vc map[int]VectorClock, tPost int) {
+	if tPost == 0 {
+		return
+	}
+
 	newRel(id, vc[routine].size)
 	relW[id] = vc[routine].Copy()
 	relR[id] = vc[routine].Copy()
@@ -54,17 +61,21 @@ func Unlock(routine int, id int, vc map[int]VectorClock) {
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
  *   wVc (map[int]VectorClock): The current weak vector clocks
- *   pos (string): The position of the lock operation
+ *   tID (string): The trace id of the lock operation
  * Returns:
  *   (vectorClock): The new vector clock
  */
-func RLock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, pos string) {
-	newRel(id, vc[routine].size)
-	vc[routine] = vc[routine].Sync(relW[id])
-	vc[routine] = vc[routine].Inc(routine)
+func RLock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock,
+	tID string, tPost int) {
+
+	if tPost != 0 {
+		newRel(id, vc[routine].size)
+		vc[routine] = vc[routine].Sync(relW[id])
+		vc[routine] = vc[routine].Inc(routine)
+	}
 
 	// TODO: can we just add this to the lockSet?
-	lockSetAddLock(routine, id, pos, wVc[routine])
+	lockSetAddLock(routine, id, tID, wVc[routine])
 }
 
 /*
@@ -73,11 +84,14 @@ func RLock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock,
  *   routine (int): The routine id
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
+ *   tPost (int): The timestamp at the end of the event
  */
-func RUnlock(routine int, id int, vc map[int]VectorClock) {
-	newRel(id, vc[routine].size)
-	relR[id] = relR[id].Sync(vc[routine])
-	vc[routine] = vc[routine].Inc(routine)
+func RUnlock(routine int, id int, vc map[int]VectorClock, tPost int) {
+	if tPost != 0 {
+		newRel(id, vc[routine].size)
+		relR[id] = relR[id].Sync(vc[routine])
+		vc[routine] = vc[routine].Inc(routine)
+	}
 
 	lockSetRemoveLock(routine, id)
 }

@@ -2,8 +2,9 @@ package analysis
 
 var (
 	// vc of close on channel
-	closeVC  = make(map[int]VectorClock)
-	closePos = make(map[int]string)
+	closeVC   = make(map[int]VectorClock)
+	closePos  = make(map[int]string)
+	closeRout = make(map[int]int)
 
 	// last receive for each routine and each channel
 	lastRecvRoutine    = make(map[int]map[int]VectorClock) // routine -> id -> vc
@@ -34,8 +35,9 @@ var (
 	donePos = make(map[int]map[int][]string)      // id > routine -> []pos
 
 	// last acquire on mutex for each routine
-	lockSet           = make(map[int]map[int]string)      // routine -> id -> string
-	mostRecentAcquire = make(map[int]map[int]VectorClock) // routine -> id -> vc  // TODO: do we need to store the operation?
+	lockSet              = make(map[int]map[int]string)      // routine -> id -> string
+	mostRecentAcquire    = make(map[int]map[int]VectorClock) // routine -> id -> vc  // TODO: do we need to store the operation?
+	mostRecentAcquireTID = make(map[int]map[int]string)      // routine -> id -> tid
 
 	// vector clocks for last release times
 	relW = make(map[int]VectorClock) // id -> vc

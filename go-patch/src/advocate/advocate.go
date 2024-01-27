@@ -14,11 +14,11 @@ import (
  * The trace is written in the file named file_name.
  * The trace is written in the format of advocate.
  */
-func CreateTrace(file_name string) {
+func CreateTrace(fileName string) {
 	runtime.DisableTrace()
 
-	os.Remove(file_name)
-	file, err := os.OpenFile(file_name, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	os.Remove(fileName)
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
