@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/logging"
 	"strconv"
 )
 
@@ -14,8 +15,10 @@ type lockGraphNode struct {
 	rLock    bool             // true if the lock was a read lock
 	children []*lockGraphNode // children of the node
 	outside  []*lockGraphNode // nodes with the same lock ID that are in the tree of another routine
+	lockSet  []int            // ids of the nodes that are hold by the routine, when the node was created
 	vc       VectorClock      // vector clock of the node, is equal to the vector clock of the lock event
 	parent   *lockGraphNode   // parent of the node
+	tID      string           // trace id of the lock
 	visited  map[int]struct{} // map to store the routine, for which the node was already visited when starting the DFS from the routines lock tree root
 }
 
@@ -35,10 +38,11 @@ func newLockGraph(routine int) *lockGraphNode {
  *   childRw (bool): True if the child is a read-write lock
  *   childRLock (bool): True if the child is a read lock
  *   vc (VectorClock): The vector clock of the childs lock operation
+ *   lockSet ([]int): The lockSet of the child
  */
-func (node *lockGraphNode) addChild(childID int, childRw bool, childRLock bool, vc VectorClock) *lockGraphNode {
+func (node *lockGraphNode) addChild(childID int, tID string, childRw bool, childRLock bool, vc VectorClock, lockSet []int) *lockGraphNode {
 	child := &lockGraphNode{id: childID, parent: node, rw: childRw,
-		rLock: childRLock, routine: node.routine, vc: vc}
+		rLock: childRLock, routine: node.routine, vc: vc, lockSet: lockSet, tID: tID}
 	node.children = append(node.children, child)
 	return node.children[len(node.children)-1]
 }
@@ -104,7 +108,7 @@ var nodesPerID = make(map[int]map[int][]*lockGraphNode) // id -> routine -> []*l
  *   vc (VectorClock): The vector clock of the lock event
  *   tPre (int): The timestamp at the end of the event
  */
-func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc VectorClock, tPost int) {
+func AnalysisCyclickDeadlockMutexLock(id int, tID string, routine int, rw bool, rLock bool, vc VectorClock, tPost int) {
 	if tPost == 0 {
 		return
 	}
@@ -125,7 +129,7 @@ func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc Vect
 
 	// add the lock element to the lock tree
 	// update the current lock
-	node := currentNode[routine][len(currentNode[routine])-1].addChild(id, rw, rLock, vc.Copy())
+	node := currentNode[routine][len(currentNode[routine])-1].addChild(id, tID, rw, rLock, vc.Copy(), getCurrentLockSet(routine))
 	currentNode[routine] = append(currentNode[routine], node)
 	nodesPerID[id][routine] = append(nodesPerID[id][routine], node)
 }
@@ -137,7 +141,7 @@ func AnalysisDeadlockMutexLock(id int, routine int, rw bool, rLock bool, vc Vect
  *   routine (int): The id of the routine
  *   tPost (int): The timestamp at the end of the event
  */
-func AnalysisDeadlockMutexUnLock(id int, routine int, tPost int) {
+func AnalysisCyclicDeadlockMutexUnLock(id int, routine int, tPost int) {
 	if tPost == 0 {
 		return
 	}
@@ -165,18 +169,25 @@ func CheckForCyclicDeadlock() {
 	}
 
 	// remove duplicate cycles
-	cycles = removeDuplicates(cycles)
+	cycles = removeCyclicPermutations(cycles)
 
 	for _, cycle := range cycles {
 		// check if the cycle can create a deadlock
 		res := isCycleDeadlock(cycle)
 		if res {
-			// TODO: log the cycle
-			println("Deadlock detected")
-			for _, node := range cycle {
-				print("  " + strconv.Itoa(node.id) + "|" + strconv.Itoa(node.routine))
+			found := "Potential cyclic deadlock with "
+			if len(cycle) == 2 {
+				found += "two locks:\n"
+			} else {
+				found += "more than two locks:\n"
 			}
-			println()
+
+			found += "\thead: " + cycle[0].tID + "\n"
+			found += "\ttail: "
+			for i := 1; i < len(cycle); i++ {
+				found += cycle[i].tID + " "
+			}
+			logging.Result(found, logging.CRITICAL)
 		}
 	}
 }
@@ -293,17 +304,13 @@ func isInCurrentPath(node *lockGraphNode, currentPath *([]*lockGraphNode)) (bool
 }
 
 /*
- * Remove duplicate cycles. The following are considered duplicates:
- * - cyclic permutations (same cycle but different starting point)
- * - subcyles (we can remove nodes from on cycle to get the other cycle
- *   e.g. [1,2,3,4] and [2,3,4] are the same cycle)
+ * Remove cyclic permutations
  * Args:
- *   cycles ([][]*lockGraphNode): The cycles to remove duplicates from
+ *   cycles ([][]*lockGraphNode): The cycles to remove permutations from
  * Returns:
- *   ([][]*lockGraphNode): The cycles without duplicates
- * TODO: does not work yet
+ *   ([][]*lockGraphNode): The cycles without cyclic permutations
  */
-func removeDuplicates(cycles [][]*lockGraphNode) [][]*lockGraphNode {
+func removeCyclicPermutations(cycles [][]*lockGraphNode) [][]*lockGraphNode {
 	// remove cyclic permutations (same cycle but different starting point)
 	for i := 0; i < len(cycles); i++ {
 		for j := i + 1; j < len(cycles); j++ {
@@ -313,20 +320,6 @@ func removeDuplicates(cycles [][]*lockGraphNode) [][]*lockGraphNode {
 					j--
 				}
 			}
-			// TODO: add back in when subcycles work
-			// else {
-			// 	if len(cycles[i]) > len(cycles[j]) {
-			// 		if isSubCycle(cycles[i], cycles[j]) {
-			// 			cycles = append(cycles[:j], cycles[j+1:]...)
-			// 			j--
-			// 		}
-			// 	} else {
-			// 		if isSubCycle(cycles[j], cycles[i]) {
-			// 			cycles = append(cycles[:i], cycles[i+1:]...)
-			// 			j = i
-			// 		}
-			// 	}
-			// }
 		}
 	}
 	return cycles
@@ -356,37 +349,12 @@ func isCyclicPermutation(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool 
 }
 
 /*
-* Check if the cycle2 is a subcycle of cycle1
-* This is the case, if we can remove nodes from cycle1 to get a cyclic
-* permutation of cycle2, keeping the order of the nodes the same.
-* The function assumes, that cycle1 is longer than cycle2.
-* Args:
-*   cycle1 ([]*lockGraphNode): The longer cycle
-*   cycle2 ([]*lockGraphNode): The shorter cycle
-* Returns:
-*   (bool): True if cycle2 is a subcycle of cycle1
- */
-// func isSubCycle(cycle1 []*lockGraphNode, cycle2 []*lockGraphNode) bool {
-// 	j := 0
-// 	for i := 0; i < len(cycle1); i++ {
-// 		if cycle1[i] == cycle2[j] {
-// 			j++
-// 			if j == len(cycle2) {
-// 				return true
-// 			}
-// 		}
-// 	}
-// 	return false
-// }
-
-/*
  * Check if a cycle can create a deadlock
  * It can not be a deadlock, if at least on of the following is false:
  * - the cycle consists of more than one different lock (R1)
  * - the lock operations in the cycle for different routines are concurrent (R2)
- * - TODO: 5.3.d
- * - TODO: 5.3.e
- * - TODO: 5.3.f
+ * - two operations on the same lock connected by an edge are not both read operations (R3)
+ * - the cycle is valid considering gate locks (R4)
  * Args:
  *   cycle ([]*lockGraphNode): The cycle to check
  * Returns:
@@ -402,6 +370,17 @@ func isCycleDeadlock(cycle []*lockGraphNode) bool {
 	if !isCycleConcurrent(cycle) {
 		return false
 	}
+
+	// check, that the cycle is valid considering read-write locks (R3)
+	if !isCycleValidRead(cycle) {
+		return false
+	}
+
+	if !isCycleValidGate(cycle) {
+		return false
+	}
+
+	//
 
 	return true
 }
@@ -449,4 +428,68 @@ func isCycleConcurrent(cycle []*lockGraphNode) bool {
 		}
 	}
 	return true
+}
+
+/*
+ * Check, that the cycle is valid considering read-write locks
+ * Two operations on the same lock connected by an edge are not both read operations
+ * Args:
+ *   cycle ([]*lockGraphNode): The cycle to check
+ * Returns:
+ *   (bool): True if the cycle is valid considering read-write locks
+ */
+func isCycleValidRead(cycle []*lockGraphNode) bool {
+	for i := 0; i < len(cycle); i++ {
+		for j := i + 1; j < len(cycle); j++ {
+			for _, ls1 := range cycle[i].lockSet {
+				for _, ls2 := range cycle[j].lockSet {
+					if ls1 != ls2 {
+						continue
+					}
+
+					if !(cycle[i].rw && cycle[j].rw) {
+						return false
+					}
+				}
+			}
+		}
+	}
+	return true
+}
+
+/*
+ * Check, that the cycle is valid considering gate locks
+ * Args:
+ *   cycle ([]*lockGraphNode): The cycle to check
+ * Returns:
+ *   (bool): True if the cycle is valid considering gate locks
+ */
+func isCycleValidGate(cycle []*lockGraphNode) bool {
+	for i := 0; i < len(cycle); i++ {
+		for j := i + 1; j < len(cycle); j++ {
+			if cycle[i].id != cycle[j].id {
+				continue
+			}
+
+			if cycle[i].rw && cycle[j].rw {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+/*
+ * Get the current lock set of a routine
+ * Args:
+ *   routine (int): The id of the routine
+ * Returns:
+ *   ([]int): The current lock set of the routine
+ */
+func getCurrentLockSet(routine int) []int {
+	ls := make([]int, len(currentNode[routine]))
+	for id, _ := range lockSet[routine] {
+		ls = append(ls, id)
+	}
+	return ls
 }
