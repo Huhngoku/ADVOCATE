@@ -18,8 +18,7 @@ func lockSetAddLock(routine int, lock int, tID string, vc VectorClock) {
 		lockSet[routine] = make(map[int]string)
 	}
 	if _, ok := mostRecentAcquire[routine]; !ok {
-		mostRecentAcquire[routine] = make(map[int]VectorClock)
-		mostRecentAcquireTID[routine] = make(map[int]string)
+		mostRecentAcquire[routine] = make(map[int]VectorClockTID)
 	}
 
 	if posOld, ok := lockSet[routine][lock]; ok {
@@ -35,8 +34,7 @@ func lockSetAddLock(routine int, lock int, tID string, vc VectorClock) {
 	}
 
 	lockSet[routine][lock] = tID
-	mostRecentAcquire[routine][lock] = vc
-	mostRecentAcquireTID[routine][lock] = tID
+	mostRecentAcquire[routine][lock] = VectorClockTID{vc, tID}
 }
 
 /*
@@ -62,8 +60,8 @@ func checkForMixedDeadlock(routineSend int, routineRevc int) {
 		if ok1 && ok2 {
 			// found potential mixed deadlock
 			found := "Potential mixed deadlock:\n"
-			found += "\tlock1: " + mostRecentAcquireTID[routineSend][m] + "\n"
-			found += "\tlock2: " + mostRecentAcquireTID[routineRevc][m]
+			found += "\tlock1: " + mostRecentAcquire[routineSend][m].tID + "\n"
+			found += "\tlock2: " + mostRecentAcquire[routineRevc][m].tID
 
 			logging.Result(found, logging.CRITICAL)
 		}
@@ -75,8 +73,8 @@ func checkForMixedDeadlock(routineSend int, routineRevc int) {
 		if ok1 && ok2 {
 			// found potential mixed deadlock
 			found := "Potential mixed deadlock:\n"
-			found += "\tlock1: " + mostRecentAcquireTID[routineSend][m] + "\n"
-			found += "\tlock2: " + mostRecentAcquireTID[routineRevc][m]
+			found += "\tlock1: " + mostRecentAcquire[routineSend][m].tID + "\n"
+			found += "\tlock2: " + mostRecentAcquire[routineRevc][m].tID
 
 			logging.Result(found, logging.CRITICAL)
 		}

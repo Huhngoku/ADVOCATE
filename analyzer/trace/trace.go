@@ -212,9 +212,38 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 	currentVCWmhb[1] = currentVCWmhb[1].Inc(1)
 
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
-		// ignore non executed operations
+		// do not update the vector clock for not executed operations, but check for leaks
 		if elem.getTpost() == 0 {
-			logging.Debug("Skip vector clock calculation for "+elem.ToString(), logging.DEBUG)
+			switch e := elem.(type) {
+			case *TraceElementChannel:
+				switch e.opC {
+				case send:
+					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 0)
+				case recv:
+					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 1)
+				}
+			case *TraceElementMutex:
+				analysis.CheckForLeakMutex(elem.GetTID())
+			case *TraceElementWait:
+				analysis.CheckForLeakWait(elem.GetTID())
+			case *TraceElementSelect:
+				cases := e.GetCases()
+				ids := make([]int, 0)
+				opTypes := make([]int, 0)
+				for _, c := range cases {
+					switch c.opC {
+					case send:
+						ids = append(ids, c.GetID())
+						opTypes = append(opTypes, 0)
+					case recv:
+						ids = append(ids, c.GetID())
+						opTypes = append(opTypes, 1)
+					}
+				}
+				analysis.CheckForLeakSelectStuck(ids, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
+			case *TraceElementCond:
+				analysis.CheckForLeakCond(elem.GetTID())
+			}
 			continue
 		}
 
@@ -244,6 +273,20 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 		case *TraceElementSelect:
 			logging.Debug("Update vector clock for select operation "+e.ToString()+
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
+			cases := e.GetCases()
+			ids := make([]int, 0)
+			opTypes := make([]int, 0)
+			for _, c := range cases {
+				switch c.opC {
+				case send:
+					ids = append(ids, c.GetID())
+					opTypes = append(opTypes, 0)
+				case recv:
+					ids = append(ids, c.GetID())
+					opTypes = append(opTypes, 1)
+				}
+			}
+			analysis.CheckForLeakSelectRun(ids, opTypes, currentVCHb[e.routine].Copy(), e.tID)
 			e.updateVectorClock()
 		case *TraceElementWait:
 			logging.Debug("Update vector clock for go operation "+e.ToString()+
@@ -253,6 +296,7 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 
 	}
 
+	analysis.CheckForLeak()
 	analysis.CheckForDoneBeforeAdd()
 	// analysis.CheckForCyclicDeadlock()
 

@@ -169,6 +169,15 @@ func (se *TraceElementSelect) GetID() int {
 }
 
 /*
+ * Get the cases of the select statement
+ * Returns:
+ *   []traceElementChannel: The cases of the select statement
+ */
+func (se *TraceElementSelect) GetCases() []TraceElementChannel {
+	return se.cases
+}
+
+/*
  * Get the routine of the element
  * Returns:
  *   int: The routine of the element
@@ -291,5 +300,6 @@ func (se *TraceElementSelect) updateVectorClock() {
 	if se.chosenDefault { // no update for default
 		return
 	}
+
 	se.chosenCase.updateVectorClock()
 }

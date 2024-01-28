@@ -18,13 +18,13 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 	if hasSend[id] {
 		logging.Debug("Check for possible send on closed channel "+
 			strconv.Itoa(id)+" with "+
-			mostRecentSend[id].ToString()+" and "+closeVC[id].ToString(),
+			mostRecentSend[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
 			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeVC[id], mostRecentSend[id])
+		happensBefore := GetHappensBefore(closeData[id].vc, mostRecentSend[id].vc)
 		if happensBefore == Concurrent {
 			found := "Possible send on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
-			found += "\tsend : " + mostRecentSendPosition[id]
+			found += "\tsend : " + mostRecentSend[id].tID
 			logging.Result(found, logging.CRITICAL)
 		}
 	}
@@ -32,13 +32,13 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 	if hasReceived[id] {
 		logging.Debug("Check for possible receive on closed channel "+
 			strconv.Itoa(id)+" with "+
-			mostRecentReceive[id].ToString()+" and "+closeVC[id].ToString(),
+			mostRecentReceive[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
 			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeVC[id], mostRecentReceive[id])
+		happensBefore := GetHappensBefore(closeData[id].vc, mostRecentReceive[id].vc)
 		if happensBefore == Concurrent || happensBefore == Before {
 			found := "Possible receive on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
-			found += "\trecv : " + mostRecentReceivePosition[id]
+			found += "\trecv : " + mostRecentReceive[id].tID
 			logging.Result(found, logging.WARNING)
 		}
 	}
@@ -60,10 +60,10 @@ func foundReceiveOnClosedChannel(posClose string, posRecv string) {
  * 	pos (string): the position of the close in the program
  */
 func checkForClosedOnClosed(id int, pos string) {
-	if posOld, ok := closePos[id]; ok {
+	if posOld, ok := closeData[id]; ok {
 		found := "Found close on closed channel:\n"
 		found += "\tclose: " + pos + "\n"
-		found += "\tclose: " + posOld
+		found += "\tclose: " + posOld.tID
 		logging.Result(found, logging.CRITICAL)
 	}
 }

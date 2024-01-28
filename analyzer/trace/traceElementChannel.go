@@ -362,6 +362,11 @@ func (ch *TraceElementChannel) updateVectorClock() {
 	}
 }
 
+/*
+ * Find the partner of the channel operation
+ * Returns:
+ *   int: The routine id of the partner
+ */
 func (ch *TraceElementChannel) findUnbufferedPartner() int {
 	// return -1 if closed by channel
 	if ch.cl {

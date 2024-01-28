@@ -745,6 +745,98 @@ func n38() {
 	m.Unlock()
 }
 
+// ============== Leaking ==============
+
+func n39() {
+	c := make(chan int, 0)
+
+	go func() {
+		c <- 1
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n40() {
+	c := make(chan int, 0)
+
+	go func() {
+		<-c
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n41() {
+	c := make(chan int, 0)
+
+	go func() {
+		close(c)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n42() {
+	c := make(chan int, 0)
+
+	go func() {
+		<-c
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		<-c
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n43() {
+	c := make(chan int, 0)
+
+	go func() {
+		<-c
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n44() {
+	w := sync.WaitGroup{}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		w.Wait()
+	}()
+
+	w.Add(1)
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n45() {
+	m := sync.Mutex{}
+
+	go func() {
+		m.Lock()
+		m.Lock()
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
 func main() {
 
 	testCase := flag.Int("c", 0, "Test to run")
@@ -763,11 +855,11 @@ func main() {
 		defer runtime.WaitForReplayFinish()
 	}
 
-	const n = 38
+	const n = 45
 	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
-		n36, n37, n38}
+		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45}
 
 	testNames := [n]string{
 		"Test 01: N - Synchronous channel",
@@ -807,7 +899,14 @@ func main() {
 		"Test 35: P - Mixed deadlock, MD2-2/3, send/recv, unbuffered",
 		"Test 36: P - Mixed deadlock, MD2-2/3, close/recv, unbuffered",
 		"Test 37: N - No mixed deadlock, MD2-2/3, close/recv, unbuffered",
-		"Test 38: N - Mixed deadlock, send/recv, buffered",
+		"Test 38: P - Mixed deadlock, send/recv, buffered",
+		"Test 39: P - Leaking channel send, no alternative",
+		"Test 40: P - Leaking channel recv, no alternative",
+		"Test 41: N - No leaking channel close",
+		"Test 42: P - Leaking channel recv, with alternative",
+		"Test 43: P - Leaking channel send, with alternative",
+		"Test 44: P - Leaking wait group",
+		"Test 45: P - Leaking mutex, doubble locking",
 	}
 
 	// cancel test if time has run out
