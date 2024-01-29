@@ -133,6 +133,12 @@ func PrintSummary() int {
 	}
 
 	// write output readable
+	if _, err := os.Stat(outputReadableFile); err == nil {
+		if err := os.Remove(outputReadableFile); err != nil {
+			panic(err)
+		}
+	}
+
 	file, err := os.OpenFile(outputReadableFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
@@ -144,6 +150,12 @@ func PrintSummary() int {
 	}
 
 	// write output machine
+	if _, err := os.Stat(outputMachineFile); err == nil {
+		if err := os.Remove(outputMachineFile); err != nil {
+			panic(err)
+		}
+	}
+
 	resReadable = strings.ReplaceAll(resReadable, "\n\n", "\n")
 	file, err = os.OpenFile(outputMachineFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
