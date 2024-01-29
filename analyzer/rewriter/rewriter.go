@@ -21,6 +21,18 @@ func RewriteTrace(bug bugs.Bug) {
 	case bugs.DoneBeforeAdd:
 		println("Start rewriting trace for negative waitgroup counter...")
 		rewriteTraceMultiple(bug)
+	case bugs.MixedDeadlock:
+		println("Rewriting trace for mixed deadlock is not implemented yet")
+		// TODO: implement
+	case bugs.CyclicDeadlock:
+		println("Rewriting trace for cyclic deadlock is not implemented yet")
+		// TODO: implement
+	case bugs.RoutineLeakPartner:
+		println("Rewriting trace for routine leak with partner is not implemented yet")
+		// TODO: implement
+	case bugs.RoutineLeakNoPartner:
+		println("Rewriting trace for routine leak without partner is not implemented yet")
+		// TODO: implement
 	default:
 		println("For the given bug type no trace rewriting is implemented")
 	}

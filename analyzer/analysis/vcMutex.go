@@ -26,12 +26,14 @@ func newRel(index int, nRout int) {
  *   tPost (int): The timestamp at the end of the event
  */
 func Lock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, tID string, tPost int) {
-	if tPost != 0 {
-		newRel(id, vc[routine].size)
-		vc[routine] = vc[routine].Sync(relW[id])
-		vc[routine] = vc[routine].Sync(relR[id])
-		vc[routine] = vc[routine].Inc(routine)
+	if tPost == 0 {
+		return
 	}
+
+	newRel(id, vc[routine].size)
+	vc[routine] = vc[routine].Sync(relW[id])
+	vc[routine] = vc[routine].Sync(relR[id])
+	vc[routine] = vc[routine].Inc(routine)
 
 	lockSetAddLock(routine, id, tID, wVc[routine])
 }
@@ -52,6 +54,8 @@ func Unlock(routine int, id int, vc map[int]VectorClock, tPost int) {
 	relW[id] = vc[routine].Copy()
 	relR[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
+
+	lockSetRemoveLock(routine, id)
 }
 
 /*

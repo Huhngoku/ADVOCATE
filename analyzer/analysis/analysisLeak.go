@@ -21,7 +21,7 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 	if opType == 0 { // send
 		if _, ok := mostRecentReceive[id]; ok {
 			if GetHappensBefore(mostRecentReceive[id].vc, vc) == Concurrent {
-				found := "Found leak on channel with possible partner:\n"
+				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + mostRecentReceive[id].tID + "\n"
 				found += "\tpartner: " + tID
 				logging.Result(found, logging.CRITICAL)
@@ -31,7 +31,7 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 	} else if opType == 1 { // recv
 		if _, ok := mostRecentSend[id]; ok {
 			if GetHappensBefore(mostRecentSend[id].vc, vc) == Concurrent {
-				found := "Found leak on channel with possible partner:\n"
+				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + tID
 				found += "\tpartner: " + mostRecentSend[id].tID + "\n"
 				logging.Result(found, logging.CRITICAL)
@@ -39,7 +39,7 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 			}
 		}
 		if _, ok := closeData[id]; ok {
-			found := "Found leak on channel with possible partner:\n"
+			found := "Potential leak with possible partner:\n"
 			found += "\tchannel: " + closeData[id].tID + "\n"
 			found += "\tpartner: " + tID
 			logging.Result(found, logging.CRITICAL)
@@ -71,7 +71,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 				continue
 			}
 			if GetHappensBefore(vcTID2.vc, vcTID.vc) == Concurrent {
-				found := "Found leak on channel with possible partner:\n"
+				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.tID
 				logging.Result(found, logging.CRITICAL)
@@ -95,7 +95,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 				continue
 			}
 			if GetHappensBefore(vcTID2.vc, vcTID.vc) == Concurrent {
-				found := "Found leak on channel with possible partner:\n"
+				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.tID
 				logging.Result(found, logging.CRITICAL)
@@ -137,7 +137,7 @@ func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []in
 		if opTypes[i] == 0 { // send
 			if _, ok := mostRecentReceive[id]; ok {
 				if GetHappensBefore(vc, mostRecentReceive[id].vc) == Concurrent {
-					found := "Found leak on select with possible partner:\n"
+					found := "Potential leak with possible partner:\n"
 					found += "\tchannel: " + tID
 					found += "\tpartner: " + mostRecentReceive[id].tID + "\n"
 					logging.Result(found, logging.CRITICAL)
@@ -147,7 +147,7 @@ func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []in
 		} else if opTypes[i] == 1 { // recv
 			if _, ok := mostRecentSend[id]; ok {
 				if GetHappensBefore(vc, mostRecentSend[id].vc) == Concurrent {
-					found := "Found leak on select with possible partner:\n"
+					found := "Potential leak with possible partner:\n"
 					found += "\tchannel: " + tID + "\n"
 					found += "\tpartner: " + mostRecentSend[id].tID
 					logging.Result(found, logging.CRITICAL)
@@ -155,7 +155,7 @@ func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []in
 				}
 			}
 			if _, ok := closeData[id]; ok {
-				found := "Found leak on select with possible partner:\n"
+				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + tID + "\n"
 				found += "\tpartner: " + closeData[id].tID
 				logging.Result(found, logging.CRITICAL)
@@ -197,7 +197,7 @@ func CheckForLeakSelectRun(ids []int, typeIds []int, vc VectorClock, tID string)
  *   tID (string): The trace id
  */
 func CheckForLeakMutex(tID string) {
-	found := "Found leak on mutex:\n"
+	found := "Potential leak on mutex:\n"
 	found += "\tmutex: " + tID + "\n"
 	found += "\t"
 	logging.Result(found, logging.CRITICAL)
@@ -209,7 +209,7 @@ func CheckForLeakMutex(tID string) {
  *   tID (string): The trace id
  */
 func CheckForLeakWait(tID string) {
-	found := "Found leak on wait group:\n"
+	found := "Potential leak on wait group:\n"
 	found += "\twait-group: " + tID + "\n"
 	found += "\t"
 	logging.Result(found, logging.CRITICAL)
@@ -221,7 +221,7 @@ func CheckForLeakWait(tID string) {
  *   tID (string): The trace id
  */
 func CheckForLeakCond(tID string) {
-	found := "Found leak on conditional variable:\n"
+	found := "Potential leak on conditional variable:\n"
 	found += "\tconditional: " + tID + "\n"
 	found += "\t"
 	logging.Result(found, logging.CRITICAL)
@@ -235,7 +235,7 @@ func CheckForLeak() {
 	// channel
 	for _, vcTIDs := range leakingChannels {
 		for _, vcTID := range vcTIDs {
-			found := "Found leak on channel without possible partner:\n"
+			found := "Potential leak without possible partner:\n"
 			found += "\tchannel: " + vcTID.tID + "\n"
 			found += "\tpartner: -"
 			logging.Result(found, logging.CRITICAL)
