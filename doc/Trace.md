@@ -2,9 +2,9 @@
 
 The following is the structure of the trace T in EBNF. There is an extra, 
 better readable
-explanation for all trace elements in the corresponding files in `traceElements`. 
+explanation for all trace elements in the corresponding files in `traceElements`.
+For the trace of each routine a separate trace file is created
 ```
-T := L\nT | ""                                                  (trace)
 L := "" | {E";"}E                                               (routine local trace)
 E := G | M | W | C | S | O | N                                  (trace element)
 G := "G,"tpre","id,","pos                                       (element for creation of new routine)

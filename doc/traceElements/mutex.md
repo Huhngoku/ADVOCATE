@@ -93,10 +93,20 @@ run concurrent (this only effects the time stamps). We also ignore the elements 
 shift the time steps.
 ```txt
 M,1,2,1,-,L,t,example_file.go:8;M,3,4,1,-,U,t,example_file.go:10
+```
+```txt
 M,5,6,1,-,T,t,example_file.go:13;M,7,8,1,-,U,t,example_file.go:16
+```
+```txt
 M,9,10,2,R,L,t,example_file.go:20;M,11,12,2,R,U,t,example_file.go:22
+```
+```txt
 M,13,14,2,R,T,t,example_file.go:25;M,15,16,2,R,U,t,example_file.go:28
+```
+```txt
 M,17,18,2,R,R,t,example_file.go:32;M,19,20,2,R,N,t,example_file.go:34
+```
+```txt
 M,21,22,2,R,Y,t,example_file.go:37;M,23,24,2,R,N,t,example_file.go:40
 ```
 

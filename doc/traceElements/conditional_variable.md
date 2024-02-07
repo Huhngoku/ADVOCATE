@@ -78,8 +78,9 @@ If we ignore all unrelated internal operations, all atomic operations and assume
 before the program terminates, we get the following trace.
 ```txt
 G,11,7,runtime.go:42;M,20,22,4,-,L,t,runtime.go:29;N,23,24,5,S,runtime.go:33;M,25,27,4,-,U,t,runtime.go:34;
+```
+```txt
 M,12,14,4,-,L,t,runtime.go:18;N,15,31,5,W,runtime.go:22;M,17,19,4,-,U,t,/home/erik/Uni/HiWi/ADVOCATE/go-patch/src/sync/cond.go:83;M,28,30,4,-,L,t,/home/erik/Uni/HiWi/ADVOCATE/go-patch/src/sync/cond.go:85;M,32,34,6,-,L,t,/home/erik/Uni/HiWi/ADVOCATE/go-patch/src/sync/pool.go:216;M,36,38,6,-,U,t,/home/erik/Uni/HiWi/ADVOCATE/go-patch/src/sync/pool.go:233;M,51,53,4,-,U,t,runtime.go:26;
-
 ```
 
 ## Implementation

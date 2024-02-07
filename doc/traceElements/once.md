@@ -56,7 +56,11 @@ If we ignore all internal operations we get the following trace:
 
 ```txt
 G,1,2;G,2,3;
+```
+```txt
 O,5,6,4,f,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/bin/main.go:12;
+```
+```txt
 O,3,4,4,t,/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/bin/main.go:18;
 ```
 

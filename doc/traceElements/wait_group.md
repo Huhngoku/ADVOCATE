@@ -49,6 +49,8 @@ func main() {  // routine 1
 If we ignore all internal operations we get the following trace:
 ```txt
 W,1,2,1,A,1,1,example_file.go:10;G,3,2;W,6,7,1,W,0,0,example_file.go:17
+```
+```txt
 W,4,5,1,A,-1,1,example_file.go:14
 ```
 ## Implementation
