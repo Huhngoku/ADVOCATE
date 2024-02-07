@@ -132,19 +132,52 @@ type ReplayElement struct {
 }
 
 type AdvocateReplayTrace []ReplayElement
+type AdvocateReplayTraces map[uint64]AdvocateReplayTrace // routine -> trace
 
 var replayEnabled bool
 var replayLock mutex
-var replayIndex int
 var replayDone int
 var replayDoneLock mutex
 
 var timeoutLock mutex
 
-var replayData = make(AdvocateReplayTrace, 0)
+// read trace
+var replayData = make(AdvocateReplayTraces, 0)
+var numberElementsInTrace int
 var traceElementPositions = make(map[string][]int) // file -> []line
 
 var timeoutMessageCycle = 500 // approx. 10s
+
+/*
+ * Add a replay trace to the replay data.
+ * Arguments:
+ * 	routine: the routine id
+ * 	trace: the replay trace
+ */
+func AddReplayTrace(routine uint64, trace AdvocateReplayTrace) {
+	if _, ok := replayData[routine]; ok {
+		panic("Routine already exists")
+	}
+	replayData[routine] = trace
+
+	numberElementsInTrace += len(trace)
+
+	for _, e := range trace {
+		if _, ok := traceElementPositions[e.File]; !ok {
+			traceElementPositions[e.File] = make([]int, 0)
+		}
+		if !containsInt(traceElementPositions[e.File], e.Line) {
+			traceElementPositions[e.File] = append(traceElementPositions[e.File], e.Line)
+		}
+	}
+}
+
+func (t AdvocateReplayTraces) Print() {
+	for id, trace := range t {
+		println("\nRoutine: ", id)
+		trace.Print()
+	}
+}
 
 func (t AdvocateReplayTrace) Print() {
 	for _, e := range t {
@@ -152,25 +185,11 @@ func (t AdvocateReplayTrace) Print() {
 	}
 }
 
-func EnableReplay(trace AdvocateReplayTrace) {
-	replayData = trace
-
-	// extract and save positions
-	for _, e := range replayData {
-		if _, ok := traceElementPositions[e.File]; !ok {
-			traceElementPositions[e.File] = make([]int, 1)
-		}
-
-		if !containsInt(traceElementPositions[e.File], e.Line) {
-			traceElementPositions[e.File] = append(traceElementPositions[e.File], e.Line)
-		}
-	}
-
+func EnableReplay() {
 	// run a background routine to check for timeout if no operation is executed
 	go checkForTimeoutNoOperation()
 
 	replayEnabled = true
-	trace.Print()
 	println("Replay enabled\n")
 }
 
@@ -184,7 +203,7 @@ func WaitForReplayFinish() {
 	for {
 		timeoutCounter++
 		lock(&replayDoneLock)
-		if replayDone >= len(replayData) {
+		if replayDone >= numberElementsInTrace {
 			unlock(&replayDoneLock)
 			break
 		}
@@ -290,7 +309,29 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	// println("WaitForReplayPath", op, file, line)
 	timeoutCounter := 0
 	for {
-		next := getNextReplayElement()
+		nextRoutine, next := getNextReplayElement()
+		currentRoutine := currentGoRoutine().id
+
+		// all elements in the trace have been executed
+		if nextRoutine == -1 {
+			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
+			replayEnabled = false
+			return false, ReplayElement{}
+		}
+
+		// not the correct routine
+		if currentRoutine != uint64(nextRoutine) {
+			timeoutCounter++
+
+			checkForTimeout(timeoutCounter, file, line)
+			slowExecution()
+			continue
+		}
+
+		// if the routine is correct, but the next element is not the correct one,
+		// the program has diverged from the trace
+		// in this case, we print a message and disable the replay
+
 		print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
 			"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
 
@@ -298,6 +339,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
 				println("Continue")
+
 				timeoutCounter++
 
 				checkForTimeout(timeoutCounter, file, line)
@@ -306,16 +348,12 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 			}
 		}
 
-		// update replay index
-		lock(&replayLock)
-		replayIndex++
-		unlock(&replayLock)
-
 		// reset timeout counter
 		lock(&timeoutLock)
 		timeoutCounter = 0
 		unlock(&timeoutLock)
 
+		foundReplayElement(nextRoutine)
 		println("Replay Run : ", next.Time, op, file, line)
 		return true, next
 	}
@@ -455,16 +493,42 @@ func BlockForever() {
 
 /*
  * Get the next replay element.
- * The function returns the next replay element and increments the index.
+ * Return:
+ * 	uint64: the routine of the next replay element or -1 if the trace is empty
+ * 	ReplayElement: the next replay element
  */
-func getNextReplayElement() ReplayElement {
+func getNextReplayElement() (int, ReplayElement) {
 	lock(&replayLock)
 	defer unlock(&replayLock)
-	if replayIndex >= len(replayData) {
-		return ReplayElement{}
-		// panic("Tace to short. The Program was most likely altered between recording and replay.")
+
+	routine := -1
+	// set mintTime to max int
+	minTime := int(^uint(0) >> 1)
+
+	for id, trace := range replayData {
+		if len(trace) == 0 {
+			continue
+		}
+		elem := trace[0]
+		if elem.Time < minTime {
+			minTime = elem.Time
+			routine = int(id)
+		}
 	}
-	return replayData[replayIndex]
+
+	if routine == -1 {
+		return -1, ReplayElement{}
+	}
+
+	return routine, replayData[uint64(routine)][0]
+}
+
+func foundReplayElement(routine int) {
+	lock(&replayLock)
+	defer unlock(&replayLock)
+
+	// remove the first element from the trace for the routine
+	replayData[uint64(routine)] = replayData[uint64(routine)][1:]
 }
 
 /*
@@ -479,6 +543,9 @@ func getNextReplayElement() ReplayElement {
  */
 // TODO: check if all of them are necessary
 func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
+	if hasSuffix(file, "advocate/advocate.go") { // internal
+		return true
+	}
 	if hasSuffix(file, "syscall/env_unix.go") {
 		return true
 	}

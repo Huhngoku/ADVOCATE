@@ -51,6 +51,7 @@ var advocateAtomicMapRoutine = make(map[uint64]uint64)
 var advocateAtomicMapToID = make(map[uint64]uint64)
 var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
+var advocateTraceWritingDisabled = false
 
 /*
  * Return a string representation of the trace
@@ -115,10 +116,11 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringById(id uint64) (string, bool) {
+	println("TraceToStringById", id)
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
-	if trace, ok := AdvocateRoutines[id]; ok {
-		return traceToString(trace), true
+	if routine, ok := AdvocateRoutines[id]; ok {
+		return traceToString(&routine.Trace), true
 	}
 	return "", false
 }
@@ -136,9 +138,9 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 	// lock(&AdvocateRoutinesLock)
 	// defer unlock(&AdvocateRoutinesLock)
 
-	if trace, ok := AdvocateRoutines[uint64(id)]; ok {
+	if routine, ok := AdvocateRoutines[uint64(id)]; ok {
 		res := ""
-		for i, elem := range *trace {
+		for i, elem := range routine.Trace {
 			if i != 0 {
 				res += ";"
 			}
@@ -169,11 +171,11 @@ func AllTracesToString() string {
 
 	for i := 1; i <= len(AdvocateRoutines); i++ {
 		res += ""
-		trace := AdvocateRoutines[uint64(i)]
-		if trace == nil {
+		routine := AdvocateRoutines[uint64(i)]
+		if routine == nil {
 			panic("Trace is nil")
 		}
-		res += traceToString(trace) + "\n"
+		res += traceToString(&routine.Trace) + "\n"
 
 	}
 	return res
@@ -226,6 +228,36 @@ func InitAdvocate(size int) {
 func DisableTrace() {
 	at.AdvocateAtomicUnlink()
 	advocateDisabled = true
+}
+
+/*
+ * Block the trace collection
+ * Resume using UnblockTrace
+ */
+func BlockTrace() {
+	println("Block trace")
+	advocateTraceWritingDisabled = true
+}
+
+/*
+ * Resume the trace collection
+ * Block using BlockTrace
+ */
+func UnblockTrace() {
+	println("UnBlock trace")
+	advocateTraceWritingDisabled = false
+}
+
+/*
+ * Remove all trace elements from the trace
+ * Do not remove the routine objects them self
+ * Make sure to call BlockTrace(), before calling this function
+ */
+func DeleteTrace() {
+	println("Delete trace")
+	for i, _ := range AdvocateRoutines {
+		AdvocateRoutines[i].Trace = AdvocateRoutines[i].Trace[:0]
+	}
 }
 
 // ============================= Routine ===========================

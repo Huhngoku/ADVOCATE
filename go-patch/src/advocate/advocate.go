@@ -7,39 +7,155 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 )
+
+// ============== Recording =================
+
+var backgroundMemoryTestRunning = true
+var traceFileCounter = 0
 
 /*
  * Write the trace of the program to a file.
  * The trace is written in the file named file_name.
  * The trace is written in the format of advocate.
  */
-func CreateTrace(fileName string) {
+func Finish() {
 	runtime.DisableTrace()
+	backgroundMemoryTestRunning = false
 
-	os.Remove(fileName)
+	writeToTraceFiles()
+}
+
+func writeTraceIfFull() {
+	for {
+		time.Sleep(5 * time.Second)
+		// get the amount of free space on ram
+		var stat syscall.Sysinfo_t
+		err := syscall.Sysinfo(&stat)
+		if err != nil {
+			panic(err)
+		}
+		// if less than 20% free space, write trace
+		if stat.Freeram*5 < stat.Totalram {
+			cleanTrace()
+			time.Sleep(15 * time.Second)
+		}
+
+		// end if background memory test is not running anymore
+		if !backgroundMemoryTestRunning {
+			break
+		}
+	}
+}
+
+func cleanTrace() {
+	println("Write trace to file2")
+	// stop new element from been added to the trace
+	runtime.BlockTrace()
+	writeToTraceFiles()
+	runtime.DeleteTrace()
+	runtime.UnblockTrace()
+	runtime.GC()
+
+}
+
+/*
+ * Write the trace to a set of files. The traces are written into a folder
+ * with name trace. For each routine, a file is created. The file is named
+ * trace_routineId.log. The trace of the routine is written into the file.
+ * Args:
+ * 	- remove: If true, and a file with the same name already exists, the file is removed, before the trace is written.
+ *      If false, the trace is appended to the file.
+ */
+func writeToTraceFiles() {
+
+	numRout := runtime.GetNumberOfRoutines()
+	for i := 1; i <= numRout; i++ {
+		// write the trace to the file
+		writeToTraceFile(i)
+	}
+
+}
+
+func writeToTraceFile(routine int) {
+	// create the file if it does not exist and open it
+	fileName := "trace/trace_" + strconv.Itoa(routine) + ".log"
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
 	defer file.Close()
 
-	numRout := runtime.GetNumberOfRoutines()
-	for i := 1; i <= numRout; i++ {
-		advocateChan := make(chan string)
-		go func() {
-			runtime.TraceToStringByIdChannel(i, advocateChan)
-			close(advocateChan)
-		}()
-		for trace := range advocateChan {
-			if _, err := file.WriteString(trace); err != nil {
-				panic(err)
-			}
-		}
-		if _, err := file.WriteString("\n"); err != nil {
+	// get the runtime to send the trace
+	advocateChan := make(chan string)
+	go func() {
+		runtime.TraceToStringByIdChannel(routine, advocateChan)
+		close(advocateChan)
+	}()
+
+	// receive the trace and write it to the file
+	for trace := range advocateChan {
+		if _, err := file.WriteString(trace); err != nil {
 			panic(err)
 		}
 	}
+}
+
+func InitTracing(size int) {
+	// remove the trace folder if it exists
+	err := os.RemoveAll("trace")
+	if err != nil {
+		if !os.IsNotExist(err) {
+			panic(err)
+		}
+	}
+
+	// create the trace folder
+	err = os.Mkdir("trace", 0755)
+	if err != nil {
+		if !os.IsExist(err) {
+			panic(err)
+		}
+	}
+	runtime.InitAdvocate(size)
+	go writeTraceIfFull()
+}
+
+// ============== Reading =================
+
+/*
+ * Read the trace from the trace folder.
+ * The function reads all files in the trace folder and adds the trace to the runtime.
+ * The trace is added to the runtime by calling the AddReplayTrace function.
+ */
+func EnableReplay() {
+	// if trace folder does not exist, panic
+	if _, err := os.Stat("trace"); os.IsNotExist(err) {
+		panic("Trace folder does not exist.")
+	}
+
+	// traverse all files in the trace folder
+	files, err := os.ReadDir("trace")
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+		// if the file is a directory, ignore it
+		if file.IsDir() {
+			continue
+		}
+
+		// if the file is a log file, read the trace
+		if strings.HasSuffix(file.Name(), ".log") {
+			routineID, trace := readTraceFile("trace/" + file.Name())
+			runtime.AddReplayTrace(uint64(routineID), trace)
+		}
+	}
+
+	runtime.EnableReplay()
 }
 
 /*
@@ -55,19 +171,29 @@ func CreateTrace(fileName string) {
  * 	- select
  * For now we ignore atomic operations.
  * We only record the relevant information for each operation.
- * Arguments:
- * 	- file_name: The name of the file that contains the trace.
+ * Args:
+ * 	- fileName: The name of the file that contains the trace.
+ * Returns:
+ * 	The routine id
+ * 	The trace for this routine
  */
-func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
+// TODO: LOCAL
+func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	mb := 1048576
 	maxTokenSize := 1
+
+	// get the routine id from the file name
+	routineId, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, "trace_"), ".log"))
+	if err != nil {
+		panic(err)
+	}
 
 	replayData := make(runtime.AdvocateReplayTrace, 0)
 	chanWithoutPartner := make(map[string]int)
 	var routine = 0
 
 	for {
-		file, err := os.Open(file_name)
+		file, err := os.Open(fileName)
 		if err != nil {
 			panic(err)
 		}
@@ -112,7 +238,7 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 					case "C":
 						op = runtime.AdvocateReplayChannelClose
 					default:
-						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + file_name + ".")
+						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + fileName + ".")
 					}
 					time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
@@ -251,10 +377,11 @@ func ReadTrace(file_name string) runtime.AdvocateReplayTrace {
 	// 	println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
 	// }
 	// println("\n\n")
-	return replayData
+	return routineId, replayData
 }
 
 // TODO: swap timer for rwmutix.Trylock
+// TODO: LOCAL
 func swapTimerRwMutex(op string, time int, file string, line int, replayData *runtime.AdvocateReplayTrace) int {
 	if op == "L" {
 		if !strings.HasSuffix(file, "sync/rwmutex.go") || line != 266 {
@@ -307,6 +434,7 @@ func findReplayPartner(cId string, oId string, index int, chanWithoutPartner map
  * Sort the replay data structure by time.
  * The function returns the sorted replay data structure.
  */
+// TODO: LOCAL
 func sortReplayDataByTime(replayData runtime.AdvocateReplayTrace) runtime.AdvocateReplayTrace {
 	sort.Slice(replayData, func(i, j int) bool {
 		return replayData[i].Time < replayData[j].Time
