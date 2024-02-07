@@ -1,8 +1,0 @@
-G,11,7,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:814;G,12,8,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:721;M,13,15,5,-,L,t,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:728;A,14,1,C;C,16,16,4,C,f,0,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:729;M,17,19,5,-,U,t,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:730;A,18,1,A
-
-
-
-
-
-
-M,20,22,5,-,L,t,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:723;A,21,1,C;M,23,25,5,-,U,t,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:724;A,24,1,A;C,26,27,4,R,t,1,0,/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:725

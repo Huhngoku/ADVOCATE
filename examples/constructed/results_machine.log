@@ -1,7 +1,0 @@
-Potential mixed deadlock:
-	lock1: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:728@13
-	lock2: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:723@20
-Found receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:729@16
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/potentialBugs.go:725@26
-3@15

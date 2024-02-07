@@ -17,7 +17,7 @@ import (
 
 // FN = False negative
 // FP = False positive
-// TN = True negative
+// TN = True negative"trace.log"
 // TP = True positive
 
 // =========== Send / Received to/from closed channel ===========
@@ -846,12 +846,12 @@ func main() {
 
 	if replay != nil && !*replay {
 		// init tracing
-		runtime.InitAdvocate(0)
-		defer advocate.CreateTrace("trace.log")
+		println("Init advocate")
+		advocate.InitTracing(0)
+		defer advocate.Finish()
 	} else {
 		// init replay
-		trace := advocate.ReadTrace("trace.log")
-		runtime.EnableReplay(trace)
+		advocate.EnableReplay()
 		defer runtime.WaitForReplayFinish()
 	}
 
@@ -913,7 +913,7 @@ func main() {
 	go func() {
 		if timeout != nil && *timeout != 0 {
 			time.Sleep(time.Duration(*timeout) * time.Second)
-			advocate.CreateTrace("trace.log")
+			advocate.Finish()
 			panic("Timeout")
 		}
 	}()
