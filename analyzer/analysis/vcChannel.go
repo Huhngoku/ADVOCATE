@@ -11,6 +11,7 @@ type bufferedVC struct {
 	oID         int
 	vc          VectorClock
 	routineSend int
+	tID         string
 }
 
 /*
@@ -46,7 +47,7 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv stri
 		vc[routRecv] = vc[routRecv].Inc(routRecv)
 	}
 
-	checkForMixedDeadlock(routSend, routRecv)
+	checkForMixedDeadlock(routSend, routRecv, tIDSend, tIDRecv)
 	CheckForLeakChannelRun(id, VectorClockTID{vc[routSend].Copy(), tIDSend}, 0)
 	CheckForLeakChannelRun(id, VectorClockTID{vc[routRecv].Copy(), tIDSend}, 1)
 
@@ -91,7 +92,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 		mostRecentSend[id] = VectorClockTID{vc[rout].Copy(), mostRecentSend[id].tID}
 	}
 
-	bufferedVCs[id][count] = bufferedVC{true, oID, vc[rout].Copy(), rout}
+	bufferedVCs[id][count] = bufferedVC{true, oID, vc[rout].Copy(), rout, tID}
 
 	bufferedVCsCount[id]++
 
@@ -136,7 +137,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
 			if bufferedVCs[id][i].oID == oID {
 				found = true
 				bufferedVCs[id][0] = bufferedVCs[id][i]
-				bufferedVCs[id][i] = bufferedVC{false, 0, vc[rout].Copy(), 0}
+				bufferedVCs[id][i] = bufferedVC{false, 0, vc[rout].Copy(), 0, ""}
 				break
 			}
 		}
@@ -147,6 +148,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
 	}
 	v := bufferedVCs[id][0].vc
 	routSend := bufferedVCs[id][0].routineSend
+	tIDSend := bufferedVCs[id][0].tID
 
 	vc[rout] = vc[rout].Sync(v)
 	if fifo {
@@ -155,7 +157,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
 	}
 
 	bufferedVCs[id] = bufferedVCs[id][1:]
-	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, 0, vc[rout].Copy(), 0})
+	bufferedVCs[id] = append(bufferedVCs[id], bufferedVC{false, 0, vc[rout].Copy(), 0, ""})
 
 	// for detection of receive on closed
 	hasReceived[id] = true
@@ -163,7 +165,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
 
 	vc[rout] = vc[rout].Inc(rout)
 
-	checkForMixedDeadlock(routSend, rout)
+	checkForMixedDeadlock(routSend, rout, tIDSend, tID)
 	CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
 }
 
@@ -212,7 +214,7 @@ func RecvC(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
 	vc[rout] = vc[rout].Sync(closeData[id].vc)
 	vc[rout] = vc[rout].Inc(rout)
 
-	checkForMixedDeadlock(closeRout[id], rout)
+	checkForMixedDeadlock(closeRout[id], rout, closeData[id].tID, tID)
 	CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
 }
 
@@ -229,7 +231,7 @@ func newBufferedVCs(id int, size int, numRout int) {
 		bufferedVCs[id] = make([]bufferedVC, size)
 		for i := 0; i < size; i++ {
 			bufferedVCsCount[id] = 0
-			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout), 0}
+			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout), 0, ""}
 		}
 	}
 }

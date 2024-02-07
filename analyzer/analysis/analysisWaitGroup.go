@@ -84,7 +84,7 @@ func CheckForDoneBeforeAdd() {
 					}
 				}
 				// count the number of done operations d that happen before the done operation
-				countDone := 0
+				countDone := 1 // self
 				donePosListConc := []string{}
 				donePosListBefore := []string{}
 				for routine2, vcs := range doneWait[id] { // for all routines
@@ -121,44 +121,27 @@ func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string
 	found += "\tdone: " + doneWait[id][routine][op].tID + "\n"
 	found += "\tdone/add: "
 
-	for i, pos := range donePosListConc {
+	for _, pos := range donePosListConc {
 		if uniquePos[pos] {
 			continue
 		}
-		if i != 0 {
-			found += ";"
-		}
-		found += pos
+		found += "\n\t\t" + pos
 		uniquePos[pos] = true
 	}
 
-	if len(donePosListConc) > 0 && (len(donePosListBefore) > 0 || len(addPosList) > 0) {
-		found += ";"
-	}
-
-	for i, pos := range donePosListBefore {
+	for _, pos := range donePosListBefore {
 		if uniquePos[pos] {
 			continue
 		}
-		if i != 0 {
-			found += ";"
-		}
-		found += pos
+		found += "\n\t\t" + pos
 		uniquePos[pos] = true
 	}
 
-	if len(donePosListBefore) > 0 && len(addPosList) > 0 {
-		found += ";"
-	}
-
-	for i, pos := range addPosList {
+	for _, pos := range addPosList {
 		if uniquePos[pos] {
 			continue
 		}
-		if i != 0 {
-			found += ";"
-		}
-		found += pos
+		found += "\n\t\t" + pos
 		uniquePos[pos] = true
 	}
 	logging.Result(found, logging.CRITICAL)

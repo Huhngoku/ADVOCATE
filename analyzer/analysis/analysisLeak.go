@@ -235,6 +235,11 @@ func CheckForLeak() {
 	// channel
 	for _, vcTIDs := range leakingChannels {
 		for _, vcTID := range vcTIDs {
+			// length of slices in go are weird
+			if vcTID.tID == "" {
+				continue
+			}
+
 			found := "Potential leak without possible partner:\n"
 			found += "\tchannel: " + vcTID.tID + "\n"
 			found += "\tpartner: -"

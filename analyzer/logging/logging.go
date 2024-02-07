@@ -96,40 +96,66 @@ func InitLogging(level int, outReadable string, outMachine string) {
 
 /*
 * Print the summary of the analysis
+* Args:
+*   noWarning: if true, only critical errors will be shown
+*   noPrint: if true, no output will be printed to the terminal
 * Returns:
 *   int: number of bugs found
  */
-func PrintSummary() int {
+func PrintSummary(noWarning bool, noPrint bool) int {
 	counter := 1
 	resMachine := ""
 	resReadable := "==================== Summary ====================\n\n"
-	fmt.Print("==================== Summary ====================\n\n")
+
+	if !noPrint {
+		fmt.Print("==================== Summary ====================\n\n")
+	}
+
 	found := false
+
 	if len(resultCritical) > 0 {
 		found = true
 		resReadable += "-------------------- Critical -------------------\n"
-		fmt.Print("-------------------- Critical -------------------\n")
+
+		if !noPrint {
+			fmt.Print("-------------------- Critical -------------------\n")
+		}
+
 		for _, result := range resultCritical {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
 			resMachine += result + "\n"
-			fmt.Println(strconv.Itoa(counter) + " " + red + result + reset)
+
+			if !noPrint {
+				fmt.Println(strconv.Itoa(counter) + " " + red + result + reset)
+			}
+
 			counter++
 		}
 	}
-	if len(resultsWarning) > 0 {
+	if len(resultsWarning) > 0 && !noWarning {
 		found = true
 		resReadable += "-------------------- Warning --------------------\n"
-		fmt.Print("-------------------- Warning --------------------\n")
+		if !noPrint {
+			fmt.Print("-------------------- Warning --------------------\n")
+		}
+
 		for _, result := range resultsWarning {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
 			resMachine += result + "\n"
-			fmt.Println(strconv.Itoa(counter) + " " + orange + result + reset)
+
+			if !noPrint {
+				fmt.Println(strconv.Itoa(counter) + " " + orange + result + reset)
+			}
+
 			counter++
 		}
 	}
 	if !found {
 		resReadable += "No bugs found" + "\n"
-		fmt.Println(green + "No bugs found" + reset)
+
+		if !noPrint {
+			fmt.Println(green + "No bugs found" + reset)
+		}
 	}
 
 	// write output readable
@@ -156,7 +182,9 @@ func PrintSummary() int {
 		}
 	}
 
-	resReadable = strings.ReplaceAll(resReadable, "\n\n", "\n")
+	resMachine = strings.ReplaceAll(resMachine, "\n\t\t", ";")
+	resMachine = strings.ReplaceAll(resMachine, ": ;", ": ")
+	resMachine = strings.ReplaceAll(resMachine, "\n\n", "\n")
 	file, err = os.OpenFile(outputMachineFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)

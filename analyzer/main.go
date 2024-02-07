@@ -22,11 +22,17 @@ func main() {
 	bugIndex := flag.Int("i", -1, "Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based")
 	ignoreCriticalSection := flag.Bool("c", false, "Ignore happens before relations of critical sections (default false)")
 	noRewrite := flag.Bool("x", false, "Do not ask to create a reordered trace file after the analysis (default false)")
+	noWarning := flag.Bool("w", false, "Do not print warnings (default false)")
+	noPrint := flag.Bool("p", false, "Do not print the results to the terminal (default false). Automatically set -x to true")
 	flag.Parse()
 
 	if *pathTrace == "" {
 		fmt.Println("Please provide a path to the trace file. Set with -t [file]")
 		return
+	}
+
+	if *noPrint {
+		*noRewrite = true
 	}
 
 	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
@@ -54,7 +60,7 @@ func main() {
 	trace.SetNumberOfRoutines(numberOfRoutines)
 	trace.RunAnalysis(*fifo, *ignoreCriticalSection)
 
-	numberOfResults := logging.PrintSummary()
+	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
 	if numberOfResults != 0 && !*noRewrite {
 		fmt.Println("\n\n\n")

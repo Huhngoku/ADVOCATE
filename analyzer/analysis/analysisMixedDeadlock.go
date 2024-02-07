@@ -53,15 +53,23 @@ func lockSetRemoveLock(routine int, lock int) {
 	delete(lockSet[routine], lock)
 }
 
-func checkForMixedDeadlock(routineSend int, routineRevc int) {
+/*
+ * Check for mixed deadlocks
+ * Args:
+ *   routineSend (int): The routine id of the send operation
+ *   routineRevc (int): The routine id of the receive operation
+ *   tIDSend (string): The trace id of the channel send
+ *   tIDSend (string): The trace id of the channel recv
+ */
+func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tIDRecv string) {
 	for m := range lockSet[routineSend] {
 		_, ok1 := mostRecentAcquire[routineRevc][m]
 		_, ok2 := mostRecentAcquire[routineSend][m]
-		if ok1 && ok2 {
+		if ok1 && ok2 && mostRecentAcquire[routineSend][m].tID != mostRecentAcquire[routineRevc][m].tID {
 			// found potential mixed deadlock
 			found := "Potential mixed deadlock:\n"
-			found += "\tlock1: " + mostRecentAcquire[routineSend][m].tID + "\n"
-			found += "\tlock2: " + mostRecentAcquire[routineRevc][m].tID
+			found += "\tlocks: \n\t\t" + mostRecentAcquire[routineSend][m].tID + "\n\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
+			found += "\tsend/close-recv: \n\t\t" + tIDSend + "\n\t\t" + tIDRecv
 
 			logging.Result(found, logging.CRITICAL)
 		}
@@ -70,11 +78,11 @@ func checkForMixedDeadlock(routineSend int, routineRevc int) {
 	for m := range lockSet[routineRevc] {
 		_, ok1 := mostRecentAcquire[routineRevc][m]
 		_, ok2 := mostRecentAcquire[routineSend][m]
-		if ok1 && ok2 {
+		if ok1 && ok2 && mostRecentAcquire[routineSend][m].tID != mostRecentAcquire[routineRevc][m].tID {
 			// found potential mixed deadlock
 			found := "Potential mixed deadlock:\n"
-			found += "\tlock1: " + mostRecentAcquire[routineSend][m].tID + "\n"
-			found += "\tlock2: " + mostRecentAcquire[routineRevc][m].tID
+			found += "\tlocks: \n\t\t" + mostRecentAcquire[routineSend][m].tID + "\n\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
+			found += "\tsend/close-recv: \n\t\t" + tIDSend + "\n\t\t" + tIDRecv
 
 			logging.Result(found, logging.CRITICAL)
 		}
