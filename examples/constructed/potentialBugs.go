@@ -365,27 +365,7 @@ func n16() {
 }
 
 // FN
-func n17() {
-	c := make(chan int, 0)
-	m := sync.Mutex{}
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		t := m.TryLock()
-		if t {
-			c <- 1
-			<-c
-			m.Unlock()
-		}
-	}()
-
-	m.Lock()
-	time.Sleep(300 * time.Millisecond)
-	close(c)
-	m.Unlock()
-
-	time.Sleep(100 * time.Millisecond)
-}
+func n17() {	const n = 45
 
 // TP
 func n18() {
@@ -755,7 +735,7 @@ func n39() {
 	}()
 
 	time.Sleep(100 * time.Millisecond)
-}
+}	const n = 45
 
 func n40() {
 	c := make(chan int, 0)
@@ -839,28 +819,13 @@ func n45() {
 
 func main() {
 
-	testCase := flag.Int("c", 0, "Test to run")
+	list := flag.Bool("l", false, "List tests. Do not run any test.")
+	testCase := flag.Int("c", 0, "Test to run. If not set, all are run.")
 	replay := flag.Bool("r", false, "Replay")
 	timeout := flag.Int("t", 0, "Timeout")
 	flag.Parse()
 
-	if replay != nil && !*replay {
-		// init tracing
-		println("Init advocate")
-		advocate.InitTracing(0)
-		defer advocate.Finish()
-	} else {
-		// init replay
-		advocate.EnableReplay()
-		defer runtime.WaitForReplayFinish()
-	}
-
 	const n = 45
-	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
-		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
-		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
-		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45}
-
 	testNames := [n]string{
 		"Test 01: N - Synchronous channel",
 		"Test 02: N - Wait group",
@@ -907,6 +872,28 @@ func main() {
 		"Test 43: P - Leaking channel send, with alternative",
 		"Test 44: P - Leaking wait group",
 		"Test 45: P - Leaking mutex, doubble locking",
+	}
+	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
+		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
+		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
+		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45}
+
+	if list != nil && *list {
+		for i := 0; i < n; i++ {
+			println(testNames[i])
+		}
+		return
+	}
+
+	if replay != nil && !*replay {
+		// init tracing
+		println("Init advocate")
+		advocate.InitTracing(0)
+		defer advocate.Finish()
+	} else {
+		// init replay
+		advocate.EnableReplay()
+		defer runtime.WaitForReplayFinish()
 	}
 
 	// cancel test if time has run out

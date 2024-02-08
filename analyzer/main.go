@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	pathTrace := flag.String("t", "", "Path to the trace file to analyze or rewrite")
+	pathTrace := flag.String("t", "", "Path to the trace folder to analyze or rewrite")
 	level := flag.Int("d", 1, "Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1)")
 	fifo := flag.Bool("f", false, "Assume a FIFO ordering for buffered channels (default false)")
 	rewrite := flag.Bool("n", false, "Create a reordered trace file from a given analysis "+
@@ -47,7 +47,10 @@ func main() {
 			fmt.Println("Please provide the index of the result to use for the reordered trace file. Set with -i [file]")
 			return
 		}
-		numberOfRoutines := reader.CreateTraceFromFile(*pathTrace)
+		numberOfRoutines, err := reader.CreateTraceFromFiles(*pathTrace)
+		if err != nil {
+			panic(err)
+		}
 		rewriteTrace(*pathTrace, newTrace, *bugIndex, numberOfRoutines)
 		return
 	}
@@ -56,7 +59,10 @@ func main() {
 	// based on the analysis results
 
 	logging.InitLogging(*level, outReadable, outMachine)
-	numberOfRoutines := reader.CreateTraceFromFile(*pathTrace)
+	numberOfRoutines, err := reader.CreateTraceFromFiles(*pathTrace)
+	if err != nil {
+		panic(err)
+	}
 	trace.SetNumberOfRoutines(numberOfRoutines)
 	trace.RunAnalysis(*fifo, *ignoreCriticalSection)
 
