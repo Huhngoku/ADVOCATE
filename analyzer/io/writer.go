@@ -4,6 +4,7 @@ import (
 	"analyzer/trace"
 	"io"
 	"os"
+	"strconv"
 )
 
 /*
@@ -43,33 +44,40 @@ func CopyFile(source string, dest string) {
  *   path (string): The path to the file to write to
  *   numberRoutines (int): The number of routines in the trace
  */
-func WriteTrace(path string, numberRoutines int) {
-	// delete file if exists
+func WriteTrace(path string, numberRoutines int) error {
+	// delete folder if exists
 	if _, err := os.Stat(path); err == nil {
-		println("File " + path + " already exists. Deleting...")
-		if err := os.Remove(path); err != nil {
-			panic(err)
+		println(path + " already exists. Delete folder " + path)
+		if err := os.RemoveAll(path); err != nil {
+			return err
 		}
 	}
 
-	// open file
-	println("Create new file " + path + "...")
-	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
+	// create new folder
+	println("Create new folder " + path + "...")
+	if err := os.Mkdir(path, 0755); err != nil {
+		return err
 	}
-	defer file.Close()
 
-	// write trace
-	println("Write trace to " + path + "...")
-	traces := trace.GetTraces()
+	// open file
 	for i := 1; i <= numberRoutines; i++ {
-		for index, element := range (*traces)[i] {
+		fileName := path + "trace_" + strconv.Itoa(i) + ".log"
+		println("Create new file " + fileName + "...")
+		file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		// write trace
+		println("Write trace to " + path + "...")
+		trace := trace.GetTraceFromId(i)
+		for index, element := range trace {
 			elementString := element.ToString()
 			if _, err := file.WriteString(elementString); err != nil {
 				panic(err)
 			}
-			if index < len((*traces)[i])-1 {
+			if index < len(trace)-1 {
 				if _, err := file.WriteString(";"); err != nil {
 					panic(err)
 				}
@@ -80,4 +88,5 @@ func WriteTrace(path string, numberRoutines int) {
 		}
 	}
 	println("Trace written")
+	return nil
 }

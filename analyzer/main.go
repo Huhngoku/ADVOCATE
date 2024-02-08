@@ -39,7 +39,7 @@ func main() {
 
 	outMachine := folder + "/results_machine.log"
 	outReadable := folder + "/results_readable.log"
-	newTrace := folder + "rewritten_trace.log"
+	newTrace := folder + "rewritten_trace/"
 
 	// rewrite the trace file based on given analysis results. No analysis is run
 	if *rewrite {
@@ -51,7 +51,10 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		rewriteTrace(*pathTrace, newTrace, *bugIndex, numberOfRoutines)
+
+		if err := rewriteTrace(*pathTrace, newTrace, *bugIndex, numberOfRoutines); err != nil {
+			panic(err)
+		}
 		return
 	}
 
@@ -102,7 +105,9 @@ func main() {
 		}
 
 		if createRewrittenFile {
-			rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines)
+			if err := rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines); err != nil {
+				panic(err)
+			}
 		}
 	}
 }
@@ -111,21 +116,35 @@ func main() {
  * Rewrite the trace file based on given analysis results
  * Args:
  *   outMachine (string): The path to the analysis result file
- *   newTrace (string): The path where the new traces will be created
+ *   newTrace (string): The path where the new traces folder will be created
  *   resultIndex (int): The index of the result to use for the reordered trace file
  *   numberOfRoutines (int): The number of routines in the trace
+ * Returns:
+ *   error: An error if the trace file could not be created
  */
 func rewriteTrace(outMachine string, newTrace string, resultIndex int,
-	numberOfRoutines int) {
-	actual, bug := io.ReadAnalysisResults(outMachine, resultIndex)
+	numberOfRoutines int) error {
+	actual, bug, err := io.ReadAnalysisResults(outMachine, resultIndex)
+	if err != nil {
+		return err
+	}
+
 	if actual {
 		// copy the file of the tracePath to the outputPath
 		io.CopyFile(*&outMachine, newTrace)
 		println("Trace created")
-		return
+		return nil
 	}
 
-	rewriter.RewriteTrace(bug)
+	err = rewriter.RewriteTrace(bug)
+	if err != nil {
+		return err
+	}
 
-	io.WriteTrace(newTrace, numberOfRoutines)
+	err = io.WriteTrace(newTrace, numberOfRoutines)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -88,6 +88,17 @@ func GetTraces() *map[int][]TraceElement {
 }
 
 /*
+ * Get the trace of the given routine
+ * Args:
+ *   id (int): The id of the routine
+ * Returns:
+ *   []traceElement: The trace of the routine
+ */
+func GetTraceFromId(id int) []TraceElement {
+	return traces[id]
+}
+
+/*
  * Given the file and line info, return the routine and index of the element
  * in trace.
  * Args:
@@ -98,6 +109,10 @@ func GetTraces() *map[int][]TraceElement {
  *   int: The index of the element in the trace of the routine
  */
 func GetTraceElementFromTID(tID string) (*TraceElement, error) {
+	if tID == "" {
+		return nil, errors.New("tID is empty")
+	}
+
 	for routine, trace := range traces {
 		for index, elem := range trace {
 			if elem.GetTID() == tID {
@@ -114,10 +129,12 @@ func GetTraceElementFromTID(tID string) (*TraceElement, error) {
  * Args:
  *   routine (int): The routine to shorten
  *   element (traceElement): The element to shorten the trace after
+ * Returns:
+ *   error: An error if the routine does not exist
  */
-func ShortenTrace(routine int, element TraceElement) {
+func ShortenTrace(routine int, element TraceElement) error {
 	if routine != element.GetRoutine() {
-		panic("Routine of element does not match routine")
+		return errors.New("Routine of element does not match routine")
 	}
 	for index, elem := range traces[routine] {
 		if elem.GetTSort() == element.GetTSort() {
@@ -125,6 +142,7 @@ func ShortenTrace(routine int, element TraceElement) {
 			break
 		}
 	}
+	return nil
 }
 
 /*

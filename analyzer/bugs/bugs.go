@@ -2,6 +2,7 @@ package bugs
 
 import (
 	"analyzer/trace"
+	"errors"
 	"strconv"
 	"strings"
 )
@@ -105,13 +106,15 @@ func (b Bug) Println() {
  *   arg2 (string): The second argument of the bug
  * Returns:
  *   bool: true, if the bug was not a possible, but a actually occuring bug
+ *   Bug: The bug that was selected
+ *   error: An error if the bug could not be processed
  */
-func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
+func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug := Bug{}
 
 	actual := strings.Split(typeStr, " ")[0]
 	if actual != "Possible" {
-		return true, bug
+		return true, bug, nil
 	}
 
 	switch typeStr {
@@ -136,30 +139,32 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug) {
 	case "Potential leak on conditional variable:":
 		bug.Type = RoutineLeakCond
 	default:
-		panic("Unknown bug type: " + typeStr)
+		return false, bug, errors.New("Unknown bug type: " + typeStr)
 	}
 
 	bug.tID1 = strings.Split(arg1, ": ")[1]
 	elem, err := trace.GetTraceElementFromTID(bug.tID1)
 	if err != nil {
-		panic("Error: " + err.Error())
+		return false, bug, err
 	}
 	bug.TraceElement1 = elem
 
-	bug.TraceElement2 = make([]*trace.TraceElement, 1)
-	bug.Pos2 = make([]string, 1)
+	bug.TraceElement2 = make([]*trace.TraceElement, 0)
+	bug.Pos2 = make([]string, 0)
 
 	elems := strings.Split(arg2, ": ")[1]
+	println("elems: " + elems)
 	for _, tID := range strings.Split(elems, ";") {
+		if tID == "" {
+			continue
+		}
 		elem, err = trace.GetTraceElementFromTID(tID)
 		if err != nil {
-			println("Error: " + err.Error())
+			return false, bug, err
 		}
 		bug.TraceElement2 = append(bug.TraceElement2, elem)
 		bug.Pos2 = append(bug.Pos2, tID)
 	}
 
-	// bug.Println()
-
-	return false, bug
+	return false, bug, nil
 }

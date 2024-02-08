@@ -16,8 +16,9 @@ import (
  * Returns:
  *   bool: true, if the bug was not a possible, but an actually occuring bug
  *   Bug: The bug that was selected
+ *   error: An error if the bug could not be processed
  */
-func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug) {
+func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 	println("Read analysis results from " + filePath + " for index " + strconv.Itoa(index) + "...")
 
 	index = (index - 1) * 3
@@ -65,20 +66,21 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug) {
 		}
 	}
 
-	print("Error type: " + errorType + "\n")
-	print("Argument 1: " + argument1 + "\n")
-	print("Argument 2: " + argument2 + "\n")
-
 	println("Analysis results read.")
 
-	actual, bug := bugs.ProcessBug(errorType, argument1, argument2)
+	actual, bug, err := bugs.ProcessBug(errorType, argument1, argument2)
+	if err != nil {
+		return false, bug, err
+	}
+
+	bug.Println()
 	if actual {
 		println("The bug is an actual bug.")
 		println("No rewrite needed.")
-		return true, bug
+		return true, bug, nil
 	} else {
 		println("The bug is a possible bug.")
 		println("Rewrite needed.")
-		return false, bug
+		return false, bug, nil
 	}
 }
