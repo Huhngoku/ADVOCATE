@@ -231,8 +231,7 @@ if true {
 		defer advocate.Finish()
 	} else {
 		// init replay
-		trace := advocate.ReadTrace()
-		runtime.EnableReplay(trace)
+		advocate.ReadTrace("pathToTrace")
 		defer runtime.WaitForReplayFinish()
 	}
 ```

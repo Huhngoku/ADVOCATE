@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"sync"
 )
 
 /*
@@ -59,34 +60,40 @@ func WriteTrace(path string, numberRoutines int) error {
 		return err
 	}
 
-	// open file
+	// write the files
+	wg := sync.WaitGroup{}
 	for i := 1; i <= numberRoutines; i++ {
-		fileName := path + "trace_" + strconv.Itoa(i) + ".log"
-		println("Create new file " + fileName + "...")
-		file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		// write trace
-		println("Write trace to " + path + "...")
-		trace := trace.GetTraceFromId(i)
-		for index, element := range trace {
-			elementString := element.ToString()
-			if _, err := file.WriteString(elementString); err != nil {
+		wg.Add(1)
+		go func() {
+			fileName := path + "trace_" + strconv.Itoa(i) + ".log"
+			println("Create new file " + fileName + "...")
+			file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
 				panic(err)
 			}
-			if index < len(trace)-1 {
-				if _, err := file.WriteString(";"); err != nil {
+			defer file.Close()
+
+			// write trace
+			println("Write trace to " + path + "...")
+			trace := trace.GetTraceFromId(i)
+			for index, element := range trace {
+				elementString := element.ToString()
+				if _, err := file.WriteString(elementString); err != nil {
 					panic(err)
 				}
+				if index < len(trace)-1 {
+					if _, err := file.WriteString(";"); err != nil {
+						panic(err)
+					}
+				}
 			}
-		}
-		if _, err := file.WriteString("\n"); err != nil {
-			panic(err)
-		}
+			if _, err := file.WriteString("\n"); err != nil {
+				panic(err)
+			}
+			wg.Done()
+		}()
 	}
+	wg.Wait()
 	println("Trace written")
 	return nil
 }

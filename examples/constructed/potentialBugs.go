@@ -365,7 +365,27 @@ func n16() {
 }
 
 // FN
-func n17() {	const n = 45
+func n17() {
+	c := make(chan int, 0)
+	m := sync.Mutex{}
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		t := m.TryLock()
+		if t {
+			c <- 1
+			<-c
+			m.Unlock()
+		}
+	}()
+
+	m.Lock()
+	time.Sleep(300 * time.Millisecond)
+	close(c)
+	m.Unlock()
+
+	time.Sleep(100 * time.Millisecond)
+}
 
 // TP
 func n18() {
@@ -735,7 +755,7 @@ func n39() {
 	}()
 
 	time.Sleep(100 * time.Millisecond)
-}	const n = 45
+}
 
 func n40() {
 	c := make(chan int, 0)
@@ -892,7 +912,7 @@ func main() {
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplay()
+		advocate.EnableReplay("")
 		defer runtime.WaitForReplayFinish()
 	}
 

@@ -135,10 +135,10 @@ func TraceToStringById(id uint64) (string, bool) {
  *  atomic: it true, the atomic trace is returned
  */
 func TraceToStringByIdChannel(id int, c chan<- string) {
-	// lock(&AdvocateRoutinesLock)
-	// defer unlock(&AdvocateRoutinesLock)
+	lock(&AdvocateRoutinesLock)
 
 	if routine, ok := AdvocateRoutines[uint64(id)]; ok {
+		unlock(&AdvocateRoutinesLock)
 		res := ""
 		for i, elem := range routine.Trace {
 			if i != 0 {
@@ -152,6 +152,8 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 			}
 		}
 		c <- res
+	} else {
+		unlock(&AdvocateRoutinesLock)
 	}
 
 }

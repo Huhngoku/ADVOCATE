@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -51,7 +52,7 @@ func writeTraceIfFull() {
 }
 
 func cleanTrace() {
-	println("Write trace to file2")
+	println("Write trace to file")
 	// stop new element from been added to the trace
 	runtime.BlockTrace()
 	writeToTraceFiles()
@@ -70,16 +71,17 @@ func cleanTrace() {
  *      If false, the trace is appended to the file.
  */
 func writeToTraceFiles() {
-
 	numRout := runtime.GetNumberOfRoutines()
+	wg := sync.WaitGroup{}
 	for i := 1; i <= numRout; i++ {
 		// write the trace to the file
-		writeToTraceFile(i)
+		wg.Add(1)
+		go writeToTraceFile(i, &wg)
 	}
-
+	wg.Wait()
 }
 
-func writeToTraceFile(routine int) {
+func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	// create the file if it does not exist and open it
 	fileName := "trace/trace_" + strconv.Itoa(routine) + ".log"
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -101,6 +103,7 @@ func writeToTraceFile(routine int) {
 			panic(err)
 		}
 	}
+	wg.Done()
 }
 
 func InitTracing(size int) {
@@ -129,15 +132,17 @@ func InitTracing(size int) {
  * Read the trace from the trace folder.
  * The function reads all files in the trace folder and adds the trace to the runtime.
  * The trace is added to the runtime by calling the AddReplayTrace function.
+ * Args:
+ * 	- folderPath: The path to the trace folder.
  */
-func EnableReplay() {
+func EnableReplay(folderPath string) {
 	// if trace folder does not exist, panic
 	if _, err := os.Stat("trace"); os.IsNotExist(err) {
 		panic("Trace folder does not exist.")
 	}
 
 	// traverse all files in the trace folder
-	files, err := os.ReadDir("trace")
+	files, err := os.ReadDir(folderPath)
 	if err != nil {
 		panic(err)
 	}
@@ -177,7 +182,7 @@ func EnableReplay() {
  * 	The routine id
  * 	The trace for this routine
  */
-// TODO: LOCAL
+// TODO: rewrite LOCAL
 func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	mb := 1048576
 	maxTokenSize := 1

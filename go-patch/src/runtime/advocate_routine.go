@@ -56,28 +56,29 @@ func (gi *AdvocateRoutine) addToTrace(elem advocateTraceElement) int {
 	// this is used to avoid writing to the trace, while the trace is written
 	// to the file in case of a too high memory usage
 	if advocateTraceWritingDisabled {
-		_, file1, line1, _ := Caller(1)
-		_, file2, line2, _ := Caller(2)
-		_, file3, line3, _ := Caller(3)
-		_, file4, line4, _ := Caller(4)
-		_, file5, line5, _ := Caller(5)
-		_, file6, line6, _ := Caller(6)
-		_, file7, line7, _ := Caller(7)
-		_, file8, line8, _ := Caller(8)
-		println(file1, line1)
-		println(file2, line2)
-		println(file3, line3)
-		println(file4, line4)
-		println(file5, line5)
-		println(file6, line6)
-		println(file7, line7)
-		println(file8, line8)
-		if !isSuffix(file1, "advocate.go") {
-			for advocateTraceWritingDisabled {
-			}
-		} else {
-			println("Write")
-		}
+		// _, file1, line1, _ := Caller(1)
+		// _, file2, line2, _ := Caller(2)
+		// _, file3, line3, _ := Caller(3)
+		// _, file4, line4, _ := Caller(4)
+		// _, file5, line5, _ := Caller(5)
+		// _, file6, line6, _ := Caller(6)
+		// _, file7, line7, _ := Caller(7)
+		// _, file8, line8, _ := Caller(8)
+		// println(file1, line1)
+		// println(file2, line2)
+		// println(file3, line3)
+		// println(file4, line4)
+		// println(file5, line5)
+		// println(file6, line6)
+		// println(file7, line7)
+		// println(file8, line8)
+		// TODO: make this work, maybe exclude the writing of the trace completely
+		// if string([]rune(elem.toString())[0]) != "A" && !isSuffix(file1, "advocate.go") {
+		// 	for advocateTraceWritingDisabled {
+		// 	}
+		// } else {
+		// 	println("Write")
+		// }
 	}
 
 	// never needed in actual code, without it the compiler tests fail
