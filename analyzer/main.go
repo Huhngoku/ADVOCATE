@@ -24,6 +24,7 @@ func main() {
 	noRewrite := flag.Bool("x", false, "Do not ask to create a reordered trace file after the analysis (default false)")
 	noWarning := flag.Bool("w", false, "Do not print warnings (default false)")
 	noPrint := flag.Bool("p", false, "Do not print the results to the terminal (default false). Automatically set -x to true")
+	resultFolder := flag.String("r", "", "Path to where the result file should be saved. If not set, it is saved in the trace folder")
 	flag.Parse()
 
 	if *pathTrace == "" {
@@ -36,9 +37,12 @@ func main() {
 	}
 
 	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
+	if *resultFolder != "" {
+		folder = *resultFolder
+	}
 
-	outMachine := folder + "/results_machine.log"
-	outReadable := folder + "/results_readable.log"
+	outMachine := folder + "results_machine.log"
+	outReadable := folder + "results_readable.log"
 	newTrace := folder + "rewritten_trace/"
 
 	// rewrite the trace file based on given analysis results. No analysis is run

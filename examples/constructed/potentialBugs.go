@@ -10,6 +10,7 @@ import "fmt"
 import (
 	"advocate"
 	"flag"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -921,7 +922,7 @@ func main() {
 		if timeout != nil && *timeout != 0 {
 			time.Sleep(time.Duration(*timeout) * time.Second)
 			advocate.Finish()
-			panic("Timeout")
+			os.Exit(1)
 		}
 	}()
 

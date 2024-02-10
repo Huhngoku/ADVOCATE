@@ -1,0 +1,3 @@
+Found concurrent Recv on same channel:
+	recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:640@35
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:645@24

@@ -1,0 +1,14 @@
+==================== Summary ====================
+
+-------------------- Critical -------------------
+1 Potential mixed deadlock:
+	locks: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:666@19
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:661@26
+	send/close-recv: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:667@22
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:662@29
+-------------------- Warning --------------------
+2 Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:667@22
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:662@29

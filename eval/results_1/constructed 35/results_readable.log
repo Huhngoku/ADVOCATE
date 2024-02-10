@@ -1,0 +1,10 @@
+==================== Summary ====================
+
+-------------------- Critical -------------------
+1 Potential mixed deadlock:
+	locks: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:691@19
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:697@26
+	send/close-recv: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:693@25
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:698@29

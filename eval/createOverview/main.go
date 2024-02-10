@@ -431,7 +431,7 @@ func copyResults(pathToResult string, statsPath string) error {
 
 	scanner := bufio.NewScanner(fileResult)
 	for scanner.Scan() {
-		fileStats.WriteString(scanner.Text())
+		fileStats.WriteString(scanner.Text() + "\n")
 	}
 
 	if err := scanner.Err(); err != nil {

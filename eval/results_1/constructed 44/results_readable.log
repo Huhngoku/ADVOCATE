@@ -1,0 +1,6 @@
+==================== Summary ====================
+
+-------------------- Critical -------------------
+1 Potential leak on wait group:
+	wait-group: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:822@21
+	
