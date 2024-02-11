@@ -842,7 +842,7 @@ func main() {
 
 	list := flag.Bool("l", false, "List tests. Do not run any test.")
 	testCase := flag.Int("c", 0, "Test to run. If not set, all are run.")
-	replay := flag.Bool("r", false, "Replay")
+	// replay := flag.Bool("r", false, "Replay")
 	timeout := flag.Int("t", 0, "Timeout")
 	flag.Parse()
 
@@ -906,14 +906,14 @@ func main() {
 		return
 	}
 
-	if replay != nil && !*replay {
+	if false {
 		// init tracing
 		println("Init advocate")
 		advocate.InitTracing(0)
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplay("")
+		advocate.EnableReplay("./trace")
 		defer runtime.WaitForReplayFinish()
 	}
 

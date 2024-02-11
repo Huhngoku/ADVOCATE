@@ -1,9 +1,0 @@
-==================== Summary ====================
-
--------------------- Critical -------------------
-1 Potential leak on mutex:
-	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:620@23
-	
-2 Potential leak without possible partner:
-	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:626@22
-	partner: -

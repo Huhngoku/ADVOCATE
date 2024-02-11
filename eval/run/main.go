@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"time"
 )
 
 const (
@@ -24,7 +25,7 @@ var (
 	// name
 	// pathToExec
 	// pathToProg
-	// name of executable
+	// basename of executable
 	// params (if any)
 	programs = [][]string{}
 
@@ -37,33 +38,62 @@ var (
 
 func addConstructed() {
 	for i := 1; i <= 45; i++ {
-		programs = append(programs, []string{"constructed " + strconv.Itoa(i), pathToAdvocate + "/examples/constructed/", pathToAdvocate + "/examples/constructed/", "main", "-c", strconv.Itoa(i), "-t", "5"})
+		programs = append(programs, []string{"constructed " + strconv.Itoa(i), pathToAdvocate + "/examples/constructed/", pathToAdvocate + "/examples/constructed/", "constructed", "-c", strconv.Itoa(i), "-t", "5"})
 	}
 }
 
-// TODO: measure time
-// TODO: run without advocate
-// TODO: run withput trace write
-func runExec(pathToExec string, execName string, execArgs []string) (error, string) {
-	commandStr := "./" + execName
+func runExecs(pathToExec string, execName string, execArgs []string, progName string) {
+	runExec(pathToExec, execName, execArgs, progName, "original")
+	runExec(pathToExec, execName, execArgs, progName, "advocate")
+	runExec(pathToExec, execName, execArgs, progName, "replay")
+
+}
+
+func runExec(pathToExec string, execName string, execArgs []string, progName string, variant string) {
+	commandStr := "./" + execName + "_" + variant
 	cmd := exec.Command(commandStr, execArgs...)
 	cmd.Dir = pathToExec
-
 	log(EXEC, cmd.String()+" in "+pathToExec)
+	out, runtimeOriginal, err := runCommand(cmd)
 
+	if err != nil {
+		log(ERROR, err.Error()+":\n"+out)
+	}
+
+	err = writeTime(runtimeOriginal, progName)
+	if err != nil {
+		log(ERROR, err.Error())
+	}
+}
+
+/*
+ * Run the command
+ * Args:
+ *   cmd (*exec.Cmd): The command to run
+ * Returns:
+ *   (string): stderr output
+ *   (time.Duration): runtime
+ *   (error): error
+ */
+func runCommand(cmd *exec.Cmd) (string, time.Duration, error) {
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
+	start := time.Now()
+
 	err := cmd.Run()
+
+	duration := time.Since(start)
+
 	if err != nil {
-		return err, stderr.String()
+		return stderr.String(), duration, err
 	}
 
-	return nil, ""
+	return "", duration, nil
 }
 
 // TODO: measure time
-func runAnalyzer(progName string, pathToTrace string) (error, string) {
+func runAnalyzer(progName string, pathToTrace string) (string, error) {
 	cmdStr := "./analyzer"
 	resOut := resPath + "/" + progName + "/"
 	cmdArgs := []string{"-t", pathToTrace, "-x", "-p", "-r", resOut}
@@ -72,22 +102,36 @@ func runAnalyzer(progName string, pathToTrace string) (error, string) {
 
 	log(ANALYZE, cmd.String()+" in "+analyzerPath)
 
-	var stderr bytes.Buffer
-	cmd.Stderr = &stderr
+	out, time, err := runCommand(cmd)
 
-	err := cmd.Run()
+	writeTime(time, progName)
+
+	return out, err
+}
+
+func writeTime(time time.Duration, programName string) error {
+	timeStr := fmt.Sprintf("%f", time.Seconds())
+	file, err := os.OpenFile(resPath+"/"+programName+"/times.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return err, stderr.String()
+		return err
 	}
+	defer file.Close()
 
-	return nil, ""
+	file.WriteString(timeStr + ",")
+
+	return nil
 }
 
 func createOverview(progName string, progPath string, execPath string) error {
 	cmdStr := "./overview"
 	resOut := resPath + "/" + progName
-	cmdArgs := []string{"-n", "overview", "-p", progPath, "-s", resOut, "-t",
-		execPath + "trace/", "-r", resOut + "/results_readable.log"} // TODO: add time file
+	cmdArgs := []string{
+		"-n", "overview",
+		"-p", progPath,
+		"-s", resOut,
+		"-t", execPath + "trace/",
+		"-r", resOut + "/results_readable.log",
+		"-d", resOut + "/times.log"}
 	cmd := exec.Command(cmdStr, cmdArgs...)
 	cmd.Dir = overviewPath
 
@@ -173,14 +217,9 @@ func main() {
 			continue
 		}
 
-		err, out := runExec(execPath, execName, execArgs)
-		if err != nil {
-			log(ERROR, err.Error()+":\n"+out)
-			// log(FAILED, name)
-			// continue
-		}
+		runExecs(execPath, execName, execArgs, name)
 
-		err, out = runAnalyzer(name, pathToTrace)
+		out, err := runAnalyzer(name, pathToTrace)
 		if err != nil {
 			log(ERROR, err.Error()+":\n"+out)
 			log(FAILED, name)

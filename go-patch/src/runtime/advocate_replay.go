@@ -310,7 +310,12 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	timeoutCounter := 0
 	for {
 		nextRoutine, next := getNextReplayElement()
-		currentRoutine := currentGoRoutine().id
+		// currentRoutineA := currentGoRoutine()
+		// if currentRoutineA == nil { // TODO: fix this
+		// 	return true, ReplayElement{}
+		// }
+
+		// currentRoutine := currentRoutineA.id
 
 		// all elements in the trace have been executed
 		if nextRoutine == -1 {
@@ -320,25 +325,25 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		}
 
 		// not the correct routine
-		if currentRoutine != uint64(nextRoutine) {
-			timeoutCounter++
+		// if currentRoutine != uint64(nextRoutine) {
+		// 	timeoutCounter++
 
-			checkForTimeout(timeoutCounter, file, line)
-			slowExecution()
-			continue
-		}
+		// 	checkForTimeout(timeoutCounter, file, line)
+		// 	slowExecution()
+		// 	continue
+		// }
 
 		// if the routine is correct, but the next element is not the correct one,
 		// the program has diverged from the trace
 		// in this case, we print a message and disable the replay
 
-		print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
-			"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
+		// print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
+		// 	"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
 
 		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
-				println("Continue")
+				// println("Continue")
 
 				timeoutCounter++
 
@@ -354,7 +359,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		unlock(&timeoutLock)
 
 		foundReplayElement(nextRoutine)
-		println("Replay Run : ", next.Time, op, file, line)
+		// println("Replay Run : ", next.Time, op, file, line)
 		return true, next
 	}
 }

@@ -1,6 +1,0 @@
-==================== Summary ====================
-
--------------------- Critical -------------------
-1 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:317@35
-	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:305@25

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -173,7 +174,7 @@ func parseProgramFile(filePath string) (map[string]int, error) {
 		text := strings.TrimSpace(scanner.Text())
 
 		res["numberLines"]++
-		if text != "" && text != "\n" && strings.HasPrefix(text, "//") {
+		if text != "" && text != "\n" && !strings.HasPrefix(text, "//") {
 			res["numberNonEmptyLines"]++
 		}
 	}
@@ -392,16 +393,30 @@ func writeTimes(pathToTime string, statsPath string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		times := strings.Split(line, ",")
-		if len(times) != 4 {
+		println(len(times))
+		if len(times) != 5 {
 			fileStats.WriteString("Invalid time file\n")
 			fileStats.WriteString(line)
 			return errors.New("Invalid time file")
 		}
 
-		fileStats.WriteString("| Run without ADVOCATE | " + times[0] + " |\n")
-		fileStats.WriteString("| Run with ADVOCATE | " + times[1] + " |\n")
-		fileStats.WriteString("| Analysis | " + times[2] + " |\n")
-		fileStats.WriteString("| Replay | " + times[3] + " |\n\n\n")
+		timeOriginal, _ := strconv.ParseFloat(times[0], 64)
+		timeAdvocate, _ := strconv.ParseFloat(times[1], 64)
+		timeReplay, _ := strconv.ParseFloat(times[2], 64)
+
+		overheadAdvocate := max(0, (timeAdvocate-timeOriginal)/timeOriginal*100)
+		overheadReplay := max(0, (timeReplay-timeOriginal)/timeOriginal*100)
+
+		overheadAdvocateStr := fmt.Sprintf("%f", overheadAdvocate) + " %"
+		overheadReplayStr := fmt.Sprintf("%f", overheadReplay) + " %"
+
+		fileStats.WriteString("| Info | Value |\n| - | - |\n")
+		fileStats.WriteString("| Time for run without ADVOCATE | " + times[0] + " s |\n")
+		fileStats.WriteString("| Time for run with ADVOCATE | " + times[1] + " s |\n")
+		fileStats.WriteString("| Overhead of ADVOCATE | " + overheadAdvocateStr + " |\n")
+		fileStats.WriteString("| Replay without changes | " + times[2] + " s |\n")
+		fileStats.WriteString("| Overhead of Replay | " + overheadReplayStr + " s |\n")
+		fileStats.WriteString("| Analysis | " + times[3] + " s |\n\n\n")
 		return nil
 	}
 

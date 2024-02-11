@@ -188,7 +188,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	maxTokenSize := 1
 
 	// get the routine id from the file name
-	routineId, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, "trace_"), ".log"))
+	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, "trace/trace_"), ".log"))
 	if err != nil {
 		panic(err)
 	}
@@ -382,7 +382,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	// 	println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
 	// }
 	// println("\n\n")
-	return routineId, replayData
+	return routineID, replayData
 }
 
 // TODO: swap timer for rwmutix.Trylock

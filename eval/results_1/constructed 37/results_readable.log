@@ -1,6 +1,0 @@
-==================== Summary ====================
-
--------------------- Warning --------------------
-1 Found receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:730@22
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:726@32
