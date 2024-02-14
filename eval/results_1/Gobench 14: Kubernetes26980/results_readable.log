@@ -1,0 +1,27 @@
+==================== Summary ====================
+
+-------------------- Critical -------------------
+1 Potential mixed deadlock:
+	locks: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:270@48
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:270@30
+	send/close-recv: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:58@53
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:60@46
+2 Potential mixed deadlock:
+	locks: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:57@47
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:15@29
+	send/close-recv: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:58@53
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:60@46
+3 Potential leak on mutex:
+	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:23@58
+	
+4 Potential leak on mutex:
+	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:270@62
+	
+-------------------- Warning --------------------
+5 Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:58@53
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:60@46

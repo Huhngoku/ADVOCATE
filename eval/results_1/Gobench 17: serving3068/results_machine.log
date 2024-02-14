@@ -1,0 +1,9 @@
+Possible send on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving3068/serving3068.go:49@94
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving3068/serving3068.go:43@85
+Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving3068/serving3068.go:49@94
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving3068/serving3068.go:29@80
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving3068/serving3068.go:49@94
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving3068/serving3068.go:29@91

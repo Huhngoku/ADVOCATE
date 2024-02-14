@@ -1,0 +1,3 @@
+Potential mixed deadlock:
+	locks: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:740@27;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:746@35
+	send/close-recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:741@30;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:747@38

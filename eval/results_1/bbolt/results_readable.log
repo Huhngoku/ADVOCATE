@@ -1,0 +1,9 @@
+==================== Summary ====================
+
+-------------------- Warning --------------------
+1 Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1222@3124
+	recv : /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1428@148
+2 Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1355@669538
+	recv : /home/erikkassubek/Uni/HiWi/Other/examples/bbolt/cmd/bbolt/main.go:1428@3215

@@ -1,0 +1,15 @@
+Potential leak on wait group:
+	wait-group: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1055/cockroach1055.go:45@96
+	
+Potential leak without possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1055/cockroach1055.go:77@88
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1055/cockroach1055.go:77@106
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1055/cockroach1055.go:93@39
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1055/cockroach1055.go:77@85
+	partner: -
