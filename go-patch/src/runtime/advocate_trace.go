@@ -51,6 +51,9 @@ var advocateAtomicMapRoutine = make(map[uint64]uint64)
 var advocateAtomicMapToID = make(map[uint64]uint64)
 var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
+var advocateAtomicMapRoutineLock mutex
+var advocateAtomicMapToIDLock mutex
+
 var advocateTraceWritingDisabled = false
 
 /*
@@ -144,6 +147,7 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 			if i != 0 {
 				res += ";"
 			}
+
 			res += elem.toString()
 
 			if i%1000 == 0 {
@@ -203,10 +207,15 @@ func GetNumberOfRoutines() int {
 
 /* Enable the collection of the trace */
 func InitAdvocate(size int) {
+	if size == 0 {
+		size = 1
+	}
+	chanSize := size * 10000000
 	// link runtime with atomic via channel to receive information about
 	// atomic events
-	c := make(chan at.AtomicElem, size)
+	c := make(chan at.AtomicElem, chanSize)
 	at.AdvocateAtomicLink(c)
+
 	go func() {
 		for atomic := range c {
 			lock(&advocateAtomicMapLock)
@@ -257,6 +266,8 @@ func UnblockTrace() {
  */
 func DeleteTrace() {
 	println("Delete trace")
+	lock(&AdvocateRoutinesLock)
+	defer unlock(&AdvocateRoutinesLock)
 	for i, _ := range AdvocateRoutines {
 		AdvocateRoutines[i].Trace = AdvocateRoutines[i].Trace[:0]
 	}
@@ -669,11 +680,11 @@ func AdvocateChanSendPre(id uint64, opId uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
-		lock(&advocateAtomicMapLock)
 		advocateCounterAtomic++
+		lock(&advocateAtomicMapRoutineLock)
 		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineId()
+		unlock(&advocateAtomicMapRoutineLock)
 		AdvocateAtomic(advocateCounterAtomic)
-		unlock(&advocateAtomicMapLock)
 
 		// they are not recorded in the trace
 		return -1
@@ -1002,11 +1013,14 @@ const (
 func (elem advocateTraceAtomicElement) toString() string {
 	lock(&advocateAtomicMapLock)
 	mapElement := advocateAtomicMap[elem.index]
+	unlock(&advocateAtomicMapLock)
+	lock(&advocateAtomicMapToIDLock)
 	if _, ok := advocateAtomicMapToID[mapElement.addr]; !ok {
 		advocateAtomicMapToID[mapElement.addr] = advocateAtomicMapIDCounter
 		advocateAtomicMapIDCounter++
 	}
 	id := advocateAtomicMapToID[mapElement.addr]
+	unlock(&advocateAtomicMapToIDLock)
 
 	res := "A," + uint64ToString(elem.timer) + "," +
 		uint64ToString(id) + ","
@@ -1024,7 +1038,6 @@ func (elem advocateTraceAtomicElement) toString() string {
 	default:
 		res += "U"
 	}
-	unlock(&advocateAtomicMapLock)
 	return res
 }
 

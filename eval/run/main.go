@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +12,7 @@ import (
 
 const (
 	red = "\033[31m"
+	org = "\033[33m"
 	grn = "\033[32m"
 	end = "\033[0m"
 )
@@ -18,6 +20,7 @@ const (
 var (
 	home, _        = os.UserHomeDir()
 	pathToAdvocate = home + "/Uni/HiWi/ADVOCATE"
+	pathToOther    = home + "/Uni/HiWi/Other"
 	analyzerPath   = pathToAdvocate + "/analyzer"
 	runEval        = pathToAdvocate + "/eval"
 	overviewPath   = pathToAdvocate + "/eval/createOverview"
@@ -37,27 +40,124 @@ var (
 )
 
 func addConstructed() {
-	for i := 1; i <= 45; i++ {
-		programs = append(programs, []string{"constructed " + strconv.Itoa(i), pathToAdvocate + "/examples/constructed/", pathToAdvocate + "/examples/constructed/", "constructed", "-c", strconv.Itoa(i), "-t", "5"})
+	for i := 1; i <= 44; i++ {
+		programs = append(programs, []string{
+			"constructed " + strconv.Itoa(i),
+			pathToAdvocate + "/examples/constructed/",
+			pathToAdvocate + "/examples/constructed/",
+			"constructed", "-c", strconv.Itoa(i), "-t", "5"})
 	}
 }
 
-func runExecs(pathToExec string, execName string, execArgs []string, progName string) {
-	runExec(pathToExec, execName, execArgs, progName, "original")
-	runExec(pathToExec, execName, execArgs, progName, "advocate")
-	runExec(pathToExec, execName, execArgs, progName, "replay")
+func addGoBench() {
+	const n = 18
+	names := [n]string{
+		"cockroach1055",
+		"cockroach1462",
+		"etcd6873",
+		"etcd7443",
+		"etcd7492",
+		"etcd7902",
+		"grpc1353",
+		"grpc1460",
+		"grpc1687",
+		"istio16224",
+		"Kubernetes1321",
+		"Kubernetes6632",
+		"Kubernetes10182",
+		"Kubernetes26980",
+		"Moby28462",
+		"serving2137",
+		"serving3068",
+		"serving5865",
+	}
 
+	for i := 0; i < n; i++ {
+		programs = append(programs,
+			[]string{
+				"Gobench " + strconv.Itoa(i+1) + ": " + names[i],
+				pathToAdvocate + "/examples/GoBench/",
+				pathToAdvocate + "/examples/GoBench/" + names[i] + "/",
+				"gobench",
+				"-c", strconv.Itoa(i + 1), "-t", "20"})
+	}
 }
 
-func runExec(pathToExec string, execName string, execArgs []string, progName string, variant string) {
+func addMediumPrograms() {
+	// bbolt
+	programs = append(programs,
+		[]string{
+			"bbolt",
+			pathToOther + "/examples/bbolt/cmd/bbolt/",
+			pathToOther + "/examples/bbolt/",
+			"bbolt",
+			"bench"})
+
+	// gocrawl
+	programs = append(programs,
+		[]string{
+			"gocrawl",
+			pathToOther + "/examples/gocrawl/",
+			pathToOther + "/examples/gocrawl/",
+			"gocrawl"})
+
+	// htcat
+	programs = append(programs,
+		[]string{
+			"htcat",
+			pathToOther + "/examples/htcat/cmd/htcat/",
+			pathToOther + "/examples/htcat/",
+			"htcat"})
+
+	// pgzip
+	programs = append(programs,
+		[]string{
+			"pgzip",
+			pathToOther + "/examples/pgzip/",
+			pathToOther + "/examples/pgzip/",
+			"pgzip"})
+
+	// sorty
+	programs = append(programs,
+		[]string{
+			"sorty",
+			pathToOther + "/examples/sorty/",
+			pathToOther + "/examples/sorty/",
+			"sorty"})
+}
+
+func runExecs(pathToExec string, execName string, execArgs []string, progName string) {
+	runExec(pathToExec, execName, execArgs, progName, "original", 0)
+	runExec(pathToExec, execName, execArgs, progName, "advocate", 0)
+	// runExec(pathToExec, execName, execArgs, progName, "replay", 0)
+}
+
+func runExec(pathToExec string, execName string, execArgs []string, progName string, variant string, repeat int) {
 	commandStr := "./" + execName + "_" + variant
 	cmd := exec.Command(commandStr, execArgs...)
 	cmd.Dir = pathToExec
 	log(EXEC, cmd.String()+" in "+pathToExec)
+
 	out, runtimeOriginal, err := runCommand(cmd)
 
 	if err != nil {
 		log(ERROR, err.Error()+":\n"+out)
+		if repeat < 5 && repeat != -1 {
+			log(ERROR, variant+" of "+progName+" resulted in an error. Trying again...")
+			runExec(pathToExec, execName, execArgs, progName, variant, repeat+1)
+			return
+		} else {
+			log(ERROR, variant+" of "+progName+" failed 5 times. Skipping...")
+		}
+	}
+	if out == "Timeout" {
+		if repeat < 5 && repeat != -1 {
+			log(TIMEOUT, variant+" of "+progName+" timed out. Trying again...")
+			runExec(pathToExec, execName, execArgs, progName, variant, repeat+1)
+			return
+		} else {
+			log(TIMEOUT, variant+" of "+progName+" failed 5 times. Skipping...")
+		}
 	}
 
 	err = writeTime(runtimeOriginal, progName)
@@ -92,7 +192,6 @@ func runCommand(cmd *exec.Cmd) (string, time.Duration, error) {
 	return "", duration, nil
 }
 
-// TODO: measure time
 func runAnalyzer(progName string, pathToTrace string) (string, error) {
 	cmdStr := "./analyzer"
 	resOut := resPath + "/" + progName + "/"
@@ -173,7 +272,7 @@ func finish() error {
 	return err
 }
 
-func setup() error {
+func setup(all, constructed, gobench bool, medium bool) error {
 	// create the res folder if needed
 	name := resPath + "/results"
 	counter := 1
@@ -193,12 +292,27 @@ func setup() error {
 
 	log(SETUP, "Create res folder "+resPath)
 
-	addConstructed()
+	if all || constructed {
+		addConstructed()
+	}
+	if all || gobench {
+		addGoBench()
+	}
+	if all || medium {
+		addMediumPrograms()
+	}
 	return nil
 }
 
 func main() {
-	setup()
+	runConstructed := flag.Bool("c", false, "Run constructed programs")
+	runGoBench := flag.Bool("g", false, "Run go benchmarks")
+	runMedium := flag.Bool("m", false, "Run medium programs")
+	flag.Parse()
+
+	runAll := !*runConstructed && !*runGoBench && !*runMedium
+
+	setup(runAll, *runConstructed, *runGoBench, *runMedium)
 
 	for _, program := range programs {
 		log(START, program[0])
@@ -259,6 +373,7 @@ const (
 	EXEC
 	ANALYZE
 	FAILED
+	TIMEOUT
 	DONE
 	ERROR
 	SETUP
@@ -285,6 +400,8 @@ func log(lt logType, message string) {
 	case FAILED:
 		res = red + "[FAILED  ] " + end + message
 		resFailure = append(resFailure, message)
+	case TIMEOUT:
+		res = org + "[TIMEOUT ] " + end + message
 	case ERROR:
 		res = red + "[ERROR   ] " + end + message
 		numberErrors++

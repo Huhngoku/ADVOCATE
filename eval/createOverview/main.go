@@ -394,7 +394,7 @@ func writeTimes(pathToTime string, statsPath string) error {
 		line := scanner.Text()
 		times := strings.Split(line, ",")
 		println(len(times))
-		if len(times) != 5 {
+		if len(times) != 5 && len(times) != 4 {
 			fileStats.WriteString("Invalid time file\n")
 			fileStats.WriteString(line)
 			return errors.New("Invalid time file")
@@ -414,9 +414,13 @@ func writeTimes(pathToTime string, statsPath string) error {
 		fileStats.WriteString("| Time for run without ADVOCATE | " + times[0] + " s |\n")
 		fileStats.WriteString("| Time for run with ADVOCATE | " + times[1] + " s |\n")
 		fileStats.WriteString("| Overhead of ADVOCATE | " + overheadAdvocateStr + " |\n")
-		fileStats.WriteString("| Replay without changes | " + times[2] + " s |\n")
-		fileStats.WriteString("| Overhead of Replay | " + overheadReplayStr + " s |\n")
-		fileStats.WriteString("| Analysis | " + times[3] + " s |\n\n\n")
+		if len(times) == 4 {
+			fileStats.WriteString("| Analysis | " + times[2] + " s |\n\n\n")
+		} else {
+			fileStats.WriteString("| Replay without changes | " + times[2] + " s |\n")
+			fileStats.WriteString("| Overhead of Replay | " + overheadReplayStr + " s |\n")
+			fileStats.WriteString("| Analysis | " + times[3] + " s |\n\n\n")
+		}
 		return nil
 	}
 

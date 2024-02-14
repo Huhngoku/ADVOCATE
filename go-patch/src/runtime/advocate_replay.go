@@ -148,6 +148,8 @@ var traceElementPositions = make(map[string][]int) // file -> []line
 
 var timeoutMessageCycle = 500 // approx. 10s
 
+var timeOutCancel = false
+
 /*
  * Add a replay trace to the replay data.
  * Arguments:
@@ -185,7 +187,9 @@ func (t AdvocateReplayTrace) Print() {
 	}
 }
 
-func EnableReplay() {
+func EnableReplay(timeout bool) {
+	timeOutCancel = timeout
+
 	// run a background routine to check for timeout if no operation is executed
 	go checkForTimeoutNoOperation()
 
@@ -226,6 +230,10 @@ func WaitForReplayFinish() {
 			warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
 			warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
 			warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+			println(warningMessage)
+			if timeOutCancel {
+				panic("ReplayError: Replay stuck")
+			}
 		}
 
 		slowExecution()
@@ -410,6 +418,10 @@ func checkForTimeout(timeoutCounter int, file string, line int) bool {
 		warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
 
 		println(warningMessage)
+
+		if timeOutCancel {
+			panic("ReplayError: Replay stuck")
+		}
 	}
 
 	return false
@@ -439,6 +451,9 @@ func checkForTimeoutNoOperation() {
 			message += warningMessage
 
 			println(message)
+			if timeOutCancel {
+				panic("ReplayError: Replay stuck")
+			}
 		}
 		unlock(&timeoutLock)
 		slowExecution()

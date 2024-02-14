@@ -531,6 +531,7 @@ func n26() {
 		wg.Done()
 	}()
 
+	time.Sleep(500 * time.Millisecond) // prevent actual negative wait counter
 	wg.Done()
 }
 
@@ -612,22 +613,22 @@ func n30() {
 }
 
 // ============== Mixed Deadlock ==============
+// func n31() {
+// 	m := sync.Mutex{}
+// 	c := make(chan int, 0)
+
+// 	go func() {
+// 		m.Lock()
+// 		c <- 1
+// 		m.Unlock()
+// 	}()
+
+// 	m.Lock()
+// 	<-c
+// 	m.Unlock()
+// }
+
 func n31() {
-	m := sync.Mutex{}
-	c := make(chan int, 0)
-
-	go func() {
-		m.Lock()
-		c <- 1
-		m.Unlock()
-	}()
-
-	m.Lock()
-	<-c
-	m.Unlock()
-}
-
-func n32() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -652,7 +653,7 @@ func n32() {
 	m.Unlock()
 }
 
-func n33() {
+func n32() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -668,9 +669,9 @@ func n33() {
 	m.Unlock()
 }
 
-func n34() {
+func n33() {
 	m := sync.Mutex{}
-	c := make(chan int, 0)
+	c := make(chan int, 1)
 
 	go func() {
 		m.Lock()
@@ -683,7 +684,7 @@ func n34() {
 	m.Unlock()
 }
 
-func n35() {
+func n34() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -691,6 +692,22 @@ func n35() {
 		m.Lock()
 		m.Unlock()
 		c <- 1
+	}()
+
+	time.Sleep(100 * time.Millisecond) // prevent deadlock
+	m.Lock()
+	<-c
+	m.Unlock()
+}
+
+func n35() {
+	m := sync.Mutex{}
+	c := make(chan int, 0)
+
+	go func() {
+		m.Lock()
+		m.Unlock()
+		close(c)
 	}()
 
 	time.Sleep(100 * time.Millisecond) // prevent deadlock
@@ -704,22 +721,6 @@ func n36() {
 	c := make(chan int, 0)
 
 	go func() {
-		m.Lock()
-		m.Unlock()
-		close(c)
-	}()
-
-	time.Sleep(100 * time.Millisecond) // prevent deadlock
-	m.Lock()
-	<-c
-	m.Unlock()
-}
-
-func n37() {
-	m := sync.Mutex{}
-	c := make(chan int, 0)
-
-	go func() {
 		time.Sleep(100 * time.Millisecond)
 		m.Lock()
 		m.Unlock()
@@ -731,7 +732,7 @@ func n37() {
 	m.Unlock()
 }
 
-func n38() {
+func n37() {
 	m := sync.Mutex{}
 	c := make(chan int, 1)
 
@@ -741,6 +742,7 @@ func n38() {
 		m.Unlock()
 	}()
 
+	time.Sleep(100 * time.Millisecond)
 	m.Lock()
 	<-c
 	m.Unlock()
@@ -748,7 +750,7 @@ func n38() {
 
 // ============== Leaking ==============
 
-func n39() {
+func n38() {
 	c := make(chan int, 0)
 
 	go func() {
@@ -758,7 +760,7 @@ func n39() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n40() {
+func n39() {
 	c := make(chan int, 0)
 
 	go func() {
@@ -768,11 +770,29 @@ func n40() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n41() {
+func n40() {
 	c := make(chan int, 0)
 
 	go func() {
 		close(c)
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n41() {
+	c := make(chan int, 0)
+
+	go func() {
+		<-c
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		<-c
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -790,31 +810,13 @@ func n42() {
 	}()
 
 	go func() {
-		<-c
+		c <- 1
 	}()
 
 	time.Sleep(100 * time.Millisecond)
 }
 
 func n43() {
-	c := make(chan int, 0)
-
-	go func() {
-		<-c
-	}()
-
-	go func() {
-		c <- 1
-	}()
-
-	go func() {
-		c <- 1
-	}()
-
-	time.Sleep(100 * time.Millisecond)
-}
-
-func n44() {
 	w := sync.WaitGroup{}
 
 	go func() {
@@ -827,7 +829,7 @@ func n44() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n45() {
+func n44() {
 	m := sync.Mutex{}
 
 	go func() {
@@ -846,7 +848,7 @@ func main() {
 	timeout := flag.Int("t", 0, "Timeout")
 	flag.Parse()
 
-	const n = 45
+	const n = 44
 	testNames := [n]string{
 		"Test 01: N - Synchronous channel",
 		"Test 02: N - Wait group",
@@ -878,26 +880,26 @@ func main() {
 		"Test 28: P - cyclic deadlock",
 		"Test 29: N - no cyclic deadlock because of channel",
 		"Test 30: N - no cyclic deadlock because of guard lock",
-		"Test 31: N - no cyclic deadlock because of channel",
-		"Test 32: P - Mixed deadlock, MD2-1, send/recv, unbuffered",
-		"Test 33: P - Mixed deadlock, MD2-1, close/recv, unbuffered",
+		// "Test 31: P - Mixed deadlock, MD2-1, send/recv, unbuffered",
+		"Test 31: P - Mixed deadlock, MD2-1, send/recv, unbuffered",
+		"Test 32: P - Mixed deadlock, MD2-1, close/recv, unbuffered",
+		"Test 33: P - Mixed deadlock, MD2-2/3, send/recv, buffered",
 		"Test 34: P - Mixed deadlock, MD2-2/3, send/recv, unbuffered",
-		"Test 35: P - Mixed deadlock, MD2-2/3, send/recv, unbuffered",
-		"Test 36: P - Mixed deadlock, MD2-2/3, close/recv, unbuffered",
-		"Test 37: N - No mixed deadlock, MD2-2/3, close/recv, unbuffered",
-		"Test 38: P - Mixed deadlock, send/recv, buffered",
-		"Test 39: P - Leaking channel send, no alternative",
-		"Test 40: P - Leaking channel recv, no alternative",
-		"Test 41: N - No leaking channel close",
-		"Test 42: P - Leaking channel recv, with alternative",
-		"Test 43: P - Leaking channel send, with alternative",
-		"Test 44: P - Leaking wait group",
-		"Test 45: P - Leaking mutex, doubble locking",
+		"Test 35: P - Mixed deadlock, MD2-2/3, close/recv, unbuffered",
+		"Test 36: N - No mixed deadlock, MD2-2/3, close/recv, unbuffered",
+		"Test 37: P - Mixed deadlock, send/recv, buffered",
+		"Test 38: P - Leaking channel send, no alternative",
+		"Test 39: P - Leaking channel recv, no alternative",
+		"Test 40: N - No leaking channel close",
+		"Test 41: P - Leaking channel recv, with alternative",
+		"Test 42: P - Leaking channel send, with alternative",
+		"Test 43: P - Leaking wait group",
+		"Test 44: P - Leaking mutex, doubble locking",
 	}
 	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
-		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45}
+		n36, n37, n38, n39, n40, n41, n42, n43, n44}
 
 	if list != nil && *list {
 		for i := 0; i < n; i++ {
@@ -908,12 +910,11 @@ func main() {
 
 	if false {
 		// init tracing
-		println("Init advocate")
 		advocate.InitTracing(0)
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplay("./trace")
+		advocate.EnableReplayWithTimeout("./trace")
 		defer runtime.WaitForReplayFinish()
 	}
 
@@ -922,14 +923,13 @@ func main() {
 		if timeout != nil && *timeout != 0 {
 			time.Sleep(time.Duration(*timeout) * time.Second)
 			advocate.Finish()
-			os.Exit(1)
+			os.Exit(42)
 		}
 	}()
 
 	if testCase != nil && *testCase != 0 {
 		println(testNames[*testCase-1])
 		testFuncs[*testCase-1]()
-		time.Sleep(1 * time.Second)
 	} else {
 		for i := 0; i < n; i++ {
 			println(testNames[i])

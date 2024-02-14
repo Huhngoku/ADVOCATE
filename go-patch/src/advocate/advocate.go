@@ -128,12 +128,15 @@ func InitTracing(size int) {
 
 // ============== Reading =================
 
+var timeout = false
+
 /*
  * Read the trace from the trace folder.
  * The function reads all files in the trace folder and adds the trace to the runtime.
  * The trace is added to the runtime by calling the AddReplayTrace function.
  * Args:
  * 	- folderPath: The path to the trace folder.
+ * 	- timeout: If true, the replay is terminated with a timeout. If false, the replay is executed without a timeout.
  */
 func EnableReplay(folderPath string) {
 	// if trace folder does not exist, panic
@@ -160,7 +163,12 @@ func EnableReplay(folderPath string) {
 		}
 	}
 
-	runtime.EnableReplay()
+	runtime.EnableReplay(timeout)
+}
+
+func EnableReplayWithTimeout(folderPath string) {
+	timeout = true
+	EnableReplay(folderPath)
 }
 
 /*
