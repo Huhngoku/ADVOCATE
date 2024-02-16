@@ -106,8 +106,8 @@ func insertIntoTrace(elem advocateTraceElement) int {
  * Print the trace of the current routines
  */
 func PrintTrace() {
-	routineId := GetRoutineId()
-	println("Routine", routineId, ":", CurrentTraceToString())
+	routineID := GetRoutineID()
+	println("Routine", routineID, ":", CurrentTraceToString())
 }
 
 /*
@@ -118,7 +118,7 @@ func PrintTrace() {
  * 	string representation of the trace of the routine
  * 	bool: true if the routine exists, false otherwise
  */
-func TraceToStringById(id uint64) (string, bool) {
+func TraceToStringByID(id uint64) (string, bool) {
 	println("TraceToStringById", id)
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
@@ -137,7 +137,7 @@ func TraceToStringById(id uint64) (string, bool) {
  * 	c: channel to send the trace to
  *  atomic: it true, the atomic trace is returned
  */
-func TraceToStringByIdChannel(id int, c chan<- string) {
+func TraceToStringByIDChannel(id int, c chan<- string) {
 	lock(&AdvocateRoutinesLock)
 
 	if routine, ok := AdvocateRoutines[uint64(id)]; ok {
@@ -159,10 +159,7 @@ func TraceToStringByIdChannel(id int, c chan<- string) {
 	} else {
 		unlock(&AdvocateRoutinesLock)
 	}
-
 }
-
-// }
 
 /*
  * Return the trace of all traces
@@ -188,14 +185,14 @@ func AllTracesToString() string {
 }
 
 /*
-* Print the trace of all routines
+* PrintAllTraces prints the trace of all routines
  */
 func PrintAllTraces() {
 	print(AllTracesToString())
 }
 
 /*
- * Return the number of routines in the trace
+ * GetNumberOfRoutines returns the number of routines in the trace
  * Return:
  *	number of routines in the trace
  */
@@ -205,12 +202,17 @@ func GetNumberOfRoutines() int {
 	return len(AdvocateRoutines)
 }
 
-/* Enable the collection of the trace */
+/*
+ * InitAdvocate enables the collection of the trace
+ * Args:
+ * 	size: size of the channel used to link the atomic recording to the main
+ *    recording.
+ */
 func InitAdvocate(size int) {
-	if size == 0 {
-		size = 1
+	if size < 0 {
+		size = 0
 	}
-	chanSize := size * 10000000
+	chanSize := (size + 1) * 10000000
 	// link runtime with atomic via channel to receive information about
 	// atomic events
 	c := make(chan at.AtomicElem, chanSize)
@@ -235,40 +237,39 @@ func InitAdvocate(size int) {
 	advocateDisabled = false
 }
 
-/* Disable the collection of the trace */
+/*
+ * DisableTrace disables the collection of the trace
+ */
 func DisableTrace() {
 	at.AdvocateAtomicUnlink()
 	advocateDisabled = true
 }
 
 /*
- * Block the trace collection
+ * BockTrace blocks the trace collection
  * Resume using UnblockTrace
  */
 func BlockTrace() {
-	println("Block trace")
 	advocateTraceWritingDisabled = true
 }
 
 /*
- * Resume the trace collection
+ * UnblockTrace resumes the trace collection
  * Block using BlockTrace
  */
 func UnblockTrace() {
-	println("UnBlock trace")
 	advocateTraceWritingDisabled = false
 }
 
 /*
- * Remove all trace elements from the trace
+ * DeleteTrace removes all trace elements from the trace
  * Do not remove the routine objects them self
  * Make sure to call BlockTrace(), before calling this function
  */
 func DeleteTrace() {
-	println("Delete trace")
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
-	for i, _ := range AdvocateRoutines {
+	for i := range AdvocateRoutines {
 		AdvocateRoutines[i].Trace = AdvocateRoutines[i].Trace[:0]
 	}
 }
@@ -296,7 +297,7 @@ func (elem advocateTraceSpawnElement) toString() string {
 }
 
 /*
- * Add a routine spawn to the trace
+ * AdvocateSpawnCaller adds a routine spawn to the trace
  * Args:
  * 	callerRoutine: routine that created the new routine
  * 	newID: id of the new routine
@@ -394,7 +395,7 @@ func (elem advocateTraceMutexElement) toString() string {
 }
 
 /*
- * Add a mutex lock to the trace
+ * AdvocateMutexLockPre adds a mutex lock to the trace
  * Args:
  * 	id: id of the mutex
  *  rw: true if it is a rwmutex
@@ -415,7 +416,7 @@ func AdvocateMutexLockPre(id uint64, rw bool, r bool) int {
 }
 
 /*
- * Add a mutex trylock to the trace
+ * AdvocateMutexLockTry adds a mutex trylock to the trace
  * Args:
  * 	id: id of the mutex
  * 	rw: true if it is a rwmutex
@@ -436,7 +437,7 @@ func AdvocateMutexLockTry(id uint64, rw bool, r bool) int {
 }
 
 /*
- * Add a mutex unlock to the trace
+ * AdvocateUnlockPre adds a mutex unlock to the trace
  * Args:
  * 	id: id of the mutex
  * 	rw: true if it is a runlock
@@ -457,8 +458,9 @@ func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
 }
 
 /*
- * Add the end counter to an operation of the trace. For try use AdvocatePostTry.
- *   Also used for wait group
+ * AdvocatePost adds the end counter to an operation of the trace.
+ * For try use AdvocatePostTry.
+ * Also used for wait group
  * Args:
  * 	index: index of the operation in the trace
  * 	c: number of the send
@@ -490,7 +492,7 @@ func AdvocatePost(index int) {
 }
 
 /*
- * Add the end counter to an try operation of the trace
+ * AdvocatePostTry adds the end counter to an try operation of the trace
  * Args:
  * 	index: index of the operation in the trace
  * 	suc: true if the try was successful, false otherwise
@@ -556,7 +558,7 @@ func (elem advocateTraceWaitGroupElement) toString() string {
 }
 
 /*
- * Add a waitgroup add or done to the trace
+ * AdvocateWaitGroupAdd adds a waitgroup add or done to the trace
  * Args:
  * 	id: id of the waitgroup
  *  delta: delta of the waitgroup
@@ -580,7 +582,7 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 }
 
 /*
- * Add a waitgroup wait to the trace
+ * AdvocateWaitGroupWaitPre adds a waitgroup wait to the trace
  * Args:
  * 	id: id of the waitgroup
  * Return:
@@ -600,7 +602,7 @@ type advocateTraceChannelElement struct {
 	id     uint64    // id of the channel
 	op     operation // operation
 	qSize  uint32    // size of the channel, 0 for unbuffered
-	opId   uint64    // id of the operation
+	opID   uint64    // id of the operation
 	file   string    // file where the operation was called
 	line   int       // line where the operation was called
 	tPre   uint64    // global timer before the operation
@@ -656,7 +658,7 @@ func (elem advocateTraceChannelElement) toStringSep(sep string, showPos bool) st
 		res += sep + "f"
 	}
 
-	res += sep + uint64ToString(elem.opId)
+	res += sep + uint64ToString(elem.opID)
 	res += sep + uint32ToString(elem.qSize)
 	if showPos {
 		res += sep + elem.file + ":" + intToString(elem.line)
@@ -664,8 +666,11 @@ func (elem advocateTraceChannelElement) toStringSep(sep string, showPos bool) st
 	return res
 }
 
+var advocateCounterAtomic uint64
+
 /*
- * Add a channel send to the trace. If the channel send was created by an atomic
+ * AdvocateChanSendPre adds a channel send to the trace.
+ * If the channel send was created by an atomic
  * operation, add this to the trace as well
  * Args:
  * 	id: id of the channel
@@ -674,15 +679,13 @@ func (elem advocateTraceChannelElement) toStringSep(sep string, showPos bool) st
  * Return:
  * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
-var advocateCounterAtomic uint64
-
-func AdvocateChanSendPre(id uint64, opId uint64, qSize uint) int {
+func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
 		advocateCounterAtomic++
 		lock(&advocateAtomicMapRoutineLock)
-		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineId()
+		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineID()
 		unlock(&advocateAtomicMapRoutineLock)
 		AdvocateAtomic(advocateCounterAtomic)
 
@@ -690,7 +693,7 @@ func AdvocateChanSendPre(id uint64, opId uint64, qSize uint) int {
 		return -1
 	}
 	timer := GetAdvocateCounter()
-	elem := advocateTraceChannelElement{id: id, op: opChanSend, opId: opId,
+	elem := advocateTraceChannelElement{id: id, op: opChanSend, opID: opID,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
@@ -711,7 +714,7 @@ func isSuffix(s, suffix string) bool {
 }
 
 /*
- * Add a channel recv to the trace
+ * AdvocateChanRecvPre adds a channel recv to the trace
  * Args:
  * 	id: id of the channel
  * 	opId: id of the operation
@@ -719,7 +722,7 @@ func isSuffix(s, suffix string) bool {
  * Return:
  * 	index of the operation in the trace
  */
-func AdvocateChanRecvPre(id uint64, opId uint64, qSize uint) int {
+func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
 	if isSuffix(file, "advocate_trace.go") {
@@ -727,13 +730,13 @@ func AdvocateChanRecvPre(id uint64, opId uint64, qSize uint) int {
 	}
 
 	timer := GetAdvocateCounter()
-	elem := advocateTraceChannelElement{id: id, op: opChanRecv, opId: opId,
+	elem := advocateTraceChannelElement{id: id, op: opChanRecv, opID: opID,
 		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
 
 /*
- * Add a channel close to the trace
+ * AdvocateChanClose adds a channel close to the trace
  * Args:
  * 	id: id of the channel
  * Return:
@@ -748,7 +751,7 @@ func AdvocateChanClose(id uint64, qSize uint) int {
 }
 
 /*
- * Set the operation as successfully finished
+ * AdvocateChanPost sets the operation as successfully finished
  * Args:
  * 	index: index of the operation in the trace
  */
@@ -762,6 +765,11 @@ func AdvocateChanPost(index int) {
 	currentGoRoutine().updateElement(index, elem)
 }
 
+/*
+ * AdvocateChanPostCausedByClose sets the operation as successfully finished
+ * Args:
+ * 	index: index of the operation in the trace
+ */
 func AdvocateChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
@@ -835,7 +843,7 @@ func (elem advocateTraceSelectElement) toString() string {
 }
 
 /*
- * Add a select to the trace
+ * AdvocateSelectPre adds a select to the trace
  * Args:
  * 	cases: cases of the select
  * 	nsends: number of send cases
@@ -867,7 +875,7 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
 }
 
 /*
- * Post event for select in case of an non-default case
+ * AdvocateSelectPost adds a post event for select in case of an non-default case
  * Args:
  * 	index: index of the operation in the trace
  * 	c: channel of the chosen case
@@ -905,10 +913,10 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 		// set oId
 		if elem.cases[chosenIndex].op == opChanSend {
 			c.numberSend++
-			elem.cases[chosenIndex].opId = c.numberSend
+			elem.cases[chosenIndex].opID = c.numberSend
 		} else {
 			c.numberRecv++
-			elem.cases[chosenIndex].opId = c.numberRecv
+			elem.cases[chosenIndex].opID = c.numberRecv
 		}
 
 	}
@@ -917,8 +925,8 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 }
 
 /*
-* Add a new select element to the trace if the select has exactly one
-* non-default case and a default case
+* AdvocateSelectPreOneNonDef adds a new select element to the trace if the
+* select has exactly one non-default case and a default case
 * Args:
 * 	c: channel of the non-default case
 * 	send: true if the non-default case is a send, false otherwise
@@ -954,7 +962,8 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 }
 
 /*
- * Add the selected case for a select with one non-default and one default case
+ * AdvocateSelectPostOneNonDef adds the selected case for a select with one
+ * non-default and one default case
  * Args:
  * 	index: index of the operation in the trace
  * 	res: 0 for the non-default case, -1 for the default case
@@ -972,10 +981,10 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 		elem.cases[0].tPost = timer
 		if elem.cases[0].op == opChanSend {
 			c.numberSend++
-			elem.cases[0].opId = c.numberSend
+			elem.cases[0].opID = c.numberSend
 		} else {
 			c.numberRecv++
-			elem.cases[0].opId = c.numberRecv
+			elem.cases[0].opID = c.numberRecv
 		}
 	} else {
 		elem.chosen = -1
@@ -1041,6 +1050,11 @@ func (elem advocateTraceAtomicElement) toString() string {
 	return res
 }
 
+/*
+ * Add an atomic operation to the trace
+ * Args:
+ * 	index: index of the atomic event in advocateAtomicMap
+ */
 func AdvocateAtomic(index uint64) {
 	timer := GetAdvocateCounter()
 	elem := advocateTraceAtomicElement{index: index, timer: timer}
@@ -1084,6 +1098,13 @@ func (elem advocateOnceElement) toString() string {
 	return res
 }
 
+/*
+ * AdvocateOncePre adds a once to the trace
+ * Args:
+ * 	id: id of the once
+ * Return:
+ * 	index of the operation in the trace
+ */
 func AdvocateOncePre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
@@ -1091,6 +1112,12 @@ func AdvocateOncePre(id uint64) int {
 	return insertIntoTrace(elem)
 }
 
+/*
+ * Add the end counter to an operation of the trace
+ * Args:
+ * 	index: index of the operation in the trace
+ * 	suc: true if the do on the once was called for the first time, false otherwise
+ */
 func AdvocateOncePost(index int, suc bool) {
 	if index == -1 {
 		return
@@ -1144,7 +1171,7 @@ func (elem advocateCondElement) toString() string {
 }
 
 /*
- * Add a cond wait to the trace
+ * AdvocateCondPre adds a cond wait to the trace
  * Args:
  * 	id: id of the cond
  * 	op: 0 for wait, 1 for signal, 2 for broadcast
@@ -1170,7 +1197,7 @@ func AdvocateCondPre(id uint64, op int) int {
 }
 
 /*
- * Add the end counter to an operation of the trace
+ * AdvocateCondPost adds the end counter to an operation of the trace
  * Args:
  * 	index: index of the operation in the trace
  */

@@ -28,12 +28,12 @@ func int64ToString(n int64) string {
 	if n < 0 {
 		return "-" + int64ToString(-n)
 	}
+
 	if n < 10 {
 		return string(rune(n + '0'))
-	} else {
-		return int64ToString(n/10) + string(rune(n%10+'0'))
-
 	}
+
+	return int64ToString(n/10) + string(rune(n%10+'0'))
 }
 
 /*
@@ -98,7 +98,7 @@ var advocateCurrentObjectIDMutex mutex
 var advocateGlobalCounterMutex mutex
 
 /*
- * Get a new id for a routine
+ * GetAdvocateRoutineID returns a new id for a routine
  * Return:
  * 	new id
  */
@@ -110,7 +110,7 @@ func GetAdvocateRoutineID() uint64 {
 }
 
 /*
- * Get a new id for a mutex, channel or waitgroup
+ * GetAdvocateObjectID returns a new id for a mutex, channel or waitgroup
  * Return:
  * 	new id
  */
@@ -122,7 +122,7 @@ func GetAdvocateObjectID() uint64 {
 }
 
 /*
- * Get a new counter
+ * GetAdvocateCounter returns a new counter
  * Return:
  * 	new counter value
  */

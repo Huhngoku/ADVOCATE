@@ -10,7 +10,7 @@ func AdvocateSpawnWait() {
 	_, _ = WaitForReplayPath(AdvocateReplaySpawn, file, line)
 
 	elem := advocateTraceSpawnedElement{
-		id:    GetRoutineId(),
+		id:    GetRoutineID(),
 		timer: GetAdvocateCounter(),
 		file:  file,
 		line:  line,

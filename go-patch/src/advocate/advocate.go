@@ -7,7 +7,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
@@ -27,6 +26,14 @@ func Finish() {
 	backgroundMemoryTestRunning = false
 
 	writeToTraceFiles()
+	deleteEmptyFiles()
+}
+
+/*
+ * WaitForReplayFinish waits for the replay to finish.
+ */
+func WaitForReplayFinish() {
+	runtime.WaitForReplayFinish()
 }
 
 func writeTraceIfFull() {
@@ -38,7 +45,6 @@ func writeTraceIfFull() {
 		if err != nil {
 			panic(err)
 		}
-		// if less than 20% free space, write trace
 		if stat.Freeram*5 < stat.Totalram {
 			cleanTrace()
 			time.Sleep(15 * time.Second)
@@ -52,14 +58,12 @@ func writeTraceIfFull() {
 }
 
 func cleanTrace() {
-	println("Write trace to file")
 	// stop new element from been added to the trace
 	runtime.BlockTrace()
 	writeToTraceFiles()
 	runtime.DeleteTrace()
 	runtime.UnblockTrace()
 	runtime.GC()
-
 }
 
 /*
@@ -72,16 +76,20 @@ func cleanTrace() {
  */
 func writeToTraceFiles() {
 	numRout := runtime.GetNumberOfRoutines()
-	wg := sync.WaitGroup{}
 	for i := 1; i <= numRout; i++ {
 		// write the trace to the file
-		wg.Add(1)
-		go writeToTraceFile(i, &wg)
+		writeToTraceFile(i) // TODO: make this parallel
 	}
-	wg.Wait()
 }
 
-func writeToTraceFile(routine int, wg *sync.WaitGroup) {
+/*
+ * Write the trace of a routine to a file.
+ * The trace is written in the file named trace_routineId.log.
+ * The trace is written in the format of advocate.
+ * Args:
+ * 	- routine: The id of the routine
+ */
+func writeToTraceFile(routine int) {
 	// create the file if it does not exist and open it
 	fileName := "trace/trace_" + strconv.Itoa(routine) + ".log"
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -92,8 +100,8 @@ func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 
 	// get the runtime to send the trace
 	advocateChan := make(chan string)
-	go func() {
-		runtime.TraceToStringByIdChannel(routine, advocateChan)
+	go func() { // TODO: do not record this routines or
+		runtime.TraceToStringByIDChannel(routine, advocateChan)
 		close(advocateChan)
 	}()
 
@@ -103,9 +111,48 @@ func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 			panic(err)
 		}
 	}
-	wg.Done()
 }
 
+/*
+ * Delete empty files in the trace folder.
+ * The function deletes all files in the trace folder that are empty.
+ */
+func deleteEmptyFiles() {
+	files, err := os.ReadDir("trace")
+	if err != nil {
+		panic(err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		stat, err := os.Stat("trace/" + file.Name())
+		if err != nil {
+			println("stat returns error")
+			continue
+		}
+		if stat == nil {
+			println("stat is nil")
+		}
+
+		if stat.Size() == 0 {
+			err := os.Remove("trace/" + file.Name())
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+}
+
+/*
+ * InitTracing initializes the tracing.
+ * The function creates the trace folder and starts the background memory test.
+ * Args:
+ * 	- size: The size of the channel used for recording atomic events.
+ */
 func InitTracing(size int) {
 	// remove the trace folder if it exists
 	err := os.RemoveAll("trace")
@@ -134,18 +181,15 @@ var timeout = false
  * Read the trace from the trace folder.
  * The function reads all files in the trace folder and adds the trace to the runtime.
  * The trace is added to the runtime by calling the AddReplayTrace function.
- * Args:
- * 	- folderPath: The path to the trace folder.
- * 	- timeout: If true, the replay is terminated with a timeout. If false, the replay is executed without a timeout.
  */
-func EnableReplay(folderPath string) {
+func EnableReplay() {
 	// if trace folder does not exist, panic
 	if _, err := os.Stat("trace"); os.IsNotExist(err) {
 		panic("Trace folder does not exist.")
 	}
 
 	// traverse all files in the trace folder
-	files, err := os.ReadDir(folderPath)
+	files, err := os.ReadDir("trace")
 	if err != nil {
 		panic(err)
 	}
@@ -166,9 +210,9 @@ func EnableReplay(folderPath string) {
 	runtime.EnableReplay(timeout)
 }
 
-func EnableReplayWithTimeout(folderPath string) {
+func EnableReplayWithTimeout() {
 	timeout = true
-	EnableReplay(folderPath)
+	EnableReplay()
 }
 
 /*
@@ -190,7 +234,6 @@ func EnableReplayWithTimeout(folderPath string) {
  * 	The routine id
  * 	The trace for this routine
  */
-// TODO: rewrite LOCAL
 func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	mb := 1048576
 	maxTokenSize := 1

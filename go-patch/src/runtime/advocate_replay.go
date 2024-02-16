@@ -1,5 +1,8 @@
 package runtime
 
+/*
+ * ReplayOperation is used to identify the type of the operation in the trace.
+ */
 type ReplayOperation int
 
 const (
@@ -174,6 +177,9 @@ func AddReplayTrace(routine uint64, trace AdvocateReplayTrace) {
 	}
 }
 
+/*
+ * Print the replay data.
+ */
 func (t AdvocateReplayTraces) Print() {
 	for id, trace := range t {
 		println("\nRoutine: ", id)
@@ -181,12 +187,20 @@ func (t AdvocateReplayTraces) Print() {
 	}
 }
 
+/*
+ * Print the replay trace for one routine.
+ */
 func (t AdvocateReplayTrace) Print() {
 	for _, e := range t {
 		println(e.Op.ToString(), e.Time, e.File, e.Line, e.Blocked, e.Suc)
 	}
 }
 
+/*
+ * Enable the replay.
+ * Arguments:
+ * 	timeout: true if the replay should be canceled after a timeout, false otherwise
+ */
 func EnableReplay(timeout bool) {
 	timeOutCancel = timeout
 

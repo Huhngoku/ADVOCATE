@@ -100,15 +100,14 @@ After adding the preamble, we get
 package main
 
 import (
-	"runtime"
 	"advocate"
 	"time"
 )
 
 func main() {
 	// ======= Preamble Start =======
-	runtime.InitAdvocate(0)
-	defer advocate.CreateTrace("trace_name.log")
+		advocate.InitTracing(0)
+		defer advocate.Finish()
 	// ======= Preamble End =======
 
 	c := make(chan int, 0)
@@ -207,15 +206,13 @@ To start the replay, add the following header at the beginning of the
 main function:
 
 ```go
-		trace := advocate.ReadTrace()
-		runtime.EnableReplay(trace)
-		defer runtime.WaitForReplayFinish()
+advocate.EnableReplay()
+defer advocate.WaitForReplayFinish()
 ```
 
-Also include the following imports:
+Also include the following import:
 ```go
 "advocate"
-"runtime"
 ```
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
 
@@ -226,14 +223,15 @@ ones for recording and replay:
 
 ```go
 if true {
-		// init tracing
-		advocate.InitTracing(0)
-		defer advocate.Finish()
-	} else {
-		// init replay
-		advocate.ReadTrace("pathToTrace")
-		defer runtime.WaitForReplayFinish()
-	}
+	// init tracing
+	advocate.InitTracing(0)
+	defer println(routineCount)
+	defer advocate.Finish()
+} else {
+	// init replay
+	advocate.EnableReplay()
+	defer advocate.WaitForReplayFinish()
+}
 ```
 
 With changing `true` to `false` one can switch between recording and replay.
