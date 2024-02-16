@@ -26,7 +26,7 @@ func Finish() {
 	backgroundMemoryTestRunning = false
 
 	writeToTraceFiles()
-	deleteEmptyFiles()
+	// deleteEmptyFiles() // TODO: Check if adding this works
 }
 
 /*
@@ -130,13 +130,8 @@ func deleteEmptyFiles() {
 
 		stat, err := os.Stat("trace/" + file.Name())
 		if err != nil {
-			println("stat returns error")
 			continue
 		}
-		if stat == nil {
-			println("stat is nil")
-		}
-
 		if stat.Size() == 0 {
 			err := os.Remove("trace/" + file.Name())
 			if err != nil {
