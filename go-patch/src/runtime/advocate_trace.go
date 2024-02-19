@@ -229,7 +229,6 @@ func InitAdvocate(size int) {
 			// go func() {
 			// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
 			// 	atomic.ChanReturn <- true
-			// 	ReplayDone()
 			// }()
 		}
 	}()
@@ -308,7 +307,6 @@ func AdvocateSpawnCaller(callerRoutine *AdvocateRoutine, newID uint64, file stri
 	timer := GetAdvocateCounter()
 	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
 		file: file, line: line})
-	ReplayDone()
 }
 
 // type to save in the trace for routines

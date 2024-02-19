@@ -4,8 +4,8 @@
 | Info | Value |
 | - | - |
 | Number of go files | 1 |
-| Number of lines | 941 |
-| Number of non-empty lines | 677 |
+| Number of lines | 942 |
+| Number of non-empty lines | 678 |
 
 
 ## Trace
@@ -34,10 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.303967 s |
-| Time for run with ADVOCATE | 0.311365 s |
-| Overhead of ADVOCATE | 2.433817 % |
-| Analysis | 0.042771 s |
+| Time for run without ADVOCATE | 0.301720 s |
+| Time for run with ADVOCATE | 0.309148 s |
+| Overhead of ADVOCATE | 2.461885 % |
+| Replay without changes | 0.305404 s |
+| Overhead of Replay | 1.221000 % s |
+| Analysis | 0.015493 s |
 
 
 ## Results
@@ -45,5 +47,5 @@
 
 -------------------- Critical -------------------
 1 Found concurrent Recv on same channel:
-	recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:451@32
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:455@29
+	recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:456@33
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:452@27

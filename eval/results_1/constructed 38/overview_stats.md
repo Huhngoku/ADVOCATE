@@ -4,8 +4,8 @@
 | Info | Value |
 | - | - |
 | Number of go files | 1 |
-| Number of lines | 941 |
-| Number of non-empty lines | 677 |
+| Number of lines | 942 |
+| Number of non-empty lines | 678 |
 
 
 ## Trace
@@ -34,10 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.102436 s |
-| Time for run with ADVOCATE | 0.110629 s |
-| Overhead of ADVOCATE | 7.998165 % |
-| Analysis | 0.023229 s |
+| Time for run without ADVOCATE | 0.101885 s |
+| Time for run with ADVOCATE | 0.118096 s |
+| Overhead of ADVOCATE | 15.911076 % |
+| Replay without changes | 0.118688 s |
+| Overhead of Replay | 16.492123 % s |
+| Analysis | 0.016186 s |
 
 
 ## Results
@@ -45,5 +47,5 @@
 
 -------------------- Critical -------------------
 1 Potential leak without possible partner:
-	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:757@27
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:758@27
 	partner: -

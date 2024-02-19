@@ -4,8 +4,8 @@
 | Info | Value |
 | - | - |
 | Number of go files | 1 |
-| Number of lines | 941 |
-| Number of non-empty lines | 677 |
+| Number of lines | 942 |
+| Number of non-empty lines | 678 |
 
 
 ## Trace
@@ -13,8 +13,8 @@
 | - | - |
 | Number of routines | 18 |
 | Number of spawns | 4 |
-| Number of atomics | 3 |
-| Number of atomic operations | 9 |
+| Number of atomics | 2 |
+| Number of atomic operations | 8 |
 | Number of channels | 1 |
 | Number of channel operations | 1 |
 | Number of selects | 0 |
@@ -34,10 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.101952 s |
-| Time for run with ADVOCATE | 0.114239 s |
-| Overhead of ADVOCATE | 12.051750 % |
-| Analysis | 0.043434 s |
+| Time for run without ADVOCATE | 0.101722 s |
+| Time for run with ADVOCATE | 0.112132 s |
+| Overhead of ADVOCATE | 10.233774 % |
+| Replay without changes | 0.112197 s |
+| Overhead of Replay | 10.297674 % s |
+| Analysis | 0.024074 s |
 
 
 ## Results

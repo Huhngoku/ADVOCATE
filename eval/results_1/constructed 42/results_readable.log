@@ -1,6 +1,6 @@
 ==================== Summary ====================
 
 -------------------- Critical -------------------
-1 Potential leak without possible partner:
-	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:809@30
-	partner: -
+1 Potential leak with possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:806@28
+	partner: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:814@32

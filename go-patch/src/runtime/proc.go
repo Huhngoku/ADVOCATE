@@ -4465,9 +4465,6 @@ func newproc(fn *funcval) {
 		if mainStarted {
 			wakep()
 		}
-		// ADVOCATE-CHANGE-START
-		ReplayDone()
-		// ADVOCATE-CHANGE-END
 	})
 }
 

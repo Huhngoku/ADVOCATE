@@ -87,7 +87,6 @@ const (
 func (m *Mutex) Lock() {
 	// ADVOCATE-CHANGE-START
 	enabled, reaplayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexLock, 2)
-	defer runtime.ReplayDone()
 	if enabled {
 		if m.id == 0 {
 			m.id = runtime.GetAdvocateObjectID()
@@ -133,7 +132,6 @@ func (m *Mutex) Lock() {
 func (m *Mutex) TryLock() bool {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexTryLock, 2)
-	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {
@@ -292,7 +290,6 @@ func (m *Mutex) lockSlow() {
 func (m *Mutex) Unlock() {
 	// ADVOCATE-CHANGE-START
 	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexUnlock, 2)
-	defer runtime.ReplayDone()
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {

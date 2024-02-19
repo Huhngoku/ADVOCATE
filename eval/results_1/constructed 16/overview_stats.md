@@ -4,8 +4,8 @@
 | Info | Value |
 | - | - |
 | Number of go files | 1 |
-| Number of lines | 941 |
-| Number of non-empty lines | 677 |
+| Number of lines | 942 |
+| Number of non-empty lines | 678 |
 
 
 ## Trace
@@ -34,10 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.101638 s |
-| Time for run with ADVOCATE | 0.107787 s |
-| Overhead of ADVOCATE | 6.049903 % |
-| Analysis | 0.019930 s |
+| Time for run without ADVOCATE | 0.101168 s |
+| Time for run with ADVOCATE | 0.109899 s |
+| Overhead of ADVOCATE | 8.630199 % |
+| Replay without changes | 0.118599 s |
+| Overhead of Replay | 17.229756 % s |
+| Analysis | 0.048047 s |
 
 
 ## Results
@@ -45,9 +47,9 @@
 
 -------------------- Critical -------------------
 1 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:365@38
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:366@38
 	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:355@32
 -------------------- Warning --------------------
 2 Possible receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:365@38
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:361@28
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:366@38
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:362@28

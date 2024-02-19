@@ -115,10 +115,10 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 
 	if len(resultCritical) > 0 {
 		found = true
-		resReadable += "-------------------- Critical -------------------\n"
+		resReadable += "-------------------- Critical -------------------\n\n"
 
 		if !noPrint {
-			fmt.Print("-------------------- Critical -------------------\n")
+			fmt.Print("-------------------- Critical -------------------\n\n")
 		}
 
 		for _, result := range resultCritical {
@@ -134,9 +134,9 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 	}
 	if len(resultsWarning) > 0 && !noWarning {
 		found = true
-		resReadable += "-------------------- Warning --------------------\n"
+		resReadable += "-------------------- Warning --------------------\n\n"
 		if !noPrint {
-			fmt.Print("-------------------- Warning --------------------\n")
+			fmt.Print("-------------------- Warning --------------------\n\n")
 		}
 
 		for _, result := range resultsWarning {

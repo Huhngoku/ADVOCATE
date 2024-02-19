@@ -77,7 +77,6 @@ func (c *Cond) Wait() {
 	}
 	// replay
 	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayCondWait, 2)
-	defer runtime.ReplayDone()
 	//record
 	advocateIndex := runtime.AdvocateCondPre(c.id, 0)
 	defer runtime.AdvocateCondPost(advocateIndex)
@@ -103,7 +102,6 @@ func (c *Cond) Signal() {
 	}
 	// replay
 	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayCondSignal, 2)
-	defer runtime.ReplayDone()
 	// recording
 	advocateIndex := runtime.AdvocateCondPre(c.id, 1)
 	defer runtime.AdvocateCondPost(advocateIndex)
@@ -123,7 +121,6 @@ func (c *Cond) Broadcast() {
 	}
 	// replay
 	_, _ = runtime.WaitForReplay(runtime.AdvocateReplayCondBroadcast, 2)
-	defer runtime.ReplayDone()
 	//recording
 	advocateIndex := runtime.AdvocateCondPre(c.id, 2)
 	defer runtime.AdvocateCondPost(advocateIndex)

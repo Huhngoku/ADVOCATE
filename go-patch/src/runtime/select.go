@@ -125,7 +125,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 	// ADVOCATE-CHANGE-START
 	replayEnabled, replayElem := WaitForReplay(AdvocateReplaySelect, 2)
-	defer ReplayDone()
 	if replayEnabled {
 		if replayElem.Blocked {
 			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))

@@ -26,7 +26,7 @@ func Finish() {
 	backgroundMemoryTestRunning = false
 
 	writeToTraceFiles()
-	// deleteEmptyFiles() // TODO: Check if adding this works
+	// deleteEmptyFiles()
 }
 
 /*
@@ -58,6 +58,7 @@ func writeTraceIfFull() {
 }
 
 func cleanTrace() {
+	println("Cleaning trace")
 	// stop new element from been added to the trace
 	runtime.BlockTrace()
 	writeToTraceFiles()
@@ -273,10 +274,11 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				var suc = true
 				var selIndex int
 				fields := strings.Split(elem, ",")
+				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
 				case "G":
 					op = runtime.AdvocateReplaySpawn
-					time, _ = strconv.Atoi(fields[1])
+					// time, _ = strconv.Atoi(fields[1])
 					pos := strings.Split(fields[3], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
@@ -291,7 +293,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					default:
 						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + fileName + ".")
 					}
-					time, _ = strconv.Atoi(fields[2])
+					// time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}
@@ -312,7 +314,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					if fields[4] == "R" {
 						rw = true
 					}
-					time, _ = strconv.Atoi(fields[2])
+					// time, _ = strconv.Atoi(fields[2])
 					if fields[6] == "f" {
 						suc = false
 					}
@@ -356,7 +358,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 
 				case "O":
 					op = runtime.AdvocateReplayOnce
-					time, _ = strconv.Atoi(fields[1]) // read tpre to prevent false order
+					// time, _ = strconv.Atoi(fields[1]) // read tpre to prevent false order
 					if time == 0 {
 						blocked = true
 					}
@@ -375,7 +377,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					default:
 						panic("Unknown waitgroup operation")
 					}
-					time, _ = strconv.Atoi(fields[2])
+					// time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}
@@ -389,7 +391,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					} else {
 						op = runtime.AdvocateReplaySelectCase
 					}
-					time, _ = strconv.Atoi(fields[2])
+					// time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}

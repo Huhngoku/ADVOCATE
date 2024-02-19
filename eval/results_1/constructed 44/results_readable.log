@@ -2,5 +2,5 @@
 
 -------------------- Critical -------------------
 1 Potential leak on mutex:
-	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:837@30
+	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:838@30
 	

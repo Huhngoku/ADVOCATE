@@ -2,5 +2,5 @@
 
 -------------------- Critical -------------------
 1 Potential leak without possible partner:
-	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:502@30
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:503@30
 	partner: -

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"advocate"
 	"flag"
 	"gobench/cockroach1055"
 	"gobench/cockroach1462"
@@ -81,16 +82,15 @@ func main() {
 		return
 	}
 
-	// if false {
-	// 	// init tracing
-	// 	println("Init advocate")
-	// 	advocate.InitTracing(0)
-	// 	defer advocate.Finish()
-	// } else {
-	// 	// init replay
-	// 	advocate.EnableReplayWithTimeout("./trace")
-	// 	defer runtime.WaitForReplayFinish()
-	// }
+	if false {
+		// init tracing
+		advocate.InitTracing(0)
+		defer advocate.Finish()
+	} else {
+		// init replay
+		advocate.EnableReplay()
+		defer advocate.WaitForReplayFinish()
+	}
 
 	// cancel test if time has run out
 	go func() {

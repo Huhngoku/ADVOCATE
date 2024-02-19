@@ -129,7 +129,7 @@ func addMediumPrograms() {
 func runExecs(pathToExec string, execName string, execArgs []string, progName string) {
 	runExec(pathToExec, execName, execArgs, progName, "original", 0)
 	runExec(pathToExec, execName, execArgs, progName, "advocate", 0)
-	// runExec(pathToExec, execName, execArgs, progName, "replay", 0)
+	runExec(pathToExec, execName, execArgs, progName, "replay", 0)
 }
 
 func runExec(pathToExec string, execName string, execArgs []string, progName string, variant string, repeat int) {

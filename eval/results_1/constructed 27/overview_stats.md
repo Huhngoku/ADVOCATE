@@ -4,8 +4,8 @@
 | Info | Value |
 | - | - |
 | Number of go files | 1 |
-| Number of lines | 941 |
-| Number of non-empty lines | 677 |
+| Number of lines | 942 |
+| Number of non-empty lines | 678 |
 
 
 ## Trace
@@ -34,10 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.000802 s |
-| Time for run with ADVOCATE | 0.005008 s |
-| Overhead of ADVOCATE | 524.438903 % |
-| Analysis | 0.008571 s |
+| Time for run without ADVOCATE | 0.000883 s |
+| Time for run with ADVOCATE | 0.004267 s |
+| Overhead of ADVOCATE | 383.238958 % |
+| Replay without changes | 0.004159 s |
+| Overhead of Replay | 371.007928 % s |
+| Analysis | 0.012484 s |
 
 
 ## Results

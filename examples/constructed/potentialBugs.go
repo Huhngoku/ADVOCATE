@@ -353,6 +353,7 @@ func n16() {
 		t := m.TryLock()
 		if t {
 			c <- 1
+			println("send")
 			m.Unlock()
 		}
 	}()
@@ -908,13 +909,13 @@ func main() {
 		return
 	}
 
-	if false {
+	if true {
 		// init tracing
 		advocate.InitTracing(0)
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplayWithTimeout("./trace")
+		advocate.EnableReplayWithTimeout()
 		defer runtime.WaitForReplayFinish()
 	}
 

@@ -4,8 +4,8 @@
 | Info | Value |
 | - | - |
 | Number of go files | 1 |
-| Number of lines | 941 |
-| Number of non-empty lines | 677 |
+| Number of lines | 942 |
+| Number of non-empty lines | 678 |
 
 
 ## Trace
@@ -34,10 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.102078 s |
-| Time for run with ADVOCATE | 0.113927 s |
-| Overhead of ADVOCATE | 11.607790 % |
-| Analysis | 0.019976 s |
+| Time for run without ADVOCATE | 0.103477 s |
+| Time for run with ADVOCATE | 0.118586 s |
+| Overhead of ADVOCATE | 14.601312 % |
+| Replay without changes | 0.115216 s |
+| Overhead of Replay | 11.344550 % s |
+| Analysis | 0.011542 s |
 
 
 ## Results
@@ -46,8 +48,8 @@
 -------------------- Critical -------------------
 1 Potential mixed deadlock:
 	locks: 
-		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:740@27
-		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:746@35
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:741@27
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:747@35
 	send/close-recv: 
-		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:741@30
-		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:747@38
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:742@30
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:748@38

@@ -328,7 +328,7 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		return true, ReplayElement{}
 	}
 
-	// println("WaitForReplayPath", op, file, line)
+	// println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		nextRoutine, next := getNextReplayElement()
@@ -381,7 +381,12 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		unlock(&timeoutLock)
 
 		foundReplayElement(nextRoutine)
-		// println("Replay Run : ", next.Time, op, file, line)
+		println("Replay Run : ", next.Time, op.ToString(), file, line)
+		lock(&replayDoneLock)
+		replayDone++
+		unlock(&replayDoneLock)
+		_, next = getNextReplayElement()
+		println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
 		return true, next
 	}
 }
@@ -492,21 +497,6 @@ func isPositionInTrace(file string, line int) bool {
 	}
 
 	return true
-}
-
-/*
- * Notify that the operation is done.
- * This function should be called after a waiting operation is done.
- * Used to prevent the program to terminate before the trace is finished, if
- * the main routine would terminate.
- */
-func ReplayDone() {
-	if !replayEnabled {
-		return
-	}
-	lock(&replayDoneLock)
-	defer unlock(&replayDoneLock)
-	replayDone++
 }
 
 func correctSelect(next ReplayOperation, op ReplayOperation) bool {

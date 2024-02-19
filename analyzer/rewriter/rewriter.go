@@ -105,5 +105,5 @@ func rewriteTraceMultiple(bug bugs.Bug) {
 		}
 	}
 	trace.ShiftTrace(minTSort, maxTSort-minTSort+1)
-	(*bug.TraceElement1).SetTsortWithoutNotExecuted(minTSort)
+	(*bug.TraceElement1).SetTsortWithoutNotExecuted(minTSort) // TODO: rewrite based on tpre
 }

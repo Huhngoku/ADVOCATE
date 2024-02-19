@@ -1,6 +1,3 @@
 Possible negative waitgroup counter:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:531@34
-	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:535@36;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:522@30;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:526@32
-Possible negative waitgroup counter:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:535@36
-	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:531@34;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:522@30;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:526@32
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:536@34
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:523@31;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:527@32
