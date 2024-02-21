@@ -2,11 +2,16 @@ package main
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -79,7 +84,7 @@ func addGoBench() {
 				pathToAdvocate + "/examples/GoBench/",
 				pathToAdvocate + "/examples/GoBench/" + names[i] + "/",
 				"gobench",
-				"-c", strconv.Itoa(i + 1), "-t", "20"})
+				"-c", strconv.Itoa(i + 1), "-t", "10"})
 	}
 }
 
@@ -126,44 +131,85 @@ func addMediumPrograms() {
 			"sorty"})
 }
 
-func runExecs(pathToExec string, execName string, execArgs []string, progName string) {
-	runExec(pathToExec, execName, execArgs, progName, "original", 0)
-	runExec(pathToExec, execName, execArgs, progName, "advocate", 0)
-	runExec(pathToExec, execName, execArgs, progName, "replay", 0)
+func runExecs(pathToExec string, execName string, execArgs []string, progName string) error {
+	success := 0
+	var err error
+	max := 4
+	for i := 1; i <= max; i++ {
+		err = nil // reset error
+
+		err = runExec(pathToExec, execName, execArgs, progName, "original", 0)
+		if err != nil {
+			if i != max {
+				resetResFolder(progName)
+				continue
+			}
+		}
+		success = 1
+
+		err = runExec(pathToExec, execName, execArgs, progName, "advocate", 0)
+		if err != nil {
+			if i != max {
+				resetResFolder(progName)
+				continue
+			}
+		}
+		success = 2
+
+		err = runExec(pathToExec, execName, execArgs, progName, "replay", 0)
+		if err != nil {
+			if i != max {
+				resetResFolder(progName)
+				continue
+			}
+		}
+		success = 3
+
+		break
+	}
+
+	switch success {
+	case 0:
+		return errors.New("Failed to run original")
+	case 1:
+		return errors.New("Failed to run advocate")
+	case 2:
+		return errors.New("Failed to run replay")
+	}
+
+	return nil
 }
 
-func runExec(pathToExec string, execName string, execArgs []string, progName string, variant string, repeat int) {
+func runExec(pathToExec string, execName string, execArgs []string, progName string, variant string, repeat int) error {
 	commandStr := "./" + execName + "_" + variant
-	cmd := exec.Command(commandStr, execArgs...)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, commandStr, execArgs...)
 	cmd.Dir = pathToExec
+
 	log(EXEC, cmd.String()+" in "+pathToExec)
 
 	out, runtimeOriginal, err := runCommand(cmd)
 
 	if err != nil {
 		log(ERROR, err.Error()+":\n"+out)
-		if repeat < 5 && repeat != -1 {
-			log(ERROR, variant+" of "+progName+" resulted in an error. Trying again...")
-			runExec(pathToExec, execName, execArgs, progName, variant, repeat+1)
-			return
-		} else {
-			log(ERROR, variant+" of "+progName+" failed 5 times. Skipping...")
-		}
+		return errors.New("Error")
 	}
+
 	if out == "Timeout" {
-		if repeat < 5 && repeat != -1 {
-			log(TIMEOUT, variant+" of "+progName+" timed out. Trying again...")
-			runExec(pathToExec, execName, execArgs, progName, variant, repeat+1)
-			return
-		} else {
-			log(TIMEOUT, variant+" of "+progName+" failed 5 times. Skipping...")
-		}
+		log(TIMEOUT, variant+" of "+progName+" timed out. Trying again...")
+		runExec(pathToExec, execName, execArgs, progName, variant, repeat+1)
+		return errors.New("Timeout")
 	}
 
 	err = writeTime(runtimeOriginal, progName)
 	if err != nil {
 		log(ERROR, err.Error())
+		return errors.New("Write time failed")
 	}
+
+	return nil
 }
 
 /*
@@ -252,24 +298,122 @@ func createResFolder(progName string) error {
 	return nil
 }
 
+func resetResFolder(progName string) error {
+	progFolder := resPath + "/" + progName
+	err := os.RemoveAll(progFolder)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(progFolder, 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func finish() error {
 	log(CLEANUP, "Create overview at "+resPath+"/overview.log")
-	file, err := os.OpenFile(resPath+"/overview.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	overheadsAdvocate := []float64{}
+	overheadsReplay := []float64{}
+	fractionAnalyses := []float64{}
+
+	// read all times.log files and save the values to a variable
+	err := filepath.Walk(resPath,
+		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			if info.Name() != "times.log" {
+				return nil
+			}
+
+			file, err := os.Open(path)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			buf := make([]byte, 1024)
+			n, err := file.Read(buf)
+			if err != nil {
+				return err
+			}
+
+			timesStr := string(buf[:n-1])
+			times := strings.Split(timesStr, ",")
+
+			original := 0.0
+			advocate := 0.0
+			replay := 0.0
+			analysis := 0.0
+
+			if len(times) == 4 {
+				original, _ = strconv.ParseFloat(times[0], 64)
+				advocate, _ = strconv.ParseFloat(times[1], 64)
+				replay, _ = strconv.ParseFloat(times[2], 64)
+				analysis, _ = strconv.ParseFloat(times[3], 64)
+			} else if len(times) == 3 {
+				original, _ = strconv.ParseFloat(times[0], 64)
+				advocate, _ = strconv.ParseFloat(times[1], 64)
+				analysis, _ = strconv.ParseFloat(times[2], 64)
+			} else {
+				return nil
+			}
+
+			overheadAdvocate := max(0, (advocate-original)/original)
+			overheadsAdvocate = append(overheadsAdvocate, overheadAdvocate)
+
+			if len(times) == 4 {
+				overheadReplay := max(0, (replay-original)/original)
+				overheadsReplay = append(overheadsReplay, overheadReplay)
+			}
+
+			fractionAnalysis := analysis / advocate
+			fractionAnalyses = append(fractionAnalyses, fractionAnalysis)
+
+			return nil
+		})
+
+	averageOverheadAdvocate, errorOverheadAdvocate := average(overheadsAdvocate)
+	averageOverheadReplay, errorOverheadReplay := average(overheadsReplay)
+	averageFractionAnalysis, errorFractionAnalysis := average(fractionAnalyses)
+
+	file, err := os.OpenFile(resPath+"/overview.md", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	file.WriteString("Success\n\n")
-	for _, suc := range resSucc {
-		file.WriteString(suc + "\n")
-	}
+	file.WriteString("# Times")
+	file.WriteString("\n\n")
+	file.WriteString("Average over all programs\n\n")
+	file.WriteString("| Type | Avg | StdErr |\n| - | - | - |\n")
+	file.WriteString("| Overhead Advocate | " + strconv.FormatFloat(averageOverheadAdvocate*100, 'f', 6, 64) + "% | " + strconv.FormatFloat(errorOverheadAdvocate*100, 'f', 6, 64) + "% |\n")
+	file.WriteString("| Overhead Replay | " + strconv.FormatFloat(averageOverheadReplay*100, 'f', 6, 64) + "% | " + strconv.FormatFloat(errorOverheadReplay*100, 'f', 6, 64) + "% |\n")
+	file.WriteString("| Fraction Analysis | " + strconv.FormatFloat(averageFractionAnalysis*100, 'f', 6, 64) + "% | " + strconv.FormatFloat(errorFractionAnalysis*100, 'f', 6, 64) + "% |\n")
+	file.WriteString("\n\nInfo: Fraction analysis is runtime of analysis divided by runtime of advocate\n\n")
 
-	file.WriteString("Failed\n\n")
-	for _, fail := range resFailure {
-		_, err = file.WriteString(fail + "\n")
-	}
 	return err
+}
+
+func average(arr []float64) (float64, float64) {
+	sum := 0.0
+	for _, val := range arr {
+		sum += val
+	}
+	avg := sum / float64(len(arr))
+	stdErr := standardError(arr, avg)
+	return avg, stdErr
+}
+
+func standardError(arr []float64, avg float64) float64 {
+	sum := 0.0
+	for _, val := range arr {
+		sum += (val - avg) * (val - avg)
+	}
+	return math.Sqrt(sum / float64(len(arr)))
 }
 
 func setup(all, constructed, gobench bool, medium bool) error {
@@ -331,18 +475,29 @@ func main() {
 			continue
 		}
 
-		runExecs(execPath, execName, execArgs, name)
-
-		out, err := runAnalyzer(name, pathToTrace)
+		err = runExecs(execPath, execName, execArgs, name)
+		runAna := true
 		if err != nil {
-			log(ERROR, err.Error()+":\n"+out)
+			log(ERROR, err.Error())
 			log(FAILED, name)
+			if err.Error() != "Failed to run original" || err.Error() != "Failed to run advocate" {
+				runAna = false
+			}
 			continue
+		}
+
+		if runAna {
+			out, err := runAnalyzer(name, pathToTrace)
+			if err != nil {
+				log(ERROR, err.Error()+":\n"+out)
+				log(FAILED, name)
+				continue
+			}
 		}
 
 		err = createOverview(name, progPath, execPath)
 		if err != nil {
-			log(ERROR, err.Error()+":\n"+out)
+			log(ERROR, err.Error())
 			log(FAILED, name)
 			continue
 		}
@@ -360,6 +515,9 @@ func main() {
 
 	if numberErrors == 0 {
 		log(FINISHS, "Finished with 0 errors")
+		for _, failed := range resFailure {
+			log(FAILED, failed)
+		}
 	} else {
 		log(FINISHF, "Finished with "+strconv.Itoa(numberErrors)+" errors")
 	}

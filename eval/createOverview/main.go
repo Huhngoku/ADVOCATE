@@ -263,8 +263,12 @@ func parseTraceFile(tracePath string, stats map[string]int, known map[string][]s
 
 	stats["numberRoutines"]++
 
-	// read the file
 	scanner := bufio.NewScanner(file)
+	const maxCapacity = 3 * 1024 * 1024 * 1024
+	buf := make([]byte, maxCapacity)
+	scanner.Buffer(buf, maxCapacity)
+
+	// read the file
 	for scanner.Scan() {
 		line := scanner.Text()
 		for _, elem := range strings.Split(line, ";") {

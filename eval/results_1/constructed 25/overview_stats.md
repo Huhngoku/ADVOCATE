@@ -34,12 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.001518 s |
-| Time for run with ADVOCATE | 0.004383 s |
-| Overhead of ADVOCATE | 188.735178 % |
-| Replay without changes | 0.004382 s |
-| Overhead of Replay | 188.669302 % s |
-| Analysis | 0.007797 s |
+| Time for run without ADVOCATE | 0.001206 s |
+| Time for run with ADVOCATE | 0.006403 s |
+| Overhead of ADVOCATE | 430.928690 % |
+| Replay without changes | 0.006398 s |
+| Overhead of Replay | 430.514096 % s |
+| Analysis | 0.011465 s |
 
 
 ## Results

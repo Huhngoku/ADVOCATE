@@ -1,0 +1,105 @@
+Potential leak on conditional variable:
+	conditional: /home/erikkassubek/go/pkg/mod/github.com/htcat/htcat@v1.0.2/eager_reader.go:64@17806
+	
+Potential leak on mutex:
+	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/cond.go:88@18118
+	
+Potential leak without possible partner:
+	channel: /home/erikkassubek/go/pkg/mod/github.com/htcat/htcat@v1.0.2/eager_reader.go:105@4447
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/go/pkg/mod/github.com/htcat/htcat@v1.0.2/defrag.go:173@5720
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/go/pkg/mod/github.com/htcat/htcat@v1.0.2/defrag.go:173@5847
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/go/pkg/mod/github.com/htcat/htcat@v1.0.2/defrag.go:173@6644
+	partner: -
+Potential leak without possible partner:
+	channel: /home/erikkassubek/go/pkg/mod/github.com/htcat/htcat@v1.0.2/defrag.go:173@6991
+	partner: -
+Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@454
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4799;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4840;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@491;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4861;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4866;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4886;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4904;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@505;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:651@4616;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:651@4621;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4473;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4507;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4591;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4656
+Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@491
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@454;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4799;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4840;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4861;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4866;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4886;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4904;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@505;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:651@4616;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:651@4621;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4473;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4507;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4591;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4656
+Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4799
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@454;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4840;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@491;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4861;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4866;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4886;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4904;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@505;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4591;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4656
+Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4840
+	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@454;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@4799;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/dnsclient_unix.go:655@491;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4861;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4866;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4886;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@4904;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:358@505;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4591;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/lookup.go:322@4656
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28@559
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31@565
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242@4221
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389@104
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28@559
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31@5021
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28@559
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31@5108
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28@559
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31@5174
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:28@559
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/crypto/internal/randutil/randutil.go:31@5186
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242@5414
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389@4501
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242@5565
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389@4581
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242@6307
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389@4648
+Found receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1242@6453
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/net/http/transport.go:1389@4446
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18163
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18183
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18203
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18223
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18243
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18263
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18283
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18303
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18323
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18343
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18363
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18383
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18403
+Found receive on closed channel:
+	close: 
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/advocate/advocate.go:110@18423

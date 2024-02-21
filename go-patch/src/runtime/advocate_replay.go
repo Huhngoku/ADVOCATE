@@ -332,10 +332,6 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 	timeoutCounter := 0
 	for {
 		nextRoutine, next := getNextReplayElement()
-		// currentRoutineA := currentGoRoutine()
-		// if currentRoutineA == nil { // TODO: fix this
-		// 	return true, ReplayElement{}
-		// }
 
 		// currentRoutine := currentRoutineA.id
 
@@ -345,15 +341,6 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 			replayEnabled = false
 			return false, ReplayElement{}
 		}
-
-		// not the correct routine
-		// if currentRoutine != uint64(nextRoutine) {
-		// 	timeoutCounter++
-
-		// 	checkForTimeout(timeoutCounter, file, line)
-		// 	slowExecution()
-		// 	continue
-		// }
 
 		// if the routine is correct, but the next element is not the correct one,
 		// the program has diverged from the trace
@@ -373,6 +360,17 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 				slowExecution()
 				continue
 			}
+
+			// // not the correct routine
+			// currentRoutine := currentGoRoutine()
+			// if currentRoutine != nil && currentRoutine.id != uint64(nextRoutine) {
+			// 	println("not the correct routine")
+			// 	timeoutCounter++
+
+			// 	checkForTimeout(timeoutCounter, file, line)
+			// 	slowExecution()
+			// 	continue
+			// }
 		}
 
 		// reset timeout counter
@@ -381,12 +379,12 @@ func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayE
 		unlock(&timeoutLock)
 
 		foundReplayElement(nextRoutine)
-		println("Replay Run : ", next.Time, op.ToString(), file, line)
+		// println("Replay Run : ", next.Time, op.ToString(), file, line)
 		lock(&replayDoneLock)
 		replayDone++
 		unlock(&replayDoneLock)
-		_, next = getNextReplayElement()
-		println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
+		// _, next = getNextReplayElement()
+		// println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
 		return true, next
 	}
 }

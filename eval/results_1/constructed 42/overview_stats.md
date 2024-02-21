@@ -34,12 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.101532 s |
-| Time for run with ADVOCATE | 0.113823 s |
-| Overhead of ADVOCATE | 12.105543 % |
-| Replay without changes | 0.113818 s |
-| Overhead of Replay | 12.100619 % s |
-| Analysis | 0.021630 s |
+| Time for run without ADVOCATE | 0.104261 s |
+| Time for run with ADVOCATE | 0.118889 s |
+| Overhead of ADVOCATE | 14.030174 % |
+| Replay without changes | 0.118925 s |
+| Overhead of Replay | 14.064703 % s |
+| Analysis | 0.047231 s |
 
 
 ## Results
@@ -47,5 +47,5 @@
 
 -------------------- Critical -------------------
 1 Potential leak with possible partner:
-	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:806@28
-	partner: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:814@32
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:806@30
+	partner: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:810@33

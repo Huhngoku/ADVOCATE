@@ -26,6 +26,16 @@ import (
 )
 
 func main() {
+	if true {
+		// init tracing
+		advocate.InitTracing(0)
+		defer advocate.Finish()
+	} else {
+		// init replay
+		advocate.EnableReplay()
+		defer advocate.WaitForReplayFinish()
+	}
+
 	list := flag.Bool("l", false, "List tests. Do not run any test.")
 	testCase := flag.Int("c", 0, "Test to run. If not set, all are run.")
 	// replay := flag.Bool("r", false, "Replay")
@@ -80,16 +90,6 @@ func main() {
 			println(testNames[i])
 		}
 		return
-	}
-
-	if false {
-		// init tracing
-		advocate.InitTracing(0)
-		defer advocate.Finish()
-	} else {
-		// init replay
-		advocate.EnableReplay()
-		defer advocate.WaitForReplayFinish()
 	}
 
 	// cancel test if time has run out

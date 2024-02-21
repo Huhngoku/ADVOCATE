@@ -13,7 +13,7 @@
 | - | - |
 | Number of routines | 17 |
 | Number of spawns | 3 |
-| Number of atomics | 3 |
+| Number of atomics | 2 |
 | Number of atomic operations | 8 |
 | Number of channels | 1 |
 | Number of channel operations | 2 |
@@ -34,12 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.000782 s |
-| Time for run with ADVOCATE | 0.004111 s |
-| Overhead of ADVOCATE | 425.703325 % |
-| Replay without changes | 0.004200 s |
-| Overhead of Replay | 437.084399 % s |
-| Analysis | 0.008040 s |
+| Time for run without ADVOCATE | 0.003161 s |
+| Time for run with ADVOCATE | 0.018536 s |
+| Overhead of ADVOCATE | 486.396710 % |
+| Replay without changes | 0.019059 s |
+| Overhead of Replay | 502.942107 % s |
+| Analysis | 0.019214 s |
 
 
 ## Results

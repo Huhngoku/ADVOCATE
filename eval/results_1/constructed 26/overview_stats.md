@@ -14,7 +14,7 @@
 | Number of routines | 19 |
 | Number of spawns | 5 |
 | Number of atomics | 1 |
-| Number of atomic operations | 3 |
+| Number of atomic operations | 4 |
 | Number of channels | 0 |
 | Number of channel operations | 0 |
 | Number of selects | 0 |
@@ -24,7 +24,7 @@
 | Number of mutexes | 0 |
 | Number of mutex operations | 0 |
 | Number of wait groups | 1 |
-| Number of wait group operations | 3 |
+| Number of wait group operations | 4 |
 | Number of cond vars | 0 |
 | Number of cond var operations | 0 |
 | Number of once | 0| 
@@ -34,12 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.501595 s |
-| Time for run with ADVOCATE | 0.504913 s |
-| Overhead of ADVOCATE | 0.661490 % |
-| Replay without changes | 0.504883 s |
-| Overhead of Replay | 0.655509 % s |
-| Analysis | 0.009847 s |
+| Time for run without ADVOCATE | 0.503189 s |
+| Time for run with ADVOCATE | 0.518638 s |
+| Overhead of ADVOCATE | 3.070218 % |
+| Replay without changes | 0.519947 s |
+| Overhead of Replay | 3.330359 % s |
+| Analysis | 0.047449 s |
 
 
 ## Results
@@ -47,7 +47,14 @@
 
 -------------------- Critical -------------------
 1 Possible negative waitgroup counter:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:536@34
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:532@34
 	done/add: 
-		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:523@31
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:536@36
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:523@30
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:527@32
+2 Possible negative waitgroup counter:
+	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:536@36
+	done/add: 
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:532@34
+		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:523@30
 		/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:527@32

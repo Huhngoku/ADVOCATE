@@ -954,6 +954,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	}
 
 	_, file, line, _ := Caller(2)
+
 	elem := advocateTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
 		defa: true, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)

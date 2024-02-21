@@ -34,18 +34,18 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.101147 s |
-| Time for run with ADVOCATE | 0.104498 s |
-| Overhead of ADVOCATE | 3.313000 % |
-| Replay without changes | 0.107516 s |
-| Overhead of Replay | 6.296776 % s |
-| Analysis | 0.009811 s |
+| Time for run without ADVOCATE | 0.102006 s |
+| Time for run with ADVOCATE | 0.112725 s |
+| Overhead of ADVOCATE | 10.508205 % |
+| Replay without changes | 0.118950 s |
+| Overhead of Replay | 16.610788 % s |
+| Analysis | 0.043668 s |
 
 
 ## Results
 ==================== Summary ====================
 
 -------------------- Critical -------------------
-1 Found concurrent Recv on same channel:
-	recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:642@42
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:647@33
+1 Potential leak with possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:642@40	partner: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:637@27
+

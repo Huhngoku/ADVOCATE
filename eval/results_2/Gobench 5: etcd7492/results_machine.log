@@ -1,0 +1,9 @@
+Potential mixed deadlock:
+	locks: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:266@137;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:266@131
+	send/close-recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:68@156;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:51@155
+Potential mixed deadlock:
+	locks: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:88@135;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:94@129
+	send/close-recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:68@156;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:51@155
+Potential leak without possible partner:
+	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7492/etcd7492.go:61@234
+	partner: -

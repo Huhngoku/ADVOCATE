@@ -14,7 +14,7 @@
 | Number of routines | 18 |
 | Number of spawns | 4 |
 | Number of atomics | 2 |
-| Number of atomic operations | 8 |
+| Number of atomic operations | 5 |
 | Number of channels | 1 |
 | Number of channel operations | 1 |
 | Number of selects | 0 |
@@ -22,7 +22,7 @@
 | Number of select channel operations | 0 |
 | Number of select default operations | 0 |
 | Number of mutexes | 1 |
-| Number of mutex operations | 4 |
+| Number of mutex operations | 2 |
 | Number of wait groups | 0 |
 | Number of wait group operations | 0 |
 | Number of cond vars | 0 |
@@ -34,12 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 0.101722 s |
-| Time for run with ADVOCATE | 0.112132 s |
-| Overhead of ADVOCATE | 10.233774 % |
-| Replay without changes | 0.112197 s |
-| Overhead of Replay | 10.297674 % s |
-| Analysis | 0.024074 s |
+| Time for run without ADVOCATE | 0.102087 s |
+| Time for run with ADVOCATE | 0.118910 s |
+| Overhead of ADVOCATE | 16.479082 % |
+| Replay without changes | 0.117446 s |
+| Overhead of Replay | 15.045011 % s |
+| Analysis | 0.030288 s |
 
 
 ## Results

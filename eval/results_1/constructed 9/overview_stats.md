@@ -19,8 +19,8 @@
 | Number of channel operations | 4 |
 | Number of selects | 2 |
 | Number of select cases | 4 |
-| Number of select channel operations | 2 |
-| Number of select default operations | 1 |
+| Number of select channel operations | 4 |
+| Number of select default operations | 0 |
 | Number of mutexes | 0 |
 | Number of mutex operations | 0 |
 | Number of wait groups | 0 |
@@ -34,12 +34,12 @@
 ## Times
 | Info | Value |
 | - | - |
-| Time for run without ADVOCATE | 1.001307 s |
-| Time for run with ADVOCATE | 1.008602 s |
-| Overhead of ADVOCATE | 0.728548 % |
-| Replay without changes | 1.007656 s |
-| Overhead of Replay | 0.634071 % s |
-| Analysis | 0.042496 s |
+| Time for run without ADVOCATE | 1.006435 s |
+| Time for run with ADVOCATE | 1.006628 s |
+| Overhead of ADVOCATE | 0.019177 % |
+| Replay without changes | 1.008983 s |
+| Overhead of Replay | 0.253171 % s |
+| Analysis | 0.042107 s |
 
 
 ## Results
@@ -48,11 +48,14 @@
 -------------------- Critical -------------------
 1 Possible send on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:184@36
-	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:190@28
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:190@31
 2 Possible send on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:185@37
-	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:200@32
+	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:200@28
 -------------------- Warning --------------------
 3 Possible receive on closed channel:
 	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:184@36
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:201@34
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:201@30
+4 Possible receive on closed channel:
+	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:185@37
+	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:195@33
