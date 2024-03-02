@@ -54,7 +54,7 @@ func (wg *WaitGroup) Add(delta int) {
 	if delta > 0 {
 		skip = 2
 	}
-	_, _ = runtime.WaitForReplay(runtime.OperationWaitgroupAddDone, skip)
+	_, _, _ = runtime.WaitForReplay(runtime.OperationWaitgroupAddDone, skip)
 	// ADVOCATE-CHANGE-END
 	if race.Enabled {
 		if delta < 0 {
@@ -124,8 +124,8 @@ func (wg *WaitGroup) Done() {
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationWaitgroupWait, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationWaitgroupWait, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if wg.id == 0 {
 				wg.id = runtime.GetAdvocateObjectID()

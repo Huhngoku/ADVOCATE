@@ -217,9 +217,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
+	var valid bool
 	if !ignored && !c.advocateIgnore {
-		enabled, replayElem = WaitForReplay(OperationChannelSend, 3)
-		if enabled {
+		enabled, valid, replayElem = WaitForReplay(OperationChannelSend, 3)
+		if enabled && valid {
 			if replayElem.Blocked {
 				lock(&c.numberSendMutex)
 				c.numberSend++
@@ -481,7 +482,7 @@ func closechan(c *hchan) {
 	// AdvocateChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	if !c.advocateIgnore {
-		_, _ = WaitForReplay(OperationChannelClose, 2)
+		_, _, _ = WaitForReplay(OperationChannelClose, 2)
 		AdvocateChanClose(c.id, c.dataqsiz)
 	}
 	// ADVOCATE-CHANGE-END
@@ -603,9 +604,10 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 	// wait until the replay has reached the current point
 	var replayElem ReplayElement
 	var enabled bool
+	var valid bool
 	if !ignored && !c.advocateIgnore {
-		enabled, replayElem = WaitForReplay(OperationChannelRecv, 3)
-		if enabled {
+		enabled, valid, replayElem = WaitForReplay(OperationChannelRecv, 3)
+		if enabled && valid {
 			if replayElem.Blocked {
 				lock(&c.numberRecvMutex)
 				c.numberRecv++
@@ -895,9 +897,10 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 		}
 		var replayElem ReplayElement
 		var enabled bool
+		var valid bool
 		if !c.advocateIgnore {
-			enabled, replayElem = WaitForReplay(OperationSelect, 2)
-			if enabled {
+			enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
+			if enabled && valid {
 				if replayElem.Blocked {
 					lock(&c.numberSendMutex)
 					c.numberSend++
@@ -944,9 +947,10 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 		}
 		var replayElem ReplayElement
 		var enabled bool
+		var valid bool
 		if !c.advocateIgnore {
-			enabled, replayElem = WaitForReplay(OperationSelect, 2)
-			if enabled {
+			enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
+			if enabled && valid {
 				if replayElem.Blocked {
 					lock(&c.numberSendMutex)
 					c.numberSend++

@@ -69,8 +69,8 @@ const rwmutexMaxReaders = 1 << 30
 // documentation on the RWMutex type.
 func (rw *RWMutex) RLock() {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexRLock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexRLock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetAdvocateObjectID()
@@ -118,8 +118,8 @@ func (rw *RWMutex) RLock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryRLock() bool {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexTryRLock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexTryRLock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetAdvocateObjectID()
@@ -186,8 +186,8 @@ func (rw *RWMutex) TryRLock() bool {
 // on entry to RUnlock.
 func (rw *RWMutex) RUnlock() {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexRUnlock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexRUnlock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			_ = runtime.AdvocateUnlockPre(rw.id, true, true)
 			runtime.BlockForever()
@@ -231,8 +231,8 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexLock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexLock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetAdvocateObjectID()
@@ -284,8 +284,8 @@ func (rw *RWMutex) Lock() {
 // in a particular use of mutexes.
 func (rw *RWMutex) TryLock() bool {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexTryLock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexTryLock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if rw.id == 0 {
 				rw.id = runtime.GetAdvocateObjectID()
@@ -361,7 +361,7 @@ func (rw *RWMutex) TryLock() bool {
 // arrange for another goroutine to RUnlock (Unlock) it.
 func (rw *RWMutex) Unlock() {
 	// ADVOCATE-CHANGE-START
-	_, _ = runtime.WaitForReplay(runtime.OperationRWMutexUnlock, 2)
+	_, _, _ = runtime.WaitForReplay(runtime.OperationRWMutexUnlock, 2)
 	// AdvocateUnlockPre is used to record the unlocking of a mutex.
 	// AdvocatePost records the successful unlocking of a mutex.
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not

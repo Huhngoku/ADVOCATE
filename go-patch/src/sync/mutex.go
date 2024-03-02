@@ -86,8 +86,8 @@ const (
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
 	// ADVOCATE-CHANGE-START
-	enabled, reaplayElem := runtime.WaitForReplay(runtime.OperationMutexLock, 2)
-	if enabled {
+	enabled, valid, reaplayElem := runtime.WaitForReplay(runtime.OperationMutexLock, 2)
+	if enabled && valid {
 		if m.id == 0 {
 			m.id = runtime.GetAdvocateObjectID()
 		}
@@ -96,6 +96,7 @@ func (m *Mutex) Lock() {
 			runtime.BlockForever()
 		}
 	}
+
 	// Mutexe don't need to be initialized in default go code. Because
 	// go does not have constructors, the only way to initialize a mutex
 	// is directly in the lock function. If the id of the channel is the default
@@ -131,8 +132,8 @@ func (m *Mutex) Lock() {
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationMutexTryLock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationMutexTryLock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if m.id == 0 {
 				m.id = runtime.GetAdvocateObjectID()
@@ -289,8 +290,8 @@ func (m *Mutex) lockSlow() {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.OperationMutexUnlock, 2)
-	if enabled {
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationMutexUnlock, 2)
+	if enabled && valid {
 		if replayElem.Blocked {
 			if m.id == 0 {
 				m.id = runtime.GetAdvocateObjectID()

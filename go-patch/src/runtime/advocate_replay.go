@@ -8,53 +8,53 @@ package runtime
 func (ro Operation) ToString() string {
 	switch ro {
 	case OperationNone:
-		return "AdvocateNone"
+		return "OperationNone"
 	case OperationSpawn:
-		return "AdvocateReplaySpawn"
+		return "OperationSpawn"
 	case OperationSpawned:
-		return "AdvocateReplaySpawned"
+		return "OperationSpawned"
 	case OperationChannelSend:
-		return "AdvocateReplayChannelSend"
+		return "OperationChannelSend"
 	case OperationChannelRecv:
-		return "AdvocateReplayChannelRecv"
+		return "OperationChannelRecv"
 	case OperationChannelClose:
-		return "AdvocateReplayChannelClose"
+		return "OperationChannelClose"
 	case OperationMutexLock:
-		return "AdvocateReplayMutexLock"
+		return "OperationMutexLock"
 	case OperationMutexUnlock:
-		return "AdvocateReplayMutexUnlock"
+		return "OperationMutexUnlock"
 	case OperationMutexTryLock:
-		return "AdvocateReplayMutexTryLock"
+		return "OperationMutexTryLock"
 	case OperationRWMutexLock:
-		return "AdvocateReplayRWMutexLock"
+		return "OperationRWMutexLock"
 	case OperationRWMutexUnlock:
-		return "AdvocateReplayRWMutexUnlock"
+		return "OperationRWMutexUnlock"
 	case OperationRWMutexTryLock:
-		return "AdvocateReplayRWMutexTryLock"
+		return "OperationRWMutexTryLock"
 	case OperationRWMutexRLock:
-		return "AdvocateReplayRWMutexRLock"
+		return "OperationRWMutexRLock"
 	case OperationRWMutexRUnlock:
-		return "AdvocateReplayRWMutexRUnlock"
+		return "OperationRWMutexRUnlock"
 	case OperationRWMutexTryRLock:
-		return "AdvocateReplayRWMutexTryRLock"
+		return "OperationRWMutexTryRLock"
 	case OperationOnce:
-		return "AdvocateReplayOnce"
+		return "OperationOnce"
 	case OperationWaitgroupAddDone:
-		return "AdvocateReplayWaitgroupAddDone"
+		return "OperationWaitgroupAddDone"
 	case OperationWaitgroupWait:
-		return "AdvocateReplayWaitgroupWait"
+		return "OperationWaitgroupWait"
 	case OperationSelect:
-		return "AdvocateReplaySelect"
+		return "OperationSelect"
 	case OperationSelectCase:
-		return "AdvocateReplaySelectCase"
+		return "OperationSelectCase"
 	case OperationSelectDefault:
-		return "AdvocateReplaySelectDefault"
+		return "OperationSelectDefault"
 	case OperationCondSignal:
-		return "AdvocateReplayCondSignal"
+		return "OperationCondSignal"
 	case OperationCondBroadcast:
-		return "AdvocateReplayCondBroadcast"
+		return "OperationCondBroadcast"
 	case OperationCondWait:
-		return "AdvocateReplayCondWait"
+		return "OperationCondWait"
 	default:
 		return "Unknown"
 	}
@@ -217,11 +217,13 @@ func WaitForReplayFinish() {
  * 	skip: number of stack frames to skip
  * Return:
  * 	bool: true if trace replay is enabled, false otherwise
+ * 	bool: true if the wait was released regularly, false if it was released
+ * 		because replay is disables, the operation is ignored or the operation is invalid
  * 	chan ReplayElement: channel to receive the next replay element
  */
-func WaitForReplay(op Operation, skip int) (bool, ReplayElement) {
+func WaitForReplay(op Operation, skip int) (bool, bool, ReplayElement) {
 	if !replayEnabled {
-		return false, ReplayElement{}
+		return false, false, ReplayElement{}
 	}
 
 	_, file, line, _ := Caller(skip)
@@ -273,18 +275,20 @@ func WaitForReplay(op Operation, skip int) (bool, ReplayElement) {
  * 		line: line number of the operation
  * Return:
  * 	bool: true if trace replay is enabled, false otherwise
+ * 	bool: true if the wait was released regularly, false if it was released
+ * 		because replay is disables, the operation is ignored or the operation is invalid
  * 	chan ReplayElement: channel to receive the next replay element
  */
-func WaitForReplayPath(op Operation, file string, line int) (bool, ReplayElement) {
+func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayElement) {
 	if !replayEnabled {
-		return false, ReplayElement{}
+		return false, false, ReplayElement{}
 	}
 
 	if AdvocateIgnore(op, file, line) {
-		return true, ReplayElement{}
+		return true, false, ReplayElement{}
 	}
 
-	// println("WaitForReplayPath", op.ToString(), file, line)
+	println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		nextRoutine, next := getNextReplayElement()
@@ -295,7 +299,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, ReplayElement
 		if nextRoutine == -1 {
 			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
 			replayEnabled = false
-			return false, ReplayElement{}
+			return false, false, ReplayElement{}
 		}
 
 		// if the routine is correct, but the next element is not the correct one,
@@ -316,17 +320,6 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, ReplayElement
 				slowExecution()
 				continue
 			}
-
-			// // not the correct routine
-			// currentRoutine := currentGoRoutine()
-			// if currentRoutine != nil && currentRoutine.id != uint64(nextRoutine) {
-			// 	println("not the correct routine")
-			// 	timeoutCounter++
-
-			// 	checkForTimeout(timeoutCounter, file, line)
-			// 	slowExecution()
-			// 	continue
-			// }
 		}
 
 		// reset timeout counter
@@ -335,13 +328,13 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, ReplayElement
 		unlock(&timeoutLock)
 
 		foundReplayElement(nextRoutine)
-		// println("Replay Run : ", next.Time, op.ToString(), file, line)
+		println("Replay Run : ", next.Time, op.ToString(), file, line)
 		lock(&replayDoneLock)
 		replayDone++
 		unlock(&replayDoneLock)
 		// _, next = getNextReplayElement()
 		// println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
-		return true, next
+		return true, true, next
 	}
 }
 

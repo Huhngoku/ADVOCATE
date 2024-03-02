@@ -124,8 +124,8 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	// ADVOCATE-CHANGE-START
-	replayEnabled, replayElem := WaitForReplay(OperationSelect, 2)
-	if replayEnabled {
+	replayEnabled, valid, replayElem := WaitForReplay(OperationSelect, 2)
+	if replayEnabled && valid {
 		if replayElem.Blocked {
 			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
 			_ = (*[1 << 17]uint16)(unsafe.Pointer(order0))
@@ -420,11 +420,12 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	gp.waiting = nil
 	for _, casei := range lockorder {
 		// ADVOCATE-CHANGE-START
-		if replayEnabled {
-			if int(casei) != replayElem.SelIndex {
-				continue
-			}
-		}
+		// TODO(ADVOCATE): for now removed, because it can lead to bad wakeup. Check later if it needs to be replaced
+		// if replayEnabled {
+		// 	if int(casei) != replayElem.SelIndex {
+		// 		continue
+		// 	}
+		// }
 		// ADVOCATE-CHANGE-END
 
 		k = &scases[casei]
