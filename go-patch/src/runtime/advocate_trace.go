@@ -6,26 +6,41 @@ import (
 	at "runtime/internal/atomic"
 )
 
-type operation int // enum for operation
+type Operation int // enum for operation
 
 const (
-	opMutLock operation = iota
-	opMutRLock
-	opMutTryLock
-	opMutRTryLock
-	opMutUnlock
-	opMutRUnlock
+	OperationNone Operation = iota
+	OperationSpawn
+	OperationSpawned
 
-	opWgAdd
-	opWgWait
+	OperationChannelSend
+	OperationChannelRecv
+	OperationChannelClose
 
-	opChanSend
-	opChanRecv
-	opChanClose
+	OperationMutexLock
+	OperationMutexUnlock
+	OperationMutexTryLock
+	OperationRWMutexLock
+	OperationRWMutexUnlock
+	OperationRWMutexTryLock
+	OperationRWMutexRLock
+	OperationRWMutexRUnlock
+	OperationRWMutexTryRLock
 
-	opCondWait
-	opCondSignal
-	opCondBroadcast
+	OperationOnce
+
+	OperationWaitgroupAddDone
+	OperationWaitgroupWait
+
+	OperationSelect
+	OperationSelectCase
+	OperationSelectDefault
+
+	OperationCondSignal
+	OperationCondBroadcast
+	OperationCondWait
+
+	OperationAtomic
 )
 
 type prePost int // enum for pre/post
@@ -38,6 +53,9 @@ const (
 type advocateTraceElement interface {
 	isAdvocateTraceElement()
 	toString() string
+	getOperation() Operation
+	getFile() string
+	getLine() int
 }
 
 type advocateAtomicMapElem struct {
@@ -276,14 +294,14 @@ func DeleteTrace() {
 // ============================= Routine ===========================
 
 // type to save in the trace for routines
-type advocateTraceSpawnElement struct {
+type advocateSpawnElement struct {
 	id    uint64 // id of the routine
 	timer uint64 // global timer
 	file  string // file where the routine was created
-	line  int32  // line where the routine was created
+	line  int    // line where the routine was created
 }
 
-func (elem advocateTraceSpawnElement) isAdvocateTraceElement() {}
+func (elem advocateSpawnElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -291,8 +309,29 @@ func (elem advocateTraceSpawnElement) isAdvocateTraceElement() {}
  * 	string representation of the element "G,'id'"
  *    'id' (number): id of the routine
  */
-func (elem advocateTraceSpawnElement) toString() string {
-	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + int32ToString(elem.line)
+func (elem advocateSpawnElement) toString() string {
+	return "G," + uint64ToString(elem.timer) + "," + uint64ToString(elem.id) + "," + elem.file + ":" + intToString(elem.line)
+}
+
+/*
+ * Get the operation
+ */
+func (elem advocateSpawnElement) getOperation() Operation {
+	return OperationSpawn
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateSpawnElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateSpawnElement) getLine() int {
+	return elem.line
 }
 
 /*
@@ -305,8 +344,8 @@ func (elem advocateTraceSpawnElement) toString() string {
  */
 func AdvocateSpawnCaller(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
 	timer := GetAdvocateCounter()
-	callerRoutine.addToTrace(advocateTraceSpawnElement{id: newID, timer: timer,
-		file: file, line: line})
+	callerRoutine.addToTrace(advocateSpawnElement{id: newID, timer: timer,
+		file: file, line: int(line)})
 }
 
 // type to save in the trace for routines
@@ -332,9 +371,9 @@ func (elem advocateTraceSpawnedElement) toString() string {
 // ============================= Mutex =============================
 
 // type to save in the trace for mutexe
-type advocateTraceMutexElement struct {
+type advocateMutexElement struct {
 	id    uint64    // id of the mutex
-	op    operation // operation
+	op    Operation // operation
 	rw    bool      // true if it is a rwmutex
 	suc   bool      // success of the operation, only for tryLock
 	file  string    // file where the operation was called
@@ -343,7 +382,7 @@ type advocateTraceMutexElement struct {
 	tPost uint64    // global timer at end of operation
 }
 
-func (elem advocateTraceMutexElement) isAdvocateTraceElement() {}
+func (elem advocateMutexElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -357,7 +396,7 @@ func (elem advocateTraceMutexElement) isAdvocateTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem advocateTraceMutexElement) toString() string {
+func (elem advocateMutexElement) toString() string {
 	res := "M,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -369,17 +408,17 @@ func (elem advocateTraceMutexElement) toString() string {
 	}
 
 	switch elem.op {
-	case opMutLock:
+	case OperationMutexLock, OperationRWMutexLock:
 		res += "L"
-	case opMutRLock:
+	case OperationRWMutexRLock:
 		res += "R"
-	case opMutTryLock:
+	case OperationMutexTryLock, OperationRWMutexTryLock:
 		res += "T"
-	case opMutRTryLock:
+	case OperationRWMutexTryRLock:
 		res += "Y"
-	case opMutUnlock:
+	case OperationMutexUnlock, OperationRWMutexUnlock:
 		res += "U"
-	case opMutRUnlock:
+	case OperationRWMutexRUnlock:
 		res += "N"
 	}
 
@@ -393,6 +432,27 @@ func (elem advocateTraceMutexElement) toString() string {
 }
 
 /*
+ * Get the operation
+ */
+func (elem advocateMutexElement) getOperation() Operation {
+	return elem.op
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateMutexElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateMutexElement) getLine() int {
+	return elem.line
+}
+
+/*
  * AdvocateMutexLockPre adds a mutex lock to the trace
  * Args:
  * 	id: id of the mutex
@@ -402,13 +462,24 @@ func (elem advocateTraceMutexElement) toString() string {
  * 	index of the operation in the trace
  */
 func AdvocateMutexLockPre(id uint64, rw bool, r bool) int {
-	op := opMutLock
-	if r {
-		op = opMutRLock
+	var op Operation
+	if !rw { // Mutex
+		if !r { // Lock
+			op = OperationMutexLock
+		} else { // rLock, invalid case
+			panic("Tried to RLock a non-RW Mutex")
+		}
+	} else { // RWMutex
+		if !r { // Lock
+			op = OperationRWMutexLock
+		} else { // RLock
+			op = OperationRWMutexRLock
+		}
 	}
+
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
-	elem := advocateTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+	elem := advocateMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -423,13 +494,24 @@ func AdvocateMutexLockPre(id uint64, rw bool, r bool) int {
  * 	index of the operation in the trace
  */
 func AdvocateMutexLockTry(id uint64, rw bool, r bool) int {
-	op := opMutTryLock
-	if r {
-		op = opMutRTryLock
+	var op Operation
+	if !rw { // Mutex
+		if !r { // Lock
+			op = OperationMutexTryLock
+		} else { // rLock, invalid case
+			panic("Tried to TryRLock a non-RW Mutex")
+		}
+	} else { // RWMutex
+		if !r { // Lock
+			op = OperationRWMutexTryLock
+		} else { // RLock
+			op = OperationRWMutexTryRLock
+		}
 	}
+
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
-	elem := advocateTraceMutexElement{id: id, op: op, rw: rw, file: file,
+	elem := advocateMutexElement{id: id, op: op, rw: rw, file: file,
 		line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -444,13 +526,23 @@ func AdvocateMutexLockTry(id uint64, rw bool, r bool) int {
  * 	index of the operation in the trace
  */
 func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
-	op := opMutUnlock
-	if r {
-		op = opMutRUnlock
+	var op Operation
+	if !rw { // Mutex
+		if !r { // Lock
+			op = OperationMutexUnlock
+		} else { // rLock, invalid case
+			panic("Tried to RUnlock a non-RW Mutex")
+		}
+	} else { // RWMutex
+		if !r { // Lock
+			op = OperationRWMutexUnlock
+		} else { // RLock
+			op = OperationRWMutexRUnlock
+		}
 	}
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
-	elem := advocateTraceMutexElement{id: id, op: op, rw: rw, suc: true,
+	elem := advocateMutexElement{id: id, op: op, rw: rw, suc: true,
 		file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 }
@@ -477,10 +569,10 @@ func AdvocatePost(index int) {
 	timer := GetAdvocateCounter()
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
-	case advocateTraceMutexElement:
+	case advocateMutexElement:
 		elem.tPost = timer
 		currentGoRoutine().updateElement(index, elem)
-	case advocateTraceWaitGroupElement:
+	case advocateWaitGroupElement:
 		elem.tPost = timer
 		currentGoRoutine().updateElement(index, elem)
 
@@ -502,7 +594,7 @@ func AdvocatePostTry(index int, suc bool) {
 	}
 
 	switch elem := currentGoRoutine().getElement(index).(type) {
-	case advocateTraceMutexElement:
+	case advocateMutexElement:
 		elem.suc = suc
 		elem.tPost = GetAdvocateCounter()
 		currentGoRoutine().updateElement(index, elem)
@@ -513,9 +605,9 @@ func AdvocatePostTry(index int, suc bool) {
 
 // ============================= WaitGroup ===========================
 
-type advocateTraceWaitGroupElement struct {
+type advocateWaitGroupElement struct {
 	id    uint64    // id of the waitgroup
-	op    operation // operation
+	op    Operation // operation
 	delta int       // delta of the waitgroup
 	val   int32     // value of the waitgroup after the operation
 	file  string    // file where the operation was called
@@ -524,7 +616,7 @@ type advocateTraceWaitGroupElement struct {
 	tPost uint64    // global timer
 }
 
-func (elem advocateTraceWaitGroupElement) isAdvocateTraceElement() {}
+func (elem advocateWaitGroupElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -539,20 +631,41 @@ func (elem advocateTraceWaitGroupElement) isAdvocateTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem advocateTraceWaitGroupElement) toString() string {
+func (elem advocateWaitGroupElement) toString() string {
 	res := "W,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
 	switch elem.op {
-	case opWgAdd:
+	case OperationWaitgroupAddDone:
 		res += "A,"
-	case opWgWait:
+	case OperationWaitgroupWait:
 		res += "W,"
 	}
 
 	res += intToString(elem.delta) + "," + int32ToString(elem.val)
 	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
+}
+
+/*
+ * Get the operation
+ */
+func (elem advocateWaitGroupElement) getOperation() Operation {
+	return elem.op
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateWaitGroupElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateWaitGroupElement) getLine() int {
+	return elem.line
 }
 
 /*
@@ -573,8 +686,8 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 		_, file, line, _ = Caller(3)
 	}
 	timer := GetAdvocateCounter()
-	elem := advocateTraceWaitGroupElement{id: id, op: opWgAdd, delta: delta,
-		val: val, file: file, line: line, tPre: timer, tPost: timer}
+	elem := advocateWaitGroupElement{id: id, op: OperationWaitgroupAddDone,
+		delta: delta, val: val, file: file, line: line, tPre: timer, tPost: timer}
 	return insertIntoTrace(elem)
 
 }
@@ -589,16 +702,16 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 func AdvocateWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
-	elem := advocateTraceWaitGroupElement{id: id, op: opWgWait, file: file,
-		line: line, tPre: timer}
+	elem := advocateWaitGroupElement{id: id, op: OperationWaitgroupWait,
+		file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
 
 // ============================= Channel =============================
 
-type advocateTraceChannelElement struct {
+type advocateChannelElement struct {
 	id     uint64    // id of the channel
-	op     operation // operation
+	op     Operation // operation
 	qSize  uint32    // size of the channel, 0 for unbuffered
 	opID   uint64    // id of the operation
 	file   string    // file where the operation was called
@@ -608,7 +721,7 @@ type advocateTraceChannelElement struct {
 	closed bool      // true if the channel operation was finished, because the channel was closed at another routine
 }
 
-func (elem advocateTraceChannelElement) isAdvocateTraceElement() {}
+func (elem advocateChannelElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -622,8 +735,29 @@ func (elem advocateTraceChannelElement) isAdvocateTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem advocateTraceChannelElement) toString() string {
+func (elem advocateChannelElement) toString() string {
 	return elem.toStringSep(",", true)
+}
+
+/*
+ * Get the operation
+ */
+func (elem advocateChannelElement) getOperation() Operation {
+	return elem.op
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateChannelElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateChannelElement) getLine() int {
+	return elem.line
 }
 
 /*
@@ -634,17 +768,17 @@ func (elem advocateTraceChannelElement) toString() string {
 * Return:
 * 	string representation of the element
  */
-func (elem advocateTraceChannelElement) toStringSep(sep string, showPos bool) string {
+func (elem advocateChannelElement) toStringSep(sep string, showPos bool) string {
 	res := "C" + sep
 	res += uint64ToString(elem.tPre) + sep + uint64ToString(elem.tPost) + sep
 	res += uint64ToString(elem.id) + sep
 
 	switch elem.op {
-	case opChanSend:
+	case OperationChannelSend:
 		res += "S"
-	case opChanRecv:
+	case OperationChannelRecv:
 		res += "R"
-	case opChanClose:
+	case OperationChannelClose:
 		res += "C"
 	default:
 		panic("Unknown channel operation" + intToString(int(elem.op)))
@@ -691,8 +825,8 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 		return -1
 	}
 	timer := GetAdvocateCounter()
-	elem := advocateTraceChannelElement{id: id, op: opChanSend, opID: opID,
-		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
+	elem := advocateChannelElement{id: id, op: OperationChannelSend,
+		opID: opID, file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
 
@@ -728,8 +862,8 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 	}
 
 	timer := GetAdvocateCounter()
-	elem := advocateTraceChannelElement{id: id, op: opChanRecv, opID: opID,
-		file: file, line: line, tPre: timer, qSize: uint32(qSize)}
+	elem := advocateChannelElement{id: id, op: OperationChannelRecv,
+		opID: opID, file: file, line: line, tPre: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
 
@@ -743,8 +877,8 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 func AdvocateChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
-	elem := advocateTraceChannelElement{id: id, op: opChanClose, file: file,
-		line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
+	elem := advocateChannelElement{id: id, op: OperationChannelClose,
+		file: file, line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
 	return insertIntoTrace(elem)
 }
 
@@ -758,7 +892,7 @@ func AdvocateChanPost(index int) {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(advocateTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(advocateChannelElement)
 	elem.tPost = GetAdvocateCounter()
 	currentGoRoutine().updateElement(index, elem)
 }
@@ -772,27 +906,27 @@ func AdvocateChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().getElement(index).(advocateTraceChannelElement)
+	elem := currentGoRoutine().getElement(index).(advocateChannelElement)
 	elem.closed = true
 	currentGoRoutine().updateElement(index, elem)
 }
 
 // ============================= Select ==============================
 
-type advocateTraceSelectElement struct {
-	tPre    uint64                        // global timer before the operation
-	tPost   uint64                        // global timer after the operation
-	id      uint64                        // id of the select
-	cases   []advocateTraceChannelElement // cases of the select
-	chosen  int                           // index of the chosen case in cases (0 indexed, -1 for default)
-	nsend   int                           // number of send cases
-	defa    bool                          // set true if a default case exists
-	defaSel bool                          // set true if a default case was chosen
-	file    string                        // file where the operation was called
-	line    int                           // line where the operation was called
+type advocateSelectElement struct {
+	tPre    uint64                   // global timer before the operation
+	tPost   uint64                   // global timer after the operation
+	id      uint64                   // id of the select
+	cases   []advocateChannelElement // cases of the select
+	chosen  int                      // index of the chosen case in cases (0 indexed, -1 for default)
+	nsend   int                      // number of send cases
+	defa    bool                     // set true if a default case exists
+	defaSel bool                     // set true if a default case was chosen
+	file    string                   // file where the operation was called
+	line    int                      // line where the operation was called
 }
 
-func (elem advocateTraceSelectElement) isAdvocateTraceElement() {}
+func (elem advocateSelectElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -807,7 +941,7 @@ func (elem advocateTraceSelectElement) isAdvocateTraceElement() {}
  *    'file' (string): file where the operation was called
  *    'line' (number): line where the operation was called
  */
-func (elem advocateTraceSelectElement) toString() string {
+func (elem advocateSelectElement) toString() string {
 	res := "S,"
 	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
 	res += uint64ToString(elem.id) + ","
@@ -841,6 +975,27 @@ func (elem advocateTraceSelectElement) toString() string {
 }
 
 /*
+ * Get the operation
+ */
+func (elem advocateSelectElement) getOperation() Operation {
+	return OperationSelect
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateSelectElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateSelectElement) getLine() int {
+	return elem.line
+}
+
+/*
  * AdvocateSelectPre adds a select to the trace
  * Args:
  * 	cases: cases of the select
@@ -856,18 +1011,18 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
 	}
 
 	id := GetAdvocateObjectID()
-	caseElements := make([]advocateTraceChannelElement, len(*cases))
+	caseElements := make([]advocateChannelElement, len(*cases))
 	_, file, line, _ := Caller(2)
 
 	for i, ca := range *cases {
 		if ca.c != nil { // ignore nil cases
-			caseElements[i] = advocateTraceChannelElement{id: ca.c.id,
-				op:    opChanRecv,
+			caseElements[i] = advocateChannelElement{id: ca.c.id,
+				op:    OperationChannelRecv,
 				qSize: uint32(ca.c.dataqsiz), tPre: timer}
 		}
 	}
 
-	elem := advocateTraceSelectElement{id: id, cases: caseElements, nsend: nsends,
+	elem := advocateSelectElement{id: id, cases: caseElements, nsend: nsends,
 		defa: !block, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -888,16 +1043,16 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(advocateTraceSelectElement)
+	elem := currentGoRoutine().getElement(index).(advocateSelectElement)
 	timer := GetAdvocateCounter()
 
 	elem.chosen = chosenIndex
 	elem.tPost = timer
 
 	for i, op := range lockOrder {
-		opChan := opChanRecv
+		opChan := OperationChannelRecv
 		if op < uint16(elem.nsend) {
-			opChan = opChanSend
+			opChan = OperationChannelSend
 		}
 		elem.cases[i].op = opChan
 	}
@@ -909,7 +1064,7 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 		elem.cases[chosenIndex].closed = rClosed
 
 		// set oId
-		if elem.cases[chosenIndex].op == opChanSend {
+		if elem.cases[chosenIndex].op == OperationChannelSend {
 			c.numberSend++
 			elem.cases[chosenIndex].opID = c.numberSend
 		} else {
@@ -939,13 +1094,13 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	id := GetAdvocateObjectID()
 	timer := GetAdvocateCounter()
 
-	opChan := opChanRecv
+	opChan := OperationChannelRecv
 	if send {
-		opChan = opChanSend
+		opChan = OperationChannelSend
 	}
 
-	caseElements := make([]advocateTraceChannelElement, 1)
-	caseElements[0] = advocateTraceChannelElement{id: c.id,
+	caseElements := make([]advocateChannelElement, 1)
+	caseElements[0] = advocateChannelElement{id: c.id,
 		qSize: uint32(c.dataqsiz), tPre: timer, op: opChan}
 
 	nSend := 0
@@ -955,7 +1110,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 
 	_, file, line, _ := Caller(2)
 
-	elem := advocateTraceSelectElement{id: id, cases: caseElements, nsend: nSend,
+	elem := advocateSelectElement{id: id, cases: caseElements, nsend: nSend,
 		defa: true, file: file, line: line, tPre: timer}
 	return insertIntoTrace(elem)
 }
@@ -973,12 +1128,12 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	}
 
 	timer := GetAdvocateCounter()
-	elem := currentGoRoutine().getElement(index).(advocateTraceSelectElement)
+	elem := currentGoRoutine().getElement(index).(advocateSelectElement)
 
 	if res {
 		elem.chosen = 0
 		elem.cases[0].tPost = timer
-		if elem.cases[0].op == opChanSend {
+		if elem.cases[0].op == OperationChannelSend {
 			c.numberSend++
 			elem.cases[0].opID = c.numberSend
 		} else {
@@ -995,13 +1150,13 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 }
 
 // ============================= Atomic ================================
-type advocateTraceAtomicElement struct {
+type advocateAtomicElement struct {
 	timer     uint64 // global timer
 	index     uint64 // index of the atomic event in advocateAtomicMap
 	operation int    // type of operation
 }
 
-func (elem advocateTraceAtomicElement) isAdvocateTraceElement() {}
+func (elem advocateAtomicElement) isAdvocateTraceElement() {}
 
 /*
  * Get a string representation of the element
@@ -1018,7 +1173,7 @@ const (
 	CompSwapOp
 )
 
-func (elem advocateTraceAtomicElement) toString() string {
+func (elem advocateAtomicElement) toString() string {
 	lock(&advocateAtomicMapLock)
 	mapElement := advocateAtomicMap[elem.index]
 	unlock(&advocateAtomicMapLock)
@@ -1050,13 +1205,34 @@ func (elem advocateTraceAtomicElement) toString() string {
 }
 
 /*
+ * Get the operation
+ */
+func (elem advocateAtomicElement) getOperation() Operation {
+	return OperationAtomic
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateAtomicElement) getFile() string {
+	return ""
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateAtomicElement) getLine() int {
+	return 0
+}
+
+/*
  * Add an atomic operation to the trace
  * Args:
  * 	index: index of the atomic event in advocateAtomicMap
  */
 func AdvocateAtomic(index uint64) {
 	timer := GetAdvocateCounter()
-	elem := advocateTraceAtomicElement{index: index, timer: timer}
+	elem := advocateAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)
 }
 
@@ -1098,6 +1274,27 @@ func (elem advocateOnceElement) toString() string {
 }
 
 /*
+ * Get the operation
+ */
+func (elem advocateOnceElement) getOperation() Operation {
+	return OperationOnce
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateOnceElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateOnceElement) getLine() int {
+	return elem.line
+}
+
+/*
  * AdvocateOncePre adds a once to the trace
  * Args:
  * 	id: id of the once
@@ -1134,7 +1331,7 @@ type advocateCondElement struct {
 	tpre  uint64 // global timer at the beginning of the execution
 	tpost uint64 // global timer at the end of the execution
 	id    uint64 // id of the cond
-	op    operation
+	op    Operation
 	file  string // file where the operation was called
 	line  int    // line where the operation was called
 }
@@ -1158,15 +1355,36 @@ func (elem advocateCondElement) toString() string {
 	res += uint64ToString(elem.tpost) + ","
 	res += uint64ToString(elem.id) + ","
 	switch elem.op {
-	case opCondWait:
+	case OperationCondWait:
 		res += "W"
-	case opCondSignal:
+	case OperationCondSignal:
 		res += "S"
-	case opCondBroadcast:
+	case OperationCondBroadcast:
 		res += "B"
 	}
 	res += "," + elem.file + ":" + intToString(elem.line)
 	return res
+}
+
+/*
+ * Get the operation
+ */
+func (elem advocateCondElement) getOperation() Operation {
+	return elem.op
+}
+
+/*
+ * Get the file
+ */
+func (elem advocateCondElement) getFile() string {
+	return elem.file
+}
+
+/*
+ * Get the line
+ */
+func (elem advocateCondElement) getLine() int {
+	return elem.line
 }
 
 /*
@@ -1180,14 +1398,14 @@ func (elem advocateCondElement) toString() string {
 func AdvocateCondPre(id uint64, op int) int {
 	_, file, line, _ := Caller(2)
 	timer := GetAdvocateCounter()
-	var opC operation
+	var opC Operation
 	switch op {
 	case 0:
-		opC = opCondWait
+		opC = OperationCondWait
 	case 1:
-		opC = opCondSignal
+		opC = OperationCondSignal
 	case 2:
-		opC = opCondBroadcast
+		opC = OperationCondWait
 	default:
 		panic("Unknown cond operation")
 	}
@@ -1209,6 +1427,65 @@ func AdvocateCondPost(index int) {
 	elem.tpost = timer
 
 	currentGoRoutine().updateElement(index, elem)
+}
+
+// ====================== Ignore =========================
+
+/*
+ * Some operations, like garbage collection and internal operations, can
+ * cause the replay to get stuck or are not needed.
+ * For this reason, we ignore them.
+ * Arguments:
+ * 	operation: operation that is about to be executed
+ * 	file: file in which the operation is executed
+ * 	line: line number of the operation
+ * Return:
+ * 	bool: true if the operation should be ignored, false otherwise
+ */
+// TODO: check if all of them are necessary
+func AdvocateIgnore(operation Operation, file string, line int) bool {
+	if hasSuffix(file, "advocate/advocate.go") ||
+		hasSuffix(file, "advocate/advocate_replay.go") ||
+		hasSuffix(file, "advocate/advocate_routine.go") ||
+		hasSuffix(file, "advocate/advocate_trace.go") ||
+		hasSuffix(file, "advocate/advocate_utile.go") ||
+		hasSuffix(file, "advocate/advocate_atomic.go") { // internal
+		return true
+	}
+
+	if hasSuffix(file, "syscall/env_unix.go") {
+		return true
+	}
+
+	switch operation {
+	case OperationSpawn:
+		// garbage collection can cause the replay to get stuck
+		if hasSuffix(file, "runtime/mgc.go") && line == 1215 {
+			return true
+		}
+	case OperationMutexLock, OperationMutexUnlock:
+		// mutex operations in the once can cause the replay to get stuck,
+		// if the once was called by the poll/fd_poll_runtime.go init.
+		if hasSuffix(file, "sync/once.go") && (line == 114 || line == 115 ||
+			line == 120 || line == 124) {
+			return true
+		}
+		// pools
+		if hasSuffix(file, "sync/pool.go") && (line == 217 || line == 218 ||
+			line == 224 || line == 234) {
+			return true
+		}
+		// mutex in rwmutex
+		// if hasSuffix(file, "sync/rwmutex.go") && (line == 270 || line == 396) {
+		// 	return true
+		// }
+	case OperationOnce:
+		// once operations in the poll/fd_poll_runtime.go init can cause the replay to get stuck.
+		if hasSuffix(file, "internal/poll/fd_poll_runtime.go") && line == 40 {
+			return true
+		}
+	}
+	return false
 }
 
 // ADVOCATE-FILE-END

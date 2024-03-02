@@ -70,6 +70,7 @@ func (gi *AdvocateRoutine) addToTrace(elem advocateTraceElement) int {
 	if gi == nil {
 		return -1
 	}
+
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	if gi.Trace == nil {

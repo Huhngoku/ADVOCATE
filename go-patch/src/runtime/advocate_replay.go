@@ -1,103 +1,59 @@
 package runtime
 
 /*
- * ReplayOperation is used to identify the type of the operation in the trace.
- */
-type ReplayOperation int
-
-const (
-	AdvocateNone ReplayOperation = iota
-	AdvocateReplaySpawn
-	AdvocateReplaySpawned
-
-	AdvocateReplayChannelSend
-	AdvocateReplayChannelRecv
-	AdvocateReplayChannelClose
-
-	AdvocateReplayMutexLock
-	AdvocateReplayMutexUnlock
-	AdvocateReplayMutexTryLock
-	AdvocateReplayRWMutexLock
-	AdvocateReplayRWMutexUnlock
-	AdvocateReplayRWMutexTryLock
-	AdvocateReplayRWMutexRLock
-	AdvocateReplayRWMutexRUnlock
-	AdvocateReplayRWMutexTryRLock
-
-	AdvocateReplayOnce
-
-	AdvocateReplayWaitgroupAddDone
-	AdvocateReplayWaitgroupWait
-
-	AdvocateReplaySelect
-	AdvocateReplaySelectCase
-	AdvocateReplaySelectDefault
-
-	AdvocateReplayCondSignal
-	AdvocateReplayCondBroadcast
-	AdvocateReplayCondWait
-
-	// AdvocateReplayAtomicLoad
-	// AdvocateReplayAtomicStore
-	// AdvocateReplayAtomicAdd
-	// AdvocateReplayAtomicSwap
-	// AdvocateReplayAtomicCompareAndSwap
-)
-
-/*
  * String representation of the replay operation.
  * Return:
  * 	string: string representation of the replay operation
  */
-func (ro ReplayOperation) ToString() string {
+func (ro Operation) ToString() string {
 	switch ro {
-	case AdvocateNone:
+	case OperationNone:
 		return "AdvocateNone"
-	case AdvocateReplaySpawn:
+	case OperationSpawn:
 		return "AdvocateReplaySpawn"
-	case AdvocateReplaySpawned:
+	case OperationSpawned:
 		return "AdvocateReplaySpawned"
-	case AdvocateReplayChannelSend:
+	case OperationChannelSend:
 		return "AdvocateReplayChannelSend"
-	case AdvocateReplayChannelRecv:
+	case OperationChannelRecv:
 		return "AdvocateReplayChannelRecv"
-	case AdvocateReplayChannelClose:
+	case OperationChannelClose:
 		return "AdvocateReplayChannelClose"
-	case AdvocateReplayMutexLock:
+	case OperationMutexLock:
 		return "AdvocateReplayMutexLock"
-	case AdvocateReplayMutexUnlock:
+	case OperationMutexUnlock:
 		return "AdvocateReplayMutexUnlock"
-	case AdvocateReplayMutexTryLock:
+	case OperationMutexTryLock:
 		return "AdvocateReplayMutexTryLock"
-	case AdvocateReplayRWMutexLock:
+	case OperationRWMutexLock:
 		return "AdvocateReplayRWMutexLock"
-	case AdvocateReplayRWMutexUnlock:
+	case OperationRWMutexUnlock:
 		return "AdvocateReplayRWMutexUnlock"
-	case AdvocateReplayRWMutexTryLock:
+	case OperationRWMutexTryLock:
 		return "AdvocateReplayRWMutexTryLock"
-	case AdvocateReplayRWMutexRLock:
+	case OperationRWMutexRLock:
 		return "AdvocateReplayRWMutexRLock"
-	case AdvocateReplayRWMutexRUnlock:
+	case OperationRWMutexRUnlock:
 		return "AdvocateReplayRWMutexRUnlock"
-	case AdvocateReplayRWMutexTryRLock:
+	case OperationRWMutexTryRLock:
 		return "AdvocateReplayRWMutexTryRLock"
-	case AdvocateReplayOnce:
+	case OperationOnce:
 		return "AdvocateReplayOnce"
-	case AdvocateReplayWaitgroupAddDone:
+	case OperationWaitgroupAddDone:
 		return "AdvocateReplayWaitgroupAddDone"
-	case AdvocateReplayWaitgroupWait:
+	case OperationWaitgroupWait:
 		return "AdvocateReplayWaitgroupWait"
-	case AdvocateReplaySelect:
+	case OperationSelect:
 		return "AdvocateReplaySelect"
-	case AdvocateReplaySelectCase:
+	case OperationSelectCase:
 		return "AdvocateReplaySelectCase"
-	case AdvocateReplaySelectDefault:
+	case OperationSelectDefault:
 		return "AdvocateReplaySelectDefault"
-	case AdvocateReplayCondSignal:
+	case OperationCondSignal:
 		return "AdvocateReplayCondSignal"
-	case AdvocateReplayCondBroadcast:
+	case OperationCondBroadcast:
 		return "AdvocateReplayCondBroadcast"
-	case AdvocateReplayCondWait:
+	case OperationCondWait:
 		return "AdvocateReplayCondWait"
 	default:
 		return "Unknown"
@@ -123,7 +79,7 @@ func (ro ReplayOperation) ToString() string {
  */
 type ReplayElement struct {
 	Routine  int
-	Op       ReplayOperation
+	Op       Operation
 	Time     int
 	File     string
 	Line     int
@@ -263,7 +219,7 @@ func WaitForReplayFinish() {
  * 	bool: true if trace replay is enabled, false otherwise
  * 	chan ReplayElement: channel to receive the next replay element
  */
-func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
+func WaitForReplay(op Operation, skip int) (bool, ReplayElement) {
 	if !replayEnabled {
 		return false, ReplayElement{}
 	}
@@ -319,12 +275,12 @@ func WaitForReplay(op ReplayOperation, skip int) (bool, ReplayElement) {
  * 	bool: true if trace replay is enabled, false otherwise
  * 	chan ReplayElement: channel to receive the next replay element
  */
-func WaitForReplayPath(op ReplayOperation, file string, line int) (bool, ReplayElement) {
+func WaitForReplayPath(op Operation, file string, line int) (bool, ReplayElement) {
 	if !replayEnabled {
 		return false, ReplayElement{}
 	}
 
-	if IgnoreInReplay(op, file, line) {
+	if AdvocateIgnore(op, file, line) {
 		return true, ReplayElement{}
 	}
 
@@ -497,12 +453,12 @@ func isPositionInTrace(file string, line int) bool {
 	return true
 }
 
-func correctSelect(next ReplayOperation, op ReplayOperation) bool {
-	if op != AdvocateReplaySelect {
+func correctSelect(next Operation, op Operation) bool {
+	if op != OperationSelect {
 		return false
 	}
 
-	if next != AdvocateReplaySelectCase && next != AdvocateReplaySelectDefault {
+	if next != OperationSelectCase && next != OperationSelectDefault {
 		return false
 	}
 
@@ -551,51 +507,4 @@ func foundReplayElement(routine int) {
 
 	// remove the first element from the trace for the routine
 	replayData[uint64(routine)] = replayData[uint64(routine)][1:]
-}
-
-/*
- * Some operations, like garbage collection, can cause the replay to get stuck.
- * For this reason, we ignore them.
- * Arguments:
- * 	operation: operation that is about to be executed
- * 	file: file in which the operation is executed
- * 	line: line number of the operation
- * Return:
- * 	bool: true if the operation should be ignored, false otherwise
- */
-// TODO: check if all of them are necessary
-func IgnoreInReplay(operation ReplayOperation, file string, line int) bool {
-	if hasSuffix(file, "advocate/advocate.go") { // internal
-		return true
-	}
-	if hasSuffix(file, "syscall/env_unix.go") {
-		return true
-	}
-	switch operation {
-	case AdvocateReplaySpawn:
-		// garbage collection can cause the replay to get stuck
-		if hasSuffix(file, "runtime/mgc.go") && line == 1215 {
-			return true
-		}
-	case AdvocateReplayMutexLock, AdvocateReplayMutexUnlock:
-		// mutex operations in the once can cause the replay to get stuck,
-		// if the once was called by the poll/fd_poll_runtime.go init.
-		if hasSuffix(file, "sync/once.go") && (line == 115 || line == 121 || line == 125) {
-			return true
-		}
-		// pools
-		if hasSuffix(file, "sync/pool.go") && (line == 216 || line == 223 || line == 233) {
-			return true
-		}
-		// mutex in rwmutex
-		if hasSuffix(file, "sync/rwmutex.go") && (line == 270 || line == 396) {
-			return true
-		}
-	case AdvocateReplayOnce:
-		// once operations in the poll/fd_poll_runtime.go init can cause the replay to get stuck.
-		if hasSuffix(file, "internal/poll/fd_poll_runtime.go") && line == 39 {
-			return true
-		}
-	}
-	return false
 }

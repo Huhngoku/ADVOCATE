@@ -86,7 +86,7 @@ const (
 // blocks until the mutex is available.
 func (m *Mutex) Lock() {
 	// ADVOCATE-CHANGE-START
-	enabled, reaplayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexLock, 2)
+	enabled, reaplayElem := runtime.WaitForReplay(runtime.OperationMutexLock, 2)
 	if enabled {
 		if m.id == 0 {
 			m.id = runtime.GetAdvocateObjectID()
@@ -131,7 +131,7 @@ func (m *Mutex) Lock() {
 // in a particular use of mutexes.
 func (m *Mutex) TryLock() bool {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexTryLock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.OperationMutexTryLock, 2)
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {
@@ -289,7 +289,7 @@ func (m *Mutex) lockSlow() {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() {
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayMutexUnlock, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.OperationMutexUnlock, 2)
 	if enabled {
 		if replayElem.Blocked {
 			if m.id == 0 {

@@ -25,7 +25,7 @@ const (
 var (
 	home, _        = os.UserHomeDir()
 	pathToAdvocate = home + "/Uni/HiWi/ADVOCATE"
-	pathToOther    = home + "/Uni/HiWi/Other"
+	pathToExamples = pathToAdvocate + "/examples"
 	analyzerPath   = pathToAdvocate + "/analyzer"
 	runEval        = pathToAdvocate + "/eval"
 	overviewPath   = pathToAdvocate + "/eval/createOverview"
@@ -48,8 +48,8 @@ func addConstructed() {
 	for i := 1; i <= 44; i++ {
 		programs = append(programs, []string{
 			"constructed " + strconv.Itoa(i),
-			pathToAdvocate + "/examples/constructed/",
-			pathToAdvocate + "/examples/constructed/",
+			pathToExamples + "/constructed/",
+			pathToExamples + "/constructed/",
 			"constructed", "-c", strconv.Itoa(i), "-t", "5"})
 	}
 }
@@ -81,8 +81,8 @@ func addGoBench() {
 		programs = append(programs,
 			[]string{
 				"Gobench " + strconv.Itoa(i+1) + ": " + names[i],
-				pathToAdvocate + "/examples/GoBench/",
-				pathToAdvocate + "/examples/GoBench/" + names[i] + "/",
+				pathToExamples + "/GoBench/",
+				pathToExamples + "/GoBench/" + names[i] + "/",
 				"gobench",
 				"-c", strconv.Itoa(i + 1), "-t", "10"})
 	}
@@ -93,8 +93,8 @@ func addMediumPrograms() {
 	programs = append(programs,
 		[]string{
 			"bbolt",
-			pathToOther + "/examples/bbolt/cmd/bbolt/",
-			pathToOther + "/examples/bbolt/",
+			pathToExamples + "/bbolt/cmd/bbolt/",
+			pathToExamples + "/bbolt/",
 			"bbolt",
 			"bench"})
 
@@ -102,32 +102,32 @@ func addMediumPrograms() {
 	programs = append(programs,
 		[]string{
 			"gocrawl",
-			pathToOther + "/examples/gocrawl/",
-			pathToOther + "/examples/gocrawl/",
+			pathToExamples + "/gocrawl/",
+			pathToExamples + "/gocrawl/",
 			"gocrawl"})
 
 	// htcat
 	programs = append(programs,
 		[]string{
 			"htcat",
-			pathToOther + "/examples/htcat/cmd/htcat/",
-			pathToOther + "/examples/htcat/",
+			pathToExamples + "/htcat/cmd/htcat/",
+			pathToExamples + "/htcat/",
 			"htcat"})
 
 	// pgzip
 	programs = append(programs,
 		[]string{
 			"pgzip",
-			pathToOther + "/examples/pgzip/",
-			pathToOther + "/examples/pgzip/",
+			pathToExamples + "/pgzip/",
+			pathToExamples + "/pgzip/",
 			"pgzip"})
 
 	// sorty
 	programs = append(programs,
 		[]string{
 			"sorty",
-			pathToOther + "/examples/sorty/",
-			pathToOther + "/examples/sorty/",
+			pathToExamples + "/sorty/",
+			pathToExamples + "/sorty/",
 			"sorty"})
 }
 

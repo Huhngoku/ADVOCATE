@@ -36,7 +36,8 @@ type pollDesc struct {
 var serverInit sync.Once
 
 func (pd *pollDesc) init(fd *FD) error {
-	serverInit.Do(runtime_pollServerInit)
+	// ADVOCATE-CHANGE-START, only comment
+	serverInit.Do(runtime_pollServerInit) // MUST BE LINE 40, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 	ctx, errno := runtime_pollOpen(uintptr(fd.Sysfd))
 	if errno != 0 {
 		return errnoErr(syscall.Errno(errno))

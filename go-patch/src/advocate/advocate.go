@@ -265,7 +265,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					continue
 				}
 				var time int
-				var op runtime.ReplayOperation
+				var op runtime.Operation
 				var file string
 				var line int
 				var pFile string
@@ -277,7 +277,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
 				case "G":
-					op = runtime.AdvocateReplaySpawn
+					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])
 					pos := strings.Split(fields[3], ":")
 					file = pos[0]
@@ -285,11 +285,11 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				case "C":
 					switch fields[4] {
 					case "S":
-						op = runtime.AdvocateReplayChannelSend
+						op = runtime.OperationChannelSend
 					case "R":
-						op = runtime.AdvocateReplayChannelRecv
+						op = runtime.OperationChannelRecv
 					case "C":
-						op = runtime.AdvocateReplayChannelClose
+						op = runtime.OperationChannelClose
 					default:
 						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + fileName + ".")
 					}
@@ -300,7 +300,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					pos := strings.Split(fields[8], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
-					if op == runtime.AdvocateReplayChannelSend || op == runtime.AdvocateReplayChannelRecv {
+					if op == runtime.OperationChannelSend || op == runtime.OperationChannelRecv {
 						index := findReplayPartner(fields[3], fields[6], len(replayData), chanWithoutPartner)
 						if index != -1 {
 							pFile = replayData[index].File
@@ -324,31 +324,31 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					switch fields[5] {
 					case "L":
 						if rw {
-							op = runtime.AdvocateReplayRWMutexLock
+							op = runtime.OperationRWMutexLock
 						} else {
-							op = runtime.AdvocateReplayMutexLock
+							op = runtime.OperationMutexLock
 							time = swapTimerRwMutex("L", time, file, line, &replayData)
 						}
 					case "U":
 						if rw {
-							op = runtime.AdvocateReplayRWMutexUnlock
+							op = runtime.OperationRWMutexUnlock
 						} else {
-							op = runtime.AdvocateReplayMutexUnlock
+							op = runtime.OperationMutexUnlock
 							time = swapTimerRwMutex("U", time, file, line, &replayData)
 						}
 					case "T":
 						if rw {
-							op = runtime.AdvocateReplayRWMutexTryLock
+							op = runtime.OperationRWMutexTryLock
 						} else {
-							op = runtime.AdvocateReplayMutexTryLock
+							op = runtime.OperationMutexTryLock
 							time = swapTimerRwMutex("T", time, file, line, &replayData)
 						}
 					case "R":
-						op = runtime.AdvocateReplayRWMutexRLock
+						op = runtime.OperationRWMutexRLock
 					case "N":
-						op = runtime.AdvocateReplayRWMutexRUnlock
+						op = runtime.OperationRWMutexRUnlock
 					case "Y":
-						op = runtime.AdvocateReplayRWMutexTryRLock
+						op = runtime.OperationRWMutexTryRLock
 					default:
 						panic("Unknown mutex operation")
 					}
@@ -357,7 +357,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					}
 
 				case "O":
-					op = runtime.AdvocateReplayOnce
+					op = runtime.OperationOnce
 					// time, _ = strconv.Atoi(fields[1]) // read tpre to prevent false order
 					if time == 0 {
 						blocked = true
@@ -371,9 +371,9 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				case "W":
 					switch fields[4] {
 					case "W":
-						op = runtime.AdvocateReplayWaitgroupWait
+						op = runtime.OperationWaitgroupWait
 					case "A":
-						op = runtime.AdvocateReplayWaitgroupAddDone
+						op = runtime.OperationWaitgroupAddDone
 					default:
 						panic("Unknown waitgroup operation")
 					}
@@ -387,9 +387,9 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				case "S":
 					cases := strings.Split(fields[4], "~")
 					if cases[len(cases)-1] == "D" {
-						op = runtime.AdvocateReplaySelectDefault
+						op = runtime.OperationSelectDefault
 					} else {
-						op = runtime.AdvocateReplaySelectCase
+						op = runtime.OperationSelectCase
 					}
 					// time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
@@ -400,7 +400,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
 				}
-				if op != runtime.AdvocateNone && !runtime.IgnoreInReplay(op, file, line) {
+				if op != runtime.OperationNone && !runtime.AdvocateIgnore(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{
 						Op: op, Routine: routine, Time: time, File: file, Line: line,
 						Blocked: blocked, Suc: suc, PFile: pFile, PLine: pLine,
@@ -472,15 +472,16 @@ func swapTimerRwMutex(op string, time int, file string, line int, replayData *ru
  * The function returns the index of the partner operation.
  * If the partner operation is not found, the function returns -1.
  */
-func findReplayPartner(cId string, oId string, index int, chanWithoutPartner map[string]int) int {
-	opString := cId + ":" + oId
+func findReplayPartner(cID string, oID string, index int, chanWithoutPartner map[string]int) int {
+	opString := cID + ":" + oID
 	if index, ok := chanWithoutPartner[opString]; ok {
 		delete(chanWithoutPartner, opString)
 		return index
-	} else {
-		chanWithoutPartner[opString] = index
-		return -1
 	}
+
+	chanWithoutPartner[opString] = index
+	return -1
+
 }
 
 /*

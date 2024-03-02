@@ -124,7 +124,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	}
 
 	// ADVOCATE-CHANGE-START
-	replayEnabled, replayElem := WaitForReplay(AdvocateReplaySelect, 2)
+	replayEnabled, replayElem := WaitForReplay(OperationSelect, 2)
 	if replayEnabled {
 		if replayElem.Blocked {
 			cas1 := (*[1 << 16]scase)(unsafe.Pointer(cas0))
@@ -275,7 +275,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// ADVOCATE-CHANGE-START
 	// if a default was selected in the trace, also select the default
 	if replayEnabled {
-		if replayElem.Op == AdvocateReplaySelectDefault {
+		if replayElem.Op == OperationSelectDefault {
 			selunlock(scases, lockorder)
 			casi = -1
 			AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)

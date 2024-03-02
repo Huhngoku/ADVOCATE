@@ -218,7 +218,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 	var replayElem ReplayElement
 	var enabled bool
 	if !ignored && !c.advocateIgnore {
-		enabled, replayElem = WaitForReplay(AdvocateReplayChannelSend, 3)
+		enabled, replayElem = WaitForReplay(OperationChannelSend, 3)
 		if enabled {
 			if replayElem.Blocked {
 				lock(&c.numberSendMutex)
@@ -481,7 +481,7 @@ func closechan(c *hchan) {
 	// AdvocateChanClose is called when a channel is closed. It creates a close event
 	// in the trace.
 	if !c.advocateIgnore {
-		_, _ = WaitForReplay(AdvocateReplayChannelClose, 2)
+		_, _ = WaitForReplay(OperationChannelClose, 2)
 		AdvocateChanClose(c.id, c.dataqsiz)
 	}
 	// ADVOCATE-CHANGE-END
@@ -604,7 +604,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 	var replayElem ReplayElement
 	var enabled bool
 	if !ignored && !c.advocateIgnore {
-		enabled, replayElem = WaitForReplay(AdvocateReplayChannelRecv, 3)
+		enabled, replayElem = WaitForReplay(OperationChannelRecv, 3)
 		if enabled {
 			if replayElem.Blocked {
 				lock(&c.numberRecvMutex)
@@ -896,7 +896,7 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 		var replayElem ReplayElement
 		var enabled bool
 		if !c.advocateIgnore {
-			enabled, replayElem = WaitForReplay(AdvocateReplaySelect, 2)
+			enabled, replayElem = WaitForReplay(OperationSelect, 2)
 			if enabled {
 				if replayElem.Blocked {
 					lock(&c.numberSendMutex)
@@ -945,7 +945,7 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 		var replayElem ReplayElement
 		var enabled bool
 		if !c.advocateIgnore {
-			enabled, replayElem = WaitForReplay(AdvocateReplaySelect, 2)
+			enabled, replayElem = WaitForReplay(OperationSelect, 2)
 			if enabled {
 				if replayElem.Blocked {
 					lock(&c.numberSendMutex)

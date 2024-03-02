@@ -67,7 +67,7 @@ func (o *Once) Do(f func()) {
 	// the atomic.StoreUint32 must be delayed until after f returns.
 
 	// ADVOCATE-CHANGE-START
-	enabled, replayElem := runtime.WaitForReplay(runtime.AdvocateReplayOnce, 2)
+	enabled, replayElem := runtime.WaitForReplay(runtime.OperationOnce, 2)
 	if enabled {
 		if replayElem.Blocked {
 			if o.id == 0 {
@@ -111,16 +111,16 @@ func (o *Once) Do(f func()) {
 // ADVOCATE-CHANGE-START
 func (o *Once) doSlow(f func()) bool {
 	// ADVOCATE-CHANGE-END
-	o.m.Lock()
-	defer o.m.Unlock()
+	o.m.Lock()         // MUST BE LINE 114, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	defer o.m.Unlock() // MUST BE LINE 115, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 	if o.done == 0 {
 		defer atomic.StoreUint32(&o.done, 1)
 		f()
 		// ADVOCATE-CHANGE-START
-		return true
+		return true // MUST BE LINE 120, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 		// ADVOCATE-CHANGE-END
 	}
 	// ADVOCATE-CHANGE-START
-	return false
+	return false // MUST BE LINE 124, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 	// ADVOCATE-CHANGE-END
 }
