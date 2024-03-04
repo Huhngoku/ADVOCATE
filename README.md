@@ -169,7 +169,7 @@ The analyzer can take the following command line arguments:
 
 If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
 ```
-./analyzer -x -t /
+./analyzer -x -t /trace
 ```
 it will create the following result, show it in the terminal and print it into an `result_readable.log` file: 
 ```txt
