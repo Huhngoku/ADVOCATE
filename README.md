@@ -12,7 +12,7 @@ We also implement a trace replay mechanism, to replay a trace as recorded.
 To analyze the program, we first need
 to record it. To do this, we modify the go runtime
 to automatically record a program while it runs. The modified runtime can 
-be found in the `advocate-go-patch` directory. Running a program with this modified 
+be found in the `go-patch` directory. Running a program with this modified 
 go runtime will create a trace of the program including 
 
 - spawning of new routines
@@ -37,13 +37,14 @@ With this modified version it is possible to save a trace of the program.
 To build the new runtime, run the `make.bash` or `make.bat` file in the `src`
 directory. This will create a `bin` directory containing a `go` executable.
 This executable can be used as your new go environment e.g. with
-`./go run main.go` or `./go build`.
+`./go run main.go` or `./go build`. Please make sure, that the program expects 
+go version 1.21 or earlier.
 
-WARNING: It can currently happen, that `make.bash` command result in a `fatal error: runtime: releaseSudog with non-nil gp.param`. It can normally be fixed by just running `make.bash` again. I'm working on fixing it.
+<!-- WARNING: It can currently happen, that `make.bash` command result in a `fatal error: runtime: releaseSudog with non-nil gp.param`. It can normally be fixed by just running `make.bash` again. I'm working on fixing it. -->
 
-It is necessary to set the GOROOT environment variable to the path of `advocate-go-patch`, e.g. with 
+It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
 ```
-export GOROOT=$HOME/ADVOCATE/advocate-go-patch/
+export GOROOT=$HOME/ADVOCATE/go-patch/
 ```
 
 To create a trace, add
@@ -56,13 +57,11 @@ To create a trace, add
 at the beginning of the main function.
 Also include the following imports 
 ```go
-runtime
 advocate
 ```
 
-Autocompletion often includes "std/runtime" instead of "runtime". Make sure to include the correct one.
 
-For some reason, `fmt.Print` and similar can lead to `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)` until the problem disappears.
+In some cases, we can get a `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)` until the problem disappears.
 
 After that run the program with `./go run main.go` or `./go build && ./main`,
 using the new runtime.
@@ -113,30 +112,27 @@ func main() {
 	c := make(chan int, 0)
 
 	go func() {
-		c <- 1  // line 48
+		c <- 1  // line 17
 	}()
 
 	go func() {
-		<-c  // line 52
+		<-c  // line 21
 	}()
 
 	time.Sleep(10 * time.Millisecond)
-	close(c)  // line 56
+	close(c)  // line 25
 }
 ```
 
-Running this leads to the following trace (indented lines are in the same line 
-as the previous line, only for better readability):
+Running this create a `trace` folder containing one trace file for each routine.
+The non-empty trace files contain the following trace:
 
 ```txt
-G,1,2;G,2,3;G,3,4;C,4,9,1,R,f,1,2,.../go-patch/src/runtime/mgc.go:180;C,10,11,1,R,f,2,2,.../go-patch/src/runtime/mgc.go:181;G,12,5;C,13,13,2,C,f,0,0,.../go-patch/src/runtime/proc.go:256;G,14,6;G,15,7;G,16,8;C,21,21,4,C,f,0,0,.../main.go:56
+G,19,15,/home/.../go-patch/src/advocate/advocate.go:169;G,20,16,/home/.../main.go:16;G,21,17,/home/.../main.go:20;C,26,26,4,C,f,0,0,/home/.../main.go:25
 
-C,7,8,1,S,f,2,2,.../go-patch/src/runtime/mgcsweep.go:279
-C,5,6,1,S,f,1,2,.../go-patch/src/runtime/mgcscavenge.go:652
+C,23,24,4,S,f,1,0,/home/.../main.go:17
 
-
-C,18,19,4,S,f,1,0,.../main.go:48
-C,17,20,4,R,f,1,0,.../main.go:52
+C,22,25,4,R,f,1,0,/home/.../main.go:21
 ```
 In this example the file paths are shortened for readability. In the real trace, the full path is given.
 
@@ -156,20 +152,24 @@ The analyzer can also create a new reordered trace, in which a detected possible
 
 The analyzer can take the following command line arguments:
 
-- -t [file]: path to the trace file
-- -d [level]: output level, 0: silent, 1: results, 2: errors, 3: info, 4: debug, default: 2
-- -f: if set, the analyzer assumes a fifo ordering of messages in the buffer of buffered channels. This is not part of the [Go Memory Mode](https://go.dev/ref/mem), but should follow from the implementation. For this reason, it is only an optional addition.
-- -n: If an analysis is run, a rewritten trace can be direcly created in the program. If the rewrite should not be done based on the direct analysis, but on a given trace and result file, -n must be set. In this case no analysis is run. -r and -i must be set.
-- -c: Normally, we assume the order of critical sections as fixed. By setting -c, we 
-ignore this, and assume we can reorder critical sections of different routines.
-This can help us to find bugs, that cannot be found without it, but it can also lead to 
-false positives.
-- -r [file]: Path to the analysis result file. Only needed if -n is set. The analysis will create two result files `result_readable.log` and `result_machine.log`. Here `result_machine.log` must be used.
-- -i [index]: Index of the bug that will be reproduced. Only needed if n is set. 1 based.
+- -c	Ignore happens before relations of critical sections (default false)
+- -d int
+    	Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
+- -f	Assume a FIFO ordering for buffered channels (default false)
+- -i int
+    	Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based (default -1)
+- -n	Create a reordered trace file from a given analysis result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results
+- -p	Do not print the results to the terminal (default false). Automatically set -x to true
+- -r string
+    	Path to where the result file should be saved. If not set, it is saved in the trace folder
+- -t string
+    	Path to the trace folder to analyze or rewrite
+  -w	Do not print warnings (default false)
+  -x	Do not ask to create a reordered trace file after the analysis (default false)
 
 If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
 ```
-./analyzer -t "trace.log"
+./analyzer -x -t /
 ```
 it will create the following result, show it in the terminal and print it into an `result_readable.log` file: 
 ```txt
@@ -177,12 +177,12 @@ it will create the following result, show it in the terminal and print it into a
 
 -------------------- Critical -------------------
 1 Possible send on closed channel:
-	close: .../main.go:56
-	send: .../main.go:48
+	close: /home/.../main.go:25@26
+	send : /home/.../main.go:17@23
 -------------------- Warning --------------------
 2 Possible receive on closed channel:
-	close: .../main.go:56
-	recv: .../main.go:42
+	close: /home/.../main.go:25@26
+	recv : /home/.../main.go:21@22
 ```
 The send can cause a panic of the program, if it occurs. It is therefor an error message (in terminal red).
 
@@ -223,15 +223,14 @@ ones for recording and replay:
 
 ```go
 if true {
-	// init tracing
-	advocate.InitTracing(0)
-	defer println(routineCount)
-	defer advocate.Finish()
-} else {
-	// init replay
-	advocate.EnableReplay()
-	defer advocate.WaitForReplayFinish()
-}
+		// init tracing
+		advocate.InitTracing(0)
+		defer advocate.Finish()
+	} else {
+		// init replay
+		advocate.EnableReplay()
+		defer advocate.WaitForReplayFinish()
+	}
 ```
 
 With changing `true` to `false` one can switch between recording and replay.
