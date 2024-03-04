@@ -1,6 +1,7 @@
 package trace
 
 import (
+	"analyzer/analysis"
 	"errors"
 	"math"
 	"strconv"
@@ -302,4 +303,12 @@ func (se *TraceElementSelect) updateVectorClock() {
 	}
 
 	se.chosenCase.updateVectorClock()
+
+	for i, c := range se.cases {
+		if i == se.chosenIndex {
+			continue
+		}
+
+		analysis.CheckForSelectCaseWithoutPartnerSelect(c.id, se.tID, c.opC == send, currentVCHb[se.routine])
+	}
 }

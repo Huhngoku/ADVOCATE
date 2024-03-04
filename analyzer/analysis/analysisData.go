@@ -15,7 +15,6 @@ type VectorClockTID2 struct {
 type untriggeredSelectCase struct {
 	id    int            // channel id
 	vcTID VectorClockTID // vector clock and tID
-	send  bool           // true: send, false: receive
 }
 
 var (
@@ -59,5 +58,6 @@ var (
 
 	// for check of select without partner
 	// not triggered
-	selectCases = make([]untriggeredSelectCase, 0) // id -> vcTID
+	selectCasesSend = make(map[int][]VectorClockTID) // chanID -> []vcTID
+	selectCasesRecv = make(map[int][]VectorClockTID) // chanID -> []vcTID
 )

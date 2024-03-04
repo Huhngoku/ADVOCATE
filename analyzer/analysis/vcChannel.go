@@ -48,6 +48,8 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv stri
 	}
 
 	checkForMixedDeadlock(routSend, routRecv, tIDSend, tIDRecv)
+	checkForSelectCaseWithoutPartnerChannel(id, tIDSend, true, vc[routSend])
+	checkForSelectCaseWithoutPartnerChannel(id, tIDRecv, false, vc[routRecv])
 	CheckForLeakChannelRun(id, VectorClockTID{vc[routSend].Copy(), tIDSend}, 0)
 	CheckForLeakChannelRun(id, VectorClockTID{vc[routRecv].Copy(), tIDSend}, 1)
 
