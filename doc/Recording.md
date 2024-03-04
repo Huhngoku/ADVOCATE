@@ -15,13 +15,13 @@ export GOROOT=$HOME/ADVOCATE/go-patch/
 To record the program, we have to add a header at the beginning of the main function:
 
 ```go
-runtime.InitAdvocate(0)
-defer advocate.CreateTrace("trace_name.log")
+advocate.InitTracing(0)
+defer advocate.Finish()
 ```
 
-It has to be included before any other code. It is also necessary to import the `runtime`, `advocate` libraries. Warning: Many auto complete tools import the `std/runtime` instead of the `runtime` library. With this, the recording will not work.
+It has to be included before any other code. It is also necessary to import the `advocate` library. 
 
-We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace file will be automatically created as soon as the program execution finishes. It will be created as `trace.log`.
+We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace files will be automatically created. It will be created in the folder `/trace`.
 
 ## Known problems
 
@@ -33,15 +33,34 @@ In some cases this will result in an
 fatal error: schedule: holding locks
 ```
 
-error. The mainly occurs when using the `fmt.Print` command in the
-program. In this case increase the argument in `InitAtomics` until
+error. In this case increase the argument in `InitTracing` until
 the problem disappears.
 
 ### Panic
 
 If the program is stopped because of an panic while the main routine is
-sleeping, it is possible, that no trace file is created. If the panic
+sleeping, it is possible, that no trace files or only partial trace files are
+created. If the panic
 occurs only occasional, it is possible to run the program again, to get
 the trace file (assuming the panic does not occur again). If it occurs
 in every run, it is necessary to first fix this panic, before a trace can
 be recorded.
+
+## Implementation
+The recording is implemented by patching the go runtime, meaning a recording 
+function is added into the recorded function, which records the operation.
+The implementation for the different recorded types are explained in the `traceElemens`
+folder. The different routines are all recorded individually, by adding a trace 
+object into the `g` object (defined in `runtime/runtime2.go`), which is created 
+automatically for each routine by the go runtime. Additionally we use a global 
+counter. For each operation we store this unique counter when the operation
+has finished, and for some additionally when whey started. With this global counter 
+it is possible to create one global trace from the different local traces.
+
+At the end all traces are written into individual files. Storing the full trace 
+for a program internally can lead to the situations where the computer does not 
+have enough RAM. To prevent this, we run an internal go routine to monitor the 
+free RAM. In this case, we pause the execution of the program, write the current 
+traces to the files and delete the internal trace. We additionally force the 
+garbage collector to run. After that we can continue the execution of the 
+program.

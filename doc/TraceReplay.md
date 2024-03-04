@@ -326,55 +326,76 @@ only operations which cannot use this yet are atomic operations.
 
 If a traced operation in the replaying trace starts, it calls the following function
 ```go
-func WaitForReplay(op ReplayOperation, skip int) (bool, chan ReplayElement) {
+func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayElement) {
 	if !replayEnabled {
-		return false, nil
+		return false, false, ReplayElement{}
 	}
 
-	_, file, line, _ := Caller(skip)
-	c := make(chan ReplayElement, 1<<16)
+	if AdvocateIgnore(op, file, line) {
+		return true, false, ReplayElement{}
+	}
 
-	go func() {
-		for {
-			next := getNextReplayElement()
+	timeoutCounter := 0
+	for {
+		nextRoutine, next := getNextReplayElement()
+
+		// all elements in the trace have been executed
+		if nextRoutine == -1 {
+			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
+			replayEnabled = false
+			return false, false, ReplayElement{}
+		}
+
+		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
-				// TODO: sleep here to not waste CPU
+
+				timeoutCounter++
+
+				checkForTimeout(timeoutCounter, file, line)
+				slowExecution()
 				continue
 			}
-			c <- next
-			lock(&replayLock)
-			replayIndex++
-			unlock(&replayLock)
-			return
 		}
-	}()
 
-	return true, c
+		foundReplayElement(nextRoutine)
+
+		lock(&replayDoneLock)
+		replayDone++
+		unlock(&replayDoneLock)
+
+		return true, true, next
+	}
 }
 ```
 
-This function will start a new go routine and then return a channel. The channel
-is modified in such a way, that it is ignored for replay and tracing purposes (size set to 1<<16).
+This function will check if the calling operation is the next function to be 
+executed or not. If it is not, it will hold the execution until this is the case.
 
-The only problem with that is, that we would record the creation of new go
-routine, if we would record a new trace while we run the replay. I hope, that I
-will be able to fix that in the future.
+First we check if the replay is enabled. If it is not, we do not check if we 
+need to hold the exections.
 
-The begin of each operation is modified to call this WaitForReplay and then
-try to receive at the returned channel. A simplified version of this looks like
-```go
-var replayElem ReplayElement
-if !c.advocateIgnore {  // c is not an channel from the replay mechanism
-    enabled, waitChan := WaitForReplay(AdvocateReplayChannelSend, 3)
-    if enabled {
-        replayElem = <-waitChan
-    }
-}
-```
-WaitForReplay will no continually check, what the next operation to be executed
-is and, when the operation, file and line are identical, send on the channel,
-to start the execution of the operation.
+Some operations, like e.g. garbage collection are not predictable and would
+lead to stuck executions. For this reason we ignore some of the operations.
+
+If non of these to cases apply, we will check if the current operation is
+the next operation, by comparing the code position of the current operation with
+the code position of next operation to be executed. If those are not equal,
+we will wait for a short moment and check again. Thereby be count how long the
+operation is already waiting. If a operation is waiting for a longer time, we
+write a message to the terminal to inform the user, that the program might be
+stuck. 
+
+If the operation is the correct one, we advance to the next value as the new
+next operation and execute the current operation.
+
+To prevent the program from terminating before all operations have been executed
+(e.g. if the main function has already executed all operations, but another
+routine has not), we count the number of finished operations. When the
+main routine finishes, we prevent the program from terminating, until the number
+of executed operations is equal to the number of operations in the trace.
+
+
 
 ## State enforcement
 This second part makes sure, that the state of the program is equal to the state
