@@ -223,14 +223,14 @@ ones for recording and replay:
 
 ```go
 if true {
-		// init tracing
-		advocate.InitTracing(0)
-		defer advocate.Finish()
-	} else {
-		// init replay
-		advocate.EnableReplay()
-		defer advocate.WaitForReplayFinish()
-	}
+	// init tracing
+	advocate.InitTracing(0)
+	defer advocate.Finish()
+} else {
+	// init replay
+	advocate.EnableReplay()
+	defer advocate.WaitForReplayFinish()
+}
 ```
 
 With changing `true` to `false` one can switch between recording and replay.
