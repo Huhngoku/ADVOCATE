@@ -12,6 +12,12 @@ type VectorClockTID2 struct {
 	val     int
 }
 
+type untriggeredSelectCase struct {
+	id    int            // channel id
+	vcTID VectorClockTID // vector clock and tID
+	send  bool           // true: send, false: receive
+}
+
 var (
 	// vc of close on channel
 	closeData = make(map[int]VectorClockTID)
@@ -50,4 +56,8 @@ var (
 
 	// for leak check
 	leakingChannels = make(map[int][]VectorClockTID2) // id -> vcTID
+
+	// for check of select without partner
+	// not triggered
+	selectCases = make([]untriggeredSelectCase, 0) // id -> vcTID
 )

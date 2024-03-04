@@ -316,6 +316,7 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 
 	analysis.CheckForLeak()
 	analysis.CheckForDoneBeforeAdd()
+	analysis.CheckForSelectCaseWithoutPartner()
 	analysis.CheckForCyclicDeadlock()
 
 	logging.Debug("Analysis completed", logging.INFO)
