@@ -11,7 +11,6 @@ Added files:
 - src/runtime/advocate_replay.go
 - src/runtime/internal/atomic/advocate_atomic.go
 - src/advocate/advocate.go
--
 
 Changed files (marked with ADVOCATE-CHANGE, außer in .s):
 
@@ -29,4 +28,9 @@ Changed files (marked with ADVOCATE-CHANGE, außer in .s):
 - src/sync/waitgroup.go
 - src/sync/once.go
 - src/sync/cond.go
-- cmd/compile/internal/ssagen
+- src/sync/pool.go
+- src/internal/poll/fs_poll_runtime.go
+- cmd/compile/internal/ssagen/ssa.go
+
+
+Additionally some test files have been altered.

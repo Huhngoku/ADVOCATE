@@ -98,8 +98,6 @@ var replayLock mutex
 var replayDone int
 var replayDoneLock mutex
 
-var timeoutLock mutex
-
 // read trace
 var replayData = make(AdvocateReplayTraces, 0)
 var numberElementsInTrace int
@@ -321,11 +319,6 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 				continue
 			}
 		}
-
-		// reset timeout counter
-		lock(&timeoutLock)
-		timeoutCounter = 0
-		unlock(&timeoutLock)
 
 		foundReplayElement(nextRoutine)
 		println("Replay Run : ", next.Time, op.ToString(), file, line)
