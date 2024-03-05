@@ -165,8 +165,8 @@ func InitTracing(size int) {
 			panic(err)
 		}
 	}
-	runtime.InitAdvocate(size)
 	go writeTraceIfFull()
+	runtime.InitAdvocate(size)
 }
 
 // ============== Reading =================

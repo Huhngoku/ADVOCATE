@@ -50,8 +50,8 @@ export GOROOT=$HOME/ADVOCATE/go-patch/
 To create a trace, add
 
 ```go
-	advocate.InitTracing(0)
-	defer advocate.Finish()
+advocate.InitTracing(0)
+defer advocate.Finish()
 ```
 
 at the beginning of the main function.
@@ -128,7 +128,7 @@ Running this create a `trace` folder containing one trace file for each routine.
 The non-empty trace files contain the following trace:
 
 ```txt
-G,19,15,/home/.../go-patch/src/advocate/advocate.go:169;G,20,16,/home/.../main.go:16;G,21,17,/home/.../main.go:20;C,26,26,4,C,f,0,0,/home/.../main.go:25
+G,20,16,/home/.../main.go:16;G,21,17,/home/.../main.go:20;C,26,26,4,C,f,0,0,/home/.../main.go:25
 
 C,23,24,4,S,f,1,0,/home/.../main.go:17
 

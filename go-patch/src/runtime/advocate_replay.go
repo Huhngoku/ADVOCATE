@@ -103,8 +103,10 @@ var replayData = make(AdvocateReplayTraces, 0)
 var numberElementsInTrace int
 var traceElementPositions = make(map[string][]int) // file -> []line
 
+// timeout
+var timeoutLock mutex
+var timeoutCounterGlobal = 0
 var timeoutMessageCycle = 500 // approx. 10s
-
 var timeOutCancel = false
 
 /*
@@ -310,7 +312,6 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		if next.Time != 0 {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
-				// println("Continue")
 
 				timeoutCounter++
 
@@ -321,12 +322,20 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		}
 
 		foundReplayElement(nextRoutine)
-		println("Replay Run : ", next.Time, op.ToString(), file, line)
+
+		// println("Replay Run : ", next.Time, op.ToString(), file, line)
+
+		lock(&timeoutLock)
+		timeoutCounterGlobal = 0 // reset the global timeout counter
+		unlock(&timeoutLock)
+
 		lock(&replayDoneLock)
 		replayDone++
 		unlock(&replayDoneLock)
+
 		// _, next = getNextReplayElement()
 		// println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
+
 		return true, true, next
 	}
 }
@@ -387,7 +396,6 @@ func checkForTimeout(timeoutCounter int, file string, line int) bool {
 }
 
 func checkForTimeoutNoOperation() {
-	timeoutCounter := 0
 	waitTime := 500 // approx. 10s
 	warningMessage := "No traced operation has been executed for approx. 10s.\n"
 	warningMessage += "This can be caused by a stuck replay.\n"
@@ -403,7 +411,10 @@ func checkForTimeoutNoOperation() {
 
 	for {
 		lock(&timeoutLock)
-		timeoutCounter++
+		timeoutCounterGlobal++
+		timeoutCounter := timeoutCounterGlobal
+		unlock(&timeoutLock)
+
 		if timeoutCounter%waitTime == 0 {
 			message := "\nReplayWarning: Long wait time of approx. "
 			message += intToString(int(10*timeoutCounter/waitTime)) + "s.\n"
@@ -414,7 +425,6 @@ func checkForTimeoutNoOperation() {
 				panic("ReplayError: Replay stuck")
 			}
 		}
-		unlock(&timeoutLock)
 		slowExecution()
 	}
 }
