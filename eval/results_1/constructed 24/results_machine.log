@@ -1,3 +1,0 @@
-Potential leak without possible partner:
-	channel: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:503@30
-	partner: -

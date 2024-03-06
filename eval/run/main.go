@@ -131,7 +131,7 @@ func addMediumPrograms() {
 			"sorty"})
 }
 
-func runExecs(pathToExec string, execName string, execArgs []string, progName string) error {
+func runExecs(pathToExec string, execName string, execArgs []string, progName string, replay bool) error {
 	success := 0
 	var err error
 	max := 4
@@ -156,12 +156,15 @@ func runExecs(pathToExec string, execName string, execArgs []string, progName st
 		}
 		success = 2
 
-		err = runExec(pathToExec, execName, execArgs, progName, "replay", 0)
-		if err != nil {
-			if i != max {
-				resetResFolder(progName)
-				continue
+		if replay {
+			err = runExec(pathToExec, execName, execArgs, progName, "replay", 0)
+			if err != nil {
+				if i != max {
+					resetResFolder(progName)
+					continue
+				}
 			}
+
 		}
 		success = 3
 
@@ -416,7 +419,7 @@ func standardError(arr []float64, avg float64) float64 {
 	return math.Sqrt(sum / float64(len(arr)))
 }
 
-func setup(all, constructed, gobench bool, medium bool) error {
+func setup(constructed, gobench bool, medium bool) error {
 	// create the res folder if needed
 	name := resPath + "/results"
 	counter := 1
@@ -436,13 +439,13 @@ func setup(all, constructed, gobench bool, medium bool) error {
 
 	log(SETUP, "Create res folder "+resPath)
 
-	if all || constructed {
+	if constructed {
 		addConstructed()
 	}
-	if all || gobench {
+	if gobench {
 		addGoBench()
 	}
-	if all || medium {
+	if medium {
 		addMediumPrograms()
 	}
 	return nil
@@ -452,11 +455,28 @@ func main() {
 	runConstructed := flag.Bool("c", false, "Run constructed programs")
 	runGoBench := flag.Bool("g", false, "Run go benchmarks")
 	runMedium := flag.Bool("m", false, "Run medium programs")
+	pathAdvocate := flag.String("a", "", "Path to advocate")
+	noReplay := flag.Bool("r", false, "Disable replay")
 	flag.Parse()
 
-	runAll := !*runConstructed && !*runGoBench && !*runMedium
+	if *pathAdvocate != "" {
+		pathToAdvocate = home + *pathAdvocate
+		pathToExamples = pathToAdvocate + "/examples"
+		analyzerPath = pathToAdvocate + "/analyzer"
+		runEval = pathToAdvocate + "/eval"
+		overviewPath = pathToAdvocate + "/eval/createOverview"
+		log(INFO, "Using path to advocate: "+pathToAdvocate)
+	} else {
+		log(INFO, "Using default path to advocate: "+pathToAdvocate)
+	}
 
-	setup(runAll, *runConstructed, *runGoBench, *runMedium)
+	if !*runConstructed && !*runGoBench && !*runMedium {
+		log(ERROR, "No programs to run")
+		log(ERROR, "Select at least one from -c, -g, -m or -i")
+		return
+	}
+
+	setup(*runConstructed, *runGoBench, *runMedium)
 
 	for _, program := range programs {
 		log(START, program[0])
@@ -475,7 +495,7 @@ func main() {
 			continue
 		}
 
-		err = runExecs(execPath, execName, execArgs, name)
+		err = runExecs(execPath, execName, execArgs, name, !(*noReplay))
 		runAna := true
 		if err != nil {
 			log(ERROR, err.Error())
@@ -527,6 +547,7 @@ type logType int
 
 const (
 	START logType = iota
+	INFO
 	CREATE
 	EXEC
 	ANALYZE
@@ -546,6 +567,8 @@ func log(lt logType, message string) {
 	switch lt {
 	case START:
 		res = "\n[START   ] " + end + message
+	case INFO:
+		res = "\n[INFO    ] " + end + message
 	case CREATE:
 		res = "[CREATE  ] " + end + message
 	case EXEC:

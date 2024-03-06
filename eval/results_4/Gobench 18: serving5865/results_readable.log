@@ -1,6 +1,0 @@
-==================== Summary ====================
-
--------------------- Critical -------------------
-1 Possible send on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving5865/serving5865.go:15@44
-	send : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/serving5865/serving5865.go:27@42

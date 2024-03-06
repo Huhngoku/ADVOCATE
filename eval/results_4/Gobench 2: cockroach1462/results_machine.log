@@ -1,6 +1,0 @@
-Possible negative waitgroup counter:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1462/cockroach1462.go:55@47
-	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1462/cockroach1462.go:55@44;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1462/cockroach1462.go:35@28
-Found receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1462/cockroach1462.go:77@36
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/cockroach1462/cockroach1462.go:122@39

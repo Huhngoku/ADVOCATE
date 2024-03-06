@@ -1,6 +1,0 @@
-Found receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7443/etcd7443.go:181@53
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7443/etcd7443.go:40@110
-Found receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7443/etcd7443.go:211@124
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/etcd7443/etcd7443.go:213@34

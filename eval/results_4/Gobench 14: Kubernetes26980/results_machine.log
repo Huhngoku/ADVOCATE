@@ -1,9 +1,0 @@
-Potential mixed deadlock:
-	locks: /home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:266@48;/home/erikkassubek/Uni/HiWi/ADVOCATE/go-patch/src/sync/rwmutex.go:266@30
-	send/close-recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:58@53;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:60@46
-Potential mixed deadlock:
-	locks: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:57@47;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:15@29
-	send/close-recv: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:58@53;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:60@46
-Found receive on closed channel:
-	close: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:58@53
-	recv : /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/GoBench/kubernetes26980/kubernetes26980.go:60@46
