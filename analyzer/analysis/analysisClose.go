@@ -15,7 +15,7 @@ Args:
 */
 func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 	// check if there is an earlier send, that could happen concurrently to close
-	if hasSend[id] {
+	if analysisCases["sendOnClosed"] && hasSend[id] {
 		logging.Debug("Check for possible send on closed channel "+
 			strconv.Itoa(id)+" with "+
 			mostRecentSend[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
@@ -29,7 +29,7 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 		}
 	}
 	// check if there is an earlier receive, that could happen concurrently to close
-	if hasReceived[id] {
+	if analysisCases["receiveOnClosed"] && hasReceived[id] {
 		logging.Debug("Check for possible receive on closed channel "+
 			strconv.Itoa(id)+" with "+
 			mostRecentReceive[id].vc.ToString()+" and "+closeData[id].vc.ToString(),

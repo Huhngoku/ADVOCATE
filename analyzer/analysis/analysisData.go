@@ -18,6 +18,9 @@ type untriggeredSelectCase struct {
 }
 
 var (
+	// analysis cases to run
+	analysisCases = make(map[string]bool)
+
 	// vc of close on channel
 	closeData = make(map[int]VectorClockTID)
 	closeRout = make(map[int]int)
@@ -61,3 +64,8 @@ var (
 	selectCasesSend = make(map[int][]VectorClockTID) // chanID -> []vcTID
 	selectCasesRecv = make(map[int][]VectorClockTID) // chanID -> []vcTID
 )
+
+// InitAnalysis initializes the analysis cases
+func InitAnalysis(analysisCasesMap map[string]bool) {
+	analysisCases = analysisCasesMap
+}

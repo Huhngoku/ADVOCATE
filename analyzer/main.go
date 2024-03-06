@@ -25,6 +25,19 @@ func main() {
 	noWarning := flag.Bool("w", false, "Do not print warnings (default false)")
 	noPrint := flag.Bool("p", false, "Do not print the results to the terminal (default false). Automatically set -x to true")
 	resultFolder := flag.String("r", "", "Path to where the result file should be saved. If not set, it is saved in the trace folder")
+
+	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
+		"\ts: Send on closed channel\n"+
+		"\tr: Receive on closed channel\n"+
+		"\tw: Done before add on waitGroup\n"+
+		"\tc: Close of closed channel\n"+
+		"\tb: Concurrent receive on channel\n"+
+		"\tl: Leaking routine\n"+
+		"\tu: Select case without partner (not implemented yet)\n"+
+		"\tc: Cyclic deadlock\n",
+	// "\tm: Mixed deadlock\n"
+	)
+
 	flag.Parse()
 
 	if *pathTrace == "" {
@@ -39,6 +52,11 @@ func main() {
 	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
 	if *resultFolder != "" {
 		folder = *resultFolder
+	}
+
+	analysisCases, err := parseAnalysisCases(*scenarios)
+	if err != nil {
+		panic(err)
 	}
 
 	outMachine := folder + "results_machine.log"
@@ -71,7 +89,7 @@ func main() {
 		panic(err)
 	}
 	trace.SetNumberOfRoutines(numberOfRoutines)
-	trace.RunAnalysis(*fifo, *ignoreCriticalSection)
+	trace.RunAnalysis(*fifo, *ignoreCriticalSection, analysisCases)
 
 	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
@@ -151,4 +169,52 @@ func rewriteTrace(outMachine string, newTrace string, resultIndex int,
 	}
 
 	return nil
+}
+
+/*
+ * Parse the given analysis cases
+ * Args:
+ *   cases (string): The string of analysis cases to parse
+ * Returns:
+ *   map[string]bool: A map of the analysis cases and if they are set
+ *   error: An error if the cases could not be parsed
+ */
+func parseAnalysisCases(cases string) (map[string]bool, error) {
+	analysisCases := map[string]bool{
+		"sendOnClosed":         false,
+		"receiveOnClosed":      false,
+		"doneBeforeAdd":        false,
+		"closeOnClosed":        false,
+		"concurrentReceive":    false,
+		"leak":                 false,
+		"selectWithoutPartner": false,
+		"cyclicDeadlock":       false,
+		// "mixedDeadlock":        false,
+	}
+
+	for _, c := range cases {
+		switch c {
+		case 's':
+			analysisCases["sendOnClosed"] = true
+		case 'r':
+			analysisCases["receiveOnClosed"] = true
+		case 'w':
+			analysisCases["doneBeforeAdd"] = true
+		case 'c':
+			analysisCases["closeOnClosed"] = true
+		case 'b':
+			analysisCases["concurrentReceive"] = true
+		case 'l':
+			analysisCases["leak"] = true
+		case 'u':
+			analysisCases["selectWithoutPartner"] = true
+		case 'd':
+			analysisCases["cyclicDeadlock"] = true
+		// case 'm':
+		// analysisCases["mixedDeadlock"] = true
+		default:
+			return nil, fmt.Errorf("Invalid analysis case: %c", c)
+		}
+	}
+	return analysisCases, nil
 }

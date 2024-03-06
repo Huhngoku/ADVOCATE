@@ -29,7 +29,9 @@ func Change(routine int, id int, delta int, tID string, vc map[int]VectorClock) 
 	wg[id] = wg[id].Sync(vc[routine])
 	vc[routine] = vc[routine].Inc(routine)
 
-	checkForDoneBeforeAdd(routine, id, delta, tID, vc[routine])
+	if analysisCases["doneBeforeAdd"] {
+		checkForDoneBeforeAdd(routine, id, delta, tID, vc[routine])
+	}
 }
 
 /*

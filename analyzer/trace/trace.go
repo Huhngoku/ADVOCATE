@@ -21,6 +21,8 @@ var (
 	numberOfRoutines = 0
 	fifo             bool
 	result           string
+
+	analysisCases map[string]bool
 )
 
 /*
@@ -215,11 +217,15 @@ func SetNumberOfRoutines(n int) {
 *   assume_fifo (bool): True to assume fifo ordering in buffered channels
 *   ignoreCriticalSections (bool): True to ignore critical sections when updating
 *   	vector clocks
+*   analysisCasesMap (map[string]bool): The analysis cases to run
  */
-func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
+func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap map[string]bool) string {
 	logging.Debug("Analyze the trace...", logging.INFO)
 
-	fifo = assume_fifo
+	fifo = assumeFifo
+
+	analysisCases = analysisCasesMap
+	analysis.InitAnalysis(analysisCases)
 
 	for i := 1; i <= numberOfRoutines; i++ {
 		currentVCHb[i] = analysis.NewVectorClock(numberOfRoutines)
@@ -231,7 +237,7 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
 		// do not update the vector clock for not executed operations, but check for leaks
-		if elem.getTpost() == 0 {
+		if analysisCases["leak"] && elem.getTpost() == 0 {
 			switch e := elem.(type) {
 			case *TraceElementChannel:
 				switch e.opC {
@@ -314,10 +320,21 @@ func RunAnalysis(assume_fifo bool, ignoreCriticalSections bool) string {
 
 	}
 
-	analysis.CheckForLeak()
-	analysis.CheckForDoneBeforeAdd()
-	analysis.CheckForSelectCaseWithoutPartner()
-	analysis.CheckForCyclicDeadlock()
+	if analysisCases["leak"] {
+		analysis.CheckForLeak()
+	}
+
+	if analysisCases["doneBeforeAdd"] {
+		analysis.CheckForDoneBeforeAdd()
+	}
+
+	if analysisCases["selectWithoutPartner"] {
+		analysis.CheckForSelectCaseWithoutPartner()
+	}
+
+	if analysisCases["cyclicDeadlock"] {
+		analysis.CheckForCyclicDeadlock()
+	}
 
 	logging.Debug("Analysis completed", logging.INFO)
 	return result

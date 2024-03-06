@@ -53,7 +53,7 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 }
 
 /*
- * Run for channel operation with a post event. Check if the operation would be
+ * Run for channel operation without a post event. Check if the operation would be
  * potential communication partner for a stuck operation in leakingChannels.
  * If so, add an error or warning to the result and remove the stuck operation.
  * Args:
@@ -174,7 +174,7 @@ func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []in
 }
 
 /*
- * Run for select operation with a post event. Check if the operation would be
+ * Run for select operation without a post event. Check if the operation would be
  * potential communication partner for a stuck operation in leakingChannels.
  * If so, add an error or warning to the result and remove the stuck operation.
  * Args:
