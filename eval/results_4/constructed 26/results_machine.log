@@ -1,3 +1,0 @@
-Possible negative waitgroup counter:
-	done: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:536@34
-	done/add: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:523@31;/home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:527@32

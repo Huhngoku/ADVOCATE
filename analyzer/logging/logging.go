@@ -105,7 +105,7 @@ func InitLogging(level int, outReadable string, outMachine string) {
 func PrintSummary(noWarning bool, noPrint bool) int {
 	counter := 1
 	resMachine := ""
-	resReadable := "==================== Summary ====================\n\n"
+	resReadable := "```\n==================== Summary ====================\n\n"
 
 	if !noPrint {
 		fmt.Print("==================== Summary ====================\n\n")
@@ -134,7 +134,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 	}
 	if len(resultsWarning) > 0 && !noWarning {
 		found = true
-		resReadable += "-------------------- Warning --------------------\n\n"
+		resReadable += "\n-------------------- Warning --------------------\n\n"
 		if !noPrint {
 			fmt.Print("-------------------- Warning --------------------\n\n")
 		}
@@ -157,6 +157,8 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			fmt.Println(green + "No bugs found" + reset)
 		}
 	}
+
+	resReadable += "```"
 
 	// write output readable
 	if _, err := os.Stat(outputReadableFile); err == nil {
