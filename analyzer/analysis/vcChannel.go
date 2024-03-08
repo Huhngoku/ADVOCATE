@@ -54,8 +54,8 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv stri
 	}
 
 	if analysisCases["selectWithoutPartner"] {
-		checkForSelectCaseWithoutPartnerChannel(id, tIDSend, true, vc[routSend])
-		checkForSelectCaseWithoutPartnerChannel(id, tIDRecv, false, vc[routRecv])
+		checkForSelectCaseWithoutPartnerChannel(id, tIDSend, true, false, vc[routSend])
+		checkForSelectCaseWithoutPartnerChannel(id, tIDRecv, false, false, vc[routRecv])
 	}
 
 	if analysisCases["leak"] {
@@ -113,6 +113,10 @@ func Send(rout int, id int, oID int, size int, tID string,
 	mostRecentSend[id] = VectorClockTID{mostRecentSend[id].vc.Sync(vc[rout]), tID}
 
 	vc[rout] = vc[rout].Inc(rout)
+
+	if analysisCases["selectWithoutPartner"] {
+		checkForSelectCaseWithoutPartnerChannel(id, tID, true, true, vc[rout])
+	}
 
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 0)
@@ -184,6 +188,10 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
 
 	if analysisCases["mixedDeadlock"] {
 		checkForMixedDeadlock(routSend, rout, tIDSend, tID)
+	}
+
+	if analysisCases["selectWithoutPartner"] {
+		checkForSelectCaseWithoutPartnerChannel(id, tID, false, true, vc[rout])
 	}
 
 	if analysisCases["leak"] {

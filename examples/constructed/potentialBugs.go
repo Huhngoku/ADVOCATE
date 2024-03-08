@@ -841,6 +841,104 @@ func n44() {
 	time.Sleep(100 * time.Millisecond)
 }
 
+// =============== Select Partner ===============
+func n45() {
+	c := make(chan int, 0)
+
+	go func() {
+		select {
+		case c <- 1:
+		}
+	}()
+
+	c <- 1
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n46() {
+	c := make(chan int, 0)
+	d := make(chan int, 0)
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		d <- 1
+	}()
+
+	select {
+	case <-c:
+	case <-d:
+	}
+
+	close(c)
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n47() {
+	c := make(chan int, 0)
+	d := make(chan int, 0)
+
+	go func() {
+		c <- 1
+	}()
+
+	select {
+	case <-c:
+	case <-d:
+	}
+}
+
+func n48() {
+	c := make(chan int, 0)
+	d := make(chan int, 0)
+	e := make(chan int, 0)
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		e <- 1 // prevents send from d to select
+		d <- 1
+	}()
+
+	select {
+	case <-c:
+	case <-d:
+	}
+
+	<-e
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n49() {
+	c := make(chan int, 0)
+	d := make(chan int, 1)
+	e := make(chan int, 0)
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		d <- 1
+		e <- 1 // prevents d from sending unbuffered
+	}()
+
+	<-e
+
+	select {
+	case <-c:
+	case <-d:
+	}
+
+	time.Sleep(100 * time.Millisecond)
+}
+
 func main() {
 
 	list := flag.Bool("l", false, "List tests. Do not run any test.")
@@ -849,7 +947,7 @@ func main() {
 	timeout := flag.Int("t", 0, "Timeout")
 	flag.Parse()
 
-	const n = 44
+	const n = 49
 	testNames := [n]string{
 		"Test 01: N - Synchronous channel",
 		"Test 02: N - Wait group",
@@ -896,11 +994,16 @@ func main() {
 		"Test 42: P - Leaking channel send, with alternative",
 		"Test 43: P - Leaking wait group",
 		"Test 44: P - Leaking mutex, doubble locking",
+		"Test 45: N - All select cases are triggered (unbuffered)",
+		"Test 46: N - One select case is not triggered, but all have potential partner (unbuffered)",
+		"Test 47: P - One select case is not triggered, and has no potential partner (unbuffered)",
+		"Test 48: P - One select case is not triggered, and has no potential partner (unbuffered)",
+		"Test 49: N - One select case has partner that can only send buffered",
 	}
 	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
-		n36, n37, n38, n39, n40, n41, n42, n43, n44}
+		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49}
 
 	if list != nil && *list {
 		for i := 0; i < n; i++ {

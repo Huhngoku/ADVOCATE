@@ -28,10 +28,11 @@ func CheckForSelectCaseWithoutPartner() {
 *   cID (int): The channel id
 *   tID (string): The trace element id
 *   send (bool): Whether the case is a send case
+*   buffered (bool): Whether the channel is buffered
 *   vc (VectorClock): The vector clock
  */
 // TODO: For now only works for unbuffered channels, but will create error for buffered channels
-func CheckForSelectCaseWithoutPartnerSelect(cID int, tID string, send bool, vc VectorClock) {
+func CheckForSelectCaseWithoutPartnerSelect(cID int, tID string, send bool, buffered bool, vc VectorClock) {
 	if send {
 		possibleRecv := mostRecentReceive[cID]
 		if GetHappensBefore(vc, possibleRecv.vc) == Concurrent {
@@ -44,7 +45,7 @@ func CheckForSelectCaseWithoutPartnerSelect(cID int, tID string, send bool, vc V
 		}
 	}
 
-	AddUntriggeredSelectCase(cID, tID, send, vc)
+	AddUntriggeredSelectCase(cID, tID, send, buffered, vc)
 }
 
 /*
@@ -54,9 +55,10 @@ func CheckForSelectCaseWithoutPartnerSelect(cID int, tID string, send bool, vc V
 *   cID (int): The channel id
 *   tID (string): The trace element id
 *   send (bool): Whether the case is a send case
+*   buffered (bool): Whether the channel is buffered
 *   vc (VectorClock): The vector clock
  */
-func checkForSelectCaseWithoutPartnerChannel(cID int, tID string, send bool, vc VectorClock) {
+func checkForSelectCaseWithoutPartnerChannel(cID int, tID string, send bool, buffered bool, vc VectorClock) {
 	if send {
 		possibleCases := selectCasesRecv[cID]
 		for i := 0; i < len(possibleCases); i++ {
@@ -84,19 +86,21 @@ func checkForSelectCaseWithoutPartnerChannel(cID int, tID string, send bool, vc 
 *   cId (int): The channel id
 *   tID (string): The trace element id
 *   send (bool): Whether the case is a send case
+*   buffered (bool): Whether the channel is buffered
 *   vc (VectorClock): The vector clock
  */
-func AddUntriggeredSelectCase(cID int, tID string, send bool, vc VectorClock) {
-	vcTID := VectorClockTID{vc, tID}
+func AddUntriggeredSelectCase(cID int, tID string, send bool, buffered bool,
+	vc VectorClock) {
+	vcTID := VectorClockTID3{vc, tID, buffered}
 	if send {
 		if _, ok := selectCasesSend[cID]; !ok {
-			selectCasesSend[cID] = make([]VectorClockTID, 0)
+			selectCasesSend[cID] = make([]VectorClockTID3, 0)
 		}
 
 		selectCasesSend[cID] = append(selectCasesSend[cID], vcTID)
 	} else {
 		if _, ok := selectCasesRecv[cID]; !ok {
-			selectCasesRecv[cID] = make([]VectorClockTID, 0)
+			selectCasesRecv[cID] = make([]VectorClockTID3, 0)
 		}
 
 		selectCasesRecv[cID] = append(selectCasesRecv[cID], vcTID)
@@ -109,7 +113,7 @@ func AddUntriggeredSelectCase(cID int, tID string, send bool, vc VectorClock) {
  * Args:
  *   vcTID (VectorClockTID): The vector clock and trace element id
  */
-func foundPossibleSelectCaseWithoutPartner(cvTID VectorClockTID) {
+func foundPossibleSelectCaseWithoutPartner(cvTID VectorClockTID3) {
 	msg := "Possible select case without partner:\n"
 	msg += "select: " + cvTID.tID + "\n"
 	msg += "case: \n" // TODO: add identifier for the case

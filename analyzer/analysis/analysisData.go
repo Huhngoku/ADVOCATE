@@ -12,6 +12,12 @@ type VectorClockTID2 struct {
 	val     int
 }
 
+type VectorClockTID3 struct {
+	vc       VectorClock
+	tID      string
+	buffered bool
+}
+
 type untriggeredSelectCase struct {
 	id    int            // channel id
 	vcTID VectorClockTID // vector clock and tID
@@ -61,8 +67,8 @@ var (
 
 	// for check of select without partner
 	// not triggered
-	selectCasesSend = make(map[int][]VectorClockTID) // chanID -> []vcTID
-	selectCasesRecv = make(map[int][]VectorClockTID) // chanID -> []vcTID
+	selectCasesSend = make(map[int][]VectorClockTID3) // chanID -> []vcTID3
+	selectCasesRecv = make(map[int][]VectorClockTID3) // chanID -> []vcTID3
 )
 
 // InitAnalysis initializes the analysis cases
