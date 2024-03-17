@@ -25,6 +25,9 @@ func RewriteTrace(bug bugs.Bug) error {
 	case bugs.DoneBeforeAdd:
 		println("Start rewriting trace for negative waitgroup counter...")
 		rewriteTraceMultiple(bug)
+	case bugs.SelectWithoutPartner:
+		println("Rewriting trace for select without partner is not implemented yet")
+		rewriteTraceMultiple(bug)
 	case bugs.MixedDeadlock:
 		err = errors.New("Rewriting trace for mixed deadlock is not implemented yet")
 		// TODO: implement

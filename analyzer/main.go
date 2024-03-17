@@ -52,6 +52,9 @@ func main() {
 	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
 	if *resultFolder != "" {
 		folder = *resultFolder
+		if folder[len(folder)-1] != os.PathSeparator {
+			folder += string(os.PathSeparator)
+		}
 	}
 
 	analysisCases, err := parseAnalysisCases(*scenarios)
@@ -189,7 +192,19 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		"leak":                 false,
 		"selectWithoutPartner": false,
 		"cyclicDeadlock":       false,
-		// "mixedDeadlock":        false,
+		"mixedDeadlock":        false,
+	}
+
+	if cases == "" {
+		analysisCases["sendOnClosed"] = true
+		analysisCases["receiveOnClosed"] = true
+		analysisCases["doneBeforeAdd"] = true
+		analysisCases["closeOnClosed"] = true
+		analysisCases["concurrentReceive"] = true
+		analysisCases["leak"] = true
+		analysisCases["selectWithoutPartner"] = true
+		analysisCases["cyclicDeadlock"] = true
+		// analysisCases["mixedDeadlock"] = true
 	}
 
 	for _, c := range cases {

@@ -320,16 +320,16 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 
 	}
 
+	if analysisCases["selectWithoutPartner"] {
+		analysis.CheckForSelectCaseWithoutPartner()
+	}
+
 	if analysisCases["leak"] {
 		analysis.CheckForLeak()
 	}
 
 	if analysisCases["doneBeforeAdd"] {
 		analysis.CheckForDoneBeforeAdd()
-	}
-
-	if analysisCases["selectWithoutPartner"] {
-		analysis.CheckForSelectCaseWithoutPartner()
 	}
 
 	if analysisCases["cyclicDeadlock"] {

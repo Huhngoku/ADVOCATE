@@ -302,14 +302,20 @@ func (se *TraceElementSelect) updateVectorClock() {
 		return
 	}
 
-	se.chosenCase.updateVectorClock()
-
-	for i, c := range se.cases {
-		if i == se.chosenIndex {
-			continue
+	if analysisCases["selectWithoutPartner"] {
+		// check for select case without partner
+		ids := make([]int, 0)
+		buffered := make([]bool, 0)
+		sendInfo := make([]bool, 0)
+		for _, c := range se.cases {
+			ids = append(ids, c.id)
+			buffered = append(buffered, c.qSize > 0)
+			sendInfo = append(sendInfo, c.opC == send)
 		}
-
-		analysis.CheckForSelectCaseWithoutPartnerSelect(c.id, se.tID,
-			c.opC == send, c.qSize != 0, currentVCHb[se.routine])
+		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,
+			currentVCHb[se.routine], se.tID)
 	}
+
+	// update the vector clock
+	se.chosenCase.updateVectorClock()
 }

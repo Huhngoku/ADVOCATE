@@ -12,15 +12,12 @@ type VectorClockTID2 struct {
 	val     int
 }
 
-type VectorClockTID3 struct {
-	vc       VectorClock
-	tID      string
-	buffered bool
-}
-
-type untriggeredSelectCase struct {
-	id    int            // channel id
-	vcTID VectorClockTID // vector clock and tID
+type allSelectCase struct {
+	id       int            // channel id
+	vcTID    VectorClockTID // vector clock and tID
+	send     bool           // true: send, false: receive
+	buffered bool           // true: buffered, false: unbuffered
+	partner  bool           // true: partner found, false: no partner found
 }
 
 var (
@@ -66,9 +63,8 @@ var (
 	leakingChannels = make(map[int][]VectorClockTID2) // id -> vcTID
 
 	// for check of select without partner
-	// not triggered
-	selectCasesSend = make(map[int][]VectorClockTID3) // chanID -> []vcTID3
-	selectCasesRecv = make(map[int][]VectorClockTID3) // chanID -> []vcTID3
+	// store all select cases
+	selectCases = make([]allSelectCase, 0) // id -> vcTID
 )
 
 // InitAnalysis initializes the analysis cases
