@@ -26,8 +26,11 @@ func RewriteTrace(bug bugs.Bug) error {
 		println("Start rewriting trace for negative waitgroup counter...")
 		rewriteTraceMultiple(bug)
 	case bugs.SelectWithoutPartner:
-		println("Rewriting trace for select without partner is not implemented yet")
-		rewriteTraceMultiple(bug)
+		err = errors.New("Rewriting trace for select without partner is not implemented yet")
+		// TODO: implement
+	case bugs.ConcurrentRecv:
+		err = errors.New("Rewriting trace for concurrent receive is not implemented yet")
+		// TODO: implement
 	case bugs.MixedDeadlock:
 		err = errors.New("Rewriting trace for mixed deadlock is not implemented yet")
 		// TODO: implement
@@ -39,6 +42,15 @@ func RewriteTrace(bug bugs.Bug) error {
 		// TODO: implement
 	case bugs.RoutineLeakNoPartner:
 		err = errors.New("Rewriting trace for routine leak without partner is not implemented yet")
+		// TODO: implement
+	case bugs.RoutineLeakMutex:
+		err = errors.New("Rewriting trace for routine leak with mutex is not implemented yet")
+		// TODO: implement
+	case bugs.RoutineLeakWaitGroup:
+		err = errors.New("Rewriting trace for routine leak with waitgroup is not implemented yet")
+		// TODO: implement
+	case bugs.RoutineLeakCond:
+		err = errors.New("Rewriting trace for routine leak with cond is not implemented yet")
 		// TODO: implement
 	default:
 		err = errors.New("For the given bug type no trace rewriting is implemented")
