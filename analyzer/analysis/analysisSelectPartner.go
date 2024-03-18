@@ -61,29 +61,35 @@ func CheckForSelectCaseWithoutPartner() {
 *   tID (string): The position of the select in the program
  */
 func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
-	sendInfo []bool, vc VectorClock, tID string) {
+	sendInfo []bool, vc VectorClock, tID string, chosenIndex int) {
 	for i, id := range ids {
 		buffered := bufferedInfo[i]
 		send := sendInfo[i]
 
 		found := false
-		// not select partners
-		if send {
-			if potentialPartner, ok := mostRecentReceive[id]; ok {
-				hb := GetHappensBefore(vc, potentialPartner.vc)
-				if buffered && (hb == Concurrent || hb == Before) {
-					found = true
-				} else if !buffered && hb == Concurrent {
-					found = true
+
+		if i == chosenIndex {
+			// no need to check if the channel is the chosen case
+			found = true
+		} else {
+			// not select cases
+			if send {
+				if potentialPartner, ok := mostRecentReceive[id]; ok {
+					hb := GetHappensBefore(vc, potentialPartner.vc)
+					if buffered && (hb == Concurrent || hb == Before) {
+						found = true
+					} else if !buffered && hb == Concurrent {
+						found = true
+					}
 				}
-			}
-		} else { // recv
-			if potentialPartner, ok := mostRecentSend[id]; ok {
-				hb := GetHappensBefore(vc, potentialPartner.vc)
-				if buffered && (hb == Concurrent || hb == After) {
-					found = true
-				} else if !buffered && hb == Concurrent {
-					found = true
+			} else { // recv
+				if potentialPartner, ok := mostRecentSend[id]; ok {
+					hb := GetHappensBefore(vc, potentialPartner.vc)
+					if buffered && (hb == Concurrent || hb == After) {
+						found = true
+					} else if !buffered && hb == Concurrent {
+						found = true
+					}
 				}
 			}
 		}
