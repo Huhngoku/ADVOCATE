@@ -13,8 +13,13 @@ const (
 	SendOnClosed BugType = iota
 	RecvOnClosed
 	DoneBeforeAdd
+	SelectWithoutPartner
+
+	ConcurrentRecv
+
 	MixedDeadlock
 	CyclicDeadlock
+
 	RoutineLeakPartner   // chan and select
 	RoutineLeakNoPartner // chan and select
 	RoutineLeakMutex
@@ -52,6 +57,14 @@ func (b Bug) ToString() string {
 		typeStr = "Possible negative waitgroup counter:"
 		arg1Str = "done: "
 		arg2Str = "add/done: "
+	case ConcurrentRecv:
+		typeStr = "Found concurrent Recv on same channel:"
+		arg1Str = "recv: "
+		arg2Str = "recv: "
+	case SelectWithoutPartner:
+		typeStr = "Possible select case without partner:"
+		arg1Str = "select: "
+		arg2Str = ""
 	case MixedDeadlock:
 		typeStr = "Potential mixed deadlock:"
 		arg1Str = "lock: "
@@ -124,6 +137,10 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = RecvOnClosed
 	case "Possible negative waitgroup counter:":
 		bug.Type = DoneBeforeAdd
+	case "Possible select case without partner:":
+		bug.Type = SelectWithoutPartner
+	case "Found concurrent Recv on same channel:":
+		bug.Type = ConcurrentRecv
 	case "Potential mixed deadlock:":
 		bug.Type = MixedDeadlock
 	case "Potential cyclic deadlock:":

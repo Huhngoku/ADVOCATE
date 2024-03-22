@@ -26,7 +26,8 @@ type bufferedVC struct {
  * 	vc (map[int]VectorClock): the current vector clocks
  *  tPost (int): the timestamp at the end of the event
  */
-func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv string, vc map[int]VectorClock, tPost int) {
+func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
+	tIDRecv string, vc map[int]VectorClock, tPost int) {
 	if tPost != 0 {
 		if analysisCases["concurrentRecv"] {
 			checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
@@ -50,12 +51,14 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string, tIDRecv stri
 	}
 
 	if analysisCases["mixedDeadlock"] {
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[routSend], tIDSend, true, false)
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[routRecv], tIDRecv, false, false)
 		checkForMixedDeadlock(routSend, routRecv, tIDSend, tIDRecv)
 	}
 
 	if analysisCases["selectWithoutPartner"] {
-		checkForSelectCaseWithoutPartnerChannel(id, tIDSend, true, false, vc[routSend])
-		checkForSelectCaseWithoutPartnerChannel(id, tIDRecv, false, false, vc[routRecv])
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[routSend], tIDSend, true, false)
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[routRecv], tIDRecv, false, false)
 	}
 
 	if analysisCases["leak"] {
@@ -115,12 +118,13 @@ func Send(rout int, id int, oID int, size int, tID string,
 	vc[rout] = vc[rout].Inc(rout)
 
 	if analysisCases["selectWithoutPartner"] {
-		checkForSelectCaseWithoutPartnerChannel(id, tID, true, true, vc[rout])
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[rout], tID, true, true)
 	}
 
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 0)
 	}
+
 }
 
 /*
@@ -186,14 +190,13 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
 
 	vc[rout] = vc[rout].Inc(rout)
 
+	if analysisCases["selectWithoutPartner"] {
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[rout], tID, true, true)
+	}
+
 	if analysisCases["mixedDeadlock"] {
 		checkForMixedDeadlock(routSend, rout, tIDSend, tID)
 	}
-
-	if analysisCases["selectWithoutPartner"] {
-		checkForSelectCaseWithoutPartnerChannel(id, tID, false, true, vc[rout])
-	}
-
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
 	}
@@ -226,6 +229,10 @@ func Close(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
 
 	vc[rout] = vc[rout].Inc(rout)
 
+	if analysisCases["selectWithoutPartner"] {
+		CheckForSelectCaseWithoutPartnerClose(id, vc[rout])
+	}
+
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 2)
 	}
@@ -239,8 +246,10 @@ func Close(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
  * 	tID (string): the position of the close in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  tPost (int): the timestamp at the end of the event
+ *  buffered (bool): true if the channel is buffered
  */
-func RecvC(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
+func RecvC(rout int, id int, tID string, vc map[int]VectorClock, tPost int,
+	buffered bool) {
 	if tPost == 0 {
 		return
 	}
@@ -250,10 +259,13 @@ func RecvC(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
 	vc[rout] = vc[rout].Sync(closeData[id].vc)
 	vc[rout] = vc[rout].Inc(rout)
 
+	if analysisCases["selectWithoutPartner"] {
+		CheckForSelectCaseWithoutPartnerChannel(id, vc[rout], tID, false, buffered)
+	}
+
 	if analysisCases["mixedDeadlock"] {
 		checkForMixedDeadlock(closeRout[id], rout, closeData[id].tID, tID)
 	}
-
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
 	}

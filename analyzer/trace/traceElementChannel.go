@@ -301,7 +301,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVCHb, ch.tPost)
+						currentVCHb, ch.tPost, false)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 				}
@@ -322,7 +322,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
 					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVCHb, ch.tPost)
+						currentVCHb, ch.tPost, false)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 				}
@@ -344,7 +344,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			if ch.cl { // recv on closed channel
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.ToString(), logging.DEBUG)
-				analysis.RecvC(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost)
+				analysis.RecvC(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost, true)
 			} else {
 				logging.Debug("Update vector clock of channel operation: "+
 					ch.ToString(), logging.DEBUG)
