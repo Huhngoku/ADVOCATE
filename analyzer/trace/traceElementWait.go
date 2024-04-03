@@ -219,9 +219,13 @@ func (wa *TraceElementWait) updateVectorClock() {
 	case ChangeOp:
 		analysis.Change(wa.routine, wa.id, wa.delta, wa.tID, currentVCHb)
 	case WaitOp:
-		analysis.Wait(wa.routine, wa.id, currentVCHb)
+		analysis.Wait(wa.routine, wa.id, wa.tID, currentVCHb)
 	default:
 		err := "Unknown operation on wait group: " + wa.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+}
+
+func (wa *TraceElementWait) GetDelta() int {
+	return wa.delta
 }

@@ -4,6 +4,7 @@ import (
 	"analyzer/bugs"
 	"analyzer/trace"
 	"errors"
+	"sort"
 )
 
 /*
@@ -111,27 +112,30 @@ func rewriteClosedChannel(bug bugs.Bug) error {
 }
 
 /*
- * Create a new trace from the given bug, given TraceElement2 has multiple elements
- * In this case, all elements in TraceElement2 should come directly after TraceElement1
- * The necessary before order should be kept
+ * Create a new trace for a negative wait group counter (done before add)
  * Args:
  *   bug (Bug): The bug to create a trace for
  */
 func rewriteWaitGroup(bug bugs.Bug) {
-	// get the smallest tSort in TraceElement1 or TraceElement2
-	minTSort := (*bug.TraceElement1).GetTSort()
-	maxTSort := (*bug.TraceElement1).GetTSort()
+	// get all concurrent add and done operations
+	ops := make(map[int][]*trace.TraceElementWait, 0)
+
 	for _, elem := range bug.TraceElement2 {
 		if elem == nil {
 			continue
 		}
-		if (*elem).GetTSort() < minTSort {
-			minTSort = (*elem).GetTSort()
-		}
-		if (*elem).GetTSort() > maxTSort {
-			maxTSort = (*elem).GetTSort()
-		}
+
+		routine := (*elem).GetRoutine()
+
+		ops[routine] = append(ops[routine], (*elem).(*trace.TraceElementWait))
+
 	}
-	trace.ShiftTrace(minTSort, maxTSort-minTSort+1)
-	(*bug.TraceElement1).SetTSortWithoutNotExecuted(minTSort) // TODO: rewrite based on tpre
+
+	// sort adds and dones by time
+	for _, add := range ops {
+		sort.Slice(add, func(i, j int) bool {
+			return add[i].GetTSort() > add[j].GetTSort()
+		})
+	}
+
 }

@@ -30,7 +30,7 @@ func Change(routine int, id int, delta int, tID string, vc map[int]VectorClock) 
 	vc[routine] = vc[routine].Inc(routine)
 
 	if analysisCases["doneBeforeAdd"] {
-		checkForDoneBeforeAdd(routine, id, delta, tID, vc[routine])
+		checkForDoneBeforeAddChange(routine, id, delta, tID, vc[routine])
 	}
 }
 
@@ -41,7 +41,7 @@ func Change(routine int, id int, delta int, tID string, vc map[int]VectorClock) 
  *   id (int): The id of the wait group
  *   vc (*map[int]VectorClock): The vector clocks
  */
-func Wait(routine int, id int, vc map[int]VectorClock) {
+func Wait(routine int, id int, tID string, vc map[int]VectorClock) {
 	newWg(id, vc[id].size)
 	vc[routine] = vc[routine].Sync(wg[id])
 	vc[routine] = vc[routine].Inc(routine)

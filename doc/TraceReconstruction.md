@@ -205,3 +205,12 @@ replay, by adding a stop character X.
 ### Close on closed channel and actual send/recv on closed
 We only record actually executed operations. For close on closed, we can therefore only detect actually occurring close on close. Reordering is therefore not necessary.
 The same is true for actual send/recv on closed
+
+
+## Done before add
+We get the done before add error, if for a done operation, there 
+are more done operations, that are before or concurrent to the wait operation,
+then there are add operations, that are before the done operation.
+To trigger an negative wait counter, we need to move as many add operations
+after and as many done operations before the done operation.
+CONT

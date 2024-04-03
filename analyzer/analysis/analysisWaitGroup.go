@@ -5,7 +5,7 @@ import (
 	"sort"
 )
 
-func checkForDoneBeforeAdd(routine int, id int, delta int, pos string, vc VectorClock) {
+func checkForDoneBeforeAddChange(routine int, id int, delta int, pos string, vc VectorClock) {
 	if delta > 0 {
 		checkForDoneBeforeAddAdd(routine, id, pos, vc, delta)
 	} else if delta < 0 {
@@ -43,19 +43,6 @@ func checkForDoneBeforeAddDone(routine int, id int, pos string, vc VectorClock) 
 	// add the vector clock and position to the list
 	doneWait[id][routine] = append(doneWait[id][routine], VectorClockTID{vc.Copy(), pos})
 
-	// for now, test new vector clock against all add vector clocks
-	// TODO: make this more efficient
-	// for r, vcs := range addVcs[id] {
-	// 	for i, vcAdd := range vcs {
-	// 		happensBefore := GetHappensBefore(vcAdd, vc)
-	// 		if happensBefore == Concurrent {
-	// 			found := "Found concurrent Add and Done on same waitgroup:\n"
-	// 			found += "\tdone: " + donePos[id][routine][len(donePos[id][routine])-1] + "\n"
-	// 			found += "\tadd: " + addPos[id][r][i]
-	// 			logging.Result(found, logging.CRITICAL)
-	// 		}
-	// 	}
-	// }
 }
 
 /*
@@ -68,8 +55,8 @@ func checkForDoneBeforeAddDone(routine int, id int, pos string, vc VectorClock) 
  */
 func CheckForDoneBeforeAdd() {
 	for id, vcs := range doneWait { // for all waitgroups id
-		for routine, vcs := range vcs { // for all routines
-			for op, vcDone := range vcs { // for all done operations
+		for routine, vc := range vcs { // for all routines
+			for op, vcDone := range vc { // for all done operations
 				// count the number of add operations a that happen before or concurrent to the done operation
 				countAdd := 0
 				addPosList := []string{}
@@ -86,7 +73,6 @@ func CheckForDoneBeforeAdd() {
 				// count the number of done operations d that happen before the done operation
 				countDone := 1 // self
 				donePosListConc := []string{}
-				donePosListBefore := []string{}
 				for routine2, vcs := range doneWait[id] { // for all routines
 					for op2, vcDone2 := range vcs { // for all done operations
 						if routine2 == routine && op2 == op {
@@ -95,7 +81,6 @@ func CheckForDoneBeforeAdd() {
 						happensBefore := GetHappensBefore(vcDone2.vc, vcDone.vc)
 						if happensBefore == Before {
 							countDone++
-							donePosListBefore = append(donePosListBefore, doneWait[id][routine2][op2].tID)
 						} else if happensBefore == Concurrent {
 							countDone++
 							donePosListConc = append(donePosListConc, doneWait[id][routine2][op2].tID)
@@ -104,45 +89,30 @@ func CheckForDoneBeforeAdd() {
 				}
 
 				if countAdd < countDone {
-					createDoneBeforeAddMessage(id, routine, op, addPosList, donePosListConc, donePosListBefore)
+					createDoneBeforeAddMessage(id, routine, op, addPosList, donePosListConc)
 				}
 			}
 		}
 	}
 }
 
-func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string, donePosListConc []string, donePosListBefore []string) {
-	uniquePos := make(map[string]bool)
+func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string, donePosListConc []string) {
 	sort.Strings(addPosList)
 	sort.Strings(donePosListConc)
-	sort.Strings(donePosListBefore)
+
+	// add/done contains the add and done, that are concurrent to the done operation
+	// add and done is separated by a #
 
 	found := "Possible negative waitgroup counter:\n"
 	found += "\tdone: " + doneWait[id][routine][op].tID + "\n"
-	found += "\tdone/add: "
+	found += "\tadd/done: "
 
 	for _, pos := range donePosListConc {
-		if uniquePos[pos] {
-			continue
-		}
-		found += "\n\t\t" + pos
-		uniquePos[pos] = true
-	}
-
-	for _, pos := range donePosListBefore {
-		if uniquePos[pos] {
-			continue
-		}
-		found += "\n\t\t" + pos
-		uniquePos[pos] = true
+		found += pos + ";"
 	}
 
 	for _, pos := range addPosList {
-		if uniquePos[pos] {
-			continue
-		}
-		found += "\n\t\t" + pos
-		uniquePos[pos] = true
-	}
+		found += pos + ";"
+	
 	logging.Result(found, logging.CRITICAL)
 }
