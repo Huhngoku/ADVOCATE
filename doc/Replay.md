@@ -223,6 +223,11 @@ select {
 ```
 this will still select one of this cases by random. To make sure, that those select statements will also be replayed correctly, we use the internal index `casi` for the cases, used in the implementation of the select statement. This case is not identical to the ordering of the select cases but is still deterministic. For this reason it is possible to use this index as an identifier for a specific case. From this, when the select determines, if a select case is usable, we reject every case, for which the index is not correct.
 
+## Disable
+If the (rewritten) trace contains a stop signal `X`, the replay is disabled.
+This means, the the program is from this moment on allowed, to run freely 
+without interference.
+
 ## Timeout
 
 For multiple reasons, including 

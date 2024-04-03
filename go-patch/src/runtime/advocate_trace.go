@@ -41,6 +41,8 @@ const (
 	OperationCondWait
 
 	OperationAtomic
+
+	OperationDisableReplay
 )
 
 type prePost int // enum for pre/post

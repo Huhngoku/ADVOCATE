@@ -181,3 +181,27 @@ Answer to the above question:
 Assuming the program is race-free, we can argue that the reordering is valid.
 Rigorously formalizing the statement might be quite a challenge though.
 ~~~~~~~~
+
+
+## Reconstructions for the different analysis cases
+
+### Send/receive on closed channel
+We assume, that the send/recv on the closed channel did not actually occur 
+in the program run. Let c be the close and a the send or receive operation.
+The global trace then has the form:
+~~~~
+T = T1 ++ [a] ++ T2 ++ [c] ++ T3
+~~~~~~
+We now, that a, c and all Elements in T2 are concurrent. Otherwise, a potential send/recv on close would not be possible. We can therefor reorder the trace in the following manner: 
+~~~~
+T = T1 ++ [c, a, X]
+~~~~~~
+For send on close, this should lead to a crash of the program. For recv on close, it will probably lead to a different execution of program after the 
+object. We therefor disable the replay after c and a have been executed and 
+let the rest of the program run freely. To tell the replay to disable the 
+replay, by adding a stop character X.
+
+
+### Close on closed channel
+We only record actually executed operations. We can therefore only detect
+actually occurring close on close. Reordering is therefore not necessary.

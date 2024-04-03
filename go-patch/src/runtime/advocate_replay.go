@@ -93,7 +93,7 @@ type ReplayElement struct {
 type AdvocateReplayTrace []ReplayElement
 type AdvocateReplayTraces map[uint64]AdvocateReplayTrace // routine -> trace
 
-var replayEnabled bool
+var replayEnabled bool // replay is on
 var replayLock mutex
 var replayDone int
 var replayDoneLock mutex
@@ -165,6 +165,18 @@ func EnableReplay(timeout bool) {
 
 	replayEnabled = true
 	println("Replay enabled\n")
+}
+
+/*
+ * Disable the replay. This is called when a stop character in the trace is
+ * encountered.
+ */
+func DisableReplay() {
+	lock(&replayLock)
+	defer unlock(&replayLock)
+
+	replayEnabled = false
+	println("Stop Character encountered.\nRewritten Operation was executed.\nReplay disabled\n")
 }
 
 /*
@@ -293,6 +305,12 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 	for {
 		nextRoutine, next := getNextReplayElement()
 
+		// disable the replay, if the next operation is the disable replay operation
+		if next.Op == OperationDisableReplay {
+			DisableReplay()
+			return false, false, ReplayElement{}
+		}
+
 		// currentRoutine := currentRoutineA.id
 
 		// all elements in the trace have been executed
@@ -309,7 +327,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		// print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
 		// 	"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
 
-		if next.Time != 0 {
+		if next.Time != 0 && !replayEnabled {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
 
@@ -349,8 +367,14 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
  * 	timeoutCounter: the current timeout counter
  * 	file: file in which the operation is executed
  * 	line: line number of the operation
+ * Return:
+ * 	bool: false
  */
-func checkForTimeout(timeoutCounter int, file string, line int) bool {
+func checkForTimeout(timeoutCounter int, file string, line int) {
+	if !replayEnabled {
+		return
+	}
+
 	messageCauses := "Possible causes are:\n"
 	messageCauses += "    - The program was altered between recording and replay\n"
 	messageCauses += "    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n"
@@ -391,11 +415,13 @@ func checkForTimeout(timeoutCounter int, file string, line int) bool {
 			panic("ReplayError: Replay stuck")
 		}
 	}
-
-	return false
 }
 
 func checkForTimeoutNoOperation() {
+	if !replayEnabled {
+		return
+	}
+
 	waitTime := 500 // approx. 10s
 	warningMessage := "No traced operation has been executed for approx. 10s.\n"
 	warningMessage += "This can be caused by a stuck replay.\n"

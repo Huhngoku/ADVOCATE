@@ -276,6 +276,8 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				fields := strings.Split(elem, ",")
 				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
+				case "X": // disable replay
+					runtime.OperationDisableReplay
 				case "G":
 					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])
