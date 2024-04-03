@@ -33,7 +33,7 @@ func main() {
 		"\tc: Close of closed channel\n"+
 		"\tb: Concurrent receive on channel\n"+
 		"\tl: Leaking routine\n"+
-		"\tu: Select case without partner (not implemented yet)\n"+
+		"\tu: Select case without partner\n"+
 		"\tc: Cyclic deadlock\n",
 	// "\tm: Mixed deadlock\n"
 	)

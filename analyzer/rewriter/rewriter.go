@@ -18,13 +18,15 @@ func RewriteTrace(bug bugs.Bug) error {
 	switch bug.Type {
 	case bugs.SendOnClosed:
 		println("Start rewriting trace for send on closed channel...")
-		err = rewriteTraceSingle(bug)
+		err = rewriteClosedChannel(bug)
 	case bugs.RecvOnClosed:
 		println("Start rewriting trace for receive on closed channel...")
-		err = rewriteTraceSingle(bug)
+		err = rewriteClosedChannel(bug)
+	case bugs.CloseOnClosed:
+		println("Only actual close on close can be detected. Therefor no rewrite is needed.")
 	case bugs.DoneBeforeAdd:
 		println("Start rewriting trace for negative waitgroup counter...")
-		rewriteTraceMultiple(bug)
+		rewriteWaitGroup(bug)
 	case bugs.SelectWithoutPartner:
 		err = errors.New("Rewriting trace for select without partner is not implemented yet")
 		// TODO: implement
@@ -68,7 +70,7 @@ func RewriteTrace(bug bugs.Bug) error {
  * Returns:
  *   error: An error if the trace could not be created
  */
-func rewriteTraceSingle(bug bugs.Bug) error {
+func rewriteClosedChannel(bug bugs.Bug) error {
 	if bug.TraceElement1 == nil {
 		return errors.New("TraceElement1 is nil")
 	}
@@ -104,7 +106,7 @@ func rewriteTraceSingle(bug bugs.Bug) error {
  * Args:
  *   bug (Bug): The bug to create a trace for
  */
-func rewriteTraceMultiple(bug bugs.Bug) {
+func rewriteWaitGroup(bug bugs.Bug) {
 	// get the smallest tSort in TraceElement1 or TraceElement2
 	minTSort := (*bug.TraceElement1).GetTSort()
 	maxTSort := (*bug.TraceElement1).GetTSort()
