@@ -84,7 +84,7 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 		tID:     tIDStr,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -179,7 +179,7 @@ func (co *TraceElementCond) SetTsort(tSort int) {
  * Args:
  *   tsort (int): The timer of the element
  */
-func (co *TraceElementCond) SetTsortWithoutNotExecuted(tSort int) {
+func (co *TraceElementCond) SetTSortWithoutNotExecuted(tSort int) {
 	if co.opC == WaitCondOp {
 		if co.tPost != 0 {
 			co.tPost = tSort

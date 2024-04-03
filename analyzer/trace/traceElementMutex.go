@@ -120,7 +120,7 @@ func AddTraceElementMutex(routine int, tPre string,
 		tID:     tIDStr,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -205,7 +205,7 @@ func (mu *TraceElementMutex) SetTsort(tSort int) {
  * Args:
  *   tsort (int): The timer of the element
  */
-func (mu *TraceElementMutex) SetTsortWithoutNotExecuted(tSort int) {
+func (mu *TraceElementMutex) SetTSortWithoutNotExecuted(tSort int) {
 	if mu.tPost != 0 {
 		mu.tPost = tSort
 	}

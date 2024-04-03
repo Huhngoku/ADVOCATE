@@ -99,7 +99,7 @@ func AddTraceElementWait(routine int, tpre string,
 		tID:     pos + "@" + tpre,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -184,7 +184,7 @@ func (wa *TraceElementWait) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (wa *TraceElementWait) SetTsortWithoutNotExecuted(tSort int) {
+func (wa *TraceElementWait) SetTSortWithoutNotExecuted(tSort int) {
 	if wa.tPost != 0 {
 		wa.tPost = tSort
 	}

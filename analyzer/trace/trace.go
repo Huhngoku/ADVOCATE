@@ -33,7 +33,7 @@ var (
 * Returns:
 *   error: An error if the routine does not exist
  */
-func addElementToTrace(element TraceElement) error {
+func AddElementToTrace(element TraceElement) error {
 	routine := element.GetRoutine()
 	traces[routine] = append(traces[routine], element)
 	return nil
@@ -126,25 +126,24 @@ func GetTraceElementFromTID(tID string) (*TraceElement, error) {
 }
 
 /*
- * Shorten the trace of the given routine by removing all elements after
- * the given element
+ * Shorten the trace by removing all elements after the given time
  * Args:
- *   routine (int): The routine to shorten
- *   element (traceElement): The element to shorten the trace after
- * Returns:
- *   error: An error if the routine does not exist
+ *   time (int): The time to shorten the trace to
+ *   incl (bool): True if an element with the same time should be included
  */
-func ShortenTrace(routine int, element TraceElement) error {
-	if routine != element.GetRoutine() {
-		return errors.New("Routine of element does not match routine")
-	}
-	for index, elem := range traces[routine] {
-		if elem.GetTSort() == element.GetTSort() {
-			traces[routine] = traces[routine][:index+1]
-			break
+func ShortenTrace(time int, incl bool) {
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if incl && elem.GetTSort() > time {
+				traces[routine] = traces[routine][:index]
+				break
+			}
+			if !incl && elem.GetTSort() >= time {
+				traces[routine] = traces[routine][:index]
+				break
+			}
 		}
 	}
-	return nil
 }
 
 /*
@@ -186,7 +185,7 @@ func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 // 	for routine, localTrace := range traces {
 // 		for _, elem := range localTrace {
 // 			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
-// 				elem.SetTsortWithoutNotExecuted(elem.GetTSort() + steps)
+// 				elem.SetTSortWithoutNotExecuted(elem.GetTSort() + steps)
 // 			}
 // 		}
 // 	}
@@ -382,7 +381,7 @@ func ShiftTrace(startTSort int, shift int) {
 	for routine, trace := range traces {
 		for index, elem := range trace {
 			if elem.GetTSort() >= startTSort {
-				traces[routine][index].SetTsortWithoutNotExecuted(elem.GetTSort() + shift)
+				traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 			}
 		}
 	}

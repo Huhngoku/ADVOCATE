@@ -51,7 +51,7 @@ func AddTraceElementFork(routine int, tPost string, id string, pos string) error
 		pos:     pos,
 		tID:     tIDStr,
 	}
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -132,7 +132,7 @@ func (fo *TraceElementFork) SetTsort(tpost int) {
  * Args:
  *   tsort (int): The timer of the element
  */
-func (fo *TraceElementFork) SetTsortWithoutNotExecuted(tsort int) {
+func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tsort int) {
 	if fo.tPost != 0 {
 		fo.tPost = tsort
 	}

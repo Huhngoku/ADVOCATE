@@ -73,7 +73,7 @@ func AddTraceElementOnce(routine int, tPre string,
 		tID:     tIDStr,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -158,7 +158,7 @@ func (on *TraceElementOnce) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (on *TraceElementOnce) SetTsortWithoutNotExecuted(tSort int) {
+func (on *TraceElementOnce) SetTSortWithoutNotExecuted(tSort int) {
 	if on.tPost != 0 {
 		on.tPost = tSort
 	}

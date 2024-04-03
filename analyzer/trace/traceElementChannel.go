@@ -124,7 +124,7 @@ func AddTraceElementChannel(routine int, tPre string,
 		tID:     tIDStr,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -210,7 +210,7 @@ func (ch *TraceElementChannel) SetTsort(tpost int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (ch *TraceElementChannel) SetTsortWithoutNotExecuted(tSort int) {
+func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tSort int) {
 	if ch.tPost != 0 {
 		ch.tPre = tSort
 		ch.tPost = tSort

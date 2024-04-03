@@ -76,7 +76,7 @@ func AddTraceElementAtomic(routine int, tpost string,
 		opA:     opAInt,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -157,7 +157,7 @@ func (at *TraceElementAtomic) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementAtomic) SetTsortWithoutNotExecuted(tSort int) {
+func (at *TraceElementAtomic) SetTSortWithoutNotExecuted(tSort int) {
 	if at.tPost != 0 {
 		at.tPost = tSort
 	}

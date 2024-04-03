@@ -7,7 +7,7 @@ type TraceElement interface {
 	getTpost() int
 	GetTSort() int
 	SetTsort(tsort int)
-	SetTsortWithoutNotExecuted(tsort int)
+	SetTSortWithoutNotExecuted(tsort int)
 	GetRoutine() int
 	GetPos() string
 	GetTID() string

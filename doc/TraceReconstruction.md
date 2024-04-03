@@ -185,7 +185,7 @@ Rigorously formalizing the statement might be quite a challenge though.
 
 ## Reconstructions for the different analysis cases
 
-### Send/receive on closed channel
+### Potential send/receive on closed channel
 We assume, that the send/recv on the closed channel did not actually occur 
 in the program run. Let c be the close and a the send or receive operation.
 The global trace then has the form:
@@ -202,6 +202,6 @@ let the rest of the program run freely. To tell the replay to disable the
 replay, by adding a stop character X.
 
 
-### Close on closed channel
-We only record actually executed operations. We can therefore only detect
-actually occurring close on close. Reordering is therefore not necessary.
+### Close on closed channel and actual send/recv on closed
+We only record actually executed operations. For close on closed, we can therefore only detect actually occurring close on close. Reordering is therefore not necessary.
+The same is true for actual send/recv on closed

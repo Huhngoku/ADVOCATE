@@ -157,7 +157,7 @@ func AddTraceElementSelect(routine int, tPre string,
 		println(elem.ToString())
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
 
 /*
@@ -251,7 +251,7 @@ func (se *TraceElementSelect) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (se *TraceElementSelect) SetTsortWithoutNotExecuted(tSort int) {
+func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
 	if se.tPost != 0 {
 		se.tPost = tSort
 	}

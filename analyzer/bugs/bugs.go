@@ -11,7 +11,8 @@ type BugType int
 
 const (
 	SendOnClosed BugType = iota
-	RecvOnClosed
+	PosRecvOnClosed
+	RecvOnClosed // actual send on closed
 	CloseOnClosed
 	DoneBeforeAdd
 	SelectWithoutPartner
@@ -50,8 +51,12 @@ func (b Bug) ToString() string {
 		typeStr = "Possible Send on closed channel:"
 		arg1Str = "close: "
 		arg2Str = "send: "
-	case RecvOnClosed:
+	case PosRecvOnClosed:
 		typeStr = "Possible Receive on closed channel:"
+		arg1Str = "close: "
+		arg2Str = "recv: "
+	case RecvOnClosed:
+		typeStr = "Found receive on closed channel:"
 		arg1Str = "close: "
 		arg2Str = "recv: "
 	case CloseOnClosed:
@@ -139,6 +144,8 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	case "Possible send on closed channel:":
 		bug.Type = SendOnClosed
 	case "Possible receive on closed channel:":
+		bug.Type = PosRecvOnClosed
+	case "Found receive on closed channel:":
 		bug.Type = RecvOnClosed
 	case "Found close on closed channel:":
 		bug.Type = CloseOnClosed
