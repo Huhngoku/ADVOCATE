@@ -241,7 +241,7 @@ func (se *TraceElementSelect) GetTID() string {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (se *TraceElementSelect) SetTsort(tSort int) {
+func (se *TraceElementSelect) SetTSort(tSort int) {
 	se.tPost = tSort
 }
 

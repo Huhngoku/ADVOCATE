@@ -216,6 +216,8 @@ Also include the following import:
 ```
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
 
+The trace files must be in the `/rewritten_trace` or `/trace` folder. If both folder exist, `/rewritten_trace` is used.
+
 It is important that the program is not changed between recording and replay.
 This is especially true for the positions of operations on the code. For this 
 reason it can be beneficial to add the following header, instead the two separate 

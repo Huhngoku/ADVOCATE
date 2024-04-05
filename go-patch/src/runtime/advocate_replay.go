@@ -55,6 +55,10 @@ func (ro Operation) ToString() string {
 		return "OperationCondBroadcast"
 	case OperationCondWait:
 		return "OperationCondWait"
+	case OperationReplayEnd:
+		return "OperationReplayEnd"
+	case OperationReplayStart:
+		return "OperationReplayStart"
 	default:
 		return "Unknown"
 	}
@@ -64,7 +68,7 @@ func (ro Operation) ToString() string {
  * The replay data structure.
  * The replay data structure is used to store the trace of the program.
  * op: identifier of the operation
- * time: time (tpre) of the operation
+ * time: int (tpre) of the operation
  * file: file in which the operation is executed
  * line: line number of the operation
  * blocked: true if the operation is blocked (never finised, tpost=0), false otherwise
@@ -305,9 +309,16 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 	for {
 		nextRoutine, next := getNextReplayElement()
 
+		// print message if the next operation is the next operation is the start of the important replay part
+		if next.Op == OperationReplayStart {
+			println("Start executing targetet operation")
+			foundReplayElement(nextRoutine)
+		}
+
 		// disable the replay, if the next operation is the disable replay operation
-		if next.Op == OperationDisableReplay {
+		if next.Op == OperationReplayEnd {
 			DisableReplay()
+			println("\nTargetet operation has finished executing")
 			return false, false, ReplayElement{}
 		}
 
@@ -316,7 +327,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		// all elements in the trace have been executed
 		if nextRoutine == -1 {
 			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
-			replayEnabled = false
+			DisableReplay()
 			return false, false, ReplayElement{}
 		}
 
@@ -503,14 +514,14 @@ func getNextReplayElement() (int, ReplayElement) {
 
 	routine := -1
 	// set mintTime to max int
-	minTime := int(^uint(0) >> 1)
+	var minTime int = -1
 
 	for id, trace := range replayData {
 		if len(trace) == 0 {
 			continue
 		}
 		elem := trace[0]
-		if elem.Time < minTime {
+		if minTime == -1 || elem.Time < minTime {
 			minTime = elem.Time
 			routine = int(id)
 		}

@@ -15,7 +15,7 @@ C := "C,"tpre","tpost","id","opC","cl",oId","qSize","pos        (element for ope
 S := "S,"tpre","tpost","id","cases","pos                        (element for select)
 O := "O,"tpre",tpost","id","suco","pos                          (element for once)
 N := "N,"tpre",tpost","id","opN","pos                           (element for conditional)
-X := "X,"tpre"                                                  (stop signal, only in rewritten trace)
+X := "X,"tpre","se                                              (start/stop signal, only in rewritten trace)
 tpre := ℕ                                                       (timer when the operation is started)
 tpost := ℕ                                                      (timer when the operation has finished)
 addr := ℕ                                                       (pointer to the atomic variable, used as id)
@@ -39,6 +39,7 @@ case := "C."tpre"."tpost"."id"."opC"."cl".oId"."qSize" | "d" | "D"     (case in 
 suco := t | f                                                   (true if function in once was executed, false if not)
 cId := ℕ                                                        (id of channel in select case) 
 opN := "W" | "S" | "B"                                          (operation for conditional: Wait, Signal, Broadcast)
+se := "s" | "e"                                                 (signalizes wether X is start or end)
 ```
 
 For each trace a separate file is stored.

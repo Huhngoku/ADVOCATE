@@ -8,19 +8,23 @@ import (
  * Struct to save an atomic event in the trace
  * Fields:
  *   tpost (int): The timestamp of the event
+ *   start (int): True if before the important event, false if after
  */
-type TraceElementReplayStop struct {
+type TraceElementReplay struct {
 	tPost int
+	start bool
 }
 
 /*
  * Create a new atomic trace element
  * Args:
  *   tpost (string): The timestamp of the event
+ *   start (int): True if before the important event, false if after
  */
-func AddTraceElementReplayStop(tPost int) error {
-	elem := TraceElementAtomic{
+func AddTraceElementReplay(tPost int, start bool) error {
+	elem := TraceElementReplay{
 		tPost: tPost,
+		start: start,
 	}
 
 	return AddElementToTrace(&elem)
@@ -31,7 +35,7 @@ func AddTraceElementReplayStop(tPost int) error {
  * Returns:
  *   int: The id of the element
  */
-func (at *TraceElementReplayStop) GetID() int {
+func (at *TraceElementReplay) GetID() int {
 	return 0
 }
 
@@ -40,7 +44,7 @@ func (at *TraceElementReplayStop) GetID() int {
  * Returns:
  *   int: The routine of the element
  */
-func (at *TraceElementReplayStop) GetRoutine() int {
+func (at *TraceElementReplay) GetRoutine() int {
 	return 1
 }
 
@@ -48,7 +52,7 @@ func (at *TraceElementReplayStop) GetRoutine() int {
  * Get the tpost of the element.
  *   int: The tpost of the element
  */
-func (at *TraceElementReplayStop) getTpre() int {
+func (at *TraceElementReplay) getTpre() int {
 	return at.tPost
 }
 
@@ -57,7 +61,7 @@ func (at *TraceElementReplayStop) getTpre() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *TraceElementReplayStop) getTpost() int {
+func (at *TraceElementReplay) getTpost() int {
 	return at.tPost
 }
 
@@ -66,7 +70,7 @@ func (at *TraceElementReplayStop) getTpost() int {
  * Returns:
  *   int: The timer of the element
  */
-func (at *TraceElementReplayStop) GetTSort() int {
+func (at *TraceElementReplay) GetTSort() int {
 	return at.tPost
 }
 
@@ -75,7 +79,7 @@ func (at *TraceElementReplayStop) GetTSort() int {
  * Returns:
  *   string: The file of the element
  */
-func (at *TraceElementReplayStop) GetPos() string {
+func (at *TraceElementReplay) GetPos() string {
 	return ""
 }
 
@@ -84,7 +88,7 @@ func (at *TraceElementReplayStop) GetPos() string {
  * Returns:
  *   string: The tID of the element
  */
-func (at *TraceElementReplayStop) GetTID() string {
+func (at *TraceElementReplay) GetTID() string {
 	return ""
 }
 
@@ -93,7 +97,7 @@ func (at *TraceElementReplayStop) GetTID() string {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementReplayStop) SetTsort(tSort int) {
+func (at *TraceElementReplay) SetTSort(tSort int) {
 	at.tPost = tSort
 }
 
@@ -103,7 +107,7 @@ func (at *TraceElementReplayStop) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementReplayStop) SetTSortWithoutNotExecuted(tSort int) {
+func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
 	at.tPost = tSort
 }
 
@@ -112,14 +116,19 @@ func (at *TraceElementReplayStop) SetTSortWithoutNotExecuted(tSort int) {
  * Returns:
  *   string: The simple string representation of the element
  */
-func (at *TraceElementReplayStop) ToString() string {
-	res := "X," + strconv.Itoa(at.tPost)
+func (at *TraceElementReplay) ToString() string {
+	res := "X," + strconv.Itoa(at.tPost) + ","
+	if at.start {
+		res += "s"
+	} else {
+		res += "e"
+	}
 	return res
 }
 
 /*
  * Update and calculate the vector clock of the element
  */
-func (at *TraceElementReplayStop) updateVectorClock() {
+func (at *TraceElementReplay) updateVectorClock() {
 	// nothing to do
 }

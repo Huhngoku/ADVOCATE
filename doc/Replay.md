@@ -7,16 +7,16 @@ To start the replay, add the following header at the beginning of the
 main function:
 
 ```go
-trace := advocate.ReadTrace("trace.log")
-runtime.EnableReplay(trace)
-defer runtime.WaitForReplayFinish()
+advocate.EnableReplay()
+defer advocate.WaitForReplayFinish()
 ```
 
-`"trace.log"` must be replaced with the path to the trace file. Also include the following imports:
+Include the following imports:
 ```go
 "advocate"
-"runtime"
 ```
+
+The trace files must be in the `/rewritten_trace` or `/trace` folder. If both folder exist, `/rewritten_trace` is used.
 
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath).
 

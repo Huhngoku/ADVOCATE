@@ -54,8 +54,9 @@ func WriteTrace(path string, numberRoutines int) error {
 		}
 	}
 
+	println("Create new trace at " + path + "...")
+
 	// create new folder
-	println("Create new folder " + path + "...")
 	if err := os.Mkdir(path, 0755); err != nil {
 		return err
 	}
@@ -64,9 +65,9 @@ func WriteTrace(path string, numberRoutines int) error {
 	wg := sync.WaitGroup{}
 	for i := 1; i <= numberRoutines; i++ {
 		wg.Add(1)
-		go func() {
+		go func(i int) {
 			fileName := path + "trace_" + strconv.Itoa(i) + ".log"
-			println("Create new file " + fileName + "...")
+			// println("Create new file " + fileName + "...")
 			file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 			if err != nil {
 				panic(err)
@@ -74,7 +75,7 @@ func WriteTrace(path string, numberRoutines int) error {
 			defer file.Close()
 
 			// write trace
-			println("Write trace to " + path + "...")
+			// println("Write trace to " + fileName + "...")
 			trace := trace.GetTraceFromId(i)
 			for index, element := range trace {
 				elementString := element.ToString()
@@ -91,7 +92,7 @@ func WriteTrace(path string, numberRoutines int) error {
 				panic(err)
 			}
 			wg.Done()
-		}()
+		}(i)
 	}
 	wg.Wait()
 	println("Trace written")

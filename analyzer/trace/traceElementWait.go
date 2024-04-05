@@ -174,7 +174,7 @@ func (wa *TraceElementWait) GetTID() string {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (wa *TraceElementWait) SetTsort(tSort int) {
+func (wa *TraceElementWait) SetTSort(tSort int) {
 	wa.tPost = tSort
 }
 

@@ -147,7 +147,7 @@ func (at *TraceElementAtomic) GetTID() string {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementAtomic) SetTsort(tSort int) {
+func (at *TraceElementAtomic) SetTSort(tSort int) {
 	at.tPost = tSort
 }
 

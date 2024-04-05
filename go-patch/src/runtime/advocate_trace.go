@@ -42,7 +42,8 @@ const (
 
 	OperationAtomic
 
-	OperationDisableReplay
+	OperationReplayStart
+	OperationReplayEnd
 )
 
 type prePost int // enum for pre/post

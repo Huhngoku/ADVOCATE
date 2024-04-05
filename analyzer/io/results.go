@@ -83,4 +83,5 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 		println("Rewrite needed.")
 		return false, bug, nil
 	}
+
 }

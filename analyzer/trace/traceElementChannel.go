@@ -197,9 +197,9 @@ func (ch *TraceElementChannel) GetTID() string {
 /*
  * Set the timer, that is used for the sorting of the trace
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
-func (ch *TraceElementChannel) SetTsort(tpost int) {
+func (ch *TraceElementChannel) SetTSort(tpost int) {
 	ch.tPre = tpost
 	ch.tPost = tpost
 }

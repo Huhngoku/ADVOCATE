@@ -10,10 +10,10 @@ import (
 )
 
 // enum for opM
-type opMutex int
+type OpMutex int
 
 const (
-	LockOp opMutex = iota
+	LockOp OpMutex = iota
 	RLockOp
 	TryLockOp
 	TryRLockOp
@@ -41,7 +41,7 @@ type TraceElementMutex struct {
 	tPost   int
 	id      int
 	rw      bool
-	opM     opMutex
+	opM     OpMutex
 	suc     bool
 	pos     string
 	tID     string
@@ -83,7 +83,7 @@ func AddTraceElementMutex(routine int, tPre string,
 		rwBool = true
 	}
 
-	var opMInt opMutex
+	var opMInt OpMutex
 	switch opM {
 	case "L":
 		opMInt = LockOp
@@ -193,9 +193,9 @@ func (mu *TraceElementMutex) GetTID() string {
 /*
  * Set the timer, that is used for the sorting of the trace
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
-func (mu *TraceElementMutex) SetTsort(tSort int) {
+func (mu *TraceElementMutex) SetTSort(tSort int) {
 	mu.tPost = tSort
 }
 
@@ -203,12 +203,30 @@ func (mu *TraceElementMutex) SetTsort(tSort int) {
  * Set the timer, that is used for the sorting of the trace, only if the original
  * value was not 0
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
 func (mu *TraceElementMutex) SetTSortWithoutNotExecuted(tSort int) {
 	if mu.tPost != 0 {
 		mu.tPost = tSort
 	}
+}
+
+/*
+ * Get the operation of the element
+ * Returns:
+ *   OpMutex: The operation of the element
+ */
+func (mu *TraceElementMutex) GetOperation() OpMutex {
+	return mu.opM
+}
+
+/*
+ * Get if the element is a lock operation
+ * Returns:
+ *   bool: If the element is a lock operation
+ */
+func (mu *TraceElementMutex) IsLock() bool {
+	return mu.opM == LockOp || mu.opM == RLockOp || mu.opM == TryLockOp || mu.opM == TryRLockOp
 }
 
 /*

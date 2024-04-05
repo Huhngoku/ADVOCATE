@@ -18,6 +18,8 @@ func CreateTraceFromFiles(filePath string) (int, error) {
 	maxTokenSize := 4
 	numberIds := 0
 
+	println("Read trace from " + filePath + "...")
+
 	// traverse all files in the folder
 	files, err := os.ReadDir(filePath)
 	if err != nil {

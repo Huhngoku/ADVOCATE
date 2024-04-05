@@ -165,7 +165,7 @@ func (co *TraceElementCond) GetTID() string {
  *   tSort (int): The timer of the element
  * TODO: check if tPre is correct
  */
-func (co *TraceElementCond) SetTsort(tSort int) {
+func (co *TraceElementCond) SetTSort(tSort int) {
 	if co.opC == WaitCondOp {
 		co.tPost = tSort
 		return
@@ -177,7 +177,7 @@ func (co *TraceElementCond) SetTsort(tSort int) {
  * Set the timer, that is used for the sorting of the trace, only if the original
  * value was not 0
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
 func (co *TraceElementCond) SetTSortWithoutNotExecuted(tSort int) {
 	if co.opC == WaitCondOp {

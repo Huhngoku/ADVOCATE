@@ -49,7 +49,7 @@ func AddEmptyRoutine(routine int) {
 }
 
 /*
- * Sort the trace by tsort
+ * Sort the trace by tSort
  */
 type sortByTSort []TraceElement
 
@@ -129,7 +129,7 @@ func GetTraceElementFromTID(tID string) (*TraceElement, error) {
  * Shorten the trace by removing all elements after the given time
  * Args:
  *   time (int): The time to shorten the trace to
- *   incl (bool): True if an element with the same time should be included
+ *   incl (bool): True if an element with the same time should stay included in the trace
  */
 func ShortenTrace(time int, incl bool) {
 	for routine, trace := range traces {
@@ -146,6 +146,14 @@ func ShortenTrace(time int, incl bool) {
 	}
 }
 
+func ShortenRoutineIndex(routine int, index int, incl bool) {
+	if incl {
+		traces[routine] = traces[routine][:index+1]
+	} else {
+		traces[routine] = traces[routine][:index]
+	}
+}
+
 /*
  * Switch the timer of two elements
  * Args:
@@ -158,12 +166,12 @@ func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 	tSort1 := (*element1).GetTSort()
 	for index, elem := range traces[routine1] {
 		if elem.GetTSort() == (*element1).GetTSort() {
-			traces[routine1][index].SetTsort((*element2).GetTSort())
+			traces[routine1][index].SetTSort((*element2).GetTSort())
 		}
 	}
 	for index, elem := range traces[routine2] {
 		if elem.GetTSort() == (*element2).GetTSort() {
-			traces[routine2][index].SetTsort(tSort1)
+			traces[routine2][index].SetTSort(tSort1)
 			break
 		}
 	}
@@ -377,6 +385,12 @@ func increaseIndex(routine int) {
 	}
 }
 
+/*
+ * Shift all elements with time greater or equal to startTSort by shift
+ * Args:
+ *   startTSort (int): The time to start shifting
+ *   shift (int): The shift
+ */
 func ShiftTrace(startTSort int, shift int) {
 	for routine, trace := range traces {
 		for index, elem := range trace {
@@ -385,4 +399,50 @@ func ShiftTrace(startTSort int, shift int) {
 			}
 		}
 	}
+}
+
+/*
+ * Shift all elements with time greater or equal to startTSort by shift
+ * Only shift back
+ * Args:
+ *   routine (int): The routine to shift
+ *   startTSort (int): The time to start shifting
+ *   shift (int): The shift
+ */
+func ShiftRoutine(routine int, startTSort int, shift int) {
+	if shift <= 0 {
+		return
+	}
+
+	for index, elem := range traces[routine] {
+		if elem.GetTSort() > startTSort {
+			traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
+		}
+	}
+}
+
+/*
+ * Get the partial trace of all element between startTime and endTime incluseve.
+ * Args:
+ *  startTime (int): The start time
+ *  endTime (int): The end time
+ * Returns:
+ *  map[int][]TraceElement: The partial trace
+ */
+func GetPartialTrace(startTime int, endTime int) map[int][]*TraceElement {
+	result := make(map[int][]*TraceElement)
+	println("\n\n")
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if _, ok := result[routine]; !ok {
+				result[routine] = make([]*TraceElement, 0)
+			}
+			time := elem.GetTSort()
+			if time >= startTime && time <= endTime {
+				result[routine] = append(result[routine], &traces[routine][index])
+			}
+		}
+	}
+
+	return result
 }

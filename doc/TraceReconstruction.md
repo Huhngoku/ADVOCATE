@@ -185,6 +185,9 @@ Rigorously formalizing the statement might be quite a challenge though.
 
 ## Reconstructions for the different analysis cases
 
+Note: Different to the recording, the reordered trace can contain float64 
+times.
+
 ### Potential send/receive on closed channel
 We assume, that the send/recv on the closed channel did not actually occur 
 in the program run. Let c be the close and a the send or receive operation.
@@ -194,12 +197,12 @@ T = T1 ++ [a] ++ T2 ++ [c] ++ T3
 ~~~~~~
 We now, that a, c and all Elements in T2 are concurrent. Otherwise, a potential send/recv on close would not be possible. We can therefor reorder the trace in the following manner: 
 ~~~~
-T = T1 ++ [c, a, X]
+T = T1 ++ [X_s, c, a, X_e]
 ~~~~~~
 For send on close, this should lead to a crash of the program. For recv on close, it will probably lead to a different execution of program after the 
 object. We therefor disable the replay after c and a have been executed and 
 let the rest of the program run freely. To tell the replay to disable the 
-replay, by adding a stop character X.
+replay, by adding a stop character X_e.
 
 
 ### Close on closed channel and actual send/recv on closed
@@ -208,9 +211,105 @@ The same is true for actual send/recv on closed
 
 
 ## Done before add
-We get the done before add error, if for a done operation, there 
+We get the done before add error, if for a done operation d in routine r1, there 
 are more done operations, that are before or concurrent to the wait operation,
 then there are add operations, that are before the done operation.
+
 To trigger an negative wait counter, we need to move as many add operations
 after and as many done operations before the done operation.
-CONT
+
+TODO: Continue
+
+## Select without partner
+
+TODO: Implement
+
+## Mixed Deadlock
+
+TODO: Maybe implement
+
+## Cyclick Deadlock
+A cyclic deadlock of only locks can exist, if the lock tree contains a loop.
+
+Lets, as an example assume, the program trace with the mutexes m, n and o had
+the following form:
+~~~
+  T1         T2          T3
+lock(m)
+unlock(m)
+lock(m)
+lock(n)
+unlock(m)
+unlock(n)
+           lock(n)
+           lock(o)
+           unlock(o)
+           unlock(n)
+                       lock(o)
+                       lock(m)
+                       unlock(m)
+                       unlock(o)
+~~~
+Whis would result in the following lock trees:
+~~~
+ T1   T2  T3
+  m   n   o
+  |   |   |
+  n   o   m
+~~~
+which can be connected to a circle as follows:
+~~~
+ T1   T2  T3
+  m   n   o
+/ | / | / |
+| n   o   m
+\--------/
+~~~
+We already get this (ordered) cycle from the analysis (the cycle is ordered in 
+such a way, that the edges inside a routine always go down). We now have to 
+reorder in such a way, that for edges from a to b, where a and b are in different 
+routines, b is run before a. We do this by shifting the timer of all b back,
+until it is greater as a.
+
+For the example we therefor get the the following:
+~~~
+  T1         T2          T3
+lock(m)
+unlock(m)
+lock(m)
+           lock(n)
+lock(n)  
+unlock(m)
+unlock(n)
+                       lock(o)
+           lock(o)     lock(m)
+           unlock(o)   unlock(m)
+           unlock(n)   unlock(o)
+~~~
+
+If this can lead to operations having the same time stamp. In this case, 
+we decide arbitrarily, which operation is executed first. (In practice 
+we set the same timestamp in the rewritten trace and the replay mechanism
+will then select one of them arbitrarily).
+If this is done for all edges, we remove all unlock operations, which 
+do not have a lock operation in the circle behind them in the same routine.
+After that, we add the start and end marker before the first, and after the 
+last lock operation in the cycle.
+Therefore the final rewritten trace will be
+~~~
+  T1         T2          T3
+start()
+lock(m)
+unlock(m)
+lock(m)
+           lock(n)
+lock(n)  
+                       lock(o)
+           lock(o)     lock(m)
+end()
+~~~
+
+## Leaks
+
+TODO: Implement
+

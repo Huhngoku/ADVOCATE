@@ -113,6 +113,7 @@ func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string
 
 	for _, pos := range addPosList {
 		found += pos + ";"
-	
+	}
+
 	logging.Result(found, logging.CRITICAL)
 }

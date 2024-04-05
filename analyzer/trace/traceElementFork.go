@@ -120,9 +120,9 @@ func (fo *TraceElementFork) GetTID() string {
 /*
  * Set the timer, that is used for the sorting of the trace
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
-func (fo *TraceElementFork) SetTsort(tpost int) {
+func (fo *TraceElementFork) SetTSort(tpost int) {
 	fo.tPost = tpost
 }
 
@@ -130,11 +130,11 @@ func (fo *TraceElementFork) SetTsort(tpost int) {
  * Set the timer, that is used for the sorting of the trace, only if the original
  * value was not 0
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
-func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tsort int) {
+func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tSort int) {
 	if fo.tPost != 0 {
-		fo.tPost = tsort
+		fo.tPost = tSort
 	}
 }
 

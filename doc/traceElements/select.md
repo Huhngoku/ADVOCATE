@@ -13,8 +13,8 @@ S,[tpre],[tpost],[id],[cases],[pos]
 ```
 where `S` identifies the element as a select element.
 The other fields are set as follows:
-- [tpre]: This is the value of the global counter when the routine gets to the select statement.
-- [tpost]: This is the value of the global counter when the select has finished, meaning if either on of the select cases has successfully send or received or the default case has been executed
+- [tpre] $\in \mathbb N$: This is the value of the global counter when the routine gets to the select statement.
+- [tpost] $\in \mathbb N$: This is the value of the global counter when the select has finished, meaning if either on of the select cases has successfully send or received or the default case has been executed
 - [id]: This field contains the unique id of the select statement
 - [cases]: This field shows a list of the available cases in the select. The
 cases are separated by a ~ symbol. The elements are equal to an equivalent 

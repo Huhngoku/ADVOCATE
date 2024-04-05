@@ -159,8 +159,6 @@ func AnalysisCyclicDeadlockMutexUnLock(id int, routine int, tPost int) {
  * If there are cycles, log the results
  */
 func CheckForCyclicDeadlock() {
-	// printTrees()
-
 	findOutsideConnections()
 	found, cycles := findCycles() // find all cycles in the lock graph
 
@@ -184,8 +182,8 @@ func CheckForCyclicDeadlock() {
 
 			found += "\thead: " + cycle[0].tID + "\n"
 			found += "\ttail: "
-			for i := 1; i < len(cycle); i++ {
-				found += cycle[i].tID + " "
+			for i := 0; i < len(cycle); i++ {
+				found += cycle[i].tID + ";"
 			}
 			logging.Result(found, logging.CRITICAL)
 		}
@@ -447,7 +445,7 @@ func isCycleValidRead(cycle []*lockGraphNode) bool {
 						continue
 					}
 
-					if !(cycle[i].rw && cycle[j].rw) {
+					if cycle[i].rw && cycle[j].rw {
 						return false
 					}
 				}

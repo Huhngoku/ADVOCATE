@@ -172,6 +172,7 @@ func InitTracing(size int) {
 // ============== Reading =================
 
 var timeout = false
+var tracePath = "rewritten_trace"
 
 /*
  * Read the trace from the trace folder.
@@ -179,13 +180,19 @@ var timeout = false
  * The trace is added to the runtime by calling the AddReplayTrace function.
  */
 func EnableReplay() {
+	if _, err := os.Stat(tracePath); os.IsNotExist(err) {
+		tracePath = "trace"
+	}
+
 	// if trace folder does not exist, panic
-	if _, err := os.Stat("trace"); os.IsNotExist(err) {
+	if _, err := os.Stat(tracePath); os.IsNotExist(err) {
 		panic("Trace folder does not exist.")
 	}
 
+	println("Reading trace from " + tracePath)
+
 	// traverse all files in the trace folder
-	files, err := os.ReadDir("trace")
+	files, err := os.ReadDir(tracePath)
 	if err != nil {
 		panic(err)
 	}
@@ -198,7 +205,7 @@ func EnableReplay() {
 
 		// if the file is a log file, read the trace
 		if strings.HasSuffix(file.Name(), ".log") {
-			routineID, trace := readTraceFile("trace/" + file.Name())
+			routineID, trace := readTraceFile(tracePath + "/" + file.Name())
 			runtime.AddReplayTrace(uint64(routineID), trace)
 		}
 	}
@@ -235,7 +242,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	maxTokenSize := 1
 
 	// get the routine id from the file name
-	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, "trace/trace_"), ".log"))
+	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, tracePath+"/trace_"), ".log"))
 	if err != nil {
 		panic(err)
 	}
@@ -277,7 +284,11 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
 				case "X": // disable replay
-					runtime.OperationDisableReplay
+					if fields[2] == "s" {
+						op = runtime.OperationReplayStart
+					} else {
+						op = runtime.OperationReplayEnd
+					}
 				case "G":
 					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])
@@ -490,7 +501,6 @@ func findReplayPartner(cID string, oID string, index int, chanWithoutPartner map
  * Sort the replay data structure by time.
  * The function returns the sorted replay data structure.
  */
-// TODO: LOCAL
 func sortReplayDataByTime(replayData runtime.AdvocateReplayTrace) runtime.AdvocateReplayTrace {
 	sort.Slice(replayData, func(i, j int) bool {
 		return replayData[i].Time < replayData[j].Time

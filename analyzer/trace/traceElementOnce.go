@@ -148,7 +148,7 @@ func (on *TraceElementOnce) GetTID() string {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (on *TraceElementOnce) SetTsort(tSort int) {
+func (on *TraceElementOnce) SetTSort(tSort int) {
 	on.tPost = tSort
 }
 

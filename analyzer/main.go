@@ -40,6 +40,8 @@ func main() {
 
 	flag.Parse()
 
+	printHeader()
+
 	if *pathTrace == "" {
 		fmt.Println("Please provide a path to the trace file. Set with -t [file]")
 		return
@@ -130,6 +132,7 @@ func main() {
 		}
 
 		if createRewrittenFile {
+			print("\n")
 			if err := rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines); err != nil {
 				panic(err)
 			}
@@ -149,6 +152,7 @@ func main() {
  */
 func rewriteTrace(outMachine string, newTrace string, resultIndex int,
 	numberOfRoutines int) error {
+
 	actual, bug, err := io.ReadAnalysisResults(outMachine, resultIndex)
 	if err != nil {
 		return err
@@ -232,4 +236,25 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		}
 	}
 	return analysisCases, nil
+}
+
+func printHeader() {
+	fmt.Print("\n")
+	fmt.Println(" $$$$$$\\  $$$$$$$\\  $$\\    $$\\  $$$$$$\\   $$$$$$\\   $$$$$$\\ $$$$$$$$\\ $$$$$$$$\\ ")
+	fmt.Println("$$  __$$\\ $$  __$$\\ $$ |   $$ |$$  __$$\\ $$  __$$\\ $$  __$$\\\\__$$  __|$$  _____|")
+	fmt.Println("$$ /  $$ |$$ |  $$ |$$ |   $$ |$$ /  $$ |$$ /  \\__|$$ /  $$ |  $$ |   $$ |      ")
+	fmt.Println("$$$$$$$$ |$$ |  $$ |\\$$\\  $$  |$$ |  $$ |$$ |      $$$$$$$$ |  $$ |   $$$$$\\    ")
+	fmt.Println("$$  __$$ |$$ |  $$ | \\$$\\$$  / $$ |  $$ |$$ |      $$  __$$ |  $$ |   $$  __|   ")
+	fmt.Println("$$ |  $$ |$$ |  $$ |  \\$$$  /  $$ |  $$ |$$ |  $$\\ $$ |  $$ |  $$ |   $$ |      ")
+	fmt.Println("$$ |  $$ |$$$$$$$  |   \\$  /    $$$$$$  |\\$$$$$$  |$$ |  $$ |  $$ |   $$$$$$$$\\ ")
+	fmt.Println("\\__|  \\__|\\_______/     \\_/     \\______/  \\______/ \\__|  \\__|  \\__|   \\________|")
+
+	fmt.Print("\n\n\n")
+	fmt.Println("Welcome to the trace analyzer.")
+	fmt.Println("This program analyzes a trace file and detects common concurrency bugs in Go programs.")
+	fmt.Println("It can also create a reordered trace file based on the analysis results.")
+	fmt.Println("Be aware, that the analysis is based on the trace file and may not be complete.")
+	fmt.Println("Be aware, that the analysis may contain false positives and false negatives.")
+	fmt.Println("Use the rewrite to check the results.")
+	fmt.Print("\n\n\n")
 }

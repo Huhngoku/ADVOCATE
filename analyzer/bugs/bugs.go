@@ -20,7 +20,8 @@ const (
 	ConcurrentRecv
 
 	MixedDeadlock
-	CyclicDeadlock
+	CyclicDeadlockTwo
+	CyclicDeadlockMulti
 
 	RoutineLeakPartner   // chan and select
 	RoutineLeakNoPartner // chan and select
@@ -79,10 +80,14 @@ func (b Bug) ToString() string {
 		typeStr = "Potential mixed deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "lock: "
-	case CyclicDeadlock:
+	case CyclicDeadlockTwo:
 		typeStr = "Potential cyclic deadlock:"
 		arg1Str = "lock: "
-		arg2Str = "lock: "
+		arg2Str = "cycle: "
+	case CyclicDeadlockMulti:
+		typeStr = "Potential cyclic deadlock:"
+		arg1Str = "lock: "
+		arg2Str = "cycle: "
 	case RoutineLeakPartner, RoutineLeakNoPartner:
 		typeStr = "Potential routine leak channel:"
 		arg1Str = "channel: "
@@ -136,9 +141,11 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug := Bug{}
 
 	actual := strings.Split(typeStr, " ")[0]
-	if actual != "Possible" {
+	if actual != "Possible" && actual != "Potential" {
 		return true, bug, nil
 	}
+
+	// println("Process bug: " + typeStr + " " + arg1 + " " + arg2)
 
 	switch typeStr {
 	case "Possible send on closed channel:":
@@ -157,8 +164,6 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = ConcurrentRecv
 	case "Potential mixed deadlock:":
 		bug.Type = MixedDeadlock
-	case "Potential cyclic deadlock:":
-		bug.Type = CyclicDeadlock
 	case "Potential leak with possible partner:":
 		bug.Type = RoutineLeakPartner
 	case "Potential leak without possible partner:":
@@ -169,6 +174,10 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = RoutineLeakWaitGroup
 	case "Potential leak on conditional variable:":
 		bug.Type = RoutineLeakCond
+	case "Potential cyclic deadlock with more than two locks:":
+		bug.Type = CyclicDeadlockTwo
+	case "Potential mixed deadlock with more than two locks:":
+		bug.Type = CyclicDeadlockMulti
 	default:
 		return false, bug, errors.New("Unknown bug type: " + typeStr)
 	}
@@ -184,13 +193,14 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug.Pos2 = make([]string, 0)
 
 	elems := strings.Split(arg2, ": ")[1]
-	println("elems: " + elems)
+
 	for _, tID := range strings.Split(elems, ";") {
 		if tID == "" {
 			continue
 		}
 		elem, err = trace.GetTraceElementFromTID(tID)
 		if err != nil {
+			println("\n\n\n\nRewrite trace for bug 3...")
 			return false, bug, err
 		}
 		bug.TraceElement2 = append(bug.TraceElement2, elem)
