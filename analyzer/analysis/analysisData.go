@@ -46,13 +46,13 @@ var (
 	bufferedVCsCount = make(map[int]int)
 
 	// add on waitGroup
-	addWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
+	wgAdd = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
 
 	// done on waitGroup
-	doneWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
+	wgDone = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
 
 	// wait on waitGroup
-	waitWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
+	// wgWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
 
 	// last acquire on mutex for each routine
 	lockSet           = make(map[int]map[int]string)         // routine -> id -> string

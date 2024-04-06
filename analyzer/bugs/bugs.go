@@ -66,8 +66,8 @@ func (b Bug) ToString() string {
 		arg2Str = "close: "
 	case DoneBeforeAdd:
 		typeStr = "Possible negative waitgroup counter:"
-		arg1Str = "wait: "
-		arg2Str = "add/done: "
+		arg1Str = "add: "
+		arg2Str = "done: "
 	case ConcurrentRecv:
 		typeStr = "Found concurrent Recv on same channel:"
 		arg1Str = "recv: "

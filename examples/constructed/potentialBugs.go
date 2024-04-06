@@ -518,35 +518,66 @@ func n25() {
 // possible negative wait counter
 func n26() {
 	var wg sync.WaitGroup
+	c := make(chan int, 0)
+	d := make(chan int, 0)
 
 	go func() {
 		wg.Add(1)
-	}()
-
-	go func() {
-		wg.Add(1)
-	}()
-
-	go func() {
-		time.Sleep(500 * time.Millisecond) // prevent actual negative wait counter
 		wg.Done()
 	}()
 
-	time.Sleep(500 * time.Millisecond) // prevent actual negative wait counter
+	go func() {
+		wg.Add(1)
+		wg.Add(1)
+		wg.Done()
+		d <- 1
+	}()
+
+	go func() {
+		wg.Add(1)
+		<-d
+		c <- 1
+	}()
+
+	<-c
+
+	time.Sleep(100 * time.Millisecond) // prevent negative wait counter
 	wg.Done()
+	wg.Done()
+
+	time.Sleep(200 * time.Millisecond)
 }
 
 func n27() {
 	var wg sync.WaitGroup
 	c := make(chan int, 0)
+	// d := make(chan int, 0)
 
 	go func() {
 		wg.Add(1)
+		wg.Done()
+	}()
+
+	go func() {
+		wg.Add(1)
+		wg.Add(1)
+		wg.Done()
+		// d <- 1
+	}()
+
+	go func() {
+		wg.Add(1)
+		// <-d
 		c <- 1
 	}()
 
 	<-c
+
+	time.Sleep(100 * time.Millisecond) // prevent negative wait counter
 	wg.Done()
+	wg.Done()
+
+	time.Sleep(200 * time.Millisecond)
 }
 
 // ============== Cyclic deadlock ==============
