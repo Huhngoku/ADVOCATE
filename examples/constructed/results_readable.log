@@ -4,6 +4,6 @@
 -------------------- Critical -------------------
 
 1 Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:563@42;
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:578@48;
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:563@42; 
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:578@48; 
 ```

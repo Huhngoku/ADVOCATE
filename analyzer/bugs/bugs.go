@@ -32,10 +32,10 @@ const (
 
 type Bug struct {
 	Type          BugType
-	TraceElement1 *trace.TraceElement
-	tID1          string
+	TraceElement1 []*trace.TraceElement
+	TID1          []string
 	TraceElement2 []*trace.TraceElement
-	Pos2          []string
+	TID2          []string
 }
 
 /*
@@ -108,9 +108,17 @@ func (b Bug) ToString() string {
 	default:
 		panic("Unknown bug type: " + strconv.Itoa(int(b.Type)))
 	}
-	res := typeStr + "\n\t" + arg1Str + b.tID1 +
-		"\n\t" + arg2Str
-	for i, pos := range b.Pos2 {
+	res := typeStr + "\n\t" + arg1Str
+	for i, pos := range b.TID1 {
+		if i != 0 {
+			res += ";"
+		}
+		res += pos
+	}
+
+	res += "\n\t" + arg2Str
+
+	for i, pos := range b.TID2 {
 		if i != 0 {
 			res += ";"
 		}
@@ -182,29 +190,40 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		return false, bug, errors.New("Unknown bug type: " + typeStr)
 	}
 
-	bug.tID1 = strings.Split(arg1, ": ")[1]
-	elem, err := trace.GetTraceElementFromTID(bug.tID1)
-	if err != nil {
-		return false, bug, err
-	}
-	bug.TraceElement1 = elem
-
 	bug.TraceElement2 = make([]*trace.TraceElement, 0)
-	bug.Pos2 = make([]string, 0)
+	bug.TID2 = make([]string, 0)
 
-	elems := strings.Split(arg2, ": ")[1]
+	elems := strings.Split(arg1, ": ")[1]
 
 	for _, tID := range strings.Split(elems, ";") {
 		if tID == "" {
 			continue
 		}
-		elem, err = trace.GetTraceElementFromTID(tID)
+		elem, err := trace.GetTraceElementFromTID(tID)
+		if err != nil {
+			println("\n\n\n\nRewrite trace for bug 3...")
+			return false, bug, err
+		}
+		bug.TraceElement1 = append(bug.TraceElement1, elem)
+		bug.TID1 = append(bug.TID1, tID)
+	}
+
+	bug.TraceElement2 = make([]*trace.TraceElement, 0)
+	bug.TID2 = make([]string, 0)
+
+	elems = strings.Split(arg2, ": ")[1]
+
+	for _, tID := range strings.Split(elems, ";") {
+		if tID == "" {
+			continue
+		}
+		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
 			println("\n\n\n\nRewrite trace for bug 3...")
 			return false, bug, err
 		}
 		bug.TraceElement2 = append(bug.TraceElement2, elem)
-		bug.Pos2 = append(bug.Pos2, tID)
+		bug.TID2 = append(bug.TID2, tID)
 	}
 
 	return false, bug, nil

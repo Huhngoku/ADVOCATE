@@ -3,7 +3,7 @@ package analysis
 import (
 	"analyzer/logging"
 	"analyzer/utils"
-	"fmt"
+	"errors"
 )
 
 func checkForDoneBeforeAddChange(routine int, id int, delta int, pos string, vc VectorClock) {
@@ -194,31 +194,63 @@ func numberDone(id int) int {
 - If the maximum flow is smaller than the number of done operations, a negative wait group counter is possible.
 */
 func CheckForDoneBeforeAdd() {
-	for id, _ := range wgAdd { // for all waitgroups
+	for id := range wgAdd { // for all waitgroups
 		graph := buildResidualGraph(wgAdd[id], wgDone[id])
 
 		maxFlow, graph := calculateMaxFlow(graph)
 		nrDone := numberDone(id)
 
-		for k, v := range graph {
-			fmt.Println(k, v)
-		}
-
-		fmt.Println("Max flow", maxFlow, "Number of done", nrDone)
+		addsVcTIDs := []VectorClockTID{}
+		donesVcTIDs := []VectorClockTID{}
 
 		if maxFlow < nrDone {
-			message := "Possible negative waitgroup counter:\n"
-			message += "\tadd: "
+			// sort the adds and dones, that do not have a partner is such a way,
+			// that the i-th add in the result message is concurrent with the
+			// i-th done in the result message
+
 			for _, adds := range wgAdd[id] {
 				for _, add := range adds {
 					if !utils.Contains(graph["t"], add.tID) {
-						message += add.tID + ";"
+						addsVcTIDs = append(addsVcTIDs, add)
 					}
 				}
 			}
-			message += "\n\tdone: "
 			for _, dones := range graph["s"] {
-				message += dones + ";"
+				doneVcTID, err := getDoneVcTIDFromTID(id, dones)
+				if err != nil {
+					logging.Debug(err.Error(), logging.ERROR)
+				} else {
+					donesVcTIDs = append(donesVcTIDs, doneVcTID)
+				}
+			}
+
+			addsVcTIDSorted := make([]VectorClockTID, 0)
+			donesVcTIDSorted := make([]VectorClockTID, 0)
+
+			for i := 0; i < len(addsVcTIDs); i++ {
+				for j := 0; j < len(donesVcTIDs); j++ {
+					if GetHappensBefore(addsVcTIDs[i].vc, addsVcTIDs[j].vc) == Concurrent {
+						addsVcTIDSorted = append(addsVcTIDSorted, addsVcTIDs[i])
+						donesVcTIDSorted = append(donesVcTIDSorted, donesVcTIDs[j])
+						// remove the element from the list
+						addsVcTIDs = append(addsVcTIDs[:i], addsVcTIDs[i+1:]...)
+						donesVcTIDs = append(donesVcTIDs[:j], donesVcTIDs[j+1:]...)
+						// fix the index
+						i--
+						j = 0
+					}
+				}
+			}
+
+			message := "Possible negative waitgroup counter:\n"
+			message += "\tadd: "
+			for _, add := range addsVcTIDSorted {
+				message += add.tID + "; "
+			}
+
+			message += "\n\tdone: "
+			for _, done := range donesVcTIDSorted {
+				message += done.tID + "; "
 			}
 
 			logging.Result(message, logging.CRITICAL)
@@ -226,66 +258,13 @@ func CheckForDoneBeforeAdd() {
 	}
 }
 
-// 	for id, vcs := range doneWait { // for all waitgroups id
-// 		for routine, vc := range vcs { // for all routines
-// 			for op, vcDone := range vc { // for all done operations
-// 				// count the number of add operations a that happen before or concurrent to the done operation
-// 				countAdd := 0
-// 				addPosList := []string{}
-// 				for routineAdd, vcs := range addWait[id] { // for all routines
-// 					for opAdd, vcAdd := range vcs { // for all add operations
-// 						happensBefore := GetHappensBefore(vcAdd.vc, vcDone.vc)
-// 						if happensBefore == Before {
-// 							countAdd++
-// 						} else if happensBefore == Concurrent {
-// 							addPosList = append(addPosList, addWait[id][routineAdd][opAdd].tID)
-// 						}
-// 					}
-// 				}
-// 				// count the number of done operations d that happen before the done operation
-// 				countDone := 1 // self
-// 				donePosListConc := []string{}
-// 				for routine2, vcs := range doneWait[id] { // for all routines
-// 					for op2, vcDone2 := range vcs { // for all done operations
-// 						if routine2 == routine && op2 == op {
-// 							continue
-// 						}
-// 						happensBefore := GetHappensBefore(vcDone2.vc, vcDone.vc)
-// 						if happensBefore == Before {
-// 							countDone++
-// 						} else if happensBefore == Concurrent {
-// 							countDone++
-// 							donePosListConc = append(donePosListConc, doneWait[id][routine2][op2].tID)
-// 						}
-// 					}
-// 				}
-
-// 				if countAdd < countDone {
-// 					createDoneBeforeAddMessage(id, routine, op, addPosList, donePosListConc)
-// 				}
-// 			}
-// 		}
-// 	}
-// }
-
-// func createDoneBeforeAddMessage(id int, routine int, op int, addPosList []string, donePosListConc []string) {
-// 	sort.Strings(addPosList)
-// 	sort.Strings(donePosListConc)
-
-// 	// add/done contains the add and done, that are concurrent to the done operation
-// 	// add and done is separated by a #
-
-// 	found := "Possible negative waitgroup counter:\n"
-// 	found += "\tdone: " + doneWait[id][routine][op].tID + "\n"
-// 	found += "\tadd/done: "
-
-// 	for _, pos := range donePosListConc {
-// 		found += pos + ";"
-// 	}
-
-// 	for _, pos := range addPosList {
-// 		found += pos + ";"
-// 	}
-
-// 	logging.Result(found, logging.CRITICAL)
-// }
+func getDoneVcTIDFromTID(id int, tID string) (VectorClockTID, error) {
+	for _, dones := range wgDone[id] {
+		for _, done := range dones {
+			if done.tID == tID {
+				return done, nil
+			}
+		}
+	}
+	return VectorClockTID{}, errors.New("Could not find done operation with tID " + tID)
+}

@@ -21,14 +21,14 @@ import (
 *   error: An error if the trace could not be created
  */
 func rewriteClosedChannel(bug bugs.Bug) error {
-	if bug.TraceElement1 == nil { // close
+	if len(bug.TraceElement1) == 0 || bug.TraceElement1[0] == nil { // close
 		return errors.New("TraceElement1 is nil") // send/recv
 	}
-	if bug.TraceElement2[0] == nil {
+	if len(bug.TraceElement2) == 0 || bug.TraceElement2[0] == nil {
 		return errors.New("TraceElement2 is nil")
 	}
 
-	t1 := (*bug.TraceElement1).GetTSort()    // close
+	t1 := (*bug.TraceElement1[0]).GetTSort() // close
 	t2 := (*bug.TraceElement2[0]).GetTSort() // send/recv
 
 	if t1 < t2 { // actual close before send/recv
@@ -39,10 +39,10 @@ func rewriteClosedChannel(bug bugs.Bug) error {
 	trace.ShortenTrace(t2, false)
 
 	// switch the times of close and send/recv and add them at the end of the trace
-	(*bug.TraceElement1).SetTPre(t2)
+	(*bug.TraceElement1[0]).SetTPre(t2)
 	(*bug.TraceElement2[0]).SetTPre(t1)
 
-	trace.AddElementToTrace(*bug.TraceElement1)
+	trace.AddElementToTrace(*bug.TraceElement1[0])
 	trace.AddElementToTrace(*bug.TraceElement2[0])
 
 	// add a start and stop marker

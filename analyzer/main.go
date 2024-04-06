@@ -127,18 +127,22 @@ func main() {
 
 		if answer == "y" || answer == "Y" {
 			createRewrittenFile = true
-			for {
-				fmt.Print("Enter the index of the result to use for the reordered trace file: ")
-				_, err := fmt.Scanf("%d", &resultIndex)
-				if err != nil {
-					fmt.Print("Please enter a valid number: ")
-					continue
+			if numberOfResults > 1 {
+				for {
+					fmt.Print("Enter the index of the result to use for the reordered trace file: ")
+					_, err := fmt.Scanf("%d", &resultIndex)
+					if err != nil {
+						fmt.Print("Please enter a valid number: ")
+						continue
+					}
+					if resultIndex < 1 || resultIndex > numberOfResults {
+						fmt.Print("Please enter a valid number: ")
+						continue
+					}
+					break
 				}
-				if resultIndex < 1 || resultIndex > numberOfResults {
-					fmt.Print("Please enter a valid number: ")
-					continue
-				}
-				break
+			} else {
+				resultIndex = 1
 			}
 		} else {
 			createRewrittenFile = false
