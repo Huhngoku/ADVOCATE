@@ -30,7 +30,7 @@ func main() {
 		"\ts: Send on closed channel\n"+
 		"\tr: Receive on closed channel\n"+
 		"\tw: Done before add on waitGroup\n"+
-		"\tc: Close of closed channel\n"+
+		"\tn: Close of closed channel\n"+
 		"\tb: Concurrent receive on channel\n"+
 		"\tl: Leaking routine\n"+
 		"\tu: Select case without partner\n"+
@@ -94,7 +94,20 @@ func main() {
 		panic(err)
 	}
 	trace.SetNumberOfRoutines(numberOfRoutines)
+
+	if analysisCases["all"] {
+		fmt.Println("Start Analysis for all scenarios")
+	} else {
+		fmt.Println("Start Analysis for the following scenarios:")
+		for key, value := range analysisCases {
+			if value {
+				fmt.Println("\t", key)
+			}
+		}
+	}
+
 	trace.RunAnalysis(*fifo, *ignoreCriticalSection, analysisCases)
+	fmt.Println("Analysis finished\n")
 
 	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
@@ -188,6 +201,7 @@ func rewriteTrace(outMachine string, newTrace string, resultIndex int,
  */
 func parseAnalysisCases(cases string) (map[string]bool, error) {
 	analysisCases := map[string]bool{
+		"all":                  false, // all cases enabled
 		"sendOnClosed":         false,
 		"receiveOnClosed":      false,
 		"doneBeforeAdd":        false,
@@ -200,6 +214,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 	}
 
 	if cases == "" {
+		analysisCases["all"] = true
 		analysisCases["sendOnClosed"] = true
 		analysisCases["receiveOnClosed"] = true
 		analysisCases["doneBeforeAdd"] = true
@@ -209,6 +224,8 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		analysisCases["selectWithoutPartner"] = true
 		analysisCases["cyclicDeadlock"] = true
 		// analysisCases["mixedDeadlock"] = true
+
+		return analysisCases, nil
 	}
 
 	for _, c := range cases {
@@ -219,7 +236,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 			analysisCases["receiveOnClosed"] = true
 		case 'w':
 			analysisCases["doneBeforeAdd"] = true
-		case 'c':
+		case 'n':
 			analysisCases["closeOnClosed"] = true
 		case 'b':
 			analysisCases["concurrentReceive"] = true
@@ -227,7 +244,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 			analysisCases["leak"] = true
 		case 'u':
 			analysisCases["selectWithoutPartner"] = true
-		case 'd':
+		case 'c':
 			analysisCases["cyclicDeadlock"] = true
 		// case 'm':
 		// analysisCases["mixedDeadlock"] = true

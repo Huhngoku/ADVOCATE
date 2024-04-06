@@ -4,6 +4,6 @@
 -------------------- Critical -------------------
 
 1 Potential cyclic deadlock with more than two locks:
-	head: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:579@23
-	tail: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:579@23;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:580@26;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:587@35;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:588@38;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:594@47;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:595@50;
+	head: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:594@52
+	tail: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:594@52;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:595@55;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:579@28;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:580@31;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:587@40;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:588@43;
 ```

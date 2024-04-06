@@ -4,7 +4,6 @@ import (
 	"analyzer/analysis"
 	"analyzer/logging"
 	"errors"
-	"fmt"
 	"sort"
 	"strconv"
 )
@@ -421,11 +420,8 @@ func ShiftRoutine(routine int, startTSort int, shift int) bool {
 		return false
 	}
 
-	fmt.Println("Shift Routine: ", routine, " by ", shift, " starting at ", startTSort)
-
 	for index, elem := range traces[routine] {
 		if elem.GetTPre() >= startTSort {
-			println("Shift: ", elem.GetTID(), " from ", elem.GetTSort(), " to ", elem.GetTSort()+shift)
 			traces[routine][index].SetTPre(elem.GetTPre() + shift)
 			traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 		}

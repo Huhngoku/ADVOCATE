@@ -3,10 +3,7 @@ package rewriter
 import (
 	"analyzer/bugs"
 	"analyzer/trace"
-	"analyzer/utils"
 	"errors"
-	"fmt"
-	"sort"
 )
 
 func rewriteCyclicDeadlock(bug bugs.Bug) error {
@@ -30,10 +27,6 @@ func rewriteCyclicDeadlock(bug bugs.Bug) error {
 
 	// remove tail after lastTime
 	trace.ShortenTrace(lastTime, true)
-
-	fmt.Print("\n")
-	PrintTrace([]string{"M"})
-	fmt.Print("\n")
 
 	routinesInCycle := make(map[int]struct{})
 
@@ -93,44 +86,38 @@ func rewriteCyclicDeadlock(bug bugs.Bug) error {
 	trace.AddTraceElementReplay(firstTime, true)
 	trace.AddTraceElementReplay(lastTime+1, false)
 
-	fmt.Println(firstTime, lastTime+1)
-
-	fmt.Print("\n")
-	PrintTrace([]string{"M"})
-	fmt.Print("\n")
-
 	return nil
 }
 
-/*
-* Print the trace sorted by tPre
-* Args:
-*   types: types of the elements to print. If empty, all elements will be printed
-* TODO: remove
- */
-func PrintTrace(types []string) {
-	elements := make([]struct {
-		string
-		int
-	}, 0)
-	for _, tra := range *trace.GetTraces() {
-		for _, elem := range tra {
-			elemStr := elem.ToString()
-			if len(types) == 0 || utils.Contains(types, elemStr[0:1]) {
-				elements = append(elements, struct {
-					string
-					int
-				}{elemStr, elem.GetTPre()})
-			}
-		}
-	}
+// /*
+// * Print the trace sorted by tPre
+// * Args:
+// *   types: types of the elements to print. If empty, all elements will be printed
+// * TODO: remove
+//  */
+// func PrintTrace(types []string) {
+// 	elements := make([]struct {
+// 		string
+// 		int
+// 	}, 0)
+// 	for _, tra := range *trace.GetTraces() {
+// 		for _, elem := range tra {
+// 			elemStr := elem.ToString()
+// 			if len(types) == 0 || utils.Contains(types, elemStr[0:1]) {
+// 				elements = append(elements, struct {
+// 					string
+// 					int
+// 				}{elemStr, elem.GetTPre()})
+// 			}
+// 		}
+// 	}
 
-	// sort elements by timestamp
-	sort.Slice(elements, func(i, j int) bool {
-		return elements[i].int < elements[j].int
-	})
+// 	// sort elements by timestamp
+// 	sort.Slice(elements, func(i, j int) bool {
+// 		return elements[i].int < elements[j].int
+// 	})
 
-	for _, elem := range elements {
-		fmt.Println(elem.string)
-	}
-}
+// 	for _, elem := range elements {
+// 		fmt.Println(elem.string)
+// 	}
+// }
