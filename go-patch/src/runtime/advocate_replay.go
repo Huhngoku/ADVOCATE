@@ -199,6 +199,10 @@ func WaitForReplayFinish() {
 		}
 		unlock(&replayDoneLock)
 
+		if !replayEnabled {
+			break
+		}
+
 		// check for timeout
 		if timeoutCounter%timeoutMessageCycle == 0 {
 			waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
@@ -307,6 +311,10 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 	println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
+		if !replayEnabled { // check again if disabled by command
+			return false, false, ReplayElement{}
+		}
+
 		nextRoutine, next := getNextReplayElement()
 
 		// print message if the next operation is the next operation is the start of the important replay part

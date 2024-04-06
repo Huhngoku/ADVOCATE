@@ -573,6 +573,34 @@ func n28() {
 func n29() {
 	m := sync.Mutex{}
 	n := sync.Mutex{}
+	o := sync.Mutex{}
+
+	go func() {
+		m.Lock()
+		n.Lock()
+		n.Unlock()
+		m.Unlock()
+	}()
+
+	go func() {
+		time.Sleep(100 * time.Millisecond) // prevent deadlock
+		n.Lock()
+		o.Lock()
+		o.Unlock()
+		n.Unlock()
+	}()
+
+	time.Sleep(200 * time.Millisecond) // prevent deadlock
+	o.Lock()
+	m.Lock()
+	m.Unlock()
+	o.Unlock()
+}
+
+// cyclic deadlock
+func n30() {
+	m := sync.Mutex{}
+	n := sync.Mutex{}
 	c := make(chan int, 0)
 
 	go func() {
@@ -591,7 +619,7 @@ func n29() {
 }
 
 // cyclic deadlock
-func n30() {
+func n31() {
 	m := sync.Mutex{}
 	n := sync.Mutex{}
 	g := sync.Mutex{}
@@ -629,7 +657,7 @@ func n30() {
 // 	m.Unlock()
 // }
 
-func n31() {
+func n32() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -654,7 +682,7 @@ func n31() {
 	m.Unlock()
 }
 
-func n32() {
+func n33() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -670,7 +698,7 @@ func n32() {
 	m.Unlock()
 }
 
-func n33() {
+func n34() {
 	m := sync.Mutex{}
 	c := make(chan int, 1)
 
@@ -685,7 +713,7 @@ func n33() {
 	m.Unlock()
 }
 
-func n34() {
+func n35() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -701,7 +729,7 @@ func n34() {
 	m.Unlock()
 }
 
-func n35() {
+func n36() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -717,7 +745,7 @@ func n35() {
 	m.Unlock()
 }
 
-func n36() {
+func n37() {
 	m := sync.Mutex{}
 	c := make(chan int, 0)
 
@@ -733,7 +761,7 @@ func n36() {
 	m.Unlock()
 }
 
-func n37() {
+func n38() {
 	m := sync.Mutex{}
 	c := make(chan int, 1)
 
@@ -751,21 +779,11 @@ func n37() {
 
 // ============== Leaking ==============
 
-func n38() {
-	c := make(chan int, 0)
-
-	go func() {
-		c <- 1
-	}()
-
-	time.Sleep(100 * time.Millisecond)
-}
-
 func n39() {
 	c := make(chan int, 0)
 
 	go func() {
-		<-c
+		c <- 1
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -775,7 +793,7 @@ func n40() {
 	c := make(chan int, 0)
 
 	go func() {
-		close(c)
+		<-c
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -785,15 +803,7 @@ func n41() {
 	c := make(chan int, 0)
 
 	go func() {
-		<-c
-	}()
-
-	go func() {
-		c <- 1
-	}()
-
-	go func() {
-		<-c
+		close(c)
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -811,13 +821,31 @@ func n42() {
 	}()
 
 	go func() {
-		c <- 1
+		<-c
 	}()
 
 	time.Sleep(100 * time.Millisecond)
 }
 
 func n43() {
+	c := make(chan int, 0)
+
+	go func() {
+		<-c
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func n44() {
 	w := sync.WaitGroup{}
 
 	go func() {
@@ -830,7 +858,7 @@ func n43() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n44() {
+func n45() {
 	m := sync.Mutex{}
 
 	go func() {
@@ -842,7 +870,7 @@ func n44() {
 }
 
 // =============== Select Partner ===============
-func n45() {
+func n46() {
 	c := make(chan int, 0)
 
 	go func() {
@@ -856,7 +884,7 @@ func n45() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n46() {
+func n47() {
 	c := make(chan int, 0)
 	d := make(chan int, 0)
 
@@ -878,7 +906,7 @@ func n46() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n47() {
+func n48() {
 	c := make(chan int, 0)
 	d := make(chan int, 0)
 
@@ -892,7 +920,7 @@ func n47() {
 	}
 }
 
-func n48() {
+func n49() {
 	c := make(chan int, 0)
 	d := make(chan int, 0)
 	e := make(chan int, 0)
@@ -915,7 +943,7 @@ func n48() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func n49() {
+func n50() {
 	c := make(chan int, 0)
 	d := make(chan int, 1)
 	e := make(chan int, 0)
@@ -947,7 +975,7 @@ func main() {
 	timeout := flag.Int("t", 0, "Timeout")
 	flag.Parse()
 
-	const n = 49
+	const n = 50
 	testNames := [n]string{
 		"Test 01: N - Synchronous channel",
 		"Test 02: N - Wait group",
@@ -977,33 +1005,34 @@ func main() {
 		"Test 26: P - negative wait counter",
 		"Test 27: N - no negative wait counter",
 		"Test 28: P - cyclic deadlock",
-		"Test 29: N - no cyclic deadlock because of channel",
-		"Test 30: N - no cyclic deadlock because of guard lock",
+		"Test 29: P - cyclic deadlock",
+		"Test 30: N - no cyclic deadlock because of channel",
+		"Test 31: N - no cyclic deadlock because of guard lock",
 		// "Test 31: P - Mixed deadlock, MD2-1, send/recv, unbuffered",
-		"Test 31: P - Mixed deadlock, MD2-1, send/recv, unbuffered",
-		"Test 32: P - Mixed deadlock, MD2-1, close/recv, unbuffered",
-		"Test 33: P - Mixed deadlock, MD2-2/3, send/recv, buffered",
-		"Test 34: P - Mixed deadlock, MD2-2/3, send/recv, unbuffered",
-		"Test 35: P - Mixed deadlock, MD2-2/3, close/recv, unbuffered",
-		"Test 36: N - No mixed deadlock, MD2-2/3, close/recv, unbuffered",
-		"Test 37: P - Mixed deadlock, send/recv, buffered",
-		"Test 38: P - Leaking channel send, no alternative",
-		"Test 39: P - Leaking channel recv, no alternative",
-		"Test 40: N - No leaking channel close",
-		"Test 41: P - Leaking channel recv, with alternative",
-		"Test 42: P - Leaking channel send, with alternative",
-		"Test 43: P - Leaking wait group",
-		"Test 44: P - Leaking mutex, doubble locking",
-		"Test 45: N - All select cases are triggered (unbuffered)",
-		"Test 46: N - One select case is not triggered, but all have potential partner (unbuffered)",
-		"Test 47: P - One select case is not triggered, and has no potential partner (unbuffered)",
+		"Test 32: P - Mixed deadlock, MD2-1, send/recv, unbuffered",
+		"Test 33: P - Mixed deadlock, MD2-1, close/recv, unbuffered",
+		"Test 34: P - Mixed deadlock, MD2-2/3, send/recv, buffered",
+		"Test 35: P - Mixed deadlock, MD2-2/3, send/recv, unbuffered",
+		"Test 36: P - Mixed deadlock, MD2-2/3, close/recv, unbuffered",
+		"Test 37: N - No mixed deadlock, MD2-2/3, close/recv, unbuffered",
+		"Test 38: P - Mixed deadlock, send/recv, buffered",
+		"Test 39: P - Leaking channel send, no alternative",
+		"Test 40: P - Leaking channel recv, no alternative",
+		"Test 41: N - No leaking channel close",
+		"Test 42: P - Leaking channel recv, with alternative",
+		"Test 43: P - Leaking channel send, with alternative",
+		"Test 44: P - Leaking wait group",
+		"Test 45: P - Leaking mutex, doubble locking",
+		"Test 46: N - All select cases are triggered (unbuffered)",
+		"Test 47: N - One select case is not triggered, but all have potential partner (unbuffered)",
 		"Test 48: P - One select case is not triggered, and has no potential partner (unbuffered)",
-		"Test 49: N - One select case has partner that can only send buffered",
+		"Test 49: P - One select case is not triggered, and has no potential partner (unbuffered)",
+		"Test 50: N - One select case has partner that can only send buffered",
 	}
 	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
-		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49}
+		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50}
 
 	if list != nil && *list {
 		for i := 0; i < n; i++ {

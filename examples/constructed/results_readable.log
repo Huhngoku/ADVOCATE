@@ -1,6 +1,9 @@
+```
 ==================== Summary ====================
 
 -------------------- Critical -------------------
-1 Potential leak on mutex:
-	mutex: /home/erikkassubek/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:838@30
-	
+
+1 Potential cyclic deadlock with more than two locks:
+	head: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:579@23
+	tail: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:579@23;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:580@26;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:587@35;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:588@38;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:594@47;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:595@50;
+```
