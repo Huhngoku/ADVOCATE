@@ -125,8 +125,20 @@ func (wa *TraceElementWait) GetRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (wa *TraceElementWait) getTpre() int {
+func (wa *TraceElementWait) GetTPre() int {
 	return wa.tPre
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (wa *TraceElementWait) SetTPre(tPre int) {
+	wa.tPre = tPre
+	if wa.tPost != 0 && wa.tPost < tPre {
+		wa.tPost = tPre
+	}
 }
 
 /*

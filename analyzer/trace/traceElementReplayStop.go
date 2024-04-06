@@ -52,8 +52,17 @@ func (at *TraceElementReplay) GetRoutine() int {
  * Get the tpost of the element.
  *   int: The tpost of the element
  */
-func (at *TraceElementReplay) getTpre() int {
+func (at *TraceElementReplay) GetTPre() int {
 	return at.tPost
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (mu *TraceElementReplay) SetTPre(tPre int) {
+	mu.tPost = tPre
 }
 
 /*

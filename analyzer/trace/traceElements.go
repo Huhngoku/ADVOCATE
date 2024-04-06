@@ -3,7 +3,8 @@ package trace
 // Interface for trace elements
 type TraceElement interface {
 	GetID() int
-	getTpre() int
+	GetTPre() int
+	SetTPre(tPre int)
 	getTpost() int
 	GetTSort() int
 	SetTSort(tSort int)

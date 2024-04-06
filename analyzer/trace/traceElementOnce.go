@@ -99,8 +99,20 @@ func (on *TraceElementOnce) GetRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (on *TraceElementOnce) getTpre() int {
+func (on *TraceElementOnce) GetTPre() int {
 	return on.tPre
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (on *TraceElementOnce) SetTPre(tPre int) {
+	on.tPre = tPre
+	if on.tPost != 0 && on.tPost < tPre {
+		on.tPost = tPre
+	}
 }
 
 /*

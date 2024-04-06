@@ -39,8 +39,8 @@ func rewriteClosedChannel(bug bugs.Bug) error {
 	trace.ShortenTrace(t2, false)
 
 	// switch the times of close and send/recv and add them at the end of the trace
-	(*bug.TraceElement1).SetTSortWithoutNotExecuted(t2)
-	(*bug.TraceElement2[0]).SetTSortWithoutNotExecuted(t1)
+	(*bug.TraceElement1).SetTPre(t2)
+	(*bug.TraceElement2[0]).SetTPre(t1)
 
 	trace.AddElementToTrace(*bug.TraceElement1)
 	trace.AddElementToTrace(*bug.TraceElement2[0])

@@ -146,8 +146,20 @@ func (mu *TraceElementMutex) GetRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (mu *TraceElementMutex) getTpre() int {
+func (mu *TraceElementMutex) GetTPre() int {
 	return mu.tPre
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (mu *TraceElementMutex) SetTPre(tPre int) {
+	mu.tPre = tPre
+	if mu.tPost != 0 && mu.tPost < tPre {
+		mu.tPost = tPre
+	}
 }
 
 /*

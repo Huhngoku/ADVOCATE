@@ -4,6 +4,7 @@ import (
 	"analyzer/analysis"
 	"analyzer/logging"
 	"errors"
+	"fmt"
 	"sort"
 	"strconv"
 )
@@ -163,14 +164,17 @@ func ShortenRoutineIndex(routine int, index int, incl bool) {
 func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 	routine1 := (*element1).GetRoutine()
 	routine2 := (*element2).GetRoutine()
+	tPre1 := (*element1).GetTPre()
 	tSort1 := (*element1).GetTSort()
 	for index, elem := range traces[routine1] {
 		if elem.GetTSort() == (*element1).GetTSort() {
+			traces[routine1][index].SetTPre((*element2).GetTPre())
 			traces[routine1][index].SetTSort((*element2).GetTSort())
 		}
 	}
 	for index, elem := range traces[routine2] {
 		if elem.GetTSort() == (*element2).GetTSort() {
+			traces[routine2][index].SetTPre(tPre1)
 			traces[routine2][index].SetTSort(tSort1)
 			break
 		}
@@ -395,6 +399,7 @@ func ShiftTrace(startTSort int, shift int) {
 	for routine, trace := range traces {
 		for index, elem := range trace {
 			if elem.GetTSort() >= startTSort {
+				traces[routine][index].SetTPre(elem.GetTPre() + shift)
 				traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 			}
 		}
@@ -408,17 +413,25 @@ func ShiftTrace(startTSort int, shift int) {
  *   routine (int): The routine to shift
  *   startTSort (int): The time to start shifting
  *   shift (int): The shift
+ * Returns:
+ *   bool: True if the shift was successful, false otherwise (shift <= 0)
  */
-func ShiftRoutine(routine int, startTSort int, shift int) {
+func ShiftRoutine(routine int, startTSort int, shift int) bool {
 	if shift <= 0 {
-		return
+		return false
 	}
 
+	fmt.Println("Shift Routine: ", routine, " by ", shift, " starting at ", startTSort)
+
 	for index, elem := range traces[routine] {
-		if elem.GetTSort() > startTSort {
+		if elem.GetTPre() >= startTSort {
+			println("Shift: ", elem.GetTID(), " from ", elem.GetTSort(), " to ", elem.GetTSort()+shift)
+			traces[routine][index].SetTPre(elem.GetTPre() + shift)
 			traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 		}
 	}
+
+	return true
 }
 
 /*

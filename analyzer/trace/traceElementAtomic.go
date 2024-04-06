@@ -102,8 +102,17 @@ func (at *TraceElementAtomic) GetRoutine() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *TraceElementAtomic) getTpre() int {
+func (at *TraceElementAtomic) GetTPre() int {
 	return at.tPost
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpost of the element
+ */
+func (at *TraceElementAtomic) SetTPre(tPre int) {
+	at.tPost = tPre
 }
 
 /*

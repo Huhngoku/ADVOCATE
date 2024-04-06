@@ -110,8 +110,20 @@ func (co *TraceElementCond) GetRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (co *TraceElementCond) getTpre() int {
+func (co *TraceElementCond) GetTPre() int {
 	return co.tPre
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (co *TraceElementCond) SetTPre(tPre int) {
+	co.tPre = tPre
+	if co.tPost != 0 && co.tPost < tPre {
+		co.tPost = tPre
+	}
 }
 
 /*

@@ -192,8 +192,22 @@ func (se *TraceElementSelect) GetRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (se *TraceElementSelect) getTpre() int {
+func (se *TraceElementSelect) GetTPre() int {
 	return se.tPre
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (se *TraceElementSelect) SetTPre(tPre int) {
+	se.tPre = tPre
+	if se.tPost != 0 && se.tPost < tPre {
+		se.tPost = tPre
+	}
+
+	se.chosenCase.SetTPre(tPre)
 }
 
 /*
@@ -243,6 +257,7 @@ func (se *TraceElementSelect) GetTID() string {
  */
 func (se *TraceElementSelect) SetTSort(tSort int) {
 	se.tPost = tSort
+	se.chosenCase.SetTSort(tSort)
 }
 
 /*
@@ -255,6 +270,7 @@ func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
 	if se.tPost != 0 {
 		se.tPost = tSort
 	}
+	se.chosenCase.SetTSortWithoutNotExecuted(tSort)
 }
 
 /*

@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"analyzer/utils"
 	"fmt"
 	"os"
 	"strconv"
@@ -67,11 +68,11 @@ Args:
 func Result(message string, level resultLevel) {
 	foundBug = true
 	if level == WARNING {
-		if !contains(resultsWarning, message) {
+		if !utils.Contains(resultsWarning, message) {
 			resultsWarning = append(resultsWarning, message)
 		}
 	} else if level == CRITICAL {
-		if !contains(resultCritical, message) {
+		if !utils.Contains(resultCritical, message) {
 			resultCritical = append(resultCritical, message)
 		}
 	}
@@ -198,19 +199,4 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 	}
 
 	return len(resultCritical) + len(resultsWarning)
-}
-
-/*
-* Check if a slice contains an element
-* Args:
-*   s: slice to check
-*   e: element to check
- */
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }

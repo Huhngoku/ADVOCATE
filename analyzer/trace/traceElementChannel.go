@@ -150,8 +150,20 @@ func (ch *TraceElementChannel) GetRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (ch *TraceElementChannel) getTpre() int {
+func (ch *TraceElementChannel) GetTPre() int {
 	return ch.tPre
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (ch *TraceElementChannel) SetTPre(tPre int) {
+	ch.tPre = tPre
+	if ch.tPost != 0 && ch.tPost < tPre {
+		ch.tPost = tPre
+	}
 }
 
 /*

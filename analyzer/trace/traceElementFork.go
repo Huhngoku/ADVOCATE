@@ -77,8 +77,17 @@ func (fo *TraceElementFork) GetRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (fo *TraceElementFork) getTpre() int {
+func (fo *TraceElementFork) GetTPre() int {
 	return fo.tPost
+}
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (fo *TraceElementFork) SetTPre(tPre int) {
+	fo.tPost = tPre
 }
 
 /*
