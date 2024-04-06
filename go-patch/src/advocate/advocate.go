@@ -439,10 +439,6 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
-	for elem := range replayData {
-		println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
-	}
-	println("\n\n")
 	return routineID, replayData
 }
 

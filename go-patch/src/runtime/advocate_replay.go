@@ -168,7 +168,7 @@ func EnableReplay(timeout bool) {
 	go checkForTimeoutNoOperation()
 
 	replayEnabled = true
-	println("Replay enabled\n")
+	println("Replay enabled")
 }
 
 /*
@@ -180,7 +180,7 @@ func DisableReplay() {
 	defer unlock(&replayLock)
 
 	replayEnabled = false
-	println("Stop Character encountered.\nRewritten Operation was executed.\nReplay disabled\n")
+	println("Replay disabled")
 }
 
 /*
@@ -308,7 +308,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		return true, false, ReplayElement{}
 	}
 
-	println("WaitForReplayPath", op.ToString(), file, line)
+	// println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		if !replayEnabled { // check again if disabled by command
@@ -319,18 +319,17 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 
 		// print message if the next operation is the next operation is the start of the important replay part
 		if next.Op == OperationReplayStart {
-			println("Start executing targetet operation")
+			println("Start Character Found")
 			foundReplayElement(nextRoutine)
 		}
 
 		// disable the replay, if the next operation is the disable replay operation
 		if next.Op == OperationReplayEnd {
+			println("Stop Character Found.")
 			DisableReplay()
-			println("\nTargetet operation has finished executing")
+			foundReplayElement(nextRoutine)
 			return false, false, ReplayElement{}
 		}
-
-		// currentRoutine := currentRoutineA.id
 
 		// all elements in the trace have been executed
 		if nextRoutine == -1 {
@@ -339,14 +338,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			return false, false, ReplayElement{}
 		}
 
-		// if the routine is correct, but the next element is not the correct one,
-		// the program has diverged from the trace
-		// in this case, we print a message and disable the replay
-
-		// print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
-		// 	"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
-
-		if next.Time != 0 && !replayEnabled {
+		if next.Time != 0 && replayEnabled {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
 
@@ -369,9 +361,6 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		lock(&replayDoneLock)
 		replayDone++
 		unlock(&replayDoneLock)
-
-		// _, next = getNextReplayElement()
-		// println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
 
 		return true, true, next
 	}
@@ -459,6 +448,10 @@ func checkForTimeoutNoOperation() {
 		timeoutCounterGlobal++
 		timeoutCounter := timeoutCounterGlobal
 		unlock(&timeoutLock)
+
+		if !replayEnabled {
+			break
+		}
 
 		if timeoutCounter%waitTime == 0 {
 			message := "\nReplayWarning: Long wait time of approx. "
