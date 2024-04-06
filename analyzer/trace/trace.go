@@ -390,19 +390,26 @@ func increaseIndex(routine int) {
 
 /*
  * Shift all elements with time greater or equal to startTSort by shift
+ * Only shift forward
  * Args:
- *   startTSort (int): The time to start shifting
+ *   startTPre (int): The time to start shifting
  *   shift (int): The shift
  */
-func ShiftTrace(startTSort int, shift int) {
+func ShiftTrace(startTPre int, shift int) bool {
+	if shift <= 0 {
+		return false
+	}
+
 	for routine, trace := range traces {
 		for index, elem := range trace {
-			if elem.GetTSort() >= startTSort {
+			if elem.GetTPre() >= startTPre {
 				traces[routine][index].SetTPre(elem.GetTPre() + shift)
 				traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 			}
 		}
 	}
+
+	return true
 }
 
 /*

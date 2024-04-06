@@ -196,12 +196,12 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	elems := strings.Split(arg1, ": ")[1]
 
 	for _, tID := range strings.Split(elems, ";") {
-		if tID == "" {
+		if strings.TrimSpace(tID) == "" {
 			continue
 		}
 		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
-			println("\n\n\n\nRewrite trace for bug 3...")
+			println("not found: " + tID + " in " + arg1 + " " + arg2)
 			return false, bug, err
 		}
 		bug.TraceElement1 = append(bug.TraceElement1, elem)
@@ -214,12 +214,11 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	elems = strings.Split(arg2, ": ")[1]
 
 	for _, tID := range strings.Split(elems, ";") {
-		if tID == "" {
+		if strings.TrimSpace(tID) == "" {
 			continue
 		}
 		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
-			println("\n\n\n\nRewrite trace for bug 3...")
 			return false, bug, err
 		}
 		bug.TraceElement2 = append(bug.TraceElement2, elem)

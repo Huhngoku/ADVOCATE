@@ -1072,7 +1072,7 @@ func main() {
 		return
 	}
 
-	if true {
+	if false {
 		// init tracing
 		advocate.InitTracing(0)
 		defer advocate.Finish()
