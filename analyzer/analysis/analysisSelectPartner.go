@@ -1,6 +1,8 @@
 package analysis
 
-import "analyzer/logging"
+import (
+	"analyzer/logging"
+)
 
 /*
 * CheckForSelectCaseWithoutPartner checks for select cases without a valid

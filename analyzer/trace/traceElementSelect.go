@@ -65,12 +65,15 @@ func AddTraceElementSelect(routine int, tPre string,
 		return errors.New("id is not an integer")
 	}
 
+	tID := pos + "@" + tPre
+
 	elem := TraceElementSelect{
 		routine: routine,
 		tPre:    tPreInt,
 		tPost:   tPostInt,
 		id:      idInt,
 		pos:     pos,
+		tID:     tID,
 	}
 
 	cs := strings.Split(cases, "~")
@@ -314,8 +317,9 @@ func (se *TraceElementSelect) ToString() string {
  * was just a normal channel operation. For the default, we do not update the vc.
  */
 func (se *TraceElementSelect) updateVectorClock() {
-	if se.chosenDefault { // no update for default
-		return
+	if !se.chosenDefault { // no update for default
+		// update the vector clock
+		se.chosenCase.updateVectorClock()
 	}
 
 	if analysisCases["selectWithoutPartner"] {
@@ -328,10 +332,8 @@ func (se *TraceElementSelect) updateVectorClock() {
 			buffered = append(buffered, c.qSize > 0)
 			sendInfo = append(sendInfo, c.opC == send)
 		}
+
 		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
-
-	// update the vector clock
-	se.chosenCase.updateVectorClock()
 }

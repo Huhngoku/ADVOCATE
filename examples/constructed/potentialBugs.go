@@ -998,6 +998,23 @@ func n50() {
 	time.Sleep(100 * time.Millisecond)
 }
 
+// =============== Select Case without valid partner ===============
+func n51() {
+	c := make(chan int, 0)
+	d := make(chan int, 0)
+
+	go func() {
+		select {
+		case c <- 1:
+		case d <- 1:
+		}
+	}()
+
+	<-c
+
+	// time.Sleep(100 * time.Millisecond)
+}
+
 func main() {
 
 	list := flag.Bool("l", false, "List tests. Do not run any test.")
@@ -1006,7 +1023,7 @@ func main() {
 	timeout := flag.Int("t", 0, "Timeout")
 	flag.Parse()
 
-	const n = 50
+	const n = 51
 	testNames := [n]string{
 		"Test 01: N - Synchronous channel",
 		"Test 02: N - Wait group",
@@ -1059,11 +1076,13 @@ func main() {
 		"Test 48: P - One select case is not triggered, and has no potential partner (unbuffered)",
 		"Test 49: P - One select case is not triggered, and has no potential partner (unbuffered)",
 		"Test 50: N - One select case has partner that can only send buffered",
+		"Test 51: P - Select case without partner",
 	}
 	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
-		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50}
+		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50,
+		n51}
 
 	if list != nil && *list {
 		for i := 0; i < n; i++ {
@@ -1072,7 +1091,7 @@ func main() {
 		return
 	}
 
-	if false {
+	if true {
 		// init tracing
 		advocate.InitTracing(0)
 		defer advocate.Finish()
