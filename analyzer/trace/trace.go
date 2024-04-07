@@ -17,6 +17,9 @@ var (
 	// current must happens before vector clocks
 	currentVCWmhb = make(map[int]analysis.VectorClock)
 
+	// channel without partner
+	channelWithoutPartner = make(map[int]map[int]*TraceElementChannel) // id -> opId -> element
+
 	currentIndex     = make(map[int]int)
 	numberOfRoutines = 0
 	fifo             bool

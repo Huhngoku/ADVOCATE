@@ -40,6 +40,8 @@ import (
 *   error: An error if the trace could not be created
  */
 func rewriteClosedChannel(bug bugs.Bug) error {
+	println("Start rewriting trace for receive on closed channel...")
+
 	if len(bug.TraceElement1) == 0 || bug.TraceElement1[0] == nil { // close
 		return errors.New("TraceElement1 is nil") // send/recv
 	}

@@ -14,6 +14,7 @@ func rewriteWaitGroup(bug bugs.Bug) error {
 	// TODO: does not work yet -> gets stuck -> do not just shift  routine
 	// TODO: check if the pairs must be sorted
 
+	println("Start rewriting trace for negative waitgroup counter...")
 	// for each pair of element, move the add after the done
 	minTime := -1
 	maxTime := -1

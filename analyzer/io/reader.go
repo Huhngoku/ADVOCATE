@@ -1,7 +1,7 @@
 /*
 Package reader provides functions for reading and processing log files.
 */
-package reader
+package io
 
 import (
 	"bufio"

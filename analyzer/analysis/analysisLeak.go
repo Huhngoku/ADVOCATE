@@ -22,8 +22,8 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 		if _, ok := mostRecentReceive[id]; ok {
 			if GetHappensBefore(mostRecentReceive[id].vc, vc) == Concurrent {
 				found := "Potential leak with possible partner:\n"
-				found += "\tchannel: " + mostRecentReceive[id].tID + "\n"
-				found += "\tpartner: " + tID
+				found += "\tchannel: " + tID + "\n"
+				found += "\tpartner: " + mostRecentReceive[id].tID
 				logging.Result(found, logging.CRITICAL)
 				foundPartner = true
 			}
@@ -40,8 +40,8 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 		}
 		if _, ok := closeData[id]; ok {
 			found := "Potential leak with possible partner:\n"
-			found += "\tchannel: " + closeData[id].tID + "\n"
-			found += "\tpartner: " + tID
+			found += "\tchannel: " + tID + "\n"
+			found += "\tpartner: " + closeData[id].tID
 			logging.Result(found, logging.CRITICAL)
 			foundPartner = true
 		}
@@ -235,7 +235,6 @@ func CheckForLeak() {
 	// channel
 	for _, vcTIDs := range leakingChannels {
 		for _, vcTID := range vcTIDs {
-			// length of slices in go are weird
 			if vcTID.tID == "" {
 				continue
 			}

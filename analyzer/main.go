@@ -8,7 +8,6 @@ import (
 
 	"analyzer/io"
 	"analyzer/logging"
-	"analyzer/reader"
 	"analyzer/rewriter"
 	"analyzer/trace"
 )
@@ -74,13 +73,13 @@ func main() {
 			fmt.Println("Please provide the index of the result to use for the reordered trace file. Set with -i [file]")
 			return
 		}
-		numberOfRoutines, err := reader.CreateTraceFromFiles(*pathTrace)
+		numberOfRoutines, err := io.CreateTraceFromFiles(*pathTrace)
 		if err != nil {
 			panic(err)
 		}
 
 		if err := rewriteTrace(*pathTrace, newTrace, *bugIndex, numberOfRoutines); err != nil {
-			panic(err)
+			println("Could not rewrite trace file: ", err.Error())
 		}
 		return
 	}
@@ -89,7 +88,7 @@ func main() {
 	// based on the analysis results
 
 	logging.InitLogging(*level, outReadable, outMachine)
-	numberOfRoutines, err := reader.CreateTraceFromFiles(*pathTrace)
+	numberOfRoutines, err := io.CreateTraceFromFiles(*pathTrace)
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +150,7 @@ func main() {
 		if createRewrittenFile {
 			print("\n")
 			if err := rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines); err != nil {
-				panic(err)
+				println("Could not rewrite trace file: ", err.Error())
 			}
 		}
 	}

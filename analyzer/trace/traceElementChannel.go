@@ -35,6 +35,7 @@ var maxOpID = make(map[int]int)
 *   pos (string): The position of the channel operation in the code
 *   sel (*traceElementSelect): The select operation, if the channel operation is part of a select, otherwise nil
 *   partner (*TraceElementChannel): The partner of the channel operation
+*   tID (string): The id of the trace element, contains the position and the tpre
  */
 type TraceElementChannel struct {
 	routine int
@@ -47,6 +48,7 @@ type TraceElementChannel struct {
 	qSize   int
 	pos     string
 	sel     *TraceElementSelect
+	partner *TraceElementChannel
 	tID     string
 }
 
@@ -124,7 +126,40 @@ func AddTraceElementChannel(routine int, tPre string,
 		tID:     tIDStr,
 	}
 
+	// check if partner was already processed, otherwise add to channelWithoutPartner
+	if tPostInt != 0 {
+		if _, ok := channelWithoutPartner[idInt][oIDInt]; ok {
+			elem.partner = channelWithoutPartner[idInt][oIDInt]
+			channelWithoutPartner[idInt][oIDInt].partner = &elem
+			delete(channelWithoutPartner[idInt], oIDInt)
+		} else {
+			if _, ok := channelWithoutPartner[idInt]; !ok {
+				channelWithoutPartner[idInt] = make(map[int]*TraceElementChannel)
+			}
+
+			channelWithoutPartner[idInt][oIDInt] = &elem
+		}
+	}
+
 	return AddElementToTrace(&elem)
+}
+
+/*
+ * Set the partner of the channel operation
+ * Args:
+ *   partner (*TraceElementChannel): The partner of the channel operation
+ */
+func (ch *TraceElementChannel) SetPartner(partner *TraceElementChannel) {
+	ch.partner = partner
+}
+
+/*
+ * Get the partner of the channel operation
+ * Returns:
+ *   *TraceElementChannel: The partner of the channel operation
+ */
+func (ch *TraceElementChannel) GetPartner() *TraceElementChannel {
+	return ch.partner
 }
 
 /*
@@ -173,6 +208,15 @@ func (ch *TraceElementChannel) SetTPre(tPre int) {
  */
 func (ch *TraceElementChannel) getTpost() int {
 	return ch.tPost
+}
+
+/*
+ * Set the tpost of the element.
+ * Args:
+ *   tPost (int): The tpost of the element
+ */
+func (ch *TraceElementChannel) SetTPost(tPost int) {
+	ch.tPost = tPost
 }
 
 /*
@@ -227,6 +271,24 @@ func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tSort int) {
 		ch.tPre = tSort
 		ch.tPost = tSort
 	}
+}
+
+/*
+ * Set the oID of the element
+ * Args:
+ *   oID (int): The oID of the element
+ */
+func (ch *TraceElementChannel) SetOID(oID int) {
+	ch.oID = oID
+}
+
+/*
+ * Get the oID of the element
+ * Returns:
+ *   int: The oID of the element
+ */
+func (ch *TraceElementChannel) GetOID() int {
+	return ch.oID
 }
 
 /*

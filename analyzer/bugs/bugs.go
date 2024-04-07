@@ -20,8 +20,7 @@ const (
 	ConcurrentRecv
 
 	MixedDeadlock
-	CyclicDeadlockTwo
-	CyclicDeadlockMulti
+	CyclicDeadlock
 
 	RoutineLeakPartner   // chan and select
 	RoutineLeakNoPartner // chan and select
@@ -80,11 +79,7 @@ func (b Bug) ToString() string {
 		typeStr = "Potential mixed deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "lock: "
-	case CyclicDeadlockTwo:
-		typeStr = "Potential cyclic deadlock:"
-		arg1Str = "lock: "
-		arg2Str = "cycle: "
-	case CyclicDeadlockMulti:
+	case CyclicDeadlock:
 		typeStr = "Potential cyclic deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "cycle: "
@@ -182,10 +177,8 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = RoutineLeakWaitGroup
 	case "Potential leak on conditional variable:":
 		bug.Type = RoutineLeakCond
-	case "Potential cyclic deadlock with more than two locks:":
-		bug.Type = CyclicDeadlockTwo
-	case "Potential mixed deadlock with more than two locks:":
-		bug.Type = CyclicDeadlockMulti
+	case "Potential cyclic deadlock:":
+		bug.Type = CyclicDeadlock
 	default:
 		return false, bug, errors.New("Unknown bug type: " + typeStr)
 	}
@@ -199,6 +192,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		if strings.TrimSpace(tID) == "" {
 			continue
 		}
+
 		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
 			println("not found: " + tID + " in " + arg1 + " " + arg2)
@@ -214,7 +208,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	elems = strings.Split(arg2, ": ")[1]
 
 	for _, tID := range strings.Split(elems, ";") {
-		if strings.TrimSpace(tID) == "" {
+		if strings.TrimSpace(tID) == "" || strings.TrimSpace(tID) == "-" {
 			continue
 		}
 		elem, err := trace.GetTraceElementFromTID(tID)
