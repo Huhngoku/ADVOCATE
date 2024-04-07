@@ -1,0 +1,15 @@
+```
+==================== Summary ====================
+
+-------------------- Critical -------------------
+
+1 Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:147@31
+	send : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:142@27
+
+-------------------- Warning --------------------
+
+2 Possible receive on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:147@31
+	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:143@29
+```
