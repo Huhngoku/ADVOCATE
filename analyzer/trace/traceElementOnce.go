@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"analyzer/analysis"
+	"analyzer/clock"
 )
 
 /*
@@ -27,6 +28,7 @@ type TraceElementOnce struct {
 	suc     bool
 	pos     string
 	tID     string
+	vc      clock.VectorClock
 }
 
 /*
@@ -204,4 +206,15 @@ func (on *TraceElementOnce) updateVectorClock() {
 	} else {
 		analysis.DoFail(on.routine, on.id, currentVCHb)
 	}
+
+	on.vc = currentVCHb[on.routine]
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (on *TraceElementOnce) GetVC() clock.VectorClock {
+	return on.vc
 }

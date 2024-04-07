@@ -16,9 +16,6 @@ func main() {
 	pathTrace := flag.String("t", "", "Path to the trace folder to analyze or rewrite")
 	level := flag.Int("d", 1, "Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1)")
 	fifo := flag.Bool("f", false, "Assume a FIFO ordering for buffered channels (default false)")
-	rewrite := flag.Bool("n", false, "Create a reordered trace file from a given analysis "+
-		"result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results")
-	bugIndex := flag.Int("i", -1, "Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based")
 	ignoreCriticalSection := flag.Bool("c", false, "Ignore happens before relations of critical sections (default false)")
 	noRewrite := flag.Bool("x", false, "Do not ask to create a reordered trace file after the analysis (default false)")
 	noWarning := flag.Bool("w", false, "Do not print warnings (default false)")
@@ -66,23 +63,6 @@ func main() {
 	outMachine := folder + "results_machine.log"
 	outReadable := folder + "results_readable.log"
 	newTrace := folder + "rewritten_trace/"
-
-	// rewrite the trace file based on given analysis results. No analysis is run
-	if *rewrite {
-		if *bugIndex == -1 {
-			fmt.Println("Please provide the index of the result to use for the reordered trace file. Set with -i [file]")
-			return
-		}
-		numberOfRoutines, err := io.CreateTraceFromFiles(*pathTrace)
-		if err != nil {
-			panic(err)
-		}
-
-		if err := rewriteTrace(*pathTrace, newTrace, *bugIndex, numberOfRoutines); err != nil {
-			println("Could not rewrite trace file: ", err.Error())
-		}
-		return
-	}
 
 	// run the analysis and, if requested, create a reordered trace file
 	// based on the analysis results

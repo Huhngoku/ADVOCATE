@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 	"strconv"
 )
@@ -20,8 +21,8 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 			strconv.Itoa(id)+" with "+
 			mostRecentSend[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
 			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeData[id].vc, mostRecentSend[id].vc)
-		if happensBefore == Concurrent {
+		happensBefore := clock.GetHappensBefore(closeData[id].vc, mostRecentSend[id].vc)
+		if happensBefore == clock.Concurrent {
 			found := "Possible send on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
 			found += "\tsend : " + mostRecentSend[id].tID
@@ -34,8 +35,8 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 			strconv.Itoa(id)+" with "+
 			mostRecentReceive[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
 			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeData[id].vc, mostRecentReceive[id].vc)
-		if happensBefore == Concurrent || happensBefore == Before {
+		happensBefore := clock.GetHappensBefore(closeData[id].vc, mostRecentReceive[id].vc)
+		if happensBefore == clock.Concurrent || happensBefore == clock.Before {
 			found := "Possible receive on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
 			found += "\trecv : " + mostRecentReceive[id].tID

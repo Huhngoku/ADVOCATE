@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 	"strconv"
 )
@@ -13,7 +14,7 @@ import (
  *   tId (string): The trace id of the mutex operation
  *   vc (VectorClock): The current vector clock
  */
-func lockSetAddLock(routine int, lock int, tID string, vc VectorClock) {
+func lockSetAddLock(routine int, lock int, tID string, vc clock.VectorClock) {
 	if _, ok := lockSet[routine]; !ok {
 		lockSet[routine] = make(map[int]string)
 	}
@@ -104,7 +105,7 @@ func checkForMixedDeadlock2(routine int) {
 			}
 
 			if vc2, ok := acquire[m]; ok {
-				weakHappensBefore := GetHappensBefore(vc1, vc2)
+				weakHappensBefore := clock.GetHappensBefore(vc1, vc2)
 				if weakHappensBefore != Concurrent {
 					continue
 				}

@@ -1,4 +1,4 @@
-package analysis
+package clock
 
 import (
 	"analyzer/logging"
@@ -37,8 +37,22 @@ func NewVectorClock(size int) VectorClock {
 	}
 }
 
+/*
+ * Get the size of the vector clock
+ * Returns:
+ *   (int): The size of the vector clock
+ */
 func (vc VectorClock) GetSize() int {
 	return vc.size
+}
+
+/*
+ * Get the vector clock
+ * Returns:
+ *   (map[int]int): The vector clock
+ */
+func (vc VectorClock) GetClock() map[int]int {
+	return vc.clock
 }
 
 /*

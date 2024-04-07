@@ -1,12 +1,13 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 	"analyzer/utils"
 	"errors"
 )
 
-func checkForDoneBeforeAddChange(routine int, id int, delta int, pos string, vc VectorClock) {
+func checkForDoneBeforeAddChange(routine int, id int, delta int, pos string, vc clock.VectorClock) {
 	if delta > 0 {
 		checkForDoneBeforeAddAdd(routine, id, pos, vc, delta)
 	} else if delta < 0 {
@@ -16,7 +17,7 @@ func checkForDoneBeforeAddChange(routine int, id int, delta int, pos string, vc 
 	}
 }
 
-func checkForDoneBeforeAddAdd(routine int, id int, pos string, vc VectorClock, delta int) {
+func checkForDoneBeforeAddAdd(routine int, id int, pos string, vc clock.VectorClock, delta int) {
 	// if necessary, create maps and lists
 	if _, ok := wgAdd[id]; !ok {
 		wgAdd[id] = make(map[int][]VectorClockTID)
@@ -31,7 +32,7 @@ func checkForDoneBeforeAddAdd(routine int, id int, pos string, vc VectorClock, d
 	}
 }
 
-func checkForDoneBeforeAddDone(routine int, id int, pos string, vc VectorClock) {
+func checkForDoneBeforeAddDone(routine int, id int, pos string, vc clock.VectorClock) {
 	// if necessary, create maps and lists
 	if _, ok := wgDone[id]; !ok {
 		wgDone[id] = make(map[int][]VectorClockTID)
@@ -84,7 +85,7 @@ func buildResidualGraph(adds map[int][]VectorClockTID, dones map[int][]VectorClo
 		for _, vcDone := range done {
 			for _, add := range adds {
 				for _, vcAdd := range add {
-					if GetHappensBefore(vcAdd.vc, vcDone.vc) == Before {
+					if clock.GetHappensBefore(vcAdd.vc, vcDone.vc) == clock.Before {
 						graph[vcDone.tID] = append(graph[vcDone.tID], vcAdd.tID)
 					}
 				}
@@ -229,7 +230,7 @@ func CheckForDoneBeforeAdd() {
 
 			for i := 0; i < len(addsVcTIDs); i++ {
 				for j := 0; j < len(donesVcTIDs); j++ {
-					if GetHappensBefore(addsVcTIDs[i].vc, addsVcTIDs[j].vc) == Concurrent {
+					if clock.GetHappensBefore(addsVcTIDs[i].vc, addsVcTIDs[j].vc) == clock.Concurrent {
 						addsVcTIDSorted = append(addsVcTIDSorted, addsVcTIDs[i])
 						donesVcTIDSorted = append(donesVcTIDSorted, donesVcTIDs[j])
 						// remove the element from the list

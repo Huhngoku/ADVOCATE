@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 )
 
@@ -26,11 +27,11 @@ func CheckForSelectCaseWithoutPartner() {
 				c1, c2 = c2, c1
 			}
 
-			hb := GetHappensBefore(c1.vcTID.vc, c2.vcTID.vc)
+			hb := clock.GetHappensBefore(c1.vcTID.vc, c2.vcTID.vc)
 			found := false
-			if c1.buffered && (hb == Concurrent || hb == After) {
+			if c1.buffered && (hb == clock.Concurrent || hb == clock.After) {
 				found = true
-			} else if !c1.buffered && hb == Concurrent {
+			} else if !c1.buffered && hb == clock.Concurrent {
 				found = true
 			}
 
@@ -63,7 +64,7 @@ func CheckForSelectCaseWithoutPartner() {
 *   tID (string): The position of the select in the program
  */
 func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
-	sendInfo []bool, vc VectorClock, tID string, chosenIndex int) {
+	sendInfo []bool, vc clock.VectorClock, tID string, chosenIndex int) {
 	for i, id := range ids {
 		buffered := bufferedInfo[i]
 		send := sendInfo[i]
@@ -77,19 +78,19 @@ func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
 			// not select cases
 			if send {
 				if potentialPartner, ok := mostRecentReceive[id]; ok {
-					hb := GetHappensBefore(vc, potentialPartner.vc)
-					if buffered && (hb == Concurrent || hb == Before) {
+					hb := clock.GetHappensBefore(vc, potentialPartner.vc)
+					if buffered && (hb == clock.Concurrent || hb == clock.Before) {
 						found = true
-					} else if !buffered && hb == Concurrent {
+					} else if !buffered && hb == clock.Concurrent {
 						found = true
 					}
 				}
 			} else { // recv
 				if potentialPartner, ok := mostRecentSend[id]; ok {
-					hb := GetHappensBefore(vc, potentialPartner.vc)
-					if buffered && (hb == Concurrent || hb == After) {
+					hb := clock.GetHappensBefore(vc, potentialPartner.vc)
+					if buffered && (hb == clock.Concurrent || hb == clock.After) {
 						found = true
-					} else if !buffered && hb == Concurrent {
+					} else if !buffered && hb == clock.Concurrent {
 						found = true
 					}
 				}
@@ -113,7 +114,7 @@ func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
 *   buffered (bool): True if the channel is buffered
 *   sel (bool): True if the operation is part of a select statement
  */
-func CheckForSelectCaseWithoutPartnerChannel(id int, vc VectorClock, tID string,
+func CheckForSelectCaseWithoutPartnerChannel(id int, vc clock.VectorClock, tID string,
 	send bool, buffered bool) {
 
 	for i, c := range selectCases {
@@ -121,18 +122,18 @@ func CheckForSelectCaseWithoutPartnerChannel(id int, vc VectorClock, tID string,
 			continue
 		}
 
-		hb := GetHappensBefore(vc, c.vcTID.vc)
+		hb := clock.GetHappensBefore(vc, c.vcTID.vc)
 		found := false
 		if send {
-			if buffered && (hb == Concurrent || hb == Before) {
+			if buffered && (hb == clock.Concurrent || hb == clock.Before) {
 				found = true
-			} else if !buffered && hb == Concurrent {
+			} else if !buffered && hb == clock.Concurrent {
 				found = true
 			}
 		} else {
-			if buffered && (hb == Concurrent || hb == After) {
+			if buffered && (hb == clock.Concurrent || hb == clock.After) {
 				found = true
-			} else if !buffered && hb == Concurrent {
+			} else if !buffered && hb == clock.Concurrent {
 				found = true
 			}
 		}
@@ -150,17 +151,17 @@ func CheckForSelectCaseWithoutPartnerChannel(id int, vc VectorClock, tID string,
 *   id (int): The id of the channel
 *   vc (VectorClock): The vector clock
  */
-func CheckForSelectCaseWithoutPartnerClose(id int, vc VectorClock) {
+func CheckForSelectCaseWithoutPartnerClose(id int, vc clock.VectorClock) {
 	for i, c := range selectCases {
 		if c.partner || c.id != id || c.send {
 			continue
 		}
 
-		hb := GetHappensBefore(vc, c.vcTID.vc)
+		hb := clock.GetHappensBefore(vc, c.vcTID.vc)
 		found := false
-		if c.buffered && (hb == Concurrent || hb == After) {
+		if c.buffered && (hb == clock.Concurrent || hb == clock.After) {
 			found = true
-		} else if !c.buffered && hb == Concurrent {
+		} else if !c.buffered && hb == clock.Concurrent {
 			found = true
 		}
 

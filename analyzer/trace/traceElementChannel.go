@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"analyzer/analysis"
+	"analyzer/clock"
 	"analyzer/logging"
 )
 
@@ -50,6 +51,7 @@ type TraceElementChannel struct {
 	sel     *TraceElementSelect
 	partner *TraceElementChannel
 	tID     string
+	vc      clock.VectorClock
 }
 
 /*
@@ -434,6 +436,9 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			logging.Debug(err, logging.ERROR)
 		}
 	}
+
+	ch.vc = currentVCHb[ch.routine].Copy()
+	ch.partner.vc = currentVCHb[ch.partner.routine].Copy()
 }
 
 /*
@@ -470,4 +475,13 @@ func (ch *TraceElementChannel) findUnbufferedPartner() int {
 		}
 	}
 	return -1
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (ch *TraceElementChannel) GetVC() clock.VectorClock {
+	return ch.vc
 }

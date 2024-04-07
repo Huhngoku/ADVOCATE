@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"analyzer/logging"
 	"errors"
 	"sort"
@@ -12,10 +13,10 @@ var (
 	traces map[int][]TraceElement = make(map[int][]TraceElement)
 
 	// current happens before vector clocks
-	currentVCHb = make(map[int]analysis.VectorClock)
+	currentVCHb = make(map[int]clock.VectorClock)
 
 	// current must happens before vector clocks
-	currentVCWmhb = make(map[int]analysis.VectorClock)
+	currentVCWmhb = make(map[int]clock.VectorClock)
 
 	// channel without partner
 	channelWithoutPartner = make(map[int]map[int]*TraceElementChannel) // id -> opId -> element
@@ -233,6 +234,7 @@ func SetNumberOfRoutines(n int) {
 *   analysisCasesMap (map[string]bool): The analysis cases to run
  */
 func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap map[string]bool) string {
+
 	logging.Debug("Analyze the trace...", logging.INFO)
 
 	fifo = assumeFifo
@@ -241,8 +243,8 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 	analysis.InitAnalysis(analysisCases)
 
 	for i := 1; i <= numberOfRoutines; i++ {
-		currentVCHb[i] = analysis.NewVectorClock(numberOfRoutines)
-		currentVCWmhb[i] = analysis.NewVectorClock(numberOfRoutines)
+		currentVCHb[i] = clock.NewVectorClock(numberOfRoutines)
+		currentVCWmhb[i] = clock.NewVectorClock(numberOfRoutines)
 	}
 
 	currentVCHb[1] = currentVCHb[1].Inc(1)
@@ -416,6 +418,40 @@ func ShiftTrace(startTPre int, shift int) bool {
 }
 
 /*
+ * Shift all elements that are concurrent or HB-later than the element such
+ * that they are after the element without changeing the order of these elements
+ * Args:
+ *   element (traceElement): The element
+ */
+func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
+	elemsToShift := make([]TraceElement, 0)
+	minTime := -1
+	for _, trace := range traces {
+		for _, elem := range trace {
+			if elem.GetTID() == (*element).GetTID() {
+				println("CONT: ", elem.GetTID())
+				continue
+			}
+
+			if !(clock.GetHappensBefore((*element).GetVC(), elem.GetVC()) == clock.After) {
+				elemsToShift = append(elemsToShift, elem)
+				if minTime == -1 || elem.GetTPre() < minTime {
+					minTime = elem.GetTPre()
+				}
+			}
+		}
+	}
+
+	distance := (*element).GetTPre() - minTime
+
+	for _, elem := range elemsToShift {
+		tSort := elem.getTpost()
+		elem.SetTPre(tSort + distance)
+		elem.SetTSortWithoutNotExecuted(tSort + distance)
+	}
+}
+
+/*
  * Shift all elements with time greater or equal to startTSort by shift
  * Only shift back
  * Args:
@@ -424,6 +460,7 @@ func ShiftTrace(startTPre int, shift int) bool {
  *   shift (int): The shift
  * Returns:
  *   bool: True if the shift was successful, false otherwise (shift <= 0)
+ * TODO: is this allowed or will it create problems?
  */
 func ShiftRoutine(routine int, startTSort int, shift int) bool {
 	if shift <= 0 {

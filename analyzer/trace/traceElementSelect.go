@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"errors"
 	"math"
 	"strconv"
@@ -35,6 +36,7 @@ type TraceElementSelect struct {
 	chosenDefault   bool
 	pos             string
 	tID             string
+	vc              clock.VectorClock
 }
 
 /*
@@ -336,4 +338,15 @@ func (se *TraceElementSelect) updateVectorClock() {
 		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
+
+	se.vc = currentVCHb[se.routine]
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (se *TraceElementSelect) GetVC() clock.VectorClock {
+	return se.vc
 }

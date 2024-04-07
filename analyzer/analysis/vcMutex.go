@@ -1,5 +1,7 @@
 package analysis
 
+import "analyzer/clock"
+
 /*
  * Create a new relW and relR if needed
  * Args:
@@ -8,10 +10,10 @@ package analysis
  */
 func newRel(index int, nRout int) {
 	if _, ok := relW[index]; !ok {
-		relW[index] = NewVectorClock(nRout)
+		relW[index] = clock.NewVectorClock(nRout)
 	}
 	if _, ok := relR[index]; !ok {
-		relR[index] = NewVectorClock(nRout)
+		relR[index] = clock.NewVectorClock(nRout)
 	}
 }
 
@@ -25,12 +27,12 @@ func newRel(index int, nRout int) {
  *   tID (string): The trace id of the lock operation
  *   tPost (int): The timestamp at the end of the event
  */
-func Lock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, tID string, tPost int) {
+func Lock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.VectorClock, tID string, tPost int) {
 	if tPost == 0 {
 		return
 	}
 
-	newRel(id, vc[routine].size)
+	newRel(id, vc[routine].GetSize())
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Sync(relR[id])
 	vc[routine] = vc[routine].Inc(routine)
@@ -47,12 +49,12 @@ func Lock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock, 
  *   id (int): The id of the mutex
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func Unlock(routine int, id int, vc map[int]VectorClock, tPost int) {
+func Unlock(routine int, id int, vc map[int]clock.VectorClock, tPost int) {
 	if tPost == 0 {
 		return
 	}
 
-	newRel(id, vc[routine].size)
+	newRel(id, vc[routine].GetSize())
 	relW[id] = vc[routine].Copy()
 	relR[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
@@ -73,11 +75,11 @@ func Unlock(routine int, id int, vc map[int]VectorClock, tPost int) {
  * Returns:
  *   (vectorClock): The new vector clock
  */
-func RLock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock,
+func RLock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.VectorClock,
 	tID string, tPost int) {
 
 	if tPost != 0 {
-		newRel(id, vc[routine].size)
+		newRel(id, vc[routine].GetSize())
 		vc[routine] = vc[routine].Sync(relW[id])
 		vc[routine] = vc[routine].Inc(routine)
 	}
@@ -94,9 +96,9 @@ func RLock(routine int, id int, vc map[int]VectorClock, wVc map[int]VectorClock,
  *   vc (map[int]VectorClock): The current vector clocks
  *   tPost (int): The timestamp at the end of the event
  */
-func RUnlock(routine int, id int, vc map[int]VectorClock, tPost int) {
+func RUnlock(routine int, id int, vc map[int]clock.VectorClock, tPost int) {
 	if tPost != 0 {
-		newRel(id, vc[routine].size)
+		newRel(id, vc[routine].GetSize())
 		relR[id] = relR[id].Sync(vc[routine])
 		vc[routine] = vc[routine].Inc(routine)
 	}

@@ -167,9 +167,6 @@ The analyzer can take the following command line arguments:
  - -d int
     	Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
  - -f	Assume a FIFO ordering for buffered channels (default false)
- - -i int
-    	Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based (default -1)
- - -n	Create a reordered trace file from a given analysis result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results
  - -p	Do not print the results to the terminal (default false). Automatically set -x to true
  - -r string
     	Path to where the result file should be saved. If not set, it is saved in the trace folder

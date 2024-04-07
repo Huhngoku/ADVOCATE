@@ -1,12 +1,14 @@
 package analysis
 
+import "analyzer/clock"
+
 type VectorClockTID struct {
-	vc  VectorClock
+	vc  clock.VectorClock
 	tID string
 }
 
 type VectorClockTID2 struct {
-	vc      VectorClock
+	vc      clock.VectorClock
 	tID     string
 	typeVal int
 	val     int
@@ -59,8 +61,8 @@ var (
 	mostRecentAcquire = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID  // TODO: do we need to store the operation?
 
 	// vector clocks for last release times
-	relW = make(map[int]VectorClock) // id -> vc
-	relR = make(map[int]VectorClock) // id -> vc
+	relW = make(map[int]clock.VectorClock) // id -> vc
+	relR = make(map[int]clock.VectorClock) // id -> vc
 
 	// for leak check
 	leakingChannels = make(map[int][]VectorClockTID2) // id -> vcTID

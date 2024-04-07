@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"errors"
 	"strconv"
 )
@@ -21,6 +22,7 @@ type TraceElementFork struct {
 	id      int
 	pos     string
 	tID     string
+	vc      clock.VectorClock
 }
 
 /*
@@ -162,4 +164,15 @@ func (fo *TraceElementFork) ToString() string {
  */
 func (fo *TraceElementFork) updateVectorClock() {
 	analysis.Fork(fo.routine, fo.id, currentVCHb, currentVCWmhb)
+
+	fo.vc = currentVCHb[fo.routine]
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (fo *TraceElementFork) GetVC() clock.VectorClock {
+	return fo.vc
 }

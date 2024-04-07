@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"analyzer/logging"
 	"errors"
 	"strconv"
@@ -214,4 +215,13 @@ func (at *TraceElementAtomic) updateVectorClock() {
 		err := "Unknown operation: " + at.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+}
+
+/*
+ * Dummy function to implement the interface
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (at *TraceElementAtomic) GetVC() clock.VectorClock {
+	return clock.VectorClock{}
 }

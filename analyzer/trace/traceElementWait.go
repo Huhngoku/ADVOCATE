@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"analyzer/logging"
 	"errors"
 	"math"
@@ -38,6 +39,7 @@ type TraceElementWait struct {
 	val     int
 	pos     string
 	tID     string
+	vc      clock.VectorClock
 }
 
 /*
@@ -236,8 +238,19 @@ func (wa *TraceElementWait) updateVectorClock() {
 		err := "Unknown operation on wait group: " + wa.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+
+	wa.vc = currentVCHb[wa.routine].Copy()
 }
 
 func (wa *TraceElementWait) GetDelta() int {
 	return wa.delta
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (wa *TraceElementWait) GetVC() clock.VectorClock {
+	return wa.vc
 }

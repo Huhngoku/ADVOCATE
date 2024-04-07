@@ -303,11 +303,11 @@ We drop send(tS,x,k) and rec(tR,x,k) from the trace and carry out the following 
 
 ~~~~
 sndRcvU(tS,tR,x) {
+  inc(Th(tS),tS)
+  inc(Th(tR),tR)
   V = sync(Th(tS), Th(tR))    -- Sync
   Th(tS) = V
   Th(tR) = V
-  inc(Th(tS),tS)
-  inc(Th(tR),tR)
 }
 ~~~~~~~~~
 
@@ -713,7 +713,7 @@ close(t,x) {
 > [!NOTE]
 > #### Status
 > Detection: IMPLEMENTED\
-> Rewrite:   PARTIALLY IMPLEMENTED
+> Rewrite:   IMPLEMENTED
 
 If "done" happens before "add", the waitgroup counter may become negative => panic.
 
@@ -738,11 +738,10 @@ We now assume, that each edge has capacity 1 and use the Ford-Fulkerson
 algorithm to find the maximum flow in this graph. A done before add is possible, 
 if this maximum flow is less then the number of done.
 
-<!-- Tow rewrite, we look at all $D$ and $A$ in the graph with max flow, which have
-a flow of 0. Those $D$ have no $A$, as its partner.
-We now sort them in pairs $(D_i, A_i)$ such that $D_i$ and $A_i$ are concurrent.
-For those pairs, we move the routine of the $A_i$ back, such that it is executed 
-after the $D_i$. -->
+To rewrite this trace, we take all $D$, that have a flow of 0 in the graph 
+with max flow. For all of those, we take all elements in the trace, that 
+are concurrent with $D$ and move them down, such that they are replayed after 
+the corresponding $D$.
 
 
 <!-- 1. Reconstruct the trace such that the concurrent done happen directly after 

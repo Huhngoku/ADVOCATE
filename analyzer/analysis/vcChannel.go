@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 	"strconv"
 )
@@ -9,7 +10,7 @@ import (
 type bufferedVC struct {
 	occupied    bool
 	oID         int
-	vc          VectorClock
+	vc          clock.VectorClock
 	routineSend int
 	tID         string
 }
@@ -27,12 +28,14 @@ type bufferedVC struct {
  *  tPost (int): the timestamp at the end of the event
  */
 func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
-	tIDRecv string, vc map[int]VectorClock, tPost int) {
+	tIDRecv string, vc map[int]clock.VectorClock, tPost int) {
 	if tPost != 0 {
 		if analysisCases["concurrentRecv"] {
 			checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
 		}
 
+		vc[routSend] = vc[routSend].Inc(routSend)
+		vc[routRecv] = vc[routRecv].Inc(routRecv)
 		vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 		vc[routSend] = vc[routRecv].Copy()
 
@@ -46,8 +49,6 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].vc.ToString(), logging.DEBUG)
 
-		vc[routSend] = vc[routSend].Inc(routSend)
-		vc[routRecv] = vc[routRecv].Inc(routRecv)
 	}
 
 	if analysisCases["mixedDeadlock"] {
@@ -81,13 +82,13 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
  *  tPost (int): the timestamp at the end of the event
  */
 func Send(rout int, id int, oID int, size int, tID string,
-	vc map[int]VectorClock, fifo bool, tPost int) {
+	vc map[int]clock.VectorClock, fifo bool, tPost int) {
 
 	if tPost == 0 {
 		return
 	}
 
-	newBufferedVCs(id, size, vc[rout].size)
+	newBufferedVCs(id, size, vc[rout].GetSize())
 
 	count := bufferedVCsCount[id]
 
@@ -139,13 +140,13 @@ func Send(rout int, id int, oID int, size int, tID string,
  *  fifo (bool): true if the channel buffer is assumed to be fifo
  *  tPost (int): the timestamp at the end of the event
  */
-func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
+func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorClock,
 	fifo bool, tPost int) {
 	if tPost == 0 {
 		return
 	}
 
-	newBufferedVCs(id, size, vc[rout].size)
+	newBufferedVCs(id, size, vc[rout].GetSize())
 
 	if analysisCases["concurrentRecv"] {
 		checkForConcurrentRecv(rout, id, tID, vc)
@@ -211,7 +212,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]VectorClock,
  * 	vc (map[int]VectorClock): the current vector clocks
  *  tPost (int): the timestamp at the end of the event
  */
-func Close(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
+func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int) {
 	if tPost == 0 {
 		return
 	}
@@ -248,7 +249,7 @@ func Close(rout int, id int, tID string, vc map[int]VectorClock, tPost int) {
  *  tPost (int): the timestamp at the end of the event
  *  buffered (bool): true if the channel is buffered
  */
-func RecvC(rout int, id int, tID string, vc map[int]VectorClock, tPost int,
+func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int,
 	buffered bool) {
 	if tPost == 0 {
 		return
@@ -284,7 +285,7 @@ func newBufferedVCs(id int, size int, numRout int) {
 		bufferedVCs[id] = make([]bufferedVC, size)
 		for i := 0; i < size; i++ {
 			bufferedVCsCount[id] = 0
-			bufferedVCs[id][i] = bufferedVC{false, 0, NewVectorClock(numRout), 0, ""}
+			bufferedVCs[id][i] = bufferedVC{false, 0, clock.NewVectorClock(numRout), 0, ""}
 		}
 	}
 }

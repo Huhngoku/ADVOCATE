@@ -1,5 +1,7 @@
 package analysis
 
+import "analyzer/clock"
+
 var currentWaits = make(map[int][]int) // -> id -> routine
 
 /*
@@ -9,7 +11,7 @@ var currentWaits = make(map[int][]int) // -> id -> routine
  *   routine (int): The routine id
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func CondWait(id int, routine int, vc map[int]VectorClock) {
+func CondWait(id int, routine int, vc map[int]clock.VectorClock) {
 	currentWaits[id] = append(currentWaits[id], routine)
 	vc[routine].Inc(routine)
 }
@@ -21,7 +23,7 @@ func CondWait(id int, routine int, vc map[int]VectorClock) {
  *   routine (int): The routine id
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func CondSignal(id int, routine int, vc map[int]VectorClock) {
+func CondSignal(id int, routine int, vc map[int]clock.VectorClock) {
 	if len(currentWaits[id]) != 0 {
 		waitRoutine := currentWaits[id][0]
 		currentWaits[id] = currentWaits[id][1:]
@@ -37,7 +39,7 @@ func CondSignal(id int, routine int, vc map[int]VectorClock) {
  *   routine (int): The routine id
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func CondBroadcast(id int, routine int, vc map[int]VectorClock) {
+func CondBroadcast(id int, routine int, vc map[int]clock.VectorClock) {
 	for _, waitRoutine := range currentWaits[id] {
 		vc[waitRoutine].Sync(vc[routine])
 	}

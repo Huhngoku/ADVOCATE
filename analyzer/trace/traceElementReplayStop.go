@@ -1,6 +1,7 @@
 package trace
 
 import (
+	"analyzer/clock"
 	"strconv"
 )
 
@@ -140,4 +141,13 @@ func (at *TraceElementReplay) ToString() string {
  */
 func (at *TraceElementReplay) updateVectorClock() {
 	// nothing to do
+}
+
+/*
+ * Dummy function to implement the interface
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (at *TraceElementReplay) GetVC() clock.VectorClock {
+	return clock.VectorClock{}
 }

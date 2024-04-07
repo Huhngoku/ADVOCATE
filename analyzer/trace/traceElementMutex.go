@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"analyzer/analysis"
+	"analyzer/clock"
 	"analyzer/logging"
 )
 
@@ -46,6 +47,7 @@ type TraceElementMutex struct {
 	pos     string
 	tID     string
 	partner *TraceElementMutex
+	vc      clock.VectorClock
 }
 
 /*
@@ -327,8 +329,20 @@ func (mu *TraceElementMutex) updateVectorClock() {
 		err := "Unknown mutex operation: " + mu.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+
+	mu.vc = currentVCHb[mu.routine].Copy()
 }
 
 func (mu *TraceElementMutex) updateVectorClockAlt() {
 	currentVCHb[mu.routine] = currentVCHb[mu.routine].Inc(mu.routine)
+	mu.vc = currentVCHb[mu.routine].Copy()
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (mu *TraceElementMutex) GetVC() clock.VectorClock {
+	return mu.vc
 }

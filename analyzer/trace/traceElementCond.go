@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"errors"
 	"math"
 	"strconv"
@@ -34,6 +35,7 @@ type TraceElementCond struct {
 	opC     opCond
 	pos     string
 	tID     string
+	vc      clock.VectorClock
 }
 
 /*
@@ -237,4 +239,15 @@ func (co *TraceElementCond) updateVectorClock() {
 	case BroadcastOp:
 		analysis.CondBroadcast(co.id, co.routine, currentVCHb)
 	}
+
+	co.vc = currentVCHb[co.routine].Copy()
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (co *TraceElementCond) GetVC() clock.VectorClock {
+	return co.vc
 }

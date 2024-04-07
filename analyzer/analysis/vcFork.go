@@ -1,5 +1,7 @@
 package analysis
 
+import "analyzer/clock"
+
 /*
  * Update the vector clocks given a fork operation
  * Args:
@@ -8,7 +10,7 @@ package analysis
  *   vcHb (map[int]VectorClock): The current hb vector clocks
  *   vcMhb (map[int]VectorClock): The current mhb vector clocks
  */
-func Fork(oldRout int, newRout int, vcHb map[int]VectorClock, vcMhb map[int]VectorClock) {
+func Fork(oldRout int, newRout int, vcHb map[int]clock.VectorClock, vcMhb map[int]clock.VectorClock) {
 	vcHb[newRout] = vcHb[oldRout].Copy()
 	vcHb[newRout] = vcHb[newRout].Inc(newRout)
 	vcHb[oldRout] = vcHb[oldRout].Inc(oldRout)

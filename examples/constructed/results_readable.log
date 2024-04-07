@@ -3,7 +3,7 @@
 
 -------------------- Critical -------------------
 
-1 Potential cyclic deadlock:
-	head: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:590@27
-	tail: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:590@27;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:591@30;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:597@39;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:598@42;
+1 Possible negative waitgroup counter:
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:568@41; 
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:591@48; 
 ```

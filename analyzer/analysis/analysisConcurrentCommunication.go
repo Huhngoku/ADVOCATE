@@ -1,8 +1,11 @@
 package analysis
 
-import "analyzer/logging"
+import (
+	"analyzer/clock"
+	"analyzer/logging"
+)
 
-func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorClock) {
+func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]clock.VectorClock) {
 	if _, ok := lastRecvRoutine[routine]; !ok {
 		lastRecvRoutine[routine] = make(map[int]VectorClockTID)
 	}
@@ -14,12 +17,12 @@ func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]VectorCl
 			continue
 		}
 
-		if elem[id].vc.clock == nil {
+		if elem[id].vc.GetClock() == nil {
 			continue
 		}
 
-		happensBefore := GetHappensBefore(elem[id].vc, vc[routine])
-		if happensBefore == Concurrent {
+		happensBefore := clock.GetHappensBefore(elem[id].vc, vc[routine])
+		if happensBefore == clock.Concurrent {
 			found := "Found concurrent Recv on same channel:\n"
 			found += "\trecv: " + pos + "\n"
 			found += "\trecv : " + lastRecvRoutine[r][id].tID

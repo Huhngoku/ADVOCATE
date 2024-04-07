@@ -1,6 +1,9 @@
 package analysis
 
-import "analyzer/logging"
+import (
+	"analyzer/clock"
+	"analyzer/logging"
+)
 
 /*
  * Run for channel operation without a post event. Check if the operation has
@@ -13,14 +16,14 @@ import "analyzer/logging"
  *   tID (string): The trace id
  *   opType (int): An identifier for the type of the operation (send = 0, recv = 1)
  */
-func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
+func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType int) {
 	logging.Debug("Checking channel for for leak channel", logging.INFO)
 
 	foundPartner := false
 
 	if opType == 0 { // send
 		if _, ok := mostRecentReceive[id]; ok {
-			if GetHappensBefore(mostRecentReceive[id].vc, vc) == Concurrent {
+			if clock.GetHappensBefore(mostRecentReceive[id].vc, vc) == clock.Concurrent {
 				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + tID + "\n"
 				found += "\tpartner: " + mostRecentReceive[id].tID
@@ -30,7 +33,7 @@ func CheckForLeakChannelStuck(id int, vc VectorClock, tID string, opType int) {
 		}
 	} else if opType == 1 { // recv
 		if _, ok := mostRecentSend[id]; ok {
-			if GetHappensBefore(mostRecentSend[id].vc, vc) == Concurrent {
+			if clock.GetHappensBefore(mostRecentSend[id].vc, vc) == clock.Concurrent {
 				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + tID
 				found += "\tpartner: " + mostRecentSend[id].tID + "\n"
@@ -70,7 +73,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 			if vcTID2.val != 1 {
 				continue
 			}
-			if GetHappensBefore(vcTID2.vc, vcTID.vc) == Concurrent {
+			if clock.GetHappensBefore(vcTID2.vc, vcTID.vc) == clock.Concurrent {
 				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.tID
@@ -94,7 +97,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 			if vcTID2.val != 0 && vcTID2.val != 2 {
 				continue
 			}
-			if GetHappensBefore(vcTID2.vc, vcTID.vc) == Concurrent {
+			if clock.GetHappensBefore(vcTID2.vc, vcTID.vc) == clock.Concurrent {
 				found := "Potential leak with possible partner:\n"
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.tID
@@ -131,12 +134,12 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
  *   tPre (int): The tpre of the select operations. Used to connect the operations of the
  *     same select statement in leakingChannels.
  */
-func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []int, tPre int) {
+func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opTypes []int, tPre int) {
 	foundPartner := false
 	for i, id := range ids {
 		if opTypes[i] == 0 { // send
 			if _, ok := mostRecentReceive[id]; ok {
-				if GetHappensBefore(vc, mostRecentReceive[id].vc) == Concurrent {
+				if clock.GetHappensBefore(vc, mostRecentReceive[id].vc) == clock.Concurrent {
 					found := "Potential leak with possible partner:\n"
 					found += "\tchannel: " + tID
 					found += "\tpartner: " + mostRecentReceive[id].tID + "\n"
@@ -146,7 +149,7 @@ func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []in
 			}
 		} else if opTypes[i] == 1 { // recv
 			if _, ok := mostRecentSend[id]; ok {
-				if GetHappensBefore(vc, mostRecentSend[id].vc) == Concurrent {
+				if clock.GetHappensBefore(vc, mostRecentSend[id].vc) == clock.Concurrent {
 					found := "Potential leak with possible partner:\n"
 					found += "\tchannel: " + tID + "\n"
 					found += "\tpartner: " + mostRecentSend[id].tID
@@ -183,7 +186,7 @@ func CheckForLeakSelectStuck(ids []int, vc VectorClock, tID string, opTypes []in
  *   tID (string): The trace id
  *   opType (int): An identifier for the type of the operation (send = 0, recv = 1, close = 2)
  */
-func CheckForLeakSelectRun(ids []int, typeIds []int, vc VectorClock, tID string) {
+func CheckForLeakSelectRun(ids []int, typeIds []int, vc clock.VectorClock, tID string) {
 	for i, id := range ids {
 		if CheckForLeakChannelRun(id, VectorClockTID{vc, tID}, typeIds[i]) {
 			break

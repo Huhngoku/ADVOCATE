@@ -134,36 +134,3 @@ func rewriteCyclicDeadlock(bug bugs.Bug) error {
 
 	return nil
 }
-
-// /*
-// * Print the trace sorted by tPre
-// * Args:
-// *   types: types of the elements to print. If empty, all elements will be printed
-// * TODO: remove
-//  */
-// func PrintTrace(types []string) {
-// 	elements := make([]struct {
-// 		string
-// 		int
-// 	}, 0)
-// 	for _, tra := range *trace.GetTraces() {
-// 		for _, elem := range tra {
-// 			elemStr := elem.ToString()
-// 			if len(types) == 0 || utils.Contains(types, elemStr[0:1]) {
-// 				elements = append(elements, struct {
-// 					string
-// 					int
-// 				}{elemStr, elem.GetTPre()})
-// 			}
-// 		}
-// 	}
-
-// 	// sort elements by timestamp
-// 	sort.Slice(elements, func(i, j int) bool {
-// 		return elements[i].int < elements[j].int
-// 	})
-
-// 	for _, elem := range elements {
-// 		fmt.Println(elem.string)
-// 	}
-// }

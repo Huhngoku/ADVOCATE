@@ -1,7 +1,11 @@
 package analysis
 
+import (
+	"analyzer/clock"
+)
+
 // vector clocks for last write times
-var lw map[int]VectorClock = make(map[int]VectorClock)
+var lw map[int]clock.VectorClock = make(map[int]clock.VectorClock)
 
 /*
  * Create a new lw if needed
@@ -11,7 +15,7 @@ var lw map[int]VectorClock = make(map[int]VectorClock)
  */
 func newLw(index int, nRout int) {
 	if _, ok := lw[index]; !ok {
-		lw[index] = NewVectorClock(nRout)
+		lw[index] = clock.NewVectorClock(nRout)
 	}
 }
 
@@ -22,8 +26,8 @@ func newLw(index int, nRout int) {
  *   id (int): The id of the atomic variable
  *   vc (*map[int]VectorClock): The vector clocks
  */
-func Write(routine int, id int, vc map[int]VectorClock) {
-	newLw(id, vc[id].size)
+func Write(routine int, id int, vc map[int]clock.VectorClock) {
+	newLw(id, vc[id].GetSize())
 	lw[id] = vc[routine].Copy()
 	vc[routine] = vc[routine].Inc(routine)
 }
@@ -36,8 +40,8 @@ func Write(routine int, id int, vc map[int]VectorClock) {
  *   numberOfRoutines (int): The number of routines in the trace
  *   vc (map[int]VectorClock): The vector clocks
  */
-func Read(routine int, id int, vc map[int]VectorClock) {
-	newLw(id, vc[id].size)
+func Read(routine int, id int, vc map[int]clock.VectorClock) {
+	newLw(id, vc[id].GetSize())
 	vc[routine] = vc[routine].Sync(lw[id])
 	vc[routine] = vc[routine].Inc(routine)
 }
@@ -51,7 +55,7 @@ func Read(routine int, id int, vc map[int]VectorClock) {
  *   numberOfRoutines (int): The number of routines in the trace
  *   cv (map[int]VectorClock): The vector clocks
  */
-func Swap(routine int, id int, cv map[int]VectorClock) {
+func Swap(routine int, id int, cv map[int]clock.VectorClock) {
 	Read(routine, id, cv)
 	Write(routine, id, cv)
 }

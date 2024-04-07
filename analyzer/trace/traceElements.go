@@ -1,5 +1,7 @@
 package trace
 
+import "analyzer/clock"
+
 // Interface for trace elements
 type TraceElement interface {
 	GetID() int
@@ -14,4 +16,5 @@ type TraceElement interface {
 	GetTID() string
 	ToString() string
 	updateVectorClock()
+	GetVC() clock.VectorClock
 }
