@@ -145,6 +145,8 @@ func n06() {
 
 	time.Sleep(300 * time.Millisecond) // prevent actual send on closed channel
 	close(c)
+
+	time.Sleep(100 * time.Second)
 }
 
 // TN recv/send on closed
