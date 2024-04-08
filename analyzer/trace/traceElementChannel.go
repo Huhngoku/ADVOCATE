@@ -438,6 +438,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 	}
 
 	ch.vc = currentVCHb[ch.routine].Copy()
+
 	if ch.partner != nil {
 		ch.partner.vc = currentVCHb[ch.partner.routine].Copy()
 	}
