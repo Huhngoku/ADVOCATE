@@ -3,6 +3,7 @@ package advocate
 import (
 	"bufio"
 	"os"
+	"os/signal"
 	"runtime"
 	"sort"
 	"strconv"
@@ -165,6 +166,17 @@ func InitTracing(size int) {
 			panic(err)
 		}
 	}
+
+	// if the program is terminated by the user, the defer in the header
+	// is not executed. Therefore capture the signal and write the trace.
+	interuptSignal := make(chan os.Signal, 1)
+	signal.Notify(interuptSignal, os.Interrupt)
+	go func() {
+		<-interuptSignal
+		Finish()
+		os.Exit(0)
+	}()
+
 	go writeTraceIfFull()
 	runtime.InitAdvocate(size)
 }
