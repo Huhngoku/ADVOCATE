@@ -42,7 +42,7 @@ func RewriteTrace(bug bugs.Bug) error {
 	case bugs.CyclicDeadlock:
 		err = rewriteCyclicDeadlock(bug)
 	case bugs.RoutineLeakPartner:
-		err = rewriteRoutineLeak(bug)
+		err = rewriteChannelLeak(bug)
 	case bugs.RoutineLeakNoPartner:
 		err = errors.New("No possible partner for stuck channel found. Cannot rewrite trace.")
 	case bugs.RoutineLeakMutex:

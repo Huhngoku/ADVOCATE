@@ -29,6 +29,7 @@ func newRel(index int, nRout int) {
  */
 func Lock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.VectorClock, tID string, tPost int) {
 	if tPost == 0 {
+		vc[routine] = vc[routine].Inc(routine)
 		return
 	}
 
@@ -36,6 +37,10 @@ func Lock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.V
 	vc[routine] = vc[routine].Sync(relW[id])
 	vc[routine] = vc[routine].Sync(relR[id])
 	vc[routine] = vc[routine].Inc(routine)
+
+	if analysisCases["leak"] {
+		addMostRecentAcquireTotal(id, tID, vc[routine])
+	}
 
 	if analysisCases["mixedDeadlock"] {
 		lockSetAddLock(routine, id, tID, wVc[routine])
@@ -78,14 +83,22 @@ func Unlock(routine int, id int, vc map[int]clock.VectorClock, tPost int) {
 func RLock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.VectorClock,
 	tID string, tPost int) {
 
-	if tPost != 0 {
-		newRel(id, vc[routine].GetSize())
-		vc[routine] = vc[routine].Sync(relW[id])
+	if tPost == 0 {
 		vc[routine] = vc[routine].Inc(routine)
+		return
 	}
 
-	// TODO: can we just add this to the lockSet?
-	lockSetAddLock(routine, id, tID, wVc[routine])
+	newRel(id, vc[routine].GetSize())
+	vc[routine] = vc[routine].Sync(relW[id])
+	vc[routine] = vc[routine].Inc(routine)
+
+	if analysisCases["leak"] {
+		addMostRecentAcquireTotal(id, tID, vc[routine])
+	}
+
+	if analysisCases["mixedDeadlock"] {
+		lockSetAddLock(routine, id, tID, wVc[routine])
+	}
 }
 
 /*

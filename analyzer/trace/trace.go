@@ -248,40 +248,6 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 	currentVCWmhb[1] = currentVCWmhb[1].Inc(1)
 
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
-		// do not update the vector clock for not executed operations, but check for leaks
-		if analysisCases["leak"] && elem.getTpost() == 0 {
-			switch e := elem.(type) {
-			case *TraceElementChannel:
-				switch e.opC {
-				case send:
-					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 0)
-				case recv:
-					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 1)
-				}
-			case *TraceElementMutex:
-				analysis.CheckForLeakMutex(elem.GetTID())
-			case *TraceElementWait:
-				analysis.CheckForLeakWait(elem.GetTID())
-			case *TraceElementSelect:
-				cases := e.GetCases()
-				ids := make([]int, 0)
-				opTypes := make([]int, 0)
-				for _, c := range cases {
-					switch c.opC {
-					case send:
-						ids = append(ids, c.GetID())
-						opTypes = append(opTypes, 0)
-					case recv:
-						ids = append(ids, c.GetID())
-						opTypes = append(opTypes, 1)
-					}
-				}
-				analysis.CheckForLeakSelectStuck(ids, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
-			case *TraceElementCond:
-				analysis.CheckForLeakCond(elem.GetTID())
-			}
-			continue
-		}
 
 		switch e := elem.(type) {
 		case *TraceElementAtomic:
@@ -328,6 +294,41 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			logging.Debug("Update vector clock for go operation "+e.ToString()+
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
+		}
+
+		// check for leak
+		if analysisCases["leak"] && elem.getTpost() == 0 {
+			switch e := elem.(type) {
+			case *TraceElementChannel:
+				switch e.opC {
+				case send:
+					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 0)
+				case recv:
+					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 1)
+				}
+			case *TraceElementMutex:
+				analysis.CheckForLeakMutex(elem.GetID(), elem.GetTID())
+			case *TraceElementWait:
+				analysis.CheckForLeakWait(elem.GetTID())
+			case *TraceElementSelect:
+				cases := e.GetCases()
+				ids := make([]int, 0)
+				opTypes := make([]int, 0)
+				for _, c := range cases {
+					switch c.opC {
+					case send:
+						ids = append(ids, c.GetID())
+						opTypes = append(opTypes, 0)
+					case recv:
+						ids = append(ids, c.GetID())
+						opTypes = append(opTypes, 1)
+					}
+				}
+				analysis.CheckForLeakSelectStuck(ids, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
+			case *TraceElementCond:
+				analysis.CheckForLeakCond(elem.GetTID())
+			}
+			// continue
 		}
 
 	}
@@ -452,15 +453,18 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
  */
 func RemoveConcurrent(element *TraceElement) {
 	for routine, trace := range traces {
-		for index, elem := range trace {
+		result := make([]TraceElement, 0)
+		for _, elem := range trace {
 			if elem.GetTID() == (*element).GetTID() {
+				result = append(result, elem)
 				continue
 			}
 
-			if clock.GetHappensBefore((*element).GetVC(), elem.GetVC()) == clock.Concurrent {
-				traces[routine] = append(traces[routine][:index], traces[routine][index+1:]...)
+			if clock.GetHappensBefore((*element).GetVC(), elem.GetVC()) != clock.Concurrent {
+				result = append(result, elem)
 			}
 		}
+		traces[routine] = result
 	}
 }
 

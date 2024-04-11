@@ -331,7 +331,6 @@ func (mu *TraceElementMutex) updateVectorClock() {
 		err := "Unknown mutex operation: " + mu.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
-
 	mu.vc = currentVCHb[mu.routine].Copy()
 }
 

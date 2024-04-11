@@ -1,6 +1,3 @@
-Possible send on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1105@48
-	send : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1096@44
-Possible receive on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1105@48
-	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1100@43
+Potential leak on mutex:
+	mutex: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1100@45
+	last: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1095@42
