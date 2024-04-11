@@ -429,7 +429,6 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 	for _, trace := range traces {
 		for _, elem := range trace {
 			if elem.GetTID() == (*element).GetTID() {
-				println("CONT: ", elem.GetTID())
 				continue
 			}
 

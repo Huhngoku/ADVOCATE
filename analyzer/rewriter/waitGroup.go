@@ -3,7 +3,6 @@ package rewriter
 import (
 	"analyzer/bugs"
 	"analyzer/trace"
-	"fmt"
 )
 
 /*
@@ -12,22 +11,8 @@ import (
  *   bug (Bug): The bug to create a trace for
  */
 func rewriteWaitGroup(bug bugs.Bug) error {
-	// TODO: does not work yet -> gets stuck -> do not just shift  routine
-	// TODO: check if the pairs must be sorted
-
 	println("Start rewriting trace for negative waitgroup counter...")
 
-	PrintTrace([]string{"W", "C"})
-	println("\n\n")
-	for _, trace := range *trace.GetTraces() {
-		for _, elem := range trace {
-			if elem.GetVC().GetSize() == 0 {
-				continue
-			}
-			fmt.Println(elem.ToString(), " ", elem.GetVC())
-		}
-	}
-	println("\n\n")
 	minTime := -1
 	maxTime := -1
 
@@ -51,6 +36,5 @@ func rewriteWaitGroup(bug bugs.Bug) error {
 		trace.AddTraceElementReplay(maxTime+1, false)
 	}
 
-	PrintTrace([]string{"W", "C"})
 	return nil
 }

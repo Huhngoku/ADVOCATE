@@ -1087,16 +1087,36 @@ func n56() {
 	time.Sleep(200 * time.Millisecond)
 }
 
+// =============== use for testing ===============
+func nTest() {
+	c := make(chan int, 0)
+	d := make(chan int, 0)
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		<-c
+	}()
+
+	time.Sleep(100 * time.Millisecond)
+	close(d)
+	close(c)
+}
+
 func main() {
 
 	list := flag.Bool("l", false, "List tests. Do not run any test.")
-	testCase := flag.Int("c", 0, "Test to run. If not set, all are run.")
+	testCase := flag.Int("c", -1, "Test to run. If not set, all are run.")
 	// replay := flag.Bool("r", false, "Replay")
 	timeout := flag.Int("t", 0, "Timeout")
+	replay := flag.Bool("r", false, "Replay")
 	flag.Parse()
 
-	const n = 56
+	const n = 57
 	testNames := [n]string{
+		"Test NN: For testing purposes only.",
 		"Test 01: N - Synchronous channel",
 		"Test 02: N - Wait group",
 		"Test 03: N - Once",
@@ -1155,20 +1175,20 @@ func main() {
 		"Test 55: P - Leak because of wait group",
 		"Test 56: P - Leak because of conditional variable",
 	}
-	testFuncs := [n]func(){n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
+	testFuncs := [n]func(){nTest, n01, n02, n03, n04, n05, n06, n07, n08, n09, n10,
 		n11, n12, n13, n14, n15, n16, n17, n18, n19, n20,
 		n21, n22, n23, n24, n25, n26, n27, n28, n29, n30, n31, n32, n33, n34, n35,
 		n36, n37, n38, n39, n40, n41, n42, n43, n44, n45, n46, n47, n48, n49, n50,
 		n51, n52, n53, n54, n55, n56}
 
 	if list != nil && *list {
-		for i := 0; i < n; i++ {
+		for i := 1; i <= n; i++ {
 			println(testNames[i])
 		}
 		return
 	}
 
-	if true {
+	if replay == nil || !*replay {
 		// init tracing
 		advocate.InitTracing(0)
 		defer advocate.Finish()
@@ -1187,11 +1207,11 @@ func main() {
 		}
 	}()
 
-	if testCase != nil && *testCase != 0 {
-		println(testNames[*testCase-1])
-		testFuncs[*testCase-1]()
+	if testCase != nil && *testCase != -1 {
+		println(testNames[*testCase])
+		testFuncs[*testCase]()
 	} else {
-		for i := 0; i < n; i++ {
+		for i := 1; i <= n; i++ {
 			println(testNames[i])
 			testFuncs[i]()
 			println("Done: ", i+1, " of ", n)

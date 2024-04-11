@@ -211,14 +211,15 @@ The same is true for actual send/recv on closed
 
 
 ## Done before add
-We get the done before add error, if for a done operation d in routine r1, there 
-are more done operations, that are before or concurrent to the wait operation,
-then there are add operations, that are before the done operation.
+We assume, that the program run that was analyzed did not result in a negative 
+wait counter. Therefore we know, that for a wait group, the number of add is greater or 
+equal than the number of done. From the analysis, we get an incomplete but
+optimal bipartite matching between adds and dones. For all dones $D$, that are 
+not part of this matching, meaning they do not have an earlier add associated 
+with it, we can find a unique add $A$, that is concurrent to $D$. For 
+each of those $D$ we now shift all elements that are concurrent or after $D$
+to be after that $D$. This includes the $A$.
 
-To trigger an negative wait counter, we need to move as many add operations
-after and as many done operations before the done operation.
-
-TODO: Continue
 
 ## Select without partner
 
@@ -229,42 +230,6 @@ TODO: Implement
 TODO: Maybe implement
 
 ## Cyclick Deadlock
-A cyclic deadlock of only locks can exist, if the lock tree contains a loop.
-
-Lets, as an example assume, the program trace with the mutexes m, n and o had
-the following form:
-~~~
-  T1         T2          T3
-lock(m)
-unlock(m)
-lock(m)
-lock(n)
-unlock(m)
-unlock(n)
-           lock(n)
-           lock(o)
-           unlock(o)
-           unlock(n)
-                       lock(o)
-                       lock(m)
-                       unlock(m)
-                       unlock(o)
-~~~
-Whis would result in the following lock trees:
-~~~
- T1   T2  T3
-  m   n   o
-  |   |   |
-  n   o   m
-~~~
-which can be connected to a circle as follows:
-~~~
- T1   T2  T3
-  m   n   o
-/ | / | / |
-| n   o   m
-\--------/
-~~~
 We already get this (ordered) cycle from the analysis (the cycle is ordered in 
 such a way, that the edges inside a routine always go down). We now have to 
 reorder in such a way, that for edges from a to b, where a and b are in different 

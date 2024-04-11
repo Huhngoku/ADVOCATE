@@ -3,13 +3,7 @@
 
 -------------------- Critical -------------------
 
-1 Possible send on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:147@26
-	send : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:142@22
-
--------------------- Warning --------------------
-
-2 Possible receive on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:147@26
-	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:143@24
+1 Possible negative waitgroup counter:
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:563@57; 
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:578@63; 
 ```

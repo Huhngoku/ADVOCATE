@@ -158,10 +158,6 @@ func AddTraceElementSelect(routine int, tPre string,
 	elem.chosenDefault = chosenDefault
 	elem.cases = casesList
 
-	if elem.pos == "/home/erikkassubek/Uni/HiWi/Other/examples/gocrawl/popchannel.go:20" {
-		println(elem.ToString())
-	}
-
 	return AddElementToTrace(&elem)
 }
 
