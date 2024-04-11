@@ -15,6 +15,7 @@ import (
  *   vc (VectorClock): The vector clock of the operation
  *   tID (string): The trace id
  *   opType (int): An identifier for the type of the operation (send = 0, recv = 1)
+ * TODO: currently only for unbuffered channels
  */
 func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType int) {
 	logging.Debug("Checking channel for for leak channel", logging.INFO)
@@ -197,13 +198,25 @@ func CheckForLeakSelectRun(ids []int, typeIds []int, vc clock.VectorClock, tID s
 /*
  * Run for mutex operation without a post event. Show an error in the results
  * Args:
+ *   id (int): The mutex id
  *   tID (string): The trace id
  */
-func CheckForLeakMutex(tID string) {
+func CheckForLeakMutex(id int, tID string) {
 	found := "Potential leak on mutex:\n"
 	found += "\tmutex: " + tID + "\n"
-	found += "\t"
+	found += "\tlast: " + mostRecentAcquireTotal[id].tID + "\n"
 	logging.Result(found, logging.CRITICAL)
+}
+
+/*
+ * Add the most recent acquire operation for a mutex
+ * Args:
+ *   id (int): The mutex id
+ *   tID (string): The trace id
+ *   vc (VectorClock): The vector clock of the operation
+ */
+func addMostRecentAcquireTotal(id int, tID string, vc clock.VectorClock) {
+	mostRecentAcquireTotal[id] = VectorClockTID{vc, tID}
 }
 
 /*

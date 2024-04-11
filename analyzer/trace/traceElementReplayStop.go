@@ -19,12 +19,12 @@ type TraceElementReplay struct {
 /*
  * Create a new atomic trace element
  * Args:
- *   tpost (string): The timestamp of the event
+ *   t (string): The timestamp of the event
  *   start (int): True if before the important event, false if after
  */
-func AddTraceElementReplay(tPost int, start bool) error {
+func AddTraceElementReplay(t int, start bool) error {
 	elem := TraceElementReplay{
-		tPost: tPost,
+		tPost: t,
 		start: start,
 	}
 

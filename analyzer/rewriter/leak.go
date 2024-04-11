@@ -2,6 +2,8 @@ package rewriter
 
 import (
 	"analyzer/bugs"
+	"analyzer/clock"
+	"analyzer/trace"
 	"errors"
 )
 
@@ -31,7 +33,7 @@ import (
  * Returns:
  *   error: An error if the trace could not be created
  */
-func rewriteRoutineLeak(bug bugs.Bug) error {
+func rewriteChannelLeak(bug bugs.Bug) error {
 	return errors.New("Rewriting trace for routine leak with partner is not implemented yet")
 
 	// println("Start rewriting trace for channel leak...")
@@ -59,6 +61,18 @@ func rewriteRoutineLeak(bug bugs.Bug) error {
 
 /*
  * Rewrite a trace where a leaking mutex was found.
+ * The trace can only be rewritten, if the stuck lock operation is concurrent
+ * with the last lock operation on this mutex. If it is not concurrent, the
+ * rewrite fails. If a rewrite is possible, we try to run the stock lock operation
+ * before the last lock operation, so that the mutex is not blocked anymore.
+ * We therefore rewrite the trace from
+ *   T_1 + [l'] + T_2 + [l] + T_3
+ * to
+ *   T_1' + T_2' + [X_s, l, X_e]
+ * where l is the stuck lock, l' is the last lock, T_1, T_2, T_3 are the traces
+ * before, between and after the locks, T_1' and T_2' are the elements from T_1 and T_2, that
+ * are before (HB) l, X_s is the start and X_e is the stop signal, that releases the program from the
+ * guided replay.
  * Args:
  *   bug (Bug): The bug to create a trace for
  * Returns:
@@ -66,7 +80,32 @@ func rewriteRoutineLeak(bug bugs.Bug) error {
  */
 func rewriteMutexLeak(bug bugs.Bug) error {
 	println("Start rewriting trace for mutex leak...")
-	return errors.New("Rewriting trace for routine leak with mutex is not implemented yet")
+
+	// get l and l'
+	lockOp := (*bug.TraceElement1[0]).(*trace.TraceElementMutex)
+	lastLockOp := (*bug.TraceElement2[0]).(*trace.TraceElementMutex)
+
+	hb := clock.GetHappensBefore(lockOp.GetVC(), lastLockOp.GetVC())
+	if hb != clock.Concurrent {
+		return errors.New("The stuck mutex lock is not concurrent with the prior lock. Cannot rewrite trace.")
+	}
+
+	// remove T_3 -> T_1 + [l'] + T_2 + [l]
+	trace.ShortenTrace(lockOp.GetTSort(), true)
+
+	// remove all elements, that are concurrent with l. This includes l'
+	// -> T_1' + T_2' + [l]
+	trace.RemoveConcurrent(bug.TraceElement1[0])
+
+	// set tpost of l to non zero
+	lockOp.SetTSort(lockOp.GetTPre())
+
+	// add the start and stop signal after l -> T_1' + T_2' + [X_s, l, X_e]
+	trace.AddTraceElementReplay(lockOp.GetTPre()-1, true)
+	trace.AddTraceElementReplay(lockOp.GetTPre()+1, false)
+
+	PrintTrace([]string{})
+	return nil
 }
 
 /*

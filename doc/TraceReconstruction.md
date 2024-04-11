@@ -277,5 +277,23 @@ end()
 
 ## Leaks
 
-TODO: Implement
-
+### Mutex
+A mutex can only be blocked by a lock operation $l$. This operations blocks, 
+if the mutex is currently hold by another block operation. Because $l$
+was blocked at the end of the program run, there is another lock operation $l'$,
+which was fully executed, but there was no unlock operation. Because a potential later 
+unlock of this mutex was not recorded, it is not possible to try to move it 
+before $l$. Therefore we can only try to solve this stuck operation, if $l$ and 
+$l'$ are concurrent. In this case, we can try to execute $l$ before $l'$ to see, 
+if this prevents the stuck operation. 
+We therefore rewrite the trace from
+~~~
+T_1 ++ [l'] ++ T_2 ++ [l] ++ T_3
+~~~~
+to 
+~~~
+T_1 ++ T_2' ++ [l, X_e]
+~~~~
+where X_e ends the guided replay and lets the rest of the program play out 
+by itself. T_2' is the set of all elements, that are before $l$.
+ 

@@ -308,7 +308,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		return true, false, ReplayElement{}
 	}
 
-	// println("WaitForReplayPath", op.ToString(), file, line)
+	println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		if !replayEnabled { // check again if disabled by command
@@ -352,7 +352,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 
 		foundReplayElement(nextRoutine)
 
-		// println("Replay Run : ", next.Time, op.ToString(), file, line)
+		println("Replay Run : ", next.Time, op.ToString(), file, line)
 
 		lock(&timeoutLock)
 		timeoutCounterGlobal = 0 // reset the global timeout counter
@@ -390,37 +390,39 @@ func checkForTimeout(timeoutCounter int, file string, line int) {
 	messageCauses += "    - The program execution depends on outside input, that was not exactly reproduced\n"
 
 	if timeoutCounter == 250 { // ca. 5s
-		res := isPositionInTrace(file, line)
-		if !res {
-			errorMessage := "ReplayError: Program tried to execute an operation that is not in the trace:\n"
-			errorMessage += "    File: " + file + "\n"
-			errorMessage += "    Line: " + intToString(line) + "\n"
-			errorMessage += "This means, that the program replay was not successful.\n"
-			errorMessage += messageCauses
-			errorMessage += "If you suspect, that one of these causes is the reason for the error, you can try to change the program to avoid the problem.\n"
-			errorMessage += "If this is not possible, you can try to rerun the replay, hoping the error does not occur again.\n"
-			errorMessage += "If this is not possible or does not work, the program replay is currently not possible.\n\n"
+		// res := isPositionInTrace(file, line)
+		// if !res {
+		// 	errorMessage := "ReplayError: Program tried to execute an operation that is not in the trace:\n"
+		// 	errorMessage += "    File: " + file + "\n"
+		// 	errorMessage += "    Line: " + intToString(line) + "\n"
+		// 	errorMessage += "This means, that the program replay was not successful.\n"
+		// 	errorMessage += messageCauses
+		// 	errorMessage += "If you suspect, that one of these causes is the reason for the error, you can try to change the program to avoid the problem.\n"
+		// 	errorMessage += "If this is not possible, you can try to rerun the replay, hoping the error does not occur again.\n"
+		// 	errorMessage += "If this is not possible or does not work, the program replay is currently not possible.\n\n"
 
-			panic(errorMessage)
-		}
-	} else if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 10s
-		waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
-		warningMessage := "\nReplayWarning: Long wait time of approx. "
-		warningMessage += waitTime + "s.\n"
-		warningMessage += "The following operation is taking a long time to execute:\n"
-		warningMessage += "    File: " + file + "\n"
-		warningMessage += "    Line: " + intToString(line) + "\n"
-		warningMessage += "This can be caused by a stuck replay.\n"
-		warningMessage += messageCauses
-		warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
-		warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
-		warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
-		warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+		// 	panic(errorMessage)
+		// }
+		// } else
+		if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 10s
+			waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
+			warningMessage := "\nReplayWarning: Long wait time of approx. "
+			warningMessage += waitTime + "s.\n"
+			warningMessage += "The following operation is taking a long time to execute:\n"
+			warningMessage += "    File: " + file + "\n"
+			warningMessage += "    Line: " + intToString(line) + "\n"
+			warningMessage += "This can be caused by a stuck replay.\n"
+			warningMessage += messageCauses
+			warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
+			warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
+			warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
+			warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
 
-		println(warningMessage)
+			println(warningMessage)
 
-		if timeOutCancel {
-			panic("ReplayError: Replay stuck")
+			if timeOutCancel {
+				panic("ReplayError: Replay stuck")
+			}
 		}
 	}
 }

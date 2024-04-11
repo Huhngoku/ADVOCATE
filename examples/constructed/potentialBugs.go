@@ -1089,20 +1089,17 @@ func n56() {
 
 // =============== use for testing ===============
 func nTest() {
-	c := make(chan int, 0)
-	d := make(chan int, 0)
+	m := sync.Mutex{}
 
 	go func() {
-		c <- 1
+		m.Lock()
+		println("locked")
 	}()
-
-	go func() {
-		<-c
-	}()
-
 	time.Sleep(100 * time.Millisecond)
-	close(d)
-	close(c)
+
+	m.Lock()
+	m.Unlock()
+	println("Done")
 }
 
 func main() {

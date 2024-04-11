@@ -149,7 +149,7 @@ func (at *TraceElementAtomic) GetPos() string {
  *   string: The tID of the element
  */
 func (at *TraceElementAtomic) GetTID() string {
-	return ""
+	return "A@" + strconv.Itoa(at.tPost)
 }
 
 /*

@@ -294,6 +294,15 @@ func (ch *TraceElementChannel) GetOID() int {
 }
 
 /*
+ * Check if the channel operation is buffered
+ * Returns:
+ *   bool: Whether the channel operation is buffered
+ */
+func (ch *TraceElementChannel) IsBuffered() bool {
+	return ch.qSize != 0
+}
+
+/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
@@ -347,7 +356,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			elem.updateVectorClock()
 		}
 	}
-	if ch.qSize != 0 {
+	if ch.IsBuffered() {
 		if ch.opC == send {
 			maxOpID[ch.id] = ch.oID
 		} else if ch.opC == recv {
@@ -359,7 +368,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 		}
 	}
 
-	if ch.qSize == 0 { // unbuffered channel
+	if !ch.IsBuffered() { // unbuffered channel
 		switch ch.opC {
 		case send:
 			partner := ch.findUnbufferedPartner()

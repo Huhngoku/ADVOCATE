@@ -90,7 +90,7 @@ func (b Bug) ToString() string {
 	case RoutineLeakMutex:
 		typeStr = "Potential routine leak mutex:"
 		arg1Str = "mutex: "
-		arg2Str = ""
+		arg2Str = "last: "
 	case RoutineLeakWaitGroup:
 		typeStr = "Potential routine leak waitgroup:"
 		arg1Str = "waitgroup: "
