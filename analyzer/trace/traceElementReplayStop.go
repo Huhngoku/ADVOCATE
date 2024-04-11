@@ -108,6 +108,7 @@ func (at *TraceElementReplay) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (at *TraceElementReplay) SetTSort(tSort int) {
+	at.SetTPre(tSort)
 	at.tPost = tSort
 }
 
@@ -118,6 +119,7 @@ func (at *TraceElementReplay) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
+	at.SetTPre(tSort)
 	at.tPost = tSort
 }
 

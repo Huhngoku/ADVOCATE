@@ -1,3 +1,6 @@
-Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:563@57; 
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:578@63; 
+Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1105@48
+	send : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1096@44
+Possible receive on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1105@48
+	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1100@43

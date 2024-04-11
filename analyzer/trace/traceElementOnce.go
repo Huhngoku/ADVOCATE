@@ -163,6 +163,7 @@ func (on *TraceElementOnce) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (on *TraceElementOnce) SetTSort(tSort int) {
+	on.SetTPre(tSort)
 	on.tPost = tSort
 }
 
@@ -173,6 +174,7 @@ func (on *TraceElementOnce) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (on *TraceElementOnce) SetTSortWithoutNotExecuted(tSort int) {
+	on.SetTPre(tSort)
 	if on.tPost != 0 {
 		on.tPost = tSort
 	}
@@ -207,7 +209,7 @@ func (on *TraceElementOnce) updateVectorClock() {
 		analysis.DoFail(on.routine, on.id, currentVCHb)
 	}
 
-	on.vc = currentVCHb[on.routine]
+	on.vc = currentVCHb[on.routine].Copy()
 }
 
 /*

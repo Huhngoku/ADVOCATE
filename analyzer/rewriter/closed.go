@@ -27,13 +27,15 @@ import (
 
 /*
 * Create a new trace for send/recv on closed channel
-* Let c be the close, a the send/recv, X a stop marker and T1, T2, T3 partial traces
+* Let c be the close, a the send/recv, X a start marker, X' a stop marker and
+* T1, T2, T3 partial traces.
 * The trace before the rewrite looks as follows:
 * 	T1 ++ [a] ++ T2 ++ [c] ++ T3
 * We know, that a, c and all elements in T2 are concurrent. Otherwise the bug
-* would not have been detected. We are also not interested in T2 and T3. We
-* can therefore rewrite the trace as follows:
-* 	T1 ++ [c, a, X]
+* would not have been detected. We are also not interested in T3. For T2
+* we only need the elements, that are before c. We call the subtrace with those
+* elements T2'. We can therefore rewrite the trace as follows:
+* 	T1 ++ T2' ++ [X, c, a, X']
 * Args:
 *   bug (Bug): The bug to create a trace for
 * Returns:
@@ -56,19 +58,19 @@ func rewriteClosedChannel(bug bugs.Bug) error {
 		return errors.New("Close is before send/recv")
 	}
 
-	// shorten routine with send. After this, t1 and t2 are not in the trace anymore
-	trace.ShortenTrace(t2, false)
+	// remove T3 -> T1 ++ [a] ++ T2 ++ [c]
+	trace.ShortenTrace(t1, true)
 
-	// switch the times of close and send/recv and add them at the end of the trace
-	(*bug.TraceElement1[0]).SetTPre(t2)
-	(*bug.TraceElement2[0]).SetTPre(t1)
-
-	trace.AddElementToTrace(*bug.TraceElement1[0])
+	// transform T2 to T2' -> T1 ++ T2' ++ [c, a]
+	// This is done by removing all elements in T2, that are concurrent to c (including a)
+	// and then adding a after c
+	trace.RemoveConcurrent(bug.TraceElement1[0])
+	(*bug.TraceElement2[0]).SetTSort(t1 + 1)
 	trace.AddElementToTrace(*bug.TraceElement2[0])
 
-	// add a start and stop marker
+	// add a start and stop marker -> T1 ++ T2' ++ [X, c, a, X']
 	trace.AddTraceElementReplay(t1-1, true)
-	trace.AddTraceElementReplay(t2+1, false)
+	trace.AddTraceElementReplay(t1+2, false)
 
 	return nil
 }

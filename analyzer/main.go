@@ -92,46 +92,40 @@ func main() {
 
 	if numberOfResults != 0 && !*noRewrite {
 		fmt.Println("\n\n\n")
-		fmt.Print("Do you want to create a reordered trace file? (y/n): ")
 
-		var answer string
-		var createRewrittenFile bool
-		resultIndex := -1
+		for {
+			fmt.Print("Enter the index of the result to use for the reordered trace file (0 to exit): ")
 
-		fmt.Scanln(&answer)
-		for answer != "y" && answer != "Y" && answer != "n" && answer != "N" {
-			fmt.Print("Please enter y or n: ")
-			fmt.Scanln(&answer)
-		}
+			resultIndex := -1
 
-		if answer == "y" || answer == "Y" {
-			createRewrittenFile = true
-			if numberOfResults > 1 {
-				for {
-					fmt.Print("Enter the index of the result to use for the reordered trace file: ")
-					_, err := fmt.Scanf("%d", &resultIndex)
-					if err != nil {
-						fmt.Print("Please enter a valid number: ")
-						continue
-					}
-					if resultIndex < 1 || resultIndex > numberOfResults {
-						fmt.Print("Please enter a valid number: ")
-						continue
-					}
-					break
+			_, err := fmt.Scanf("%d", &resultIndex)
+			if err != nil {
+				if numberOfResults == 1 {
+					fmt.Println("Please enter 1 to create the reordered trace file or 0 to exit\n")
+				} else {
+					fmt.Print("Please enter a valid number between 1 and ", numberOfResults, " or 0 to exit\n")
 				}
-			} else {
-				resultIndex = 1
+				continue
 			}
-		} else {
-			createRewrittenFile = false
-		}
+			if resultIndex == 0 { // no rewrite
+				break
+			}
 
-		if createRewrittenFile {
+			if resultIndex < 0 || resultIndex > numberOfResults {
+				if numberOfResults == 1 {
+					fmt.Println("Please enter 1 to create the reordered trace file or 0 to exit\n")
+				} else {
+					fmt.Print("Please enter a valid number between 1 and ", numberOfResults, " or 0 to exit\n")
+				}
+				continue
+			}
+
 			print("\n")
 			if err := rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines); err != nil {
 				println("Could not rewrite trace file: ", err.Error())
 			}
+
+			break // exit for loop
 		}
 	}
 }

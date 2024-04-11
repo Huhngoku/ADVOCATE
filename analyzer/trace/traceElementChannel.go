@@ -258,7 +258,7 @@ func (ch *TraceElementChannel) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (ch *TraceElementChannel) SetTSort(tpost int) {
-	ch.tPre = tpost
+	ch.SetTPre(tpost)
 	ch.tPost = tpost
 }
 
@@ -269,8 +269,8 @@ func (ch *TraceElementChannel) SetTSort(tpost int) {
  *   tSort (int): The timer of the element
  */
 func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tSort int) {
+	ch.SetTPre(tSort)
 	if ch.tPost != 0 {
-		ch.tPre = tSort
 		ch.tPost = tSort
 	}
 }

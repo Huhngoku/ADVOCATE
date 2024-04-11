@@ -210,6 +210,7 @@ func (mu *TraceElementMutex) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (mu *TraceElementMutex) SetTSort(tSort int) {
+	mu.SetTPre(tSort)
 	mu.tPost = tSort
 }
 
@@ -220,6 +221,7 @@ func (mu *TraceElementMutex) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (mu *TraceElementMutex) SetTSortWithoutNotExecuted(tSort int) {
+	mu.SetTPre(tSort)
 	if mu.tPost != 0 {
 		mu.tPost = tSort
 	}

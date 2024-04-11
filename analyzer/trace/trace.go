@@ -167,17 +167,14 @@ func ShortenRoutineIndex(routine int, index int, incl bool) {
 func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 	routine1 := (*element1).GetRoutine()
 	routine2 := (*element2).GetRoutine()
-	tPre1 := (*element1).GetTPre()
 	tSort1 := (*element1).GetTSort()
 	for index, elem := range traces[routine1] {
 		if elem.GetTSort() == (*element1).GetTSort() {
-			traces[routine1][index].SetTPre((*element2).GetTPre())
 			traces[routine1][index].SetTSort((*element2).GetTSort())
 		}
 	}
 	for index, elem := range traces[routine2] {
 		if elem.GetTSort() == (*element2).GetTSort() {
-			traces[routine2][index].SetTPre(tPre1)
 			traces[routine2][index].SetTSort(tSort1)
 			break
 		}
@@ -408,7 +405,6 @@ func ShiftTrace(startTPre int, shift int) bool {
 	for routine, trace := range traces {
 		for index, elem := range trace {
 			if elem.GetTPre() >= startTPre {
-				traces[routine][index].SetTPre(elem.GetTPre() + shift)
 				traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 			}
 		}
@@ -445,8 +441,26 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 
 	for _, elem := range elemsToShift {
 		tSort := elem.getTpost()
-		elem.SetTPre(tSort + distance)
 		elem.SetTSortWithoutNotExecuted(tSort + distance)
+	}
+}
+
+/*
+ * Remove all elements that are concurrent to the element
+ * Args:
+ *   element (traceElement): The element
+ */
+func RemoveConcurrent(element *TraceElement) {
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if elem.GetTID() == (*element).GetTID() {
+				continue
+			}
+
+			if clock.GetHappensBefore((*element).GetVC(), elem.GetVC()) == clock.Concurrent {
+				traces[routine] = append(traces[routine][:index], traces[routine][index+1:]...)
+			}
+		}
 	}
 }
 
@@ -468,7 +482,6 @@ func ShiftRoutine(routine int, startTSort int, shift int) bool {
 
 	for index, elem := range traces[routine] {
 		if elem.GetTPre() >= startTSort {
-			traces[routine][index].SetTPre(elem.GetTPre() + shift)
 			traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
 		}
 	}

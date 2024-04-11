@@ -158,6 +158,7 @@ func (at *TraceElementAtomic) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (at *TraceElementAtomic) SetTSort(tSort int) {
+	at.SetTPre(tSort)
 	at.tPost = tSort
 }
 
@@ -168,6 +169,7 @@ func (at *TraceElementAtomic) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (at *TraceElementAtomic) SetTSortWithoutNotExecuted(tSort int) {
+	at.SetTPre(tSort)
 	if at.tPost != 0 {
 		at.tPost = tSort
 	}
@@ -215,6 +217,7 @@ func (at *TraceElementAtomic) updateVectorClock() {
 		err := "Unknown operation: " + at.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+
 }
 
 /*

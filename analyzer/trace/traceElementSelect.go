@@ -257,6 +257,7 @@ func (se *TraceElementSelect) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (se *TraceElementSelect) SetTSort(tSort int) {
+	se.SetTPre(tSort)
 	se.tPost = tSort
 	se.chosenCase.SetTSort(tSort)
 }
@@ -268,6 +269,7 @@ func (se *TraceElementSelect) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
+	se.SetTPre(tSort)
 	if se.tPost != 0 {
 		se.tPost = tSort
 	}
@@ -335,7 +337,7 @@ func (se *TraceElementSelect) updateVectorClock() {
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
 
-	se.vc = currentVCHb[se.routine]
+	se.vc = currentVCHb[se.routine].Copy()
 }
 
 /*

@@ -189,6 +189,7 @@ func (wa *TraceElementWait) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (wa *TraceElementWait) SetTSort(tSort int) {
+	wa.SetTPre(tSort)
 	wa.tPost = tSort
 }
 
@@ -199,6 +200,7 @@ func (wa *TraceElementWait) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (wa *TraceElementWait) SetTSortWithoutNotExecuted(tSort int) {
+	wa.SetTPre(tSort)
 	if wa.tPost != 0 {
 		wa.tPost = tSort
 	}

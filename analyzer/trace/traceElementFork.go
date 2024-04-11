@@ -134,6 +134,7 @@ func (fo *TraceElementFork) GetTID() string {
  *   tSort (int): The timer of the element
  */
 func (fo *TraceElementFork) SetTSort(tpost int) {
+	fo.SetTPre(tpost)
 	fo.tPost = tpost
 }
 
@@ -144,6 +145,7 @@ func (fo *TraceElementFork) SetTSort(tpost int) {
  *   tSort (int): The timer of the element
  */
 func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tSort int) {
+	fo.SetTPre(tSort)
 	if fo.tPost != 0 {
 		fo.tPost = tSort
 	}
@@ -165,7 +167,7 @@ func (fo *TraceElementFork) ToString() string {
 func (fo *TraceElementFork) updateVectorClock() {
 	analysis.Fork(fo.routine, fo.id, currentVCHb, currentVCWmhb)
 
-	fo.vc = currentVCHb[fo.routine]
+	fo.vc = currentVCHb[fo.routine].Copy()
 }
 
 /*

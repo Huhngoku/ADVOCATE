@@ -180,11 +180,10 @@ func (co *TraceElementCond) GetTID() string {
  * TODO: check if tPre is correct
  */
 func (co *TraceElementCond) SetTSort(tSort int) {
+	co.SetTPre(tSort)
 	if co.opC == WaitCondOp {
 		co.tPost = tSort
-		return
 	}
-	co.tPre = tSort
 }
 
 /*
@@ -194,6 +193,7 @@ func (co *TraceElementCond) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (co *TraceElementCond) SetTSortWithoutNotExecuted(tSort int) {
+	co.SetTPre(tSort)
 	if co.opC == WaitCondOp {
 		if co.tPost != 0 {
 			co.tPost = tSort
