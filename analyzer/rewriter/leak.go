@@ -5,7 +5,6 @@ import (
 	"analyzer/clock"
 	"analyzer/trace"
 	"errors"
-	"fmt"
 )
 
 /*
@@ -147,13 +146,6 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
  */
 func rewriteCondLeak(bug bugs.Bug) error {
 	println("Start rewriting trace for cond leak...")
-
-	warningMessage := "Because of the locks involved in the wait of an " +
-		"conditional variable, it is highly recommended to run the analyzer with " +
-		"-c when rewriting a leak of a conditional variable. Rewriting without -c" +
-		"may lead to incorrect rewrites."
-
-	fmt.Println("\033[31m" + warningMessage + "\033[0m")
 
 	couldRewrite := false
 

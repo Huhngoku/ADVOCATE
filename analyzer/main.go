@@ -243,12 +243,17 @@ func printHeader() {
 	fmt.Println("$$ |  $$ |$$$$$$$  |   \\$  /    $$$$$$  |\\$$$$$$  |$$ |  $$ |  $$ |   $$$$$$$$\\ ")
 	fmt.Println("\\__|  \\__|\\_______/     \\_/     \\______/  \\______/ \\__|  \\__|  \\__|   \\________|")
 
-	fmt.Print("\n\n\n")
-	fmt.Println("Welcome to the trace analyzer.")
-	fmt.Println("This program analyzes a trace file and detects common concurrency bugs in Go programs.")
-	fmt.Println("It can also create a reordered trace file based on the analysis results.")
-	fmt.Println("Be aware, that the analysis is based on the trace file and may not be complete.")
-	fmt.Println("Be aware, that the analysis may contain false positives and false negatives.")
-	fmt.Println("Use the rewrite to check the results.")
-	fmt.Print("\n\n\n")
+	headerInfo := "\n\n\n" +
+		"Welcome to the trace analyzer and rewriter.\n" +
+		"This program analyzes a trace file and detects common concurrency bugs in Go programs.\n" +
+		"It can also create a reordered trace file based on the analysis results.\n" +
+		"Be aware, that the analysis is based on the trace file and may not be complete.\n" +
+		"Be aware, that the analysis may contain false positives and false negatives.\n" +
+		"\n" +
+		"If the rewrite of a trace file does not create the expected result, it can help to run the\n" +
+		"analyzer with the -c flag to ignore the happens before relations of critical sections (mutex lock/unlock operations).\n" +
+		"For the first analysis this is not recommended, because it increases the likelihood of false positives." +
+		"\n\n\n"
+
+	fmt.Print(headerInfo)
 }
