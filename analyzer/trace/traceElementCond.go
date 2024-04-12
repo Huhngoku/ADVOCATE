@@ -8,10 +8,10 @@ import (
 	"strconv"
 )
 
-type opCond int
+type OpCond int
 
 const (
-	WaitCondOp opCond = iota
+	WaitCondOp OpCond = iota
 	SignalOp
 	BroadcastOp
 )
@@ -32,7 +32,7 @@ type TraceElementCond struct {
 	tPre    int
 	tPost   int
 	id      int
-	opC     opCond
+	opC     OpCond
 	pos     string
 	tID     string
 	vc      clock.VectorClock
@@ -62,7 +62,7 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
-	var op opCond
+	var op OpCond
 	switch opN {
 	case "W":
 		op = WaitCondOp
@@ -207,6 +207,15 @@ func (co *TraceElementCond) SetTSortWithoutNotExecuted(tSort int) {
 }
 
 /*
+ * Get the operation of the element
+ * Returns:
+ *   (OpCond): The operation of the element
+ */
+func (co *TraceElementCond) GetOpCond() OpCond {
+	return co.opC
+}
+
+/*
  * Get the string representation of the element
  * Returns:
  *   (string): The string representation of the element
@@ -250,4 +259,40 @@ func (co *TraceElementCond) updateVectorClock() {
  */
 func (co *TraceElementCond) GetVC() clock.VectorClock {
 	return co.vc
+}
+
+/*
+ * Get all concurrent broadcast and signal operations on the same element
+ * Args:
+ *   element (traceElement): The element
+ *   filter ([]string): The types of the elements to return
+ * Returns:
+ *   []*traceElement: The concurrent elements
+ */
+func GetConcurrentBroadcastSignal(element *TraceElement) []*TraceElement {
+	res := make([]*TraceElement, 0)
+	for _, trace := range traces {
+		for _, elem := range trace {
+			switch elem.(type) {
+			case *TraceElementCond:
+			default:
+				continue
+			}
+
+			if elem.GetTID() == (*element).GetTID() {
+				continue
+			}
+
+			e := elem.(*TraceElementCond)
+
+			if e.opC == WaitCondOp {
+				continue
+			}
+
+			if clock.GetHappensBefore((*element).GetVC(), e.GetVC()) == clock.Concurrent {
+				res = append(res, &elem)
+			}
+		}
+	}
+	return res
 }

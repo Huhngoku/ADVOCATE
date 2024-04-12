@@ -424,6 +424,26 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					pos := strings.Split(fields[6], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
+				case "N":
+					switch fields[4] {
+					case "W":
+						op = runtime.OperationCondWait
+					case "S":
+						op = runtime.OperationCondSignal
+					case "B":
+						op = runtime.OperationCondBroadcast
+					default:
+						panic("Unknown cond operation")
+					}
+					pos := strings.Split(fields[5], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
+					if fields[2] == "0" {
+						blocked = true
+					}
+
+				default:
+					panic("Unknown operation " + fields[0] + " in line " + elem + " in file " + fileName + ".")
 				}
 				if op != runtime.OperationNone && !runtime.AdvocateIgnore(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{

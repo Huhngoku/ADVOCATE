@@ -1413,7 +1413,7 @@ func AdvocateCondPre(id uint64, op int) int {
 	case 1:
 		opC = OperationCondSignal
 	case 2:
-		opC = OperationCondWait
+		opC = OperationCondBroadcast
 	default:
 		panic("Unknown cond operation")
 	}

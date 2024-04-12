@@ -294,6 +294,10 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			logging.Debug("Update vector clock for go operation "+e.ToString()+
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
 			e.updateVectorClock()
+		case *TraceElementCond:
+			logging.Debug("Update vector clock for cond operation "+e.ToString()+
+				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
+			e.updateVectorClock()
 		}
 
 		// check for leak
@@ -442,6 +446,34 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 	distance := (*element).GetTPre() - minTime
 
 	for _, elem := range elemsToShift {
+		tSort := elem.GetTPre()
+		elem.SetTSort(tSort + distance)
+	}
+}
+
+/*
+ * Shift the element to be after all elements, that are concurrent to it
+ * Args:
+ *   element (traceElement): The element
+ */
+func ShiftConcurrentToBefore(element *TraceElement) {
+	lastConcurrentTime := (*element).GetTPre()
+	elementsToShift := make([]TraceElement, 0)
+
+	for _, trace := range traces {
+		for _, elem := range trace {
+			hb := clock.GetHappensBefore(elem.GetVC(), (*element).GetVC())
+			if elem.GetTID() == (*element).GetTID() || hb == clock.After {
+				elementsToShift = append(elementsToShift, elem)
+			} else if hb == clock.Concurrent && elem.GetTPre() > lastConcurrentTime {
+				lastConcurrentTime = elem.GetTPre()
+			}
+		}
+	}
+
+	distance := lastConcurrentTime - (*element).GetTPre()
+
+	for _, elem := range elementsToShift {
 		tSort := elem.GetTPre()
 		elem.SetTSort(tSort + distance)
 	}

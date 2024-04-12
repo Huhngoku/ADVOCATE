@@ -308,7 +308,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		return true, false, ReplayElement{}
 	}
 
-	println("WaitForReplayPath", op.ToString(), file, line)
+	// println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		if !replayEnabled { // check again if disabled by command
@@ -321,6 +321,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		if next.Op == OperationReplayStart {
 			println("Start Character Found")
 			foundReplayElement(nextRoutine)
+			continue
 		}
 
 		// disable the replay, if the next operation is the disable replay operation
@@ -338,6 +339,8 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			return false, false, ReplayElement{}
 		}
 
+		// println("Try: ", next.Time, next.Op.ToString(), next.File, next.Line)
+
 		if next.Time != 0 && replayEnabled {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
@@ -350,9 +353,8 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			}
 		}
 
+		// println("Replay Run : ", next.Time, next.Op.ToString(), next.File, next.Line)
 		foundReplayElement(nextRoutine)
-
-		println("Replay Run : ", next.Time, op.ToString(), file, line)
 
 		lock(&timeoutLock)
 		timeoutCounterGlobal = 0 // reset the global timeout counter

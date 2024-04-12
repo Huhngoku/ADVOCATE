@@ -4,6 +4,7 @@ import (
 	"analyzer/trace"
 	"io"
 	"os"
+	"sort"
 	"strconv"
 	"sync"
 )
@@ -77,6 +78,12 @@ func WriteTrace(path string, numberRoutines int) error {
 			// write trace
 			// println("Write trace to " + fileName + "...")
 			trace := trace.GetTraceFromId(i)
+
+			// sort trace by tPre
+			sort.Slice(trace, func(i, j int) bool {
+				return trace[i].GetTPre() < trace[j].GetTPre()
+			})
+
 			for index, element := range trace {
 				elementString := element.ToString()
 				if _, err := file.WriteString(elementString); err != nil {

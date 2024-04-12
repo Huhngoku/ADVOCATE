@@ -123,6 +123,8 @@ func rewriteMutexLeak(bug bugs.Bug) error {
 func rewriteWaitGroupLeak(bug bugs.Bug) error {
 	println("Start rewriting trace for waitgroup leak...")
 
+	// TODO: test if rewrite is possible
+
 	wait := bug.TraceElement1[0]
 
 	trace.ShiftConcurrentOrAfterToAfter(wait)
@@ -131,8 +133,6 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
 	trace.AddTraceElementReplay((*wait).GetTPre()+1, false)
 
 	return nil
-
-	// return errors.New("Rewriting trace for routine leak with waitgroup is not implemented yet")
 }
 
 // ================== Cond ====================
@@ -146,5 +146,38 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
  */
 func rewriteCondLeak(bug bugs.Bug) error {
 	println("Start rewriting trace for cond leak...")
-	return errors.New("Rewriting trace for routine leak with cond is not implemented yet")
+
+	couldRewrite := false
+
+	wait := bug.TraceElement1[0]
+
+	// check if there is an concurrent signal or broadcast
+	concurrentSignals := make([]*trace.TraceElement, 0)
+	concurretBroadcasts := make([]*trace.TraceElement, 0)
+
+	for _, elem := range trace.GetConcurrentBroadcastSignal(wait) {
+		e := (*elem).(*trace.TraceElementCond)
+		if e.GetOpCond() == trace.SignalOp {
+			concurrentSignals = append(concurrentSignals, elem)
+		} else if e.GetOpCond() == trace.BroadcastOp {
+			concurretBroadcasts = append(concurretBroadcasts, elem)
+		}
+	}
+
+	for _, broad := range concurretBroadcasts {
+		couldRewrite = true
+		trace.ShiftConcurrentToBefore(broad)
+	}
+
+	(*wait).SetTSort((*wait).GetTPre())
+
+	// trace.AddTraceElementReplay((*wait).GetTPre()-1, true)
+	trace.AddTraceElementReplay((*wait).GetTPre()+1, false)
+
+	if couldRewrite {
+		return nil
+	}
+
+	return errors.New("Could not rewrite trace for cond leak")
+
 }

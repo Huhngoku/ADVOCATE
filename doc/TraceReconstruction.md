@@ -313,13 +313,17 @@ moving all elements, that are concurrent with the stuck wait to be after
 the wait. To make sure, that we do not create a negative wait counter, we 
 keep the order of those moving elements the same as before the rewrite.
 
-
-
-
-
-
-
-
-
 ### Conditional Variables
+For a conditional variable only the wait operation can block. The block can be
+ended by a Signal or Broadcast call.
+
+If there is a Signal $s$, that is concurrent to the blocking wait $w$, but did
+not release $w$, TODO: missing
+
+If there is a Broadcast call $b$, that is concurrent to the blocking wait $w$, 
+but happened before it in the program run, we can move $b$ to 
+be after $w$, by moving all elements that are concurrent to $b$ to be before $b$. 
+
+
+
 TODO: NOT IMPLEMENTED YET
