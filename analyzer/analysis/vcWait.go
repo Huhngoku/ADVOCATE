@@ -42,9 +42,12 @@ func Change(routine int, id int, delta int, tID string, vc map[int]clock.VectorC
  *   routine (int): The routine id
  *   id (int): The id of the wait group
  *   vc (*map[int]VectorClock): The vector clocks
+ *   notLeak (bool): If the wait group is not leaked (tpost = 0)
  */
-func Wait(routine int, id int, tID string, vc map[int]clock.VectorClock) {
+func Wait(routine int, id int, tID string, vc map[int]clock.VectorClock, notLeak bool) {
 	newWg(id, vc[id].GetSize())
-	vc[routine] = vc[routine].Sync(wg[id])
-	vc[routine] = vc[routine].Inc(routine)
+	if notLeak {
+		vc[routine] = vc[routine].Sync(wg[id])
+		vc[routine] = vc[routine].Inc(routine)
+	}
 }

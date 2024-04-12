@@ -207,6 +207,15 @@ func (wa *TraceElementWait) SetTSortWithoutNotExecuted(tSort int) {
 }
 
 /*
+ * Get if the operation is a wait op
+ * Returns:
+ *   bool: True if the operation is a wait op
+ */
+func (wa *TraceElementWait) IsWait() bool {
+	return wa.opW == WaitOp
+}
+
+/*
  * Get the simple string representation of the element
  * Returns:
  *   string: The simple string representation of the element
@@ -235,7 +244,7 @@ func (wa *TraceElementWait) updateVectorClock() {
 	case ChangeOp:
 		analysis.Change(wa.routine, wa.id, wa.delta, wa.tID, currentVCHb)
 	case WaitOp:
-		analysis.Wait(wa.routine, wa.id, wa.tID, currentVCHb)
+		analysis.Wait(wa.routine, wa.id, wa.tID, currentVCHb, wa.getTpost() != 0)
 	default:
 		err := "Unknown operation on wait group: " + wa.ToString()
 		logging.Debug(err, logging.ERROR)

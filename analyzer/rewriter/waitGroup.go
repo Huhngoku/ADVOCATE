@@ -36,5 +36,7 @@ func rewriteWaitGroup(bug bugs.Bug) error {
 		trace.AddTraceElementReplay(maxTime+1, false)
 	}
 
+	PrintTrace([]string{"G", "W"})
+
 	return nil
 }

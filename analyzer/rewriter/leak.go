@@ -20,11 +20,13 @@ import (
  *  - waitgroup operation without a post event
  *  - cond operation without a post event
  * TODO:
- *  - implement rewriteRoutineLeak
- *  - implement rewriteMutexLeak
- *  - implement rewriteWaitGroupLeak
+ *  - implement rewriteChannelLeak
+ *  - implement rewriteWaitGroupLeak -> not possible????
  *  - implement rewriteCondLeak
+ *  - look at stuck select
  */
+
+// =============== Channel ====================
 
 /*
  * Rewrite a trace where a leaking channel with possible partner was found.
@@ -58,6 +60,8 @@ func rewriteChannelLeak(bug bugs.Bug) error {
 	// println(originalPartner.ToString())
 
 }
+
+// ================== Mutex ====================
 
 /*
  * Rewrite a trace where a leaking mutex was found.
@@ -104,9 +108,10 @@ func rewriteMutexLeak(bug bugs.Bug) error {
 	trace.AddTraceElementReplay(lockOp.GetTPre()-1, true)
 	trace.AddTraceElementReplay(lockOp.GetTPre()+1, false)
 
-	PrintTrace([]string{})
 	return nil
 }
+
+// ================== WaitGroup ====================
 
 /*
  * Rewrite a trace where a leaking waitgroup was found.
@@ -116,9 +121,11 @@ func rewriteMutexLeak(bug bugs.Bug) error {
  *   error: An error if the trace could not be created
  */
 func rewriteWaitGroupLeak(bug bugs.Bug) error {
-	println("Start rewriting trace for waitgroup leak...")
-	return errors.New("Rewriting trace for routine leak with waitgroup is not implemented yet")
+	// println("Start rewriting trace for waitgroup leak...")
+	return errors.New("Rewrite for leaking waitgroup not possible")
 }
+
+// ================== Cond ====================
 
 /*
  * Rewrite a trace where a leaking cond was found.

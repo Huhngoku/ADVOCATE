@@ -1089,17 +1089,27 @@ func n56() {
 
 // =============== use for testing ===============
 func nTest() {
-	m := sync.Mutex{}
+	w := sync.WaitGroup{}
 
 	go func() {
-		m.Lock()
-		println("locked")
+		w.Add(1)
 	}()
+
+	go func() {
+		w.Add(1)
+	}()
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		w.Done()
+	}()
+
+	time.Sleep(200 * time.Millisecond)
+
+	w.Wait()
+
 	time.Sleep(100 * time.Millisecond)
 
-	m.Lock()
-	m.Unlock()
-	println("Done")
 }
 
 func main() {

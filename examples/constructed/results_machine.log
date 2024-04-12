@@ -1,3 +1,6 @@
-Potential leak on mutex:
-	mutex: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1100@45
-	last: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1095@42
+Potential leak on wait group:
+	wait-group: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1109@50
+	
+Possible negative waitgroup counter:
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1095@45; 
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1104@49; 
