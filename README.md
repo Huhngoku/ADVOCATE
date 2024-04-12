@@ -63,6 +63,10 @@ advocate
 
 In some cases, we can get a `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)` until the problem disappears.
 
+In some cases, the trace files can get very big. If you want to simplify the 
+traces, you can set the value in `runtime.InitAtomics` to $-1$. In this case, 
+atomic variable operations are not recorded. 
+
 After that run the program with `./go run main.go` or `./go build && ./main`,
 using the new runtime.
 

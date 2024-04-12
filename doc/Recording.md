@@ -36,6 +36,10 @@ fatal error: schedule: holding locks
 error. In this case increase the argument in `InitTracing` until
 the problem disappears.
 
+In some cases, the trace files can get very big. If you want to simplify the 
+traces, you can set the value in `InitAtomics` to $-1$. In this case, 
+atomic variable operations are not recorded. 
+
 ### Panic
 
 If the program is stopped because of an panic while the main routine is

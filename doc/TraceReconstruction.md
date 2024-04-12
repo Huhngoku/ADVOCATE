@@ -277,6 +277,12 @@ end()
 
 ## Leaks
 
+### Channel
+TODO: NOT IMPLEMENTED YET
+
+### Select
+TODO: NOT IMPLEMENTED YET
+
 ### Mutex
 A mutex can only be blocked by a lock operation $l$. This operations blocks, 
 if the mutex is currently hold by another block operation. Because $l$
@@ -297,3 +303,22 @@ T_1 ++ T_2' ++ [l, X_e]
 where X_e ends the guided replay and lets the rest of the program play out 
 by itself. T_2' is the set of all elements, that are before $l$.
  
+### Wait Group
+Only the wait in a wait group can lead to an actual leak. This happens, when the 
+wait group counter is not 0 at any time after the wait command. We can 
+only influence the counter for the wait, by moving adds and dones, that are 
+concurrent to the wait. To minimize the counter as much as possible, we need 
+to move as many done before and as many add after the wait.
+
+
+
+
+TODO: NOT IMPLEMENTED YET
+
+
+
+
+
+
+### Conditional Variables
+TODO: NOT IMPLEMENTED YET
