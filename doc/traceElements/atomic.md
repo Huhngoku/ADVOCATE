@@ -32,7 +32,7 @@ The following is an example containing atomic operations.
 package main
 
 func main() {  // routine 1
-    var a atomic.Int32
+	var a atomic.Int32
 	var b int32
 
 	a.Add(1)

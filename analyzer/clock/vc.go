@@ -126,7 +126,7 @@ func (vc VectorClock) Copy() VectorClock {
 	if vc.size == 0 {
 		_, file, line, _ := runtime.Caller(1)
 		logging.Debug("Copy of empty vector clock: "+file+":"+strconv.Itoa(line), logging.ERROR)
-		panic("")
+		panic("Copy of empty vector clock: " + file + ":" + strconv.Itoa(line))
 	}
 	newVc := NewVectorClock(vc.size)
 	for i := 1; i <= vc.size; i++ {

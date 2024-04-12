@@ -1,6 +1,6 @@
 Leak on wait group:
-	wait-group: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1109@50
+	wait-group: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1108@47
 	
 Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1095@45; 
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1104@49; 
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1098@44; 
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1103@46; 

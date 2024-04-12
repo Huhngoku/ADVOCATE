@@ -121,8 +121,18 @@ func rewriteMutexLeak(bug bugs.Bug) error {
  *   error: An error if the trace could not be created
  */
 func rewriteWaitGroupLeak(bug bugs.Bug) error {
-	// println("Start rewriting trace for waitgroup leak...")
-	return errors.New("Rewrite for leaking waitgroup not possible")
+	println("Start rewriting trace for waitgroup leak...")
+
+	wait := bug.TraceElement1[0]
+
+	trace.ShiftConcurrentOrAfterToAfter(wait)
+
+	trace.AddTraceElementReplay((*wait).GetTPre()-1, true)
+	trace.AddTraceElementReplay((*wait).GetTPre()+1, false)
+
+	return nil
+
+	// return errors.New("Rewriting trace for routine leak with waitgroup is not implemented yet")
 }
 
 // ================== Cond ====================

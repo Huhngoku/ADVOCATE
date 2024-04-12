@@ -230,28 +230,34 @@ func GetNumberOfRoutines() int {
  *    recording.
  */
 func InitAdvocate(size int) {
-	if size >= 0 {
-		chanSize := (size + 1) * 10000000
-		// link runtime with atomic via channel to receive information about
-		// atomic events
-		c := make(chan at.AtomicElem, chanSize)
-		at.AdvocateAtomicLink(c)
-
-		go func() {
-			for atomic := range c {
-				lock(&advocateAtomicMapLock)
-				advocateAtomicMap[atomic.Index] = advocateAtomicMapElem{
-					addr:      atomic.Addr,
-					operation: atomic.Operation,
-				}
-				unlock(&advocateAtomicMapLock)
-				// go func() {
-				// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
-				// 	atomic.ChanReturn <- true
-				// }()
-			}
-		}()
+	disableAtomics := false
+	if size < 0 {
+		size = 0
+		disableAtomics = true
 	}
+	chanSize := (size + 1) * 10000000
+	// link runtime with atomic via channel to receive information about
+	// atomic events
+	c := make(chan at.AtomicElem, chanSize)
+
+	if !disableAtomics {
+		at.AdvocateAtomicLink(c)
+	}
+
+	go func() {
+		for atomic := range c {
+			lock(&advocateAtomicMapLock)
+			advocateAtomicMap[atomic.Index] = advocateAtomicMapElem{
+				addr:      atomic.Addr,
+				operation: atomic.Operation,
+			}
+			unlock(&advocateAtomicMapLock)
+			// go func() {
+			// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
+			// 	atomic.ChanReturn <- true
+			// }()
+		}
+	}()
 
 	advocateDisabled = false
 }

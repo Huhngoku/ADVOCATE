@@ -11,7 +11,6 @@ import (
 	"advocate"
 	"flag"
 	"os"
-	"runtime"
 	"sync"
 	"time"
 )
@@ -1201,7 +1200,7 @@ func main() {
 	} else {
 		// init replay
 		advocate.EnableReplayWithTimeout()
-		defer runtime.WaitForReplayFinish()
+		defer advocate.WaitForReplayFinish()
 	}
 
 	// cancel test if time has run out

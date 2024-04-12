@@ -308,12 +308,13 @@ Only the wait in a wait group can lead to an actual leak. This happens, when the
 wait group counter is not 0 at any time after the wait command. We can 
 only influence the counter for the wait, by moving adds and dones, that are 
 concurrent to the wait. To minimize the counter as much as possible, we need 
-to move as many done before and as many add after the wait.
+to move as many done before and as many add after the wait. We do this,
+moving all elements, that are concurrent with the stuck wait to be after 
+the wait. To make sure, that we do not create a negative wait counter, we 
+keep the order of those moving elements the same as before the rewrite.
 
 
 
-
-TODO: NOT IMPLEMENTED YET
 
 
 
