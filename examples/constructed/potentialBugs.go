@@ -270,7 +270,7 @@ func n12() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-// FN: potential send to closed channel not recorded because of once
+// FN: possible send to closed channel not recorded because of once
 func n13() {
 	c := make(chan int, 1)
 
@@ -294,7 +294,7 @@ func n13() {
 	time.Sleep(100 * time.Millisecond)
 }
 
-// TP: potential send to closed channel recorded with once
+// TP: possible send to closed channel recorded with once
 func n14() {
 	c := make(chan int, 1)
 
@@ -1133,11 +1133,11 @@ func main() {
 		"Test 07: N - recv/send on closed",
 		"Test 08: P - recv on closed",
 		"Test 09: P - send/recv on closed",
-		"Test 10: P - potential send on closed",
-		"Test 11: P - potential send on closed",
+		"Test 10: P - possible send on closed",
+		"Test 11: P - possible send on closed",
 		"Test 12: N - no send to closed channel because of once",
-		"Test 13: P - potential send to closed channel not recorded because of once",
-		"Test 14: P - potential send to closed channel recorded with once",
+		"Test 13: P - possible send to closed channel not recorded because of once",
+		"Test 14: P - possible send to closed channel recorded with once",
 		"Test 15: N - send on close, no send possible",
 		"Test 16: P - send on close",
 		"Test 17: P - send on close",
@@ -1171,9 +1171,9 @@ func main() {
 		"Test 44: P - Leaking wait group",
 		"Test 45: P - Leaking mutex, doubble locking",
 		"Test 46: N - All select cases are triggered (unbuffered)",
-		"Test 47: N - One select case is not triggered, but all have potential partner (unbuffered)",
-		"Test 48: P - One select case is not triggered, and has no potential partner (unbuffered)",
-		"Test 49: P - One select case is not triggered, and has no potential partner (unbuffered)",
+		"Test 47: N - One select case is not triggered, but all have possible partner (unbuffered)",
+		"Test 48: P - One select case is not triggered, and has no possible partner (unbuffered)",
+		"Test 49: P - One select case is not triggered, and has no possible partner (unbuffered)",
 		"Test 50: N - One select case has partner that can only send buffered",
 		"Test 51: P - Leak because of channel with possible partner",
 		"Test 52: P - Leak because of channel without possible partner",

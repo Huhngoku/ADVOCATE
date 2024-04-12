@@ -48,11 +48,11 @@ func (b Bug) ToString() string {
 	arg2Str := ""
 	switch b.Type {
 	case SendOnClosed:
-		typeStr = "Possible Send on closed channel:"
+		typeStr = "Possible send on closed channel:"
 		arg1Str = "close: "
 		arg2Str = "send: "
 	case PosRecvOnClosed:
-		typeStr = "Possible Receive on closed channel:"
+		typeStr = "Possible receive on closed channel:"
 		arg1Str = "close: "
 		arg2Str = "recv: "
 	case RecvOnClosed:
@@ -76,27 +76,27 @@ func (b Bug) ToString() string {
 		arg1Str = "select: "
 		arg2Str = ""
 	case MixedDeadlock:
-		typeStr = "Potential mixed deadlock:"
+		typeStr = "Possible mixed deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "lock: "
 	case CyclicDeadlock:
-		typeStr = "Potential cyclic deadlock:"
+		typeStr = "Possible cyclic deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "cycle: "
 	case RoutineLeakPartner, RoutineLeakNoPartner:
-		typeStr = "Potential routine leak channel:"
+		typeStr = "Leak of channel:"
 		arg1Str = "channel: "
 		arg2Str = "partner: "
 	case RoutineLeakMutex:
-		typeStr = "Potential routine leak mutex:"
+		typeStr = "Leak of mutex:"
 		arg1Str = "mutex: "
 		arg2Str = "last: "
 	case RoutineLeakWaitGroup:
-		typeStr = "Potential routine leak waitgroup:"
+		typeStr = "Leak of waitgroup:"
 		arg1Str = "waitgroup: "
 		arg2Str = ""
 	case RoutineLeakCond:
-		typeStr = "Potential routine leak conditional variable:"
+		typeStr = "Leak of conditional variable:"
 		arg1Str = "conditional: "
 		arg2Str = ""
 
@@ -144,7 +144,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug := Bug{}
 
 	actual := strings.Split(typeStr, " ")[0]
-	if actual != "Possible" && actual != "Potential" {
+	if actual != "Possible" && actual != "Leak" {
 		return true, bug, nil
 	}
 
@@ -165,19 +165,19 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = SelectWithoutPartner
 	case "Found concurrent Recv on same channel:":
 		bug.Type = ConcurrentRecv
-	case "Potential mixed deadlock:":
+	case "Possible mixed deadlock:":
 		bug.Type = MixedDeadlock
-	case "Potential leak with possible partner:":
+	case "Leak with possible partner:":
 		bug.Type = RoutineLeakPartner
-	case "Potential leak without possible partner:":
+	case "Leak without possible partner:":
 		bug.Type = RoutineLeakNoPartner
-	case "Potential leak on mutex:":
+	case "Leak on mutex::":
 		bug.Type = RoutineLeakMutex
-	case "Potential leak on wait group:":
+	case "Leak on wait group:":
 		bug.Type = RoutineLeakWaitGroup
-	case "Potential leak on conditional variable:":
+	case "Leak on conditional variable:":
 		bug.Type = RoutineLeakCond
-	case "Potential cyclic deadlock:":
+	case "Possible cyclic deadlock:":
 		bug.Type = CyclicDeadlock
 	default:
 		return false, bug, errors.New("Unknown bug type: " + typeStr)
@@ -204,6 +204,10 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 
 	bug.TraceElement2 = make([]*trace.TraceElement, 0)
 	bug.TID2 = make([]string, 0)
+
+	if arg2 == "" || arg2 == "\t" {
+		return false, bug, nil
+	}
 
 	elems = strings.Split(arg2, ": ")[1]
 

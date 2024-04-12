@@ -15,7 +15,7 @@ import (
  * ~~~~
  * T = T1 ++ [a] ++ T2 ++ [c] ++ T3
  * ~~~~~~
- * We now, that a, c and all Elements in T2 are concurrent. Otherwise, a potential send/recv on close would not be possible. We can therefor reorder the trace in the following manner:
+ * We now, that a, c and all Elements in T2 are concurrent. Otherwise, a possible send/recv on close would not be possible. We can therefor reorder the trace in the following manner:
  * ~~~~
  * T = T1 ++ [X_s, c, a, X_e]
  * ~~~~~~

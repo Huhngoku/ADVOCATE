@@ -77,8 +77,8 @@ func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
 		} else {
 			// not select cases
 			if send {
-				if potentialPartner, ok := mostRecentReceive[id]; ok {
-					hb := clock.GetHappensBefore(vc, potentialPartner.vc)
+				if possiblePartner, ok := mostRecentReceive[id]; ok {
+					hb := clock.GetHappensBefore(vc, possiblePartner.vc)
 					if buffered && (hb == clock.Concurrent || hb == clock.Before) {
 						found = true
 					} else if !buffered && hb == clock.Concurrent {
@@ -86,8 +86,8 @@ func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
 					}
 				}
 			} else { // recv
-				if potentialPartner, ok := mostRecentSend[id]; ok {
-					hb := clock.GetHappensBefore(vc, potentialPartner.vc)
+				if possiblePartner, ok := mostRecentSend[id]; ok {
+					hb := clock.GetHappensBefore(vc, possiblePartner.vc)
 					if buffered && (hb == clock.Concurrent || hb == clock.After) {
 						found = true
 					} else if !buffered && hb == clock.Concurrent {

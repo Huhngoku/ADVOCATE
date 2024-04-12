@@ -1,4 +1,4 @@
-Potential leak on wait group:
+Leak on wait group:
 	wait-group: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1109@50
 	
 Possible negative waitgroup counter:

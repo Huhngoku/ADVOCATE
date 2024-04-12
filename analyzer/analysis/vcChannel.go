@@ -225,7 +225,7 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	closeRout[id] = rout
 
 	if analysisCases["sendOnClosed"] || analysisCases["receiveOnClosed"] {
-		checkForPotentialCommunicationOnClosedChannel(id, tID)
+		checkForCommunicationOnClosedChannel(id, tID)
 	}
 
 	vc[rout] = vc[rout].Inc(rout)

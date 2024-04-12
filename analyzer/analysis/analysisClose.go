@@ -14,7 +14,7 @@ Args:
 	id (int): the id of the channel
 	pos (string): the position of the close in the program
 */
-func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
+func checkForCommunicationOnClosedChannel(id int, pos string) {
 	// check if there is an earlier send, that could happen concurrently to close
 	if analysisCases["sendOnClosed"] && hasSend[id] {
 		logging.Debug("Check for possible send on closed channel "+

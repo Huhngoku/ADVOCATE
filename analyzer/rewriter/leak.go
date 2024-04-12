@@ -10,12 +10,12 @@ import (
 /*
  * Rewrite a trace where a leaking routine was found.
  * Different to most other rewrites, we don not try to get the program to run
- * into a potential bug, but to take an actual leak (we only detect actual leaks,
- * not potential leaks) and rewrite them in such a way, that the routine
+ * into a possible bug, but to take an actual leak (we only detect actual leaks,
+ * not possible leaks) and rewrite them in such a way, that the routine
  * gets unstuck, meaning is not leaking any more.
  * We detect leaks, that are stuck because of the following conditions:
- *  - channel operation without a potential  partner (may be in select)
- *  - channel operation with a potential partner, but no communication (may be in select)
+ *  - channel operation without a possible  partner (may be in select)
+ *  - channel operation with a possible partner, but no communication (may be in select)
  *  - mutex operation without a post event
  *  - waitgroup operation without a post event
  *  - cond operation without a post event
@@ -40,15 +40,15 @@ func rewriteChannelLeak(bug bugs.Bug) error {
 
 	// println("Start rewriting trace for channel leak...")
 	// println((*bug.TraceElement1[0]).ToString()) // stuck
-	// println((*bug.TraceElement2[0]).ToString()) // potential partner
+	// println((*bug.TraceElement2[0]).ToString()) // possible partner
 
-	// // get the original partner of the potential partner, and set its post and oId to 0
+	// // get the original partner of the possible partner, and set its post and oId to 0
 	// originalPartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel).GetPartner()
 	// println(originalPartner.ToString())
 	// originalPartner.SetTPost(0)
 	// originalPartner.SetOID(0)
 
-	// // set the oId of the stuck operation to the oId of the potential partner
+	// // set the oId of the stuck operation to the oId of the possible partner
 	// (*bug.TraceElement1[0]).(*trace.TraceElementChannel).SetOID((*bug.TraceElement2[0]).(*trace.TraceElementChannel).GetOID())
 
 	// // TODO: shift correctly

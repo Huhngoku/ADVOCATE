@@ -174,7 +174,7 @@ func CheckForCyclicDeadlock() {
 		// check if the cycle can create a deadlock
 		res := isCycleDeadlock(cycle)
 		if res {
-			found := "Potential cyclic deadlock:\n"
+			found := "Possible cyclic deadlock:\n"
 			found += "\thead: " + cycle[0].tID + "\n"
 			found += "\ttail: "
 			for i := 0; i < len(cycle); i++ {
