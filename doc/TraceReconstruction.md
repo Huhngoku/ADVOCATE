@@ -317,13 +317,20 @@ keep the order of those moving elements the same as before the rewrite.
 For a conditional variable only the wait operation can block. The block can be
 ended by a Signal or Broadcast call.
 
-If there is a Signal $s$, that is concurrent to the blocking wait $w$, but did
-not release $w$, TODO: missing
+If there is a Signal $s$, that is concurrent to the blocking wait $w$, there are 
+two possible cases. Either $s$ was executed before $w$ or $s$ was executed 
+after $w$ but released another wait $w'$.\
+If $w'$ is HB before $w$, we cannot use this signal to release $w$, because 
+signal wakes the wait in the order in which the waits where started. If 
+$w'$ is concurrent with $w$, we move $w$ to be before $w'$. If $w$ was executed 
+after $s$, we move $s$ to be before $w$. Unfortunately, waits are always 
+surrounded by lock operations, which in out HB relation scheme create a happens 
+before relation. With this, this type of reorder is not possible. For this 
+reason, it is currently necessary to run the analyzer with `-c`, which disables
+the happens before relation of mutex operations.
 
 If there is a Broadcast call $b$, that is concurrent to the blocking wait $w$, 
 but happened before it in the program run, we can move $b$ to 
 be after $w$, by moving all elements that are concurrent to $b$ to be before $b$. 
 
 
-
-TODO: NOT IMPLEMENTED YET

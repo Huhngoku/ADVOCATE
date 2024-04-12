@@ -1091,19 +1091,19 @@ func nTest() {
 	c := sync.NewCond(&sync.Mutex{})
 
 	go func() {
-		c.Broadcast()
+		time.Sleep(100 * time.Millisecond)
+		c.Signal()
 	}()
 
-	// go func() {
-	// 	time.Sleep(100 * time.Millisecond)
-	// 	c.L.Lock()
-	// 	println("Wait - b - 1")
-	// 	c.Wait()
-	// 	println("Wait - e - 1")
-	// 	c.L.Unlock()
-	// }()
+	go func() {
+		c.L.Lock()
+		println("Wait - b - 1")
+		c.Wait()
+		println("Wait - e - 1")
+		c.L.Unlock()
+	}()
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 	c.L.Lock()
 	println("Wait - b - 2")
 	c.Wait()

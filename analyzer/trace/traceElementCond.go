@@ -242,7 +242,7 @@ func (co *TraceElementCond) ToString() string {
 func (co *TraceElementCond) updateVectorClock() {
 	switch co.opC {
 	case WaitCondOp:
-		analysis.CondWait(co.id, co.routine, currentVCHb)
+		analysis.CondWait(co.id, co.routine, currentVCHb, co.tPost == 0)
 	case SignalOp:
 		analysis.CondSignal(co.id, co.routine, currentVCHb)
 	case BroadcastOp:
@@ -262,15 +262,18 @@ func (co *TraceElementCond) GetVC() clock.VectorClock {
 }
 
 /*
- * Get all concurrent broadcast and signal operations on the same element
+ * Get all to element concurrent wait, broadcast and signal operations on the same condition variable
  * Args:
  *   element (traceElement): The element
  *   filter ([]string): The types of the elements to return
  * Returns:
  *   []*traceElement: The concurrent elements
  */
-func GetConcurrentBroadcastSignal(element *TraceElement) []*TraceElement {
-	res := make([]*TraceElement, 0)
+func GetConcurrentWaitgroups(element *TraceElement) map[string][]*TraceElement {
+	res := make(map[string][]*TraceElement)
+	res["broadcast"] = make([]*TraceElement, 0)
+	res["signal"] = make([]*TraceElement, 0)
+	res["wait"] = make([]*TraceElement, 0)
 	for _, trace := range traces {
 		for _, elem := range trace {
 			switch elem.(type) {
@@ -290,7 +293,14 @@ func GetConcurrentBroadcastSignal(element *TraceElement) []*TraceElement {
 			}
 
 			if clock.GetHappensBefore((*element).GetVC(), e.GetVC()) == clock.Concurrent {
-				res = append(res, &elem)
+				e := elem.(*TraceElementCond)
+				if e.opC == SignalOp {
+					res["signal"] = append(res["signal"], &elem)
+				} else if e.opC == BroadcastOp {
+					res["broadcast"] = append(res["broadcast"], &elem)
+				} else if e.opC == WaitCondOp {
+					res["wait"] = append(res["wait"], &elem)
+				}
 			}
 		}
 	}

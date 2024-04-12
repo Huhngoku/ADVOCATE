@@ -317,7 +317,6 @@ func (se *TraceElementSelect) ToString() string {
  * was just a normal channel operation. For the default, we do not update the vc.
  */
 func (se *TraceElementSelect) updateVectorClock() {
-	println("Select: ", se.tID)
 	if !se.chosenDefault { // no update for default
 		// update the vector clock
 		se.chosenCase.updateVectorClock()

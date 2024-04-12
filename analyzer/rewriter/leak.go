@@ -5,6 +5,7 @@ import (
 	"analyzer/clock"
 	"analyzer/trace"
 	"errors"
+	"fmt"
 )
 
 /*
@@ -147,31 +148,40 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
 func rewriteCondLeak(bug bugs.Bug) error {
 	println("Start rewriting trace for cond leak...")
 
+	warningMessage := "Because of the locks involved in the wait of an " +
+		"conditional variable, it is highly recommended to run the analyzer with " +
+		"-c when rewriting a leak of a conditional variable. Rewriting without -c" +
+		"may lead to incorrect rewrites."
+
+	fmt.Println("\033[31m" + warningMessage + "\033[0m")
+
 	couldRewrite := false
 
 	wait := bug.TraceElement1[0]
 
-	// check if there is an concurrent signal or broadcast
-	concurrentSignals := make([]*trace.TraceElement, 0)
-	concurretBroadcasts := make([]*trace.TraceElement, 0)
+	res := trace.GetConcurrentWaitgroups(wait)
 
-	for _, elem := range trace.GetConcurrentBroadcastSignal(wait) {
-		e := (*elem).(*trace.TraceElementCond)
-		if e.GetOpCond() == trace.SignalOp {
-			concurrentSignals = append(concurrentSignals, elem)
-		} else if e.GetOpCond() == trace.BroadcastOp {
-			concurretBroadcasts = append(concurretBroadcasts, elem)
-		}
+	// possible signals to release the wait
+	if len(res["signal"]) > 0 {
+		couldRewrite = true
+
+		(*wait).SetTSort((*wait).GetTPre())
+
+		// move the signal after the wait
+		trace.ShiftConcurrentOrAfterToAfter(wait)
+
+		// TODO: Problem: locks create a happens before relation -> currently only works with -c
 	}
 
-	for _, broad := range concurretBroadcasts {
+	// possible broadcasts to release the wait
+	for _, broad := range res["broadcast"] {
 		couldRewrite = true
 		trace.ShiftConcurrentToBefore(broad)
 	}
 
 	(*wait).SetTSort((*wait).GetTPre())
 
-	// trace.AddTraceElementReplay((*wait).GetTPre()-1, true)
+	trace.AddTraceElementReplay((*wait).GetTPre()-1, true)
 	trace.AddTraceElementReplay((*wait).GetTPre()+1, false)
 
 	if couldRewrite {
