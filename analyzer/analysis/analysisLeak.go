@@ -5,6 +5,7 @@ import (
 	"analyzer/logging"
 )
 
+// TODO: make this work with buffered channels
 /*
  * Run for channel operation without a post event. Check if the operation has
  * a possible communication partner in mostRecentSend, mostRecentReceive or closeData.
@@ -57,7 +58,7 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
 		}
 
 		if !foundPartner {
-			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{vc, tID, opType, -1})
+			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opType, -1})
 		}
 	} else {
 		found := "Leak on buffered channel:\n"
@@ -145,10 +146,41 @@ func CheckForLeak() {
 				continue
 			}
 
-			found := "Leak on unbuffered channel without possible partner:\n"
-			found += "\tchannel: " + vcTID.tID + "\n"
-			found += "\tpartner: -"
-			logging.Result(found, logging.CRITICAL)
+			found := false
+			for _, c := range selectCases {
+				if c.send {
+					println(vcTID.tID, c.vcTID.tID, c.send, vcTID.id, c.id)
+				}
+				if c.id != vcTID.id {
+					continue
+				}
+
+				if (c.send && vcTID.typeVal == 0) || (!c.send && vcTID.typeVal == 1) {
+					continue
+				}
+
+				hb := clock.GetHappensBefore(c.vcTID.vc, vcTID.vc)
+				if hb == clock.Concurrent {
+					found = true
+					break
+				}
+
+				if c.buffered {
+					{
+						if (c.send && hb == clock.Before) || (!c.send && hb == clock.After) {
+							found = true
+							break
+						}
+					}
+				}
+			}
+
+			if !found {
+				found := "Leak on channel without possible partner:\n"
+				found += "\tchannel: " + vcTID.tID + "\n"
+				found += "\tpartner: -"
+				logging.Result(found, logging.CRITICAL)
+			}
 		}
 	}
 }
@@ -202,10 +234,9 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 	}
 
 	if !foundPartner {
-		// TODO: add to leaking channels, make sure, that if one is removed, all are removed
 		for i, id := range ids {
 			// add all select operations to leaking Channels,
-			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{vc, tID, opTypes[i], tPre})
+			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opTypes[i], tPre})
 		}
 	}
 }

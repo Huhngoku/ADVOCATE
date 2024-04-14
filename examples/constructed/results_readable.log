@@ -3,7 +3,21 @@
 
 -------------------- Critical -------------------
 
-1 Leak on unbuffered channel with possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1109@47
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1113@44
+1 Leak on channel without possible partner:
+	channel: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1005@30
+	partner: -
+2 Leak on channel without possible partner:
+	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1106@47
+	partner: -
+
+-------------------- Warning --------------------
+
+3 Possible select case without partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1097@42
+	
+
+4 Possible select case without partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1005@30
+	
+
 ```

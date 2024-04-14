@@ -278,7 +278,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		if replayElem.Op == OperationSelectDefault {
 			selunlock(scases, lockorder)
 			casi = -1
-			AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
+			AdvocateSelectPost(advocateIndex, c, casi, pollorder, advocateRClose)
 			// ADVOCATE-CHANGE-END
 			goto retc
 		}

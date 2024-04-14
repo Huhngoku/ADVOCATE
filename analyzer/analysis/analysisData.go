@@ -8,6 +8,7 @@ type VectorClockTID struct {
 }
 
 type VectorClockTID2 struct {
+	id      int
 	vc      clock.VectorClock
 	tID     string
 	typeVal int

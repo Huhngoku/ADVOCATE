@@ -145,7 +145,9 @@ func AddTraceElementSelect(routine int, tPre string,
 		}
 
 		casesList = append(casesList, elemCase)
-		elem.chosenCase = elemCase
+		if elemCase.tPost != 0 {
+			elem.chosenCase = elemCase
+		}
 	}
 
 	elem.chosenIndex, err = strconv.Atoi(index)

@@ -7,6 +7,13 @@ Added files:
 
 - src/runtime/advocate_routine.go
 - src/runtime/advocate_trace.go
+- src/runtime/advocate_trace_atomic.go
+- src/runtime/advocate_trace_channel.go
+- src/runtime/advocate_trace_cond.go
+- src/runtime/advocate_trace_mutex.go
+- src/runtime/advocate_trace_routine.go
+- src/runtime/advocate_trace_select.go
+- src/runtime/advocate_trace_waitgroup.go
 - src/runtime/advocate_util.go
 - src/runtime/advocate_replay.go
 - src/runtime/internal/atomic/advocate_atomic.go

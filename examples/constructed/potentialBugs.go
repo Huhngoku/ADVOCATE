@@ -1089,32 +1089,35 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
-	a := 2
+
 	c := make(chan int, 0)
+	d := make(chan int, 0)
+	e := make(chan int, 0)
+	f := make(chan int, 0)
 
-	if a == 1 {
-		go func() {
-			time.Sleep(100 * time.Millisecond)
-			c <- 1
-		}()
+	go func() {
+		select {
+		case <-f:
+			println("F")
+		case c <- 1:
+			println("C")
+		case d <- 1:
+			println("D")
+		case e <- 1:
+			println("E")
+		}
+	}()
 
-		go func() {
-			<-c
-		}()
+	go func() {
+		time.Sleep(200 * time.Millisecond)
+		<-d
+	}()
 
-		c <- 1
-	} else if a == 2 {
-		go func() {
-			time.Sleep(100 * time.Millisecond)
-			<-c
-		}()
+	// go func() {
+	// 	<-c
+	// }()
 
-		go func() {
-			c <- 1
-		}()
-
-		<-c
-	}
+	<-c
 
 	time.Sleep(500 * time.Millisecond)
 

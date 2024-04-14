@@ -181,8 +181,6 @@ func rewriteMutexLeak(bug bugs.Bug) error {
 func rewriteWaitGroupLeak(bug bugs.Bug) error {
 	println("Start rewriting trace for waitgroup leak...")
 
-	// TODO: test if rewrite is possible
-
 	wait := bug.TraceElement1[0]
 
 	trace.ShiftConcurrentOrAfterToAfter(wait)
