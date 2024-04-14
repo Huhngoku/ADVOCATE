@@ -151,6 +151,22 @@ func ShortenTrace(time int, incl bool) {
 }
 
 /*
+ * Remove the element with the given tID from the trace
+ * Args:
+ *   tID (string): The tID of the element to remove
+ */
+func RemoveElementFromTrace(tID string) {
+	for routine, trace := range traces {
+		for index, elem := range trace {
+			if elem.GetTID() == tID {
+				traces[routine] = append(traces[routine][:index], traces[routine][index+1:]...)
+				break
+			}
+		}
+	}
+}
+
+/*
  * Shorten the trace of the given routine by removing all elements after and equal the given time
  * Args:
  *   routine (int): The routine to shorten

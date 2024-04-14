@@ -37,28 +37,41 @@ import (
  *   error: An error if the trace could not be created
  */
 func rewriteUnbufChanLeak(bug bugs.Bug) error {
-	return errors.New("Rewriting trace for routine leak with partner is not implemented yet")
+	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
+	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel)
+	possiblePartnerPartner := possiblePartner.GetPartner()
 
-	// println("Start rewriting trace for channel leak...")
-	// println((*bug.TraceElement1[0]).ToString()) // stuck
-	// println((*bug.TraceElement2[0]).ToString()) // possible partner
+	hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
+	if hb == clock.Before {
+		return errors.New("The actual partner of the potential partner is HB " +
+			"before the stuck element. Cannot rewrite trace.")
+	}
 
-	// // get the original partner of the possible partner, and set its post and oId to 0
-	// originalPartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel).GetPartner()
-	// println(originalPartner.ToString())
-	// originalPartner.SetTPost(0)
-	// originalPartner.SetOID(0)
+	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
+	// all concurrent, we can therefore reorder
+	// remove the potential partner partner from the trace
+	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
 
-	// // set the oId of the stuck operation to the oId of the possible partner
-	// (*bug.TraceElement1[0]).(*trace.TraceElementChannel).SetOID((*bug.TraceElement2[0]).(*trace.TraceElementChannel).GetOID())
+	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
+	trace.ShortenTrace(earlierTime, false)
 
-	// // TODO: shift correctly
-	// distance := (*bug.TraceElement2[0]).GetTPre() - (*bug.TraceElement1[0]).GetTPre()
-	// trace.ShiftRoutine((*bug.TraceElement1[0]).GetRoutine(), (*bug.TraceElement1[0]).GetTPre(), distance)
+	// add the communication back in
+	if stuck.Operation() == trace.Send {
+		stuck.SetTSort(earlierTime)
+		possiblePartner.SetTSort(earlierTime + 1)
+	} else if stuck.Operation() == trace.Recv {
+		stuck.SetTSort(earlierTime + 1)
+		possiblePartner.SetTSort(earlierTime)
+	}
 
-	// println((*bug.TraceElement1[0]).ToString())
-	// println((*bug.TraceElement2[0]).ToString())
-	// println(originalPartner.ToString())
+	trace.AddElementToTrace(stuck)
+	trace.AddElementToTrace(possiblePartner)
+
+	// add the start and stop signal to release the program from the guided replay
+	trace.AddTraceElementReplay(earlierTime-1, true)
+	trace.AddTraceElementReplay(earlierTime+2, false)
+
+	return nil
 
 }
 

@@ -3,7 +3,7 @@
 
 -------------------- Critical -------------------
 
-1 Leak on buffered channel:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1097@45
-	
+1 Leak on unbuffered channel with possible partner:
+	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1109@47
+	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1113@44
 ```

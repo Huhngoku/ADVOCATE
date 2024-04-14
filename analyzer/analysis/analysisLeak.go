@@ -39,7 +39,7 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
 			if _, ok := mostRecentSend[id]; ok {
 				if clock.GetHappensBefore(mostRecentSend[id].vc, vc) == clock.Concurrent {
 					found := "Leak on unbuffered channel with possible partner:\n"
-					found += "\tchannel: " + tID
+					found += "\tchannel: " + tID + "\n"
 					found += "\tpartner: " + mostRecentSend[id].tID
 					logging.Result(found, logging.CRITICAL)
 					foundPartner = true
@@ -175,7 +175,7 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 			if _, ok := mostRecentReceive[id]; ok {
 				if clock.GetHappensBefore(vc, mostRecentReceive[id].vc) == clock.Concurrent {
 					found := "Leak on unbuffered channel with possible partner:\n"
-					found += "\tchannel: " + tID
+					found += "\tchannel: " + tID + "\n"
 					found += "\tpartner: " + mostRecentReceive[id].tID + "\n"
 					logging.Result(found, logging.CRITICAL)
 					foundPartner = true

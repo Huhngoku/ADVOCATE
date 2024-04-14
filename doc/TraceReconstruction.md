@@ -282,25 +282,14 @@ There are two possible cases, either the stuck channel is unbuffered, or it is
 buffered.
 
 #### Unbuffered Channels
-Buffered channels must communicate concurrently. If an unbuffered channel operation $c$ is 
+Buffered channels must communicate concurrently. If an unbuffered channel operation $c_s$/$c_r is 
 stuck, we check if there is a possible concurrent communication partner. If there 
 is non, we cannot rewrite the channel to get unstuck. This does not mean, 
 that it is impossible to run the program without getting stuck, e.g. with an 
 communication operation, that was not executed and therefore recorded in the run.
 If there is, the operation must have communicated with another operation, 
 otherwise it would have communicated with $c$. Lets assume $s$ is the send 
-and $r$ the receive of this communication. The trace where $c$ got stuck must 
-therefore be one of the following
-~~~
-T_1 ++ [s] ++ T_2 ++ [r] ++ T_3 ++ [c_s] ++ T_4
-T_1 ++ [s] ++ T_2 ++ [r] ++ T_3 ++ [c_r] ++ T_4
-T_1 ++ [s] ++ T_2 ++ [c_s] ++ T_3 ++ [r] ++ T_4
-T_1 ++ [r] ++ T_2 ++ [c_r] ++ T_3 ++ [s] ++ T_4
-T_1 ++ [c_s] ++ T_2 ++ [s] ++ T_3 ++ [r] ++ T_4
-T_1 ++ [c_r] ++ T_2 ++ [r] ++ T_3 ++ [s] ++ T_4
-~~~
-if we sort by TPre. $c_rs$ could both be a receive or a send, $c_r$ would only be a 
-receive and $c_s$ a send. We already know, that 
+and $r$ the receive of this communication. We already know, that 
 $s$ must be concurrent with $r$, otherwise the communication wouldn't have
 happened. We also know from the analysis, that $c_s$ and $r$ or $c_r$ and $s$
 must be concurrent. Additionally we assume, that $c_s$ and $r$ or $c_r$ and 
@@ -308,13 +297,13 @@ $s$ are also concurrent. If this is not the case, we assume, we cannot
 rewrite the trace with the selected possible partner.
 We can therefore rewrite the trace as:
 ~~~
-T_1 ++ T_2' ++ [X_s, c_s] ++ T_2'' ++ T_3' ++ [r, X_e]
-T_1 ++ T_2' ++ [X_s, s] ++ T_2'' ++ T_3' ++ [c_r, X_e]
+T_1 ++ [X_s, c_s, r, X_e]
+T_1 ++ [X_s, s, c_r, X_e]
 ~~~
-where T_2' are all elements from T_2, that must be before $c_s$ or $s$,
-T_2'' all element from T_2 that must be before $x_r$ or $r$ but are not in T_2'
-and T_3' all elements from T_3, that must happen before $r$ or $c_r$. $X_s$ 
-and $X_e$ are marker for the replay. $X_s$ will only print a message, but not 
+In practice we will do this by deleting the original communication partner 
+and then removing all elements that happend after the stuck element or the 
+possible communication. 
+$X_s$ will only print a message, but not 
 effect the replay itself. $X_e$ will print a message and then disable the
 replay. After this the program will continue to run, without following a 
 given trace.
