@@ -384,7 +384,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			elem.updateVectorClock()
 		}
 	}
-	if ch.IsBuffered() {
+	if ch.IsBuffered() && ch.tPost != 0 {
 		if ch.opC == Send {
 			maxOpID[ch.id] = ch.oID
 		} else if ch.opC == Recv {

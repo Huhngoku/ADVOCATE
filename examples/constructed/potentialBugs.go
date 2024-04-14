@@ -1092,11 +1092,11 @@ func nTest() {
 	c := make(chan int, 1)
 
 	go func() {
+		time.Sleep(100 * time.Millisecond)
 		c <- 1
+		<-c
 	}()
 
-	time.Sleep(100 * time.Millisecond)
-	c <- 1
 	<-c
 	time.Sleep(300 * time.Millisecond)
 

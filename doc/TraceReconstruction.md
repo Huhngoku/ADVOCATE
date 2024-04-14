@@ -333,6 +333,7 @@ reorder the trace in such a way, that $s$ is no before all those $s'$.\
 Equivalently, is a recv $r$ is stuck, we try to find recvs, that are
 concurrent to $r$, but happened before $r$ in the program run, and 
 order then, such that they happen after $r$. In practice, we remove them 
+and all other elements that are after them and in the same routine
 from the trace such that $r$ is moved before them automatically, and let the 
 program run freely after executing $r$, by adding the $X_e$ control element.
 

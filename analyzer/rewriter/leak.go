@@ -72,9 +72,6 @@ func rewriteUnbufChanLeak(bug bugs.Bug) error {
 func LeakBufChan(bug bugs.Bug) error {
 	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
 
-	PrintTrace([]string{}, true)
-	println("\n\n")
-
 	if stuck.Operation() == trace.Send {
 		// a buffered channel send operation is stuck, if the channel is full
 		// and there is no receive operation to empty the channel
@@ -83,12 +80,26 @@ func LeakBufChan(bug bugs.Bug) error {
 		// be after the stuck element
 		trace.ShiftConcurrentOrAfterToAfter(bug.TraceElement1[0])
 		stuck.SetTSort(stuck.GetTPre())
+
+		// add a start and stop signal to release the program from the guided replay
+		trace.AddTraceElementReplay(stuck.GetTPre()-1, true)
+		trace.AddTraceElementReplay(stuck.GetTPre()+1, false)
+	} else if stuck.Operation() == trace.Recv {
+		// a buffered channel receive operation is stuck, if the channel is empty
+		// and there is no send operation to fill the channel
+		// -> we can rewrite the trace by moving all concurrent receive operations
+		// to be after stuck. In practice, we remove all concurrent revc as well
+		// as all elements after them in the same routine
+		concurrentRevc := trace.GetConcurrentEarliest(bug.TraceElement1[0])
+		for routine, recv := range concurrentRevc {
+			trace.ShortenRoutine(routine, (*recv).GetTSort())
+		}
+
+		stuck.SetTSort(stuck.GetTPre())
 		// add a start and stop signal to release the program from the guided replay
 		trace.AddTraceElementReplay(stuck.GetTPre()-1, true)
 		trace.AddTraceElementReplay(stuck.GetTPre()+1, false)
 	}
-
-	PrintTrace([]string{}, false)
 
 	return nil
 }

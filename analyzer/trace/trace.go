@@ -150,6 +150,21 @@ func ShortenTrace(time int, incl bool) {
 	}
 }
 
+/*
+ * Shorten the trace of the given routine by removing all elements after and equal the given time
+ * Args:
+ *   routine (int): The routine to shorten
+ *   time (int): The time to shorten the trace to
+ */
+func ShortenRoutine(routine int, time int) {
+	for index, elem := range traces[routine] {
+		if elem.GetTSort() >= time {
+			traces[routine] = traces[routine][:index]
+			break
+		}
+	}
+}
+
 func ShortenRoutineIndex(routine int, index int, incl bool) {
 	if incl {
 		traces[routine] = traces[routine][:index+1]
@@ -506,6 +521,29 @@ func RemoveConcurrent(element *TraceElement) {
 		}
 		traces[routine] = result
 	}
+}
+
+/*
+ * For each routine, get the earliest element that is concurrent to the element
+ * Args:
+ *   element (traceElement): The element
+ * Returns:
+ *   map[int]traceElement: The earliest concurrent element for each routine
+ */
+func GetConcurrentEarliest(element *TraceElement) map[int]*TraceElement {
+	concurrent := make(map[int]*TraceElement)
+	for routine, trace := range traces {
+		for _, elem := range trace {
+			if elem.GetTID() == (*element).GetTID() {
+				continue
+			}
+
+			if clock.GetHappensBefore((*element).GetVC(), elem.GetVC()) == clock.Concurrent {
+				concurrent[routine] = &elem
+			}
+		}
+	}
+	return concurrent
 }
 
 /*
