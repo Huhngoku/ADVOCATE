@@ -371,6 +371,7 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 	}
 
 	if analysisCases["selectWithoutPartner"] {
+		rerunCheckForSelectCaseWithoutPartnerChannel()
 		analysis.CheckForSelectCaseWithoutPartner()
 	}
 
@@ -388,6 +389,22 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 
 	logging.Debug("Analysis completed", logging.INFO)
 	return result
+}
+
+/*
+ * Rerun the CheckForSelectCaseWithoutPartnerChannel for all channel. This
+ * is needed to find potential communication partners for not executed
+ * select cases, if the select was executed after the channel
+ */
+func rerunCheckForSelectCaseWithoutPartnerChannel() {
+	for _, trace := range traces {
+		for _, elem := range trace {
+			if e, ok := elem.(*TraceElementChannel); ok {
+				analysis.CheckForSelectCaseWithoutPartnerChannel(e.GetID(), e.GetVC(),
+					e.GetTID(), e.Operation() == Send, e.IsBuffered())
+			}
+		}
+	}
 }
 
 func getNextElement() TraceElement {
@@ -463,8 +480,6 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 	elemsToShift := make([]TraceElement, 0)
 	minTime := -1
 
-	println("ELEM: ", (*element).GetTID(), (*element).GetVC().ToString())
-
 	for _, trace := range traces {
 		for _, elem := range trace {
 			if elem.GetTID() == (*element).GetTID() {
@@ -472,7 +487,6 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 			}
 
 			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
-				println("SHIFT: ", elem.GetTID(), elem.GetVC().ToString())
 				elemsToShift = append(elemsToShift, elem)
 				if minTime == -1 || elem.GetTPre() < minTime {
 					minTime = elem.GetTPre()

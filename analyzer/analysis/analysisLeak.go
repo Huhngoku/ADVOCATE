@@ -148,9 +148,6 @@ func CheckForLeak() {
 
 			found := false
 			for _, c := range selectCases {
-				if c.send {
-					println(vcTID.tID, c.vcTID.tID, c.send, vcTID.id, c.id)
-				}
 				if c.id != vcTID.id {
 					continue
 				}

@@ -1,12 +1,3 @@
-Leak on channel without possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1005@30
-	partner: -
-Leak on channel without possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1106@47
-	partner: -
 Possible select case without partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1097@42
-	
-Possible select case without partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1005@30
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1097@43
 	

@@ -1092,26 +1092,19 @@ func nTest() {
 
 	c := make(chan int, 0)
 	d := make(chan int, 0)
-	e := make(chan int, 0)
-	f := make(chan int, 0)
 
 	go func() {
 		select {
-		case <-f:
-			println("F")
 		case c <- 1:
 			println("C")
 		case d <- 1:
 			println("D")
-		case e <- 1:
-			println("E")
 		}
 	}()
 
-	go func() {
-		time.Sleep(200 * time.Millisecond)
-		<-d
-	}()
+	// go func() {
+	// 	<-d
+	// }()
 
 	// go func() {
 	// 	<-c
