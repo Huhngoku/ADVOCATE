@@ -181,6 +181,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	tIDSend := bufferedVCs[id][0].tID
 
 	vc[rout] = vc[rout].Sync(v)
+
 	if fifo {
 		vc[rout] = vc[rout].Sync(mostRecentReceive[id].vc)
 		mostRecentReceive[id] = VectorClockTID{vc[rout].Copy(), mostRecentReceive[id].tID}

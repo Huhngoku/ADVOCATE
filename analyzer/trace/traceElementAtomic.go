@@ -21,6 +21,7 @@ const (
 
 /*
  * Struct to save an atomic event in the trace
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpost (int): The timestamp of the event
@@ -36,6 +37,7 @@ type TraceElementAtomic struct {
 
 /*
  * Create a new atomic trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tpost (string): The timestamp of the event
@@ -80,6 +82,8 @@ func AddTraceElementAtomic(routine int, tpost string,
 	return AddElementToTrace(&elem)
 }
 
+// MARK: Getter
+
 /*
  * Get the id of the element
  * Returns:
@@ -105,15 +109,6 @@ func (at *TraceElementAtomic) GetRoutine() int {
  */
 func (at *TraceElementAtomic) GetTPre() int {
 	return at.tPost
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpost of the element
- */
-func (at *TraceElementAtomic) SetTPre(tPre int) {
-	at.tPost = tPre
 }
 
 /*
@@ -153,6 +148,26 @@ func (at *TraceElementAtomic) GetTID() string {
 }
 
 /*
+ * Dummy function to implement the interface
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (at *TraceElementAtomic) GetVC() clock.VectorClock {
+	return clock.VectorClock{}
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpost of the element
+ */
+func (at *TraceElementAtomic) SetTPre(tPre int) {
+	at.tPost = tPre
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -174,6 +189,8 @@ func (at *TraceElementAtomic) SetTSortWithoutNotExecuted(tSort int) {
 		at.tPost = tSort
 	}
 }
+
+// MARK: ToString
 
 /*
  * Get the simple string representation of the element.
@@ -202,6 +219,8 @@ func (at *TraceElementAtomic) ToString() string {
 	return res
 }
 
+// MARK: Vector Clock
+
 /*
  * Update and calculate the vector clock of the element
  */
@@ -218,13 +237,4 @@ func (at *TraceElementAtomic) updateVectorClock() {
 		logging.Debug(err, logging.ERROR)
 	}
 
-}
-
-/*
- * Dummy function to implement the interface
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (at *TraceElementAtomic) GetVC() clock.VectorClock {
-	return clock.VectorClock{}
 }

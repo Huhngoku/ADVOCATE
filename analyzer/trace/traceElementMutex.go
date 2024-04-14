@@ -24,6 +24,7 @@ const (
 
 /*
  * TraceElementMutex is a trace element for a mutex
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -52,6 +53,7 @@ type TraceElementMutex struct {
 
 /*
  * Create a new mutex trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tPre (string): The timestamp at the start of the event
@@ -125,6 +127,8 @@ func AddTraceElementMutex(routine int, tPre string,
 	return AddElementToTrace(&elem)
 }
 
+// MARK: Getter
+
 /*
  * Get the id of the element
  * Returns:
@@ -150,18 +154,6 @@ func (mu *TraceElementMutex) GetRoutine() int {
  */
 func (mu *TraceElementMutex) GetTPre() int {
 	return mu.tPre
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpre of the element
- */
-func (mu *TraceElementMutex) SetTPre(tPre int) {
-	mu.tPre = tPre
-	if mu.tPost != 0 && mu.tPost < tPre {
-		mu.tPost = tPre
-	}
 }
 
 /*
@@ -205,6 +197,47 @@ func (mu *TraceElementMutex) GetTID() string {
 }
 
 /*
+ * Get the operation of the element
+ * Returns:
+ *   OpMutex: The operation of the element
+ */
+func (mu *TraceElementMutex) GetOperation() OpMutex {
+	return mu.opM
+}
+
+/*
+ * Get if the element is a lock operation
+ * Returns:
+ *   bool: If the element is a lock operation
+ */
+func (mu *TraceElementMutex) IsLock() bool {
+	return mu.opM == LockOp || mu.opM == RLockOp || mu.opM == TryLockOp || mu.opM == TryRLockOp
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (mu *TraceElementMutex) GetVC() clock.VectorClock {
+	return mu.vc
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (mu *TraceElementMutex) SetTPre(tPre int) {
+	mu.tPre = tPre
+	if mu.tPost != 0 && mu.tPost < tPre {
+		mu.tPost = tPre
+	}
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -228,25 +261,8 @@ func (mu *TraceElementMutex) SetTSortWithoutNotExecuted(tSort int) {
 }
 
 /*
- * Get the operation of the element
- * Returns:
- *   OpMutex: The operation of the element
- */
-func (mu *TraceElementMutex) GetOperation() OpMutex {
-	return mu.opM
-}
-
-/*
- * Get if the element is a lock operation
- * Returns:
- *   bool: If the element is a lock operation
- */
-func (mu *TraceElementMutex) IsLock() bool {
-	return mu.opM == LockOp || mu.opM == RLockOp || mu.opM == TryLockOp || mu.opM == TryRLockOp
-}
-
-/*
  * Get the simple string representation of the element
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -290,6 +306,7 @@ var mutexNoPartner []*TraceElementMutex
 
 /*
  * Update the vector clock of the trace and element
+ * MARK: VectorClock
  */
 func (mu *TraceElementMutex) updateVectorClock() {
 	switch mu.opM {
@@ -337,13 +354,4 @@ func (mu *TraceElementMutex) updateVectorClock() {
 func (mu *TraceElementMutex) updateVectorClockAlt() {
 	currentVCHb[mu.routine] = currentVCHb[mu.routine].Inc(mu.routine)
 	mu.vc = currentVCHb[mu.routine].Copy()
-}
-
-/*
- * Get the vector clock of the element
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (mu *TraceElementMutex) GetVC() clock.VectorClock {
-	return mu.vc
 }

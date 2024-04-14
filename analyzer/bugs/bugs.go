@@ -172,9 +172,9 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = ConcurrentRecv
 	case "Possible mixed deadlock:":
 		bug.Type = MixedDeadlock
-	case "Leak on unbuffered channel with possible partner:":
+	case "Leak on unbuffered channel or select with possible partner:":
 		bug.Type = LeakUnbufChanPartner
-	case "Leak on unbuffered channel without possible partner:":
+	case "Leak on unbuffered channel or select without possible partner:":
 		bug.Type = LeakUnbufChanNoPartner
 	case "Leak on buffered channel:":
 		bug.Type = LeakBufChan

@@ -9,6 +9,7 @@ import (
 
 /*
 * TraceElementFork is a trace element for a go statement
+* MARK: Struct
 * Fields:
 *   routine (int): The routine id
 *   tpost (int): The timestamp at the end of the event
@@ -27,6 +28,7 @@ type TraceElementFork struct {
 
 /*
  * Create a new go statement trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tPost (string): The timestamp at the end of the event
@@ -56,6 +58,8 @@ func AddTraceElementFork(routine int, tPost string, id string, pos string) error
 	return AddElementToTrace(&elem)
 }
 
+// MARK Getter
+
 /*
  * Get the id of the element
  * Returns:
@@ -81,15 +85,6 @@ func (fo *TraceElementFork) GetRoutine() int {
  */
 func (fo *TraceElementFork) GetTPre() int {
 	return fo.tPost
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpre of the element
- */
-func (fo *TraceElementFork) SetTPre(tPre int) {
-	fo.tPost = tPre
 }
 
 /*
@@ -129,6 +124,26 @@ func (fo *TraceElementFork) GetTID() string {
 }
 
 /*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (fo *TraceElementFork) GetVC() clock.VectorClock {
+	return fo.vc
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (fo *TraceElementFork) SetTPre(tPre int) {
+	fo.tPost = tPre
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -153,6 +168,7 @@ func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tSort int) {
 
 /*
  * Get the simple string representation of the element
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -163,18 +179,10 @@ func (fo *TraceElementFork) ToString() string {
 
 /*
  * Update and calculate the vector clock of the element
+ * MARK: VectorClock
  */
 func (fo *TraceElementFork) updateVectorClock() {
 	analysis.Fork(fo.routine, fo.id, currentVCHb, currentVCWmhb)
 
 	fo.vc = currentVCHb[fo.routine].Copy()
-}
-
-/*
- * Get the vector clock of the element
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (fo *TraceElementFork) GetVC() clock.VectorClock {
-	return fo.vc
 }

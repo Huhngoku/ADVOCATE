@@ -11,6 +11,7 @@ import (
 
 /*
  * traceElementMutex is a trace element for a once
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -33,6 +34,7 @@ type TraceElementOnce struct {
 
 /*
  * Create a new mutex trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tPre (string): The timestamp at the start of the event
@@ -78,6 +80,8 @@ func AddTraceElementOnce(routine int, tPre string,
 	return AddElementToTrace(&elem)
 }
 
+// MARK: Getter
+
 /*
  * Get the id of the element
  * Returns:
@@ -103,18 +107,6 @@ func (on *TraceElementOnce) GetRoutine() int {
  */
 func (on *TraceElementOnce) GetTPre() int {
 	return on.tPre
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpre of the element
- */
-func (on *TraceElementOnce) SetTPre(tPre int) {
-	on.tPre = tPre
-	if on.tPost != 0 && on.tPost < tPre {
-		on.tPost = tPre
-	}
 }
 
 /*
@@ -158,6 +150,29 @@ func (on *TraceElementOnce) GetTID() string {
 }
 
 /*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (on *TraceElementOnce) GetVC() clock.VectorClock {
+	return on.vc
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (on *TraceElementOnce) SetTPre(tPre int) {
+	on.tPre = tPre
+	if on.tPost != 0 && on.tPost < tPre {
+		on.tPost = tPre
+	}
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -182,6 +197,7 @@ func (on *TraceElementOnce) SetTSortWithoutNotExecuted(tSort int) {
 
 /*
  * Get the simple string representation of the element
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -201,6 +217,7 @@ func (on *TraceElementOnce) ToString() string {
 
 /*
  * Update the vector clock of the trace and element
+ * MARK: VectorClock
  */
 func (on *TraceElementOnce) updateVectorClock() {
 	if on.suc {
@@ -210,13 +227,4 @@ func (on *TraceElementOnce) updateVectorClock() {
 	}
 
 	on.vc = currentVCHb[on.routine].Copy()
-}
-
-/*
- * Get the vector clock of the element
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (on *TraceElementOnce) GetVC() clock.VectorClock {
-	return on.vc
 }

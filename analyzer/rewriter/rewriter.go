@@ -32,10 +32,10 @@ func RewriteTrace(bug bugs.Bug) error {
 	case bugs.DoneBeforeAdd:
 		err = rewriteWaitGroup(bug)
 	case bugs.SelectWithoutPartner:
-		err = errors.New("Rewriting trace for select without partner is not implemented yet")
+		err = errors.New("Rewriting trace for select without partner is not possible")
 		// TODO: implement
 	case bugs.ConcurrentRecv:
-		err = errors.New("Rewriting trace for concurrent receive is not implemented yet")
+		err = errors.New("Rewriting trace for concurrent receive is not possible")
 		// TODO: implement
 	case bugs.MixedDeadlock:
 		err = errors.New("Rewriting trace for mixed deadlock is not implemented yet")

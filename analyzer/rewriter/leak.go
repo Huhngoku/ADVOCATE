@@ -26,8 +26,8 @@ import (
  *  - look at stuck select
  */
 
-// =============== Channel ====================
-// MARK: Channel
+// =============== Channel/Select ====================
+// MARK: Channel/Select
 
 /*
  * Rewrite a trace where a leaking unbuffered channel with possible partner was found.
@@ -36,6 +36,7 @@ import (
  * Returns:
  *   error: An error if the trace could not be created
  */
+// TODO: panics if bug param contains select
 func rewriteUnbufChanLeak(bug bugs.Bug) error {
 	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
 	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel)

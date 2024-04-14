@@ -7,6 +7,7 @@ import (
 
 /*
  * Struct to save an atomic event in the trace
+ * MARK: Struct
  * Fields:
  *   tpost (int): The timestamp of the event
  *   start (int): True if before the important event, false if after
@@ -18,6 +19,7 @@ type TraceElementReplay struct {
 
 /*
  * Create a new atomic trace element
+ * MARK: New
  * Args:
  *   t (string): The timestamp of the event
  *   start (int): True if before the important event, false if after
@@ -30,6 +32,8 @@ func AddTraceElementReplay(t int, start bool) error {
 
 	return AddElementToTrace(&elem)
 }
+
+// MARK: Getter
 
 /*
  * Get the id of the element
@@ -55,15 +59,6 @@ func (at *TraceElementReplay) GetRoutine() int {
  */
 func (at *TraceElementReplay) GetTPre() int {
 	return at.tPost
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpre of the element
- */
-func (mu *TraceElementReplay) SetTPre(tPre int) {
-	mu.tPost = tPre
 }
 
 /*
@@ -103,6 +98,26 @@ func (at *TraceElementReplay) GetTID() string {
 }
 
 /*
+ * Dummy function to implement the interface
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (at *TraceElementReplay) GetVC() clock.VectorClock {
+	return clock.VectorClock{}
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (mu *TraceElementReplay) SetTPre(tPre int) {
+	mu.tPost = tPre
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -125,6 +140,7 @@ func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
 
 /*
  * Get the simple string representation of the element.
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -140,16 +156,8 @@ func (at *TraceElementReplay) ToString() string {
 
 /*
  * Update and calculate the vector clock of the element
+ * MARK: VectorClock
  */
 func (at *TraceElementReplay) updateVectorClock() {
 	// nothing to do
-}
-
-/*
- * Dummy function to implement the interface
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (at *TraceElementReplay) GetVC() clock.VectorClock {
-	return clock.VectorClock{}
 }

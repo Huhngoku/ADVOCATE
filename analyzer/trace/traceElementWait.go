@@ -19,6 +19,7 @@ const (
 
 /*
 * TraceElementWait is a trace element for a wait group statement
+* MARK: Struct
 * Fields:
 *   tpre (int): The timestamp at the start of the event
 *   tpost (int): The timestamp at the end of the event
@@ -44,6 +45,7 @@ type TraceElementWait struct {
 
 /*
  * Create a new wait group trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tpre (string): The timestamp at the start of the event
@@ -104,6 +106,8 @@ func AddTraceElementWait(routine int, tpre string,
 	return AddElementToTrace(&elem)
 }
 
+// MARK: Getter
+
 /*
  * Get the id of the element
  * Returns:
@@ -129,18 +133,6 @@ func (wa *TraceElementWait) GetRoutine() int {
  */
 func (wa *TraceElementWait) GetTPre() int {
 	return wa.tPre
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpre of the element
- */
-func (wa *TraceElementWait) SetTPre(tPre int) {
-	wa.tPre = tPre
-	if wa.tPost != 0 && wa.tPost < tPre {
-		wa.tPost = tPre
-	}
 }
 
 /*
@@ -184,6 +176,42 @@ func (wa *TraceElementWait) GetTID() string {
 }
 
 /*
+ * Get if the operation is a wait op
+ * Returns:
+ *   bool: True if the operation is a wait op
+ */
+func (wa *TraceElementWait) IsWait() bool {
+	return wa.opW == WaitOp
+}
+
+func (wa *TraceElementWait) GetDelta() int {
+	return wa.delta
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (wa *TraceElementWait) GetVC() clock.VectorClock {
+	return wa.vc
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (wa *TraceElementWait) SetTPre(tPre int) {
+	wa.tPre = tPre
+	if wa.tPost != 0 && wa.tPost < tPre {
+		wa.tPost = tPre
+	}
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -207,16 +235,8 @@ func (wa *TraceElementWait) SetTSortWithoutNotExecuted(tSort int) {
 }
 
 /*
- * Get if the operation is a wait op
- * Returns:
- *   bool: True if the operation is a wait op
- */
-func (wa *TraceElementWait) IsWait() bool {
-	return wa.opW == WaitOp
-}
-
-/*
  * Get the simple string representation of the element
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -238,6 +258,7 @@ func (wa *TraceElementWait) ToString() string {
 
 /*
  * Update and calculate the vector clock of the element
+ * MARK: VectorClock
  */
 func (wa *TraceElementWait) updateVectorClock() {
 	switch wa.opW {
@@ -251,17 +272,4 @@ func (wa *TraceElementWait) updateVectorClock() {
 	}
 
 	wa.vc = currentVCHb[wa.routine].Copy()
-}
-
-func (wa *TraceElementWait) GetDelta() int {
-	return wa.delta
-}
-
-/*
- * Get the vector clock of the element
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (wa *TraceElementWait) GetVC() clock.VectorClock {
-	return wa.vc
 }

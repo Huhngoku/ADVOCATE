@@ -1095,22 +1095,19 @@ func nTest() {
 
 	go func() {
 		select {
-		case c <- 1:
+		case <-c:
 			println("C")
-		case d <- 1:
+		case <-d:
 			println("D")
 		}
 	}()
 
-	// go func() {
-	// 	<-d
-	// }()
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		<-c
+	}()
 
-	// go func() {
-	// 	<-c
-	// }()
-
-	<-c
+	c <- 1
 
 	time.Sleep(500 * time.Millisecond)
 

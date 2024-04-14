@@ -399,7 +399,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 	if !ch.IsBuffered() { // unbuffered channel
 		switch ch.opC {
 		case Send:
-			partner := ch.findUnbufferedPartner()
+			partner := ch.findPartner()
 			if partner != -1 {
 				logging.Debug("Update vector clock of channel operation: "+
 					traces[partner][currentIndex[partner]].ToString(),
@@ -421,7 +421,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 			}
 
 		case Recv: // should not occur, but better save than sorry
-			partner := ch.findUnbufferedPartner()
+			partner := ch.findPartner()
 			if partner != -1 {
 				logging.Debug("Update vector clock of channel operation: "+
 					traces[partner][currentIndex[partner]].ToString(), logging.DEBUG)
@@ -486,7 +486,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
  * Returns:
  *   int: The routine id of the partner
  */
-func (ch *TraceElementChannel) findUnbufferedPartner() int {
+func (ch *TraceElementChannel) findPartner() int {
 	// return -1 if closed by channel
 	if ch.cl {
 		return -1
@@ -506,7 +506,8 @@ func (ch *TraceElementChannel) findUnbufferedPartner() int {
 				return routine
 			}
 		case *TraceElementSelect:
-			if e.chosenCase.oID == ch.id &&
+			if e.chosenCase != nil &&
+				e.chosenCase.oID == ch.id &&
 				e.chosenCase.oID == ch.oID {
 				return routine
 			}

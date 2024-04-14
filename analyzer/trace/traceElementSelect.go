@@ -11,6 +11,7 @@ import (
 
 /*
  * TraceElementSelect is a trace element for a select statement
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -30,7 +31,7 @@ type TraceElementSelect struct {
 	tPost           int
 	id              int
 	cases           []TraceElementChannel
-	chosenCase      TraceElementChannel
+	chosenCase      *TraceElementChannel
 	chosenIndex     int
 	containsDefault bool
 	chosenDefault   bool
@@ -41,6 +42,7 @@ type TraceElementSelect struct {
 
 /*
  * Add a new select statement trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tPre (string): The timestamp at the start of the event
@@ -146,7 +148,7 @@ func AddTraceElementSelect(routine int, tPre string,
 
 		casesList = append(casesList, elemCase)
 		if elemCase.tPost != 0 {
-			elem.chosenCase = elemCase
+			elem.chosenCase = &elemCase
 		}
 	}
 
@@ -158,8 +160,25 @@ func AddTraceElementSelect(routine int, tPre string,
 	elem.chosenDefault = chosenDefault
 	elem.cases = casesList
 
+	// check if partner was already processed, otherwise add to channelWithoutPartner
+	if tPostInt != 0 {
+		if _, ok := channelWithoutPartner[idInt][elem.chosenCase.oID]; ok {
+			elem.chosenCase.partner = channelWithoutPartner[idInt][elem.chosenCase.oID]
+			channelWithoutPartner[idInt][elem.chosenCase.oID].partner = elem.chosenCase
+			delete(channelWithoutPartner[idInt], elem.chosenCase.oID)
+		} else {
+			if _, ok := channelWithoutPartner[idInt]; !ok {
+				channelWithoutPartner[idInt] = make(map[int]*TraceElementChannel)
+			}
+
+			channelWithoutPartner[idInt][elem.chosenCase.oID] = elem.chosenCase
+		}
+	}
+
 	return AddElementToTrace(&elem)
 }
+
+// MARK: Getter
 
 /*
  * Get the id of the element
@@ -195,20 +214,6 @@ func (se *TraceElementSelect) GetRoutine() int {
  */
 func (se *TraceElementSelect) GetTPre() int {
 	return se.tPre
-}
-
-/*
- * Set the tpre of the element.
- * Args:
- *   tPre (int): The tpre of the element
- */
-func (se *TraceElementSelect) SetTPre(tPre int) {
-	se.tPre = tPre
-	if se.tPost != 0 && se.tPost < tPre {
-		se.tPost = tPre
-	}
-
-	se.chosenCase.SetTPre(tPre)
 }
 
 /*
@@ -252,6 +257,43 @@ func (se *TraceElementSelect) GetTID() string {
 }
 
 /*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (se *TraceElementSelect) GetVC() clock.VectorClock {
+	return se.vc
+}
+
+/*
+ * Get the communication partner of the select
+ * Returns:
+ *   *TraceElementChannel: The communication partner of the select or nil
+ */
+func (se *TraceElementSelect) GetPartner() *TraceElementChannel {
+	if se.chosenCase != nil {
+		return se.chosenCase.partner
+	}
+	return nil
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (se *TraceElementSelect) SetTPre(tPre int) {
+	se.tPre = tPre
+	if se.tPost != 0 && se.tPost < tPre {
+		se.tPost = tPre
+	}
+
+	se.chosenCase.SetTPre(tPre)
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
@@ -278,6 +320,7 @@ func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
 
 /*
  * Get the simple string representation of the element
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -313,11 +356,12 @@ func (se *TraceElementSelect) ToString() string {
 
 /*
  * Update and calculate the vector clock of the select element.
- * For now, we assume the select acted like the chosen channel operation
- * was just a normal channel operation. For the default, we do not update the vc.
+ * MARK: VectorClock
  */
 func (se *TraceElementSelect) updateVectorClock() {
-	if !se.chosenDefault { // no update for default
+	if se.chosenDefault || se.tPost == 0 {
+		currentVCHb[se.routine] = currentVCHb[se.routine].Inc(se.routine)
+	} else {
 		// update the vector clock
 		se.chosenCase.updateVectorClock()
 	}
@@ -338,13 +382,7 @@ func (se *TraceElementSelect) updateVectorClock() {
 	}
 
 	se.vc = currentVCHb[se.routine].Copy()
-}
-
-/*
- * Get the vector clock of the element
- * Returns:
- *   VectorClock: The vector clock of the element
- */
-func (se *TraceElementSelect) GetVC() clock.VectorClock {
-	return se.vc
+	for _, c := range se.cases {
+		c.vc = se.vc
+	}
 }
