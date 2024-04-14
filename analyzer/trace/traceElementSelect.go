@@ -107,9 +107,9 @@ func AddTraceElementSelect(routine int, tPre string,
 		if err != nil {
 			return errors.New("c_id is not an integer")
 		}
-		var cOpC = send
+		var cOpC = Send
 		if caseList[4] == "R" {
-			cOpC = recv
+			cOpC = Recv
 		} else if caseList[4] == "C" {
 			panic("Close in select case list")
 		}
@@ -330,7 +330,7 @@ func (se *TraceElementSelect) updateVectorClock() {
 		for _, c := range se.cases {
 			ids = append(ids, c.id)
 			buffered = append(buffered, c.qSize > 0)
-			sendInfo = append(sendInfo, c.opC == send)
+			sendInfo = append(sendInfo, c.opC == Send)
 		}
 
 		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,

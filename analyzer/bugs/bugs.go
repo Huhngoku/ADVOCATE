@@ -22,11 +22,12 @@ const (
 	MixedDeadlock
 	CyclicDeadlock
 
-	RoutineLeakPartner   // chan and select
-	RoutineLeakNoPartner // chan and select
-	RoutineLeakMutex
-	RoutineLeakWaitGroup
-	RoutineLeakCond
+	LeakUnbufChanPartner   // chan and select
+	LeakUnbufChanNoPartner // chan and select
+	LeakBufChan
+	LeakMutex
+	LeakWaitGroup
+	LeakCond
 )
 
 type Bug struct {
@@ -83,19 +84,23 @@ func (b Bug) ToString() string {
 		typeStr = "Possible cyclic deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "cycle: "
-	case RoutineLeakPartner, RoutineLeakNoPartner:
-		typeStr = "Leak of channel:"
+	case LeakUnbufChanPartner, LeakUnbufChanNoPartner:
+		typeStr = "Leak of unbuffered channel:"
 		arg1Str = "channel: "
 		arg2Str = "partner: "
-	case RoutineLeakMutex:
+	case LeakBufChan:
+		typeStr = "Leak of buffered channel:"
+		arg1Str = "channel: "
+		arg2Str = ""
+	case LeakMutex:
 		typeStr = "Leak of mutex:"
 		arg1Str = "mutex: "
 		arg2Str = "last: "
-	case RoutineLeakWaitGroup:
+	case LeakWaitGroup:
 		typeStr = "Leak of waitgroup:"
 		arg1Str = "waitgroup: "
 		arg2Str = ""
-	case RoutineLeakCond:
+	case LeakCond:
 		typeStr = "Leak of conditional variable:"
 		arg1Str = "conditional: "
 		arg2Str = ""
@@ -167,16 +172,18 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = ConcurrentRecv
 	case "Possible mixed deadlock:":
 		bug.Type = MixedDeadlock
-	case "Leak with possible partner:":
-		bug.Type = RoutineLeakPartner
-	case "Leak without possible partner:":
-		bug.Type = RoutineLeakNoPartner
-	case "Leak on mutex::":
-		bug.Type = RoutineLeakMutex
+	case "Leak on unbuffered channel with possible partner:":
+		bug.Type = LeakUnbufChanPartner
+	case "Leak on unbuffered channel without possible partner:":
+		bug.Type = LeakUnbufChanNoPartner
+	case "Leak on buffered channel:":
+		bug.Type = LeakBufChan
+	case "Leak on mutex:":
+		bug.Type = LeakMutex
 	case "Leak on wait group:":
-		bug.Type = RoutineLeakWaitGroup
+		bug.Type = LeakWaitGroup
 	case "Leak on conditional variable:":
-		bug.Type = RoutineLeakCond
+		bug.Type = LeakCond
 	case "Possible cyclic deadlock:":
 		bug.Type = CyclicDeadlock
 	default:
@@ -195,7 +202,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 
 		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
-			println("not found: " + tID + " in " + arg1 + " " + arg2)
+			println("Could not find: " + tID + " in trace")
 			return false, bug, err
 		}
 		bug.TraceElement1 = append(bug.TraceElement1, elem)

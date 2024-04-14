@@ -3,6 +3,7 @@ package rewriter
 
 import (
 	"analyzer/bugs"
+	"analyzer/clock"
 	"analyzer/trace"
 	"analyzer/utils"
 	"errors"
@@ -41,15 +42,17 @@ func RewriteTrace(bug bugs.Bug) error {
 		// TODO: implement
 	case bugs.CyclicDeadlock:
 		err = rewriteCyclicDeadlock(bug)
-	case bugs.RoutineLeakPartner:
-		err = rewriteChannelLeak(bug)
-	case bugs.RoutineLeakNoPartner:
+	case bugs.LeakUnbufChanPartner:
+		err = rewriteUnbufChanLeak(bug)
+	case bugs.LeakUnbufChanNoPartner:
 		err = errors.New("No possible partner for stuck channel found. Cannot rewrite trace.")
-	case bugs.RoutineLeakMutex:
+	case bugs.LeakBufChan:
+		err = LeakBufChan(bug)
+	case bugs.LeakMutex:
 		err = rewriteMutexLeak(bug)
-	case bugs.RoutineLeakWaitGroup:
+	case bugs.LeakWaitGroup:
 		err = rewriteWaitGroupLeak(bug)
-	case bugs.RoutineLeakCond:
+	case bugs.LeakCond:
 		err = rewriteCondLeak(bug)
 	default:
 		err = errors.New("For the given bug type no trace rewriting is implemented")
@@ -64,12 +67,14 @@ func RewriteTrace(bug bugs.Bug) error {
 * Print the trace sorted by tPre
 * Args:
 *   types: types of the elements to print. If empty, all elements will be printed
+*   clocks: if true, the clocks will be printed
 * TODO: remove
  */
-func PrintTrace(types []string) {
+func PrintTrace(types []string, clocks bool) {
 	elements := make([]struct {
 		string
 		int
+		clock.VectorClock
 	}, 0)
 	for _, tra := range *trace.GetTraces() {
 		for _, elem := range tra {
@@ -78,7 +83,8 @@ func PrintTrace(types []string) {
 				elements = append(elements, struct {
 					string
 					int
-				}{elemStr, elem.GetTPre()})
+					clock.VectorClock
+				}{elemStr, elem.GetTPre(), elem.GetVC()})
 			}
 		}
 	}
@@ -89,6 +95,10 @@ func PrintTrace(types []string) {
 	})
 
 	for _, elem := range elements {
-		fmt.Println(elem.string)
+		if clocks {
+			fmt.Println(elem.string, elem.VectorClock.ToString())
+		} else {
+			fmt.Println(elem.string)
+		}
 	}
 }

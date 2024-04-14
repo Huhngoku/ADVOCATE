@@ -49,6 +49,8 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].vc.ToString(), logging.DEBUG)
 
+	} else {
+		vc[routSend] = vc[routSend].Inc(routSend)
 	}
 
 	if analysisCases["mixedDeadlock"] {
@@ -85,6 +87,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 	vc map[int]clock.VectorClock, fifo bool, tPost int) {
 
 	if tPost == 0 {
+		vc[rout] = vc[rout].Inc(rout)
 		return
 	}
 
@@ -143,6 +146,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorClock,
 	fifo bool, tPost int) {
 	if tPost == 0 {
+		vc[rout] = vc[rout].Inc(rout)
 		return
 	}
 

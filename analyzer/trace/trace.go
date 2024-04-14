@@ -224,6 +224,7 @@ func SetNumberOfRoutines(n int) {
 
 /*
 * Calculate vector clocks
+* MARK: run analysis
 * Args:
 *   assume_fifo (bool): True to assume fifo ordering in buffered channels
 *   ignoreCriticalSections (bool): True to ignore critical sections when updating
@@ -280,10 +281,10 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			opTypes := make([]int, 0)
 			for _, c := range cases {
 				switch c.opC {
-				case send:
+				case Send:
 					ids = append(ids, c.GetID())
 					opTypes = append(opTypes, 0)
-				case recv:
+				case Recv:
 					ids = append(ids, c.GetID())
 					opTypes = append(opTypes, 1)
 				}
@@ -305,10 +306,12 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			switch e := elem.(type) {
 			case *TraceElementChannel:
 				switch e.opC {
-				case send:
-					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 0)
-				case recv:
-					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine], elem.GetTID(), 1)
+				case Send:
+					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine],
+						elem.GetTID(), 0, e.qSize != 0)
+				case Recv:
+					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine],
+						elem.GetTID(), 1, e.qSize != 0)
 				}
 			case *TraceElementMutex:
 				analysis.CheckForLeakMutex(elem.GetID(), elem.GetTID())
@@ -320,10 +323,10 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 				opTypes := make([]int, 0)
 				for _, c := range cases {
 					switch c.opC {
-					case send:
+					case Send:
 						ids = append(ids, c.GetID())
 						opTypes = append(opTypes, 0)
-					case recv:
+					case Recv:
 						ids = append(ids, c.GetID())
 						opTypes = append(opTypes, 1)
 					}
@@ -332,7 +335,6 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			case *TraceElementCond:
 				analysis.CheckForLeakCond(elem.GetTID())
 			}
-			// continue
 		}
 
 	}
@@ -395,6 +397,8 @@ func increaseIndex(routine int) {
 	}
 }
 
+// MARK: Shift
+
 /*
  * Shift all elements with time greater or equal to startTSort by shift
  * Only shift forward
@@ -428,13 +432,16 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 	elemsToShift := make([]TraceElement, 0)
 	minTime := -1
 
+	println("ELEM: ", (*element).GetTID(), (*element).GetVC().ToString())
+
 	for _, trace := range traces {
 		for _, elem := range trace {
 			if elem.GetTID() == (*element).GetTID() {
 				continue
 			}
 
-			if !(clock.GetHappensBefore((*element).GetVC(), elem.GetVC()) == clock.After) {
+			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
+				println("SHIFT: ", elem.GetTID(), elem.GetVC().ToString())
 				elemsToShift = append(elemsToShift, elem)
 				if minTime == -1 || elem.GetTPre() < minTime {
 					minTime = elem.GetTPre()

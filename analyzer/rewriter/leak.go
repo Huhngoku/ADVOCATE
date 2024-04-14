@@ -27,15 +27,16 @@ import (
  */
 
 // =============== Channel ====================
+// MARK: Channel
 
 /*
- * Rewrite a trace where a leaking channel with possible partner was found.
+ * Rewrite a trace where a leaking unbuffered channel with possible partner was found.
  * Args:
  *   bug (Bug): The bug to create a trace for
  * Returns:
  *   error: An error if the trace could not be created
  */
-func rewriteChannelLeak(bug bugs.Bug) error {
+func rewriteUnbufChanLeak(bug bugs.Bug) error {
 	return errors.New("Rewriting trace for routine leak with partner is not implemented yet")
 
 	// println("Start rewriting trace for channel leak...")
@@ -61,7 +62,39 @@ func rewriteChannelLeak(bug bugs.Bug) error {
 
 }
 
+/*
+ * Rewrite a trace for a leaking buffered channel
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func LeakBufChan(bug bugs.Bug) error {
+	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
+
+	PrintTrace([]string{}, true)
+	println("\n\n")
+
+	if stuck.Operation() == trace.Send {
+		// a buffered channel send operation is stuck, if the channel is full
+		// and there is no receive operation to empty the channel
+		// -> we can rewrite the trace by moving all concurrent send operations
+		// to be after stuck. In practice, we move all concurrent operations to
+		// be after the stuck element
+		trace.ShiftConcurrentOrAfterToAfter(bug.TraceElement1[0])
+		stuck.SetTSort(stuck.GetTPre())
+		// add a start and stop signal to release the program from the guided replay
+		trace.AddTraceElementReplay(stuck.GetTPre()-1, true)
+		trace.AddTraceElementReplay(stuck.GetTPre()+1, false)
+	}
+
+	PrintTrace([]string{}, false)
+
+	return nil
+}
+
 // ================== Mutex ====================
+// MARK: Mutex
 
 /*
  * Rewrite a trace where a leaking mutex was found.
@@ -112,6 +145,7 @@ func rewriteMutexLeak(bug bugs.Bug) error {
 }
 
 // ================== WaitGroup ====================
+// MARK: WaitGroup
 
 /*
  * Rewrite a trace where a leaking waitgroup was found.
@@ -136,6 +170,7 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
 }
 
 // ================== Cond ====================
+// MARK: Cond
 
 /*
  * Rewrite a trace where a leaking cond was found.

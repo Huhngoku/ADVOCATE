@@ -1087,30 +1087,18 @@ func n56() {
 }
 
 // =============== use for testing ===============
+// MARK: FOR TESTING
 func nTest() {
-	c := sync.NewCond(&sync.Mutex{})
+	c := make(chan int, 1)
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
-		c.Signal()
+		c <- 1
 	}()
 
-	go func() {
-		c.L.Lock()
-		println("Wait - b - 1")
-		c.Wait()
-		println("Wait - e - 1")
-		c.L.Unlock()
-	}()
-
-	time.Sleep(200 * time.Millisecond)
-	c.L.Lock()
-	println("Wait - b - 2")
-	c.Wait()
-	println("Wait - e - 2")
-	c.L.Unlock()
-
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
+	c <- 1
+	<-c
+	time.Sleep(300 * time.Millisecond)
 
 }
 

@@ -10,56 +10,68 @@ import (
  * a possible communication partner in mostRecentSend, mostRecentReceive or closeData.
  * If so, add an error or warning to the result.
  * If not, add to leakingChannels, for later check.
+ * MARK: Channel Stuck
  * Args:
  *   id (int): The channel id
  *   vc (VectorClock): The vector clock of the operation
  *   tID (string): The trace id
  *   opType (int): An identifier for the type of the operation (send = 0, recv = 1)
- * TODO: currently only for unbuffered channels
+ *   buffered (bool): If the channel is buffered
  */
-func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType int) {
+func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType int,
+	buffered bool) {
 	logging.Debug("Checking channel for for leak channel", logging.INFO)
 
-	foundPartner := false
+	if !buffered {
+		foundPartner := false
 
-	if opType == 0 { // send
-		if _, ok := mostRecentReceive[id]; ok {
-			if clock.GetHappensBefore(mostRecentReceive[id].vc, vc) == clock.Concurrent {
-				found := "Leak with possible partner:\n"
-				found += "\tchannel: " + tID + "\n"
-				found += "\tpartner: " + mostRecentReceive[id].tID
-				logging.Result(found, logging.CRITICAL)
-				foundPartner = true
+		if opType == 0 { // send
+			if _, ok := mostRecentReceive[id]; ok {
+				if clock.GetHappensBefore(mostRecentReceive[id].vc, vc) == clock.Concurrent {
+					found := "Leak on unbuffered channel with possible partner:\n"
+					found += "\tchannel: " + tID + "\n"
+					found += "\tpartner: " + mostRecentReceive[id].tID
+					logging.Result(found, logging.CRITICAL)
+					foundPartner = true
+				}
 			}
-		}
-	} else if opType == 1 { // recv
-		if _, ok := mostRecentSend[id]; ok {
-			if clock.GetHappensBefore(mostRecentSend[id].vc, vc) == clock.Concurrent {
-				found := "Leak with possible partner:\n"
-				found += "\tchannel: " + tID
-				found += "\tpartner: " + mostRecentSend[id].tID + "\n"
-				logging.Result(found, logging.CRITICAL)
-				foundPartner = true
+		} else if opType == 1 { // recv
+			if _, ok := mostRecentSend[id]; ok {
+				if clock.GetHappensBefore(mostRecentSend[id].vc, vc) == clock.Concurrent {
+					found := "Leak on unbuffered channel with possible partner:\n"
+					found += "\tchannel: " + tID
+					found += "\tpartner: " + mostRecentSend[id].tID
+					logging.Result(found, logging.CRITICAL)
+					foundPartner = true
+				}
 			}
-		}
-		if _, ok := closeData[id]; ok {
-			found := "Leak with possible partner:\n"
-			found += "\tchannel: " + tID + "\n"
-			found += "\tpartner: " + closeData[id].tID
-			logging.Result(found, logging.CRITICAL)
-			foundPartner = true
-		}
-	}
 
-	if !foundPartner {
-		leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{vc, tID, opType, -1})
+			// // This cannot happen:
+			// if _, ok := closeData[id]; ok {
+			// 	found := "Leak on unbuffered channel with possible partner:\n"
+			// 	found += "\tchannel: " + tID + "\n"
+			// 	found += "\tpartner: " + closeData[id].tID
+			// 	logging.Result(found, logging.CRITICAL)
+			// 	foundPartner = true
+			// }
+		}
+
+		if !foundPartner {
+			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{vc, tID, opType, -1})
+		}
+	} else {
+		found := "Leak on buffered channel:\n"
+		found += "\tchannel: " + tID + "\n"
+		found += "\t"
+		logging.Result(found, logging.CRITICAL)
 	}
 }
 
 /*
- * Run for channel operation without a post event. Check if the operation would be
+ * Run for channel operation with a post event. Check if the operation would be
  * possible communication partner for a stuck operation in leakingChannels.
  * If so, add an error or warning to the result and remove the stuck operation.
+ * MARK: ChannelRun
  * Args:
  *   id (int): The channel id
  *   vc (VectorClock): The vector clock of the operation
@@ -75,7 +87,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 				continue
 			}
 			if clock.GetHappensBefore(vcTID2.vc, vcTID.vc) == clock.Concurrent {
-				found := "Leak with possible partner:\n"
+				found := "Leak on unbuffered channel with possible partner:\n"
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.tID
 				logging.Result(found, logging.CRITICAL)
@@ -99,7 +111,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 				continue
 			}
 			if clock.GetHappensBefore(vcTID2.vc, vcTID.vc) == clock.Concurrent {
-				found := "Leak with possible partner:\n"
+				found := "Leak on unbuffered channel with possible partner:\n"
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.tID
 				logging.Result(found, logging.CRITICAL)
@@ -122,10 +134,31 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 }
 
 /*
+ * After all operations have been analyzed, check if there are still leaking
+ * operations without a possible partner.
+ */
+func CheckForLeak() {
+	// channel
+	for _, vcTIDs := range leakingChannels {
+		for _, vcTID := range vcTIDs {
+			if vcTID.tID == "" {
+				continue
+			}
+
+			found := "Leak on unbuffered channel without possible partner:\n"
+			found += "\tchannel: " + vcTID.tID + "\n"
+			found += "\tpartner: -"
+			logging.Result(found, logging.CRITICAL)
+		}
+	}
+}
+
+/*
  * Run for select operation without a post event. Check if the operation has
  * a possible communication partner in mostRecentSend, mostRecentReceive or closeData.
  * If so, add an error or warning to the result.
  * If not, add all elements to leakingChannels, for later check.
+ * MARK: SelectStuck
  * Args:
  *   ids (int): The channel ids
  *   vc (VectorClock): The vector clock of the operation
@@ -141,7 +174,7 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 		if opTypes[i] == 0 { // send
 			if _, ok := mostRecentReceive[id]; ok {
 				if clock.GetHappensBefore(vc, mostRecentReceive[id].vc) == clock.Concurrent {
-					found := "Leak with possible partner:\n"
+					found := "Leak on unbuffered channel with possible partner:\n"
 					found += "\tchannel: " + tID
 					found += "\tpartner: " + mostRecentReceive[id].tID + "\n"
 					logging.Result(found, logging.CRITICAL)
@@ -151,7 +184,7 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 		} else if opTypes[i] == 1 { // recv
 			if _, ok := mostRecentSend[id]; ok {
 				if clock.GetHappensBefore(vc, mostRecentSend[id].vc) == clock.Concurrent {
-					found := "Leak with possible partner:\n"
+					found := "Leak on unbuffered channel with possible partner:\n"
 					found += "\tchannel: " + tID + "\n"
 					found += "\tpartner: " + mostRecentSend[id].tID
 					logging.Result(found, logging.CRITICAL)
@@ -159,7 +192,7 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 				}
 			}
 			if _, ok := closeData[id]; ok {
-				found := "Leak with possible partner:\n"
+				found := "Leak on unbuffered channel with possible partner:\n"
 				found += "\tchannel: " + tID + "\n"
 				found += "\tpartner: " + closeData[id].tID
 				logging.Result(found, logging.CRITICAL)
@@ -178,9 +211,10 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 }
 
 /*
- * Run for select operation without a post event. Check if the operation would be
+ * Run for select operation with a post event. Check if the operation would be
  * possible communication partner for a stuck operation in leakingChannels.
  * If so, add an error or warning to the result and remove the stuck operation.
+ * MARK: SelectRun
  * Args:
  *   id (int): The channel id
  *   vc (VectorClock): The vector clock of the operation
@@ -197,6 +231,7 @@ func CheckForLeakSelectRun(ids []int, typeIds []int, vc clock.VectorClock, tID s
 
 /*
  * Run for mutex operation without a post event. Show an error in the results
+ * MARK: Mutex
  * Args:
  *   id (int): The mutex id
  *   tID (string): The trace id
@@ -221,6 +256,7 @@ func addMostRecentAcquireTotal(id int, tID string, vc clock.VectorClock) {
 
 /*
  * Run for wait group operation without a post event. Show an error in the results
+ * MARK: WaitGroup
  * Args:
  *   tID (string): The trace id
  */
@@ -233,6 +269,7 @@ func CheckForLeakWait(tID string) {
 
 /*
  * Run for conditional varable operation without a post event. Show an error in the results
+ * MARK: Cond
  * Args:
  *   tID (string): The trace id
  */
@@ -241,24 +278,4 @@ func CheckForLeakCond(tID string) {
 	found += "\tconditional: " + tID + "\n"
 	found += "\t"
 	logging.Result(found, logging.CRITICAL)
-}
-
-/*
- * After all operations have been analyzed, check if there are still leaking
- * operations without a possible partner.
- */
-func CheckForLeak() {
-	// channel
-	for _, vcTIDs := range leakingChannels {
-		for _, vcTID := range vcTIDs {
-			if vcTID.tID == "" {
-				continue
-			}
-
-			found := "Leak without possible partner:\n"
-			found += "\tchannel: " + vcTID.tID + "\n"
-			found += "\tpartner: -"
-			logging.Result(found, logging.CRITICAL)
-		}
-	}
 }
