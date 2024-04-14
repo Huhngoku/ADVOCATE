@@ -211,7 +211,7 @@ We only record actually executed operations. For close on closed, we can therefo
 The same is true for actual send/recv on closed
 
 
-## Done before add
+### Done before add
 We assume, that the program run that was analyzed did not result in a negative 
 wait counter. Therefore we know, that for a wait group, the number of add is greater or 
 equal than the number of done. From the analysis, we get an incomplete but
@@ -222,15 +222,15 @@ each of those $D$ we now shift all elements that are concurrent or after $D$
 to be after that $D$. This includes the $A$.
 
 
-## Select without partner
+### Select without partner
+If there is no possible partner for a select, it is not possible to rewrite 
+the program.
 
-TODO: Implement
-
-## Mixed Deadlock
+### Mixed Deadlock
 
 TODO: Maybe implement
 
-## Cyclick Deadlock
+### Cyclick Deadlock
 We already get this (ordered) cycle from the analysis (the cycle is ordered in 
 such a way, that the edges inside a routine always go down). We now have to 
 reorder in such a way, that for edges from a to b, where a and b are in different 
@@ -275,13 +275,13 @@ lock(n)
 end()
 ~~~
 
-## Leaks
+### Leaks
 
-### Channel
+#### Channel
 There are two possible cases, either the stuck channel is unbuffered, or it is 
 buffered.
 
-#### Unbuffered Channels
+##### Unbuffered Channels
 Buffered channels must communicate concurrently. If an unbuffered channel operation $c_s$/$c_r is 
 stuck, we check if there is a possible concurrent communication partner. If there 
 is non, we cannot rewrite the channel to get unstuck. This does not mean, 
@@ -309,7 +309,7 @@ replay. After this the program will continue to run, without following a
 given trace.
 
 
-#### Buffered Channels
+##### Buffered Channels
 Leaks on buffered channels do not depend on whether there is a concurrent 
 communication partner. There are two cases, in which a buffered channel 
 can refuse to send/receive and get stuck. Either the program tries to 
@@ -327,10 +327,12 @@ from the trace such that $r$ is moved before them automatically, and let the
 program run freely after executing $r$, by adding the $X_e$ control element.
 
 
-### Select
-TODO: NOT IMPLEMENTED YET
+#### Select
+When searching for a possible communication partner, we check for all 
+cases, if there is a possible partner. When this partner is found, we 
+rewrite the program as if the select was only this selected channel operation.
 
-### Mutex
+#### Mutex
 A mutex can only be blocked by a lock operation $l$. This operations blocks, 
 if the mutex is currently hold by another block operation. Because $l$
 was blocked at the end of the program run, there is another lock operation $l'$,
@@ -350,7 +352,7 @@ T_1 ++ T_2' ++ [l, X_e]
 where X_e ends the guided replay and lets the rest of the program play out 
 by itself. T_2' is the set of all elements, that are before $l$.
  
-### Wait Group
+#### Wait Group
 Only the wait in a wait group can lead to an actual leak. This happens, when the 
 wait group counter is not 0 at any time after the wait command. We can 
 only influence the counter for the wait, by moving adds and dones, that are 
@@ -360,7 +362,7 @@ moving all elements, that are concurrent with the stuck wait to be after
 the wait. To make sure, that we do not create a negative wait counter, we 
 keep the order of those moving elements the same as before the rewrite.
 
-### Conditional Variables
+#### Conditional Variables
 For a conditional variable only the wait operation can block. The block can be
 ended by a Signal or Broadcast call.
 

@@ -31,7 +31,7 @@ type TraceElementSelect struct {
 	tPost           int
 	id              int
 	cases           []TraceElementChannel
-	chosenCase      *TraceElementChannel
+	chosenCase      TraceElementChannel
 	chosenIndex     int
 	containsDefault bool
 	chosenDefault   bool
@@ -148,7 +148,7 @@ func AddTraceElementSelect(routine int, tPre string,
 
 		casesList = append(casesList, elemCase)
 		if elemCase.tPost != 0 {
-			elem.chosenCase = &elemCase
+			elem.chosenCase = elemCase
 		}
 	}
 
@@ -162,16 +162,18 @@ func AddTraceElementSelect(routine int, tPre string,
 
 	// check if partner was already processed, otherwise add to channelWithoutPartner
 	if tPostInt != 0 {
-		if _, ok := channelWithoutPartner[idInt][elem.chosenCase.oID]; ok {
-			elem.chosenCase.partner = channelWithoutPartner[idInt][elem.chosenCase.oID]
-			channelWithoutPartner[idInt][elem.chosenCase.oID].partner = elem.chosenCase
-			delete(channelWithoutPartner[idInt], elem.chosenCase.oID)
+		id := elem.chosenCase.id
+		oID := elem.chosenCase.oID
+		if _, ok := channelWithoutPartner[id][oID]; ok {
+			elem.chosenCase.partner = channelWithoutPartner[id][oID]
+			channelWithoutPartner[elem.chosenCase.id][oID].partner = &elem.chosenCase
+			delete(channelWithoutPartner[id], oID)
 		} else {
-			if _, ok := channelWithoutPartner[idInt]; !ok {
-				channelWithoutPartner[idInt] = make(map[int]*TraceElementChannel)
+			if _, ok := channelWithoutPartner[id]; !ok {
+				channelWithoutPartner[id] = make(map[int]*TraceElementChannel)
 			}
 
-			channelWithoutPartner[idInt][elem.chosenCase.oID] = elem.chosenCase
+			channelWithoutPartner[id][oID] = &elem.chosenCase
 		}
 	}
 
@@ -271,7 +273,7 @@ func (se *TraceElementSelect) GetVC() clock.VectorClock {
  *   *TraceElementChannel: The communication partner of the select or nil
  */
 func (se *TraceElementSelect) GetPartner() *TraceElementChannel {
-	if se.chosenCase != nil {
+	if se.chosenCase.tPost != 0 {
 		return se.chosenCase.partner
 	}
 	return nil
@@ -381,8 +383,8 @@ func (se *TraceElementSelect) updateVectorClock() {
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
 
-	se.vc = currentVCHb[se.routine].Copy()
+	se.vc = se.chosenCase.vc.Copy()
 	for _, c := range se.cases {
-		c.vc = se.vc
+		c.vc = se.vc.Copy()
 	}
 }

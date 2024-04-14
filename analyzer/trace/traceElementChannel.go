@@ -496,9 +496,9 @@ func (ch *TraceElementChannel) findPartner() int {
 		if currentIndex[routine] == -1 {
 			continue
 		}
-		if routine == ch.routine {
-			continue
-		}
+		// if routine == ch.routine {
+		// 	continue
+		// }
 		elem := trace[currentIndex[routine]]
 		switch e := elem.(type) {
 		case *TraceElementChannel:
@@ -506,7 +506,7 @@ func (ch *TraceElementChannel) findPartner() int {
 				return routine
 			}
 		case *TraceElementSelect:
-			if e.chosenCase != nil &&
+			if e.chosenCase.tPost != 0 &&
 				e.chosenCase.oID == ch.id &&
 				e.chosenCase.oID == ch.oID {
 				return routine
