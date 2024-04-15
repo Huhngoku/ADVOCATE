@@ -58,14 +58,16 @@ func writeTraceIfFull() {
 	}
 }
 
+// BUG: crashes bug
 func cleanTrace() {
-	println("Cleaning trace")
-	// stop new element from been added to the trace
-	runtime.BlockTrace()
-	writeToTraceFiles()
-	runtime.DeleteTrace()
-	runtime.UnblockTrace()
-	runtime.GC()
+	return
+	// println("Cleaning trace")
+	// // stop new element from been added to the trace
+	// runtime.BlockTrace()
+	// writeToTraceFiles()
+	// runtime.DeleteTrace()
+	// runtime.UnblockTrace()
+	// runtime.GC()
 }
 
 /*
