@@ -38,15 +38,23 @@ func WaitForReplayFinish() {
 }
 
 func writeTraceIfFull() {
+	var m runtime.MemStats
+	var stat syscall.Sysinfo_t
+	err := syscall.Sysinfo(&stat)
+	if err != nil {
+		panic(err)
+	}
+	totalRAM := stat.Totalram
 	for {
 		time.Sleep(5 * time.Second)
 		// get the amount of free space on ram
-		var stat syscall.Sysinfo_t
-		err := syscall.Sysinfo(&stat)
-		if err != nil {
-			panic(err)
-		}
-		if stat.Freeram*5 < stat.Totalram {
+		runtime.ReadMemStats(&m)
+		heap := m.Alloc
+		stack := m.StackSys
+		freeRam := stat.Totalram - heap - stack
+		println(toGB(heap), toGB(stack), toGB(freeRam), toGB(stat.Totalram/5))
+		if freeRam < totalRAM/5 {
+			println("Memory full")
 			cleanTrace()
 			time.Sleep(15 * time.Second)
 		}
@@ -58,9 +66,13 @@ func writeTraceIfFull() {
 	}
 }
 
+func toGB(bytes uint64) float64 {
+	return float64(bytes) / 1024 / 1024 / 1024
+}
+
 // BUG: crashes bug
 func cleanTrace() {
-	// println("Cleaning trace")
+	println("Cleaning trace")
 	// // stop new element from been added to the trace
 	// runtime.BlockTrace()
 	// writeToTraceFiles()

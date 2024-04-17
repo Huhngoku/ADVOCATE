@@ -154,7 +154,7 @@ func (wg *WaitGroup) Wait() {
 	// blocks the routine and it is nessesary to record the successful
 	// finish of the wait with a post.
 	advocateIndex := runtime.AdvocateWaitGroupWaitPre(wg.id)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateWaitGroupPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 	for {
 		state := wg.state.Load()

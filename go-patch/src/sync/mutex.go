@@ -111,7 +111,7 @@ func (m *Mutex) Lock() {
 	// this information. advocateIndex is used for AdvocatePost to find the
 	// pre event.
 	advocateIndex := runtime.AdvocateMutexLockPre(m.id, false, false)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateMutexPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 
 	// Fast path: grab unlocked mutex.
@@ -310,7 +310,7 @@ func (m *Mutex) Unlock() {
 	// Here the post is seperatly recorded to easy the implementation for
 	// the rw mutexes.
 	advocateIndex := runtime.AdvocateUnlockPre(m.id, false, false)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateMutexPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {

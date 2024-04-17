@@ -53,13 +53,13 @@ const (
 	none
 )
 
-type advocateTraceElement interface {
-	isAdvocateTraceElement()
-	toString() string
-	getOperation() Operation
-	getFile() string
-	getLine() int
-}
+// type advocateTraceElement interface {
+// 	isAdvocateTraceElement()
+// 	toString() string
+// 	getOperation() Operation
+// 	getFile() string
+// 	getLine() int
+// }
 
 type advocateAtomicMapElem struct {
 	addr      uint64
@@ -88,7 +88,7 @@ func CurrentTraceToString() string {
 		if i != 0 {
 			res += ";"
 		}
-		res += elem.toString()
+		res += elem
 	}
 
 	return res
@@ -101,13 +101,13 @@ func CurrentTraceToString() string {
  * Return:
  * 	string representation of the trace
  */
-func traceToString(trace *[]advocateTraceElement) string {
+func traceToString(trace *[]string) string {
 	res := ""
 	for i, elem := range *trace {
 		if i != 0 {
 			res += ";"
 		}
-		res += elem.toString()
+		res += elem
 	}
 	return res
 }
@@ -119,7 +119,7 @@ func traceToString(trace *[]advocateTraceElement) string {
  * Return:
  * 	index of the element in the trace
  */
-func insertIntoTrace(elem advocateTraceElement) int {
+func insertIntoTrace(elem string) int {
 	return currentGoRoutine().addToTrace(elem)
 }
 
@@ -169,7 +169,7 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 				res += ";"
 			}
 
-			res += elem.toString()
+			res += elem
 
 			if i%1000 == 0 {
 				c <- res

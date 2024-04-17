@@ -2,6 +2,8 @@
 
 package runtime
 
+// MARK: INT -> STR
+
 /*
  * Get a string representation of an uint64
  * Args:
@@ -89,6 +91,89 @@ func intToString(n int) string {
 	}
 }
 
+// MARK: BOOL -> STR
+
+/*
+ * Get a string representation of a bool
+ * Args:
+ * 	b: bool to convert
+ * Return:
+ * 	string representation of the bool (true: "t", false: "f")
+ */
+func boolToString(b bool) string {
+	if b {
+		return "t"
+	}
+	return "f"
+}
+
+// MARK: STR manipulation
+
+/*
+ * Split a string at comma
+ * Args:
+ * 	s: string to split
+ * 	indices: at witch commas to split the string, must be sorted, 1 based
+ * Return:
+ * 	splitted string
+ */
+func splitStringAtCommas(s string, indices []int) []string {
+	var start int
+	result := make([]string, 0, len(indices)+1)
+
+	count := 0
+	for _, index := range indices {
+		for i, r := range s[start:] {
+			if r == ',' {
+				count++
+				if count == index {
+					result = append(result, s[start:start+i])
+					start += i + 1
+					break
+				}
+			}
+		}
+	}
+	result = append(result, s[start:])
+	return result
+}
+
+/*
+ * Merge a string slice to a string
+ * Args:
+ * 	s: slice of strings to merge
+ * Return:
+ * 	merged string, separated by commas
+ */
+func mergeString(s []string) string {
+	var result string
+	for i, elem := range s {
+		if i != 0 {
+			result += ","
+		}
+		result += elem
+	}
+	return result
+}
+
+/*
+ * Split a string by the seperator
+ */
+func splitString(line string, sep string) []string {
+	var result []string
+	start := 0
+	for i := 0; i < len(line); i++ {
+		if line[i] == sep[0] {
+			result = append(result, line[start:i])
+			start = i + 1
+		}
+	}
+	result = append(result, line[start:])
+	return result
+}
+
+// MARK: ADVOCATE
+
 var advocateCurrentRoutineID uint64
 var advocateCurrentObjectID uint64
 var advocateGlobalCounter uint64
@@ -131,22 +216,6 @@ func GetAdvocateCounter() uint64 {
 	defer unlock(&advocateGlobalCounterMutex)
 	advocateGlobalCounter++
 	return advocateGlobalCounter
-}
-
-/*
- * Split a string by the seperator
- */
-func splitString(line string, sep string) []string {
-	var result []string
-	start := 0
-	for i := 0; i < len(line); i++ {
-		if line[i] == sep[0] {
-			result = append(result, line[start:i])
-			start = i + 1
-		}
-	}
-	result = append(result, line[start:])
-	return result
 }
 
 /*

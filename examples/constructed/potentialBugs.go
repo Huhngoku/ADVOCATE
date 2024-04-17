@@ -1103,11 +1103,11 @@ func nTest() {
 	}()
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
-		<-c
+		c <- 1
 	}()
 
-	c <- 1
+	time.Sleep(100 * time.Millisecond)
+	<-c
 
 	time.Sleep(500 * time.Millisecond)
 
@@ -1197,7 +1197,7 @@ func main() {
 
 	if replay == nil || !*replay {
 		// init tracing
-		advocate.InitTracing(-1)
+		advocate.InitTracing(0)
 		defer advocate.Finish()
 	} else {
 		// init replay
