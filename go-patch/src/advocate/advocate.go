@@ -60,7 +60,6 @@ func writeTraceIfFull() {
 
 // BUG: crashes bug
 func cleanTrace() {
-	return
 	// println("Cleaning trace")
 	// // stop new element from been added to the trace
 	// runtime.BlockTrace()
