@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 	"strconv"
 )
@@ -13,7 +14,7 @@ import (
  *   tId (string): The trace id of the mutex operation
  *   vc (VectorClock): The current vector clock
  */
-func lockSetAddLock(routine int, lock int, tID string, vc VectorClock) {
+func lockSetAddLock(routine int, lock int, tID string, vc clock.VectorClock) {
 	if _, ok := lockSet[routine]; !ok {
 		lockSet[routine] = make(map[int]string)
 	}
@@ -66,10 +67,10 @@ func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tID
 		_, ok1 := mostRecentAcquire[routineRevc][m]
 		_, ok2 := mostRecentAcquire[routineSend][m]
 		if ok1 && ok2 && mostRecentAcquire[routineSend][m].tID != mostRecentAcquire[routineRevc][m].tID {
-			// found potential mixed deadlock
-			found := "Potential mixed deadlock:\n"
-			found += "\tlocks: \n\t\t" + mostRecentAcquire[routineSend][m].tID + "\n\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
-			found += "\tsend/close-recv: \n\t\t" + tIDSend + "\n\t\t" + tIDRecv
+			// found possible mixed deadlock
+			found := "Possible mixed deadlock:\n"
+			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].tID + "\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
+			found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
 
 			logging.Result(found, logging.CRITICAL)
 		}
@@ -79,10 +80,10 @@ func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tID
 		_, ok1 := mostRecentAcquire[routineRevc][m]
 		_, ok2 := mostRecentAcquire[routineSend][m]
 		if ok1 && ok2 && mostRecentAcquire[routineSend][m].tID != mostRecentAcquire[routineRevc][m].tID {
-			// found potential mixed deadlock
-			found := "Potential mixed deadlock:\n"
-			found += "\tlocks: \n\t\t" + mostRecentAcquire[routineSend][m].tID + "\n\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
-			found += "\tsend/close-recv: \n\t\t" + tIDSend + "\n\t\t" + tIDRecv
+			// found possible mixed deadlock
+			found := "Possible mixed deadlock:\n"
+			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].tID + "\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
+			found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
 
 			logging.Result(found, logging.CRITICAL)
 		}
@@ -104,13 +105,13 @@ func checkForMixedDeadlock2(routine int) {
 			}
 
 			if vc2, ok := acquire[m]; ok {
-				weakHappensBefore := GetHappensBefore(vc1, vc2)
+				weakHappensBefore := clock.GetHappensBefore(vc1, vc2)
 				if weakHappensBefore != Concurrent {
 					continue
 				}
 
-				// found potential mixed deadlock
-				found := "Potential mixed deadlock:\n"
+				// found possible mixed deadlock
+				found := "Possible mixed deadlock:\n"
 				found += "\tlock1: " + lockSet[routine][m] + "\n"
 				found += "\tlock2: " + lockSet[routine2][m]
 

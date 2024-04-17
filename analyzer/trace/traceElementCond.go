@@ -2,21 +2,23 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"errors"
 	"math"
 	"strconv"
 )
 
-type opCond int
+type OpCond int
 
 const (
-	WaitCondOp opCond = iota
+	WaitCondOp OpCond = iota
 	SignalOp
 	BroadcastOp
 )
 
 /*
  * TraceElementCond is a trace element for a condition variable
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -31,13 +33,15 @@ type TraceElementCond struct {
 	tPre    int
 	tPost   int
 	id      int
-	opC     opCond
+	opC     OpCond
 	pos     string
 	tID     string
+	vc      clock.VectorClock
 }
 
 /*
  * Create a new condition variable trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tPre (string): The timestamp at the start of the event
@@ -60,7 +64,7 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 	if err != nil {
 		return errors.New("id is not an integer")
 	}
-	var op opCond
+	var op OpCond
 	switch opN {
 	case "W":
 		op = WaitCondOp
@@ -84,8 +88,10 @@ func AddTraceElementCond(routine int, tPre string, tPost string, id string, opN 
 		tID:     tIDStr,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
+
+// MARK: Getter
 
 /*
  * Get the id of the element
@@ -110,7 +116,7 @@ func (co *TraceElementCond) GetRoutine() int {
  * Returns:
  *   int: The tpre of the element
  */
-func (co *TraceElementCond) getTpre() int {
+func (co *TraceElementCond) GetTPre() int {
 	return co.tPre
 }
 
@@ -160,26 +166,104 @@ func (co *TraceElementCond) GetTID() string {
 }
 
 /*
+ * Get the operation of the element
+ * Returns:
+ *   (OpCond): The operation of the element
+ */
+func (co *TraceElementCond) GetOpCond() OpCond {
+	return co.opC
+}
+
+/*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (co *TraceElementCond) GetVC() clock.VectorClock {
+	return co.vc
+}
+
+/*
+ * Get all to element concurrent wait, broadcast and signal operations on the same condition variable
+ * Args:
+ *   element (traceElement): The element
+ *   filter ([]string): The types of the elements to return
+ * Returns:
+ *   []*traceElement: The concurrent elements
+ */
+func GetConcurrentWaitgroups(element *TraceElement) map[string][]*TraceElement {
+	res := make(map[string][]*TraceElement)
+	res["broadcast"] = make([]*TraceElement, 0)
+	res["signal"] = make([]*TraceElement, 0)
+	res["wait"] = make([]*TraceElement, 0)
+	for _, trace := range traces {
+		for _, elem := range trace {
+			switch elem.(type) {
+			case *TraceElementCond:
+			default:
+				continue
+			}
+
+			if elem.GetTID() == (*element).GetTID() {
+				continue
+			}
+
+			e := elem.(*TraceElementCond)
+
+			if e.opC == WaitCondOp {
+				continue
+			}
+
+			if clock.GetHappensBefore((*element).GetVC(), e.GetVC()) == clock.Concurrent {
+				e := elem.(*TraceElementCond)
+				if e.opC == SignalOp {
+					res["signal"] = append(res["signal"], &elem)
+				} else if e.opC == BroadcastOp {
+					res["broadcast"] = append(res["broadcast"], &elem)
+				} else if e.opC == WaitCondOp {
+					res["wait"] = append(res["wait"], &elem)
+				}
+			}
+		}
+	}
+	return res
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (co *TraceElementCond) SetTPre(tPre int) {
+	co.tPre = tPre
+	if co.tPost != 0 && co.tPost < tPre {
+		co.tPost = tPre
+	}
+}
+
+/*
  * Set the timer that is used for sorting the trace
  * Args:
  *   tSort (int): The timer of the element
  * TODO: check if tPre is correct
  */
-func (co *TraceElementCond) SetTsort(tSort int) {
+func (co *TraceElementCond) SetTSort(tSort int) {
+	co.SetTPre(tSort)
 	if co.opC == WaitCondOp {
 		co.tPost = tSort
-		return
 	}
-	co.tPre = tSort
 }
 
 /*
  * Set the timer, that is used for the sorting of the trace, only if the original
  * value was not 0
  * Args:
- *   tsort (int): The timer of the element
+ *   tSort (int): The timer of the element
  */
-func (co *TraceElementCond) SetTsortWithoutNotExecuted(tSort int) {
+func (co *TraceElementCond) SetTSortWithoutNotExecuted(tSort int) {
+	co.SetTPre(tSort)
 	if co.opC == WaitCondOp {
 		if co.tPost != 0 {
 			co.tPost = tSort
@@ -194,6 +278,7 @@ func (co *TraceElementCond) SetTsortWithoutNotExecuted(tSort int) {
 
 /*
  * Get the string representation of the element
+ * MARK: ToString
  * Returns:
  *   (string): The string representation of the element
  */
@@ -215,14 +300,17 @@ func (co *TraceElementCond) ToString() string {
 
 /*
  * Update the vector clock of the trace and element
+ * MARK: VectorClock
  */
 func (co *TraceElementCond) updateVectorClock() {
 	switch co.opC {
 	case WaitCondOp:
-		analysis.CondWait(co.id, co.routine, currentVCHb)
+		analysis.CondWait(co.id, co.routine, currentVCHb, co.tPost == 0)
 	case SignalOp:
 		analysis.CondSignal(co.id, co.routine, currentVCHb)
 	case BroadcastOp:
 		analysis.CondBroadcast(co.id, co.routine, currentVCHb)
 	}
+
+	co.vc = currentVCHb[co.routine].Copy()
 }

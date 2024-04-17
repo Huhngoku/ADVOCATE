@@ -6,7 +6,7 @@ explanation for all trace elements in the corresponding files in `traceElements`
 For the trace of each routine a separate trace file is created
 ```
 L := "" | {E";"}E                                               (routine local trace)
-E := G | M | W | C | S | O | N                                  (trace element)
+E := G | M | W | C | S | O | N | X                              (trace element)
 G := "G,"tpre","id,","pos                                       (element for creation of new routine)
 A := "A,"tpre","addr","opA                                      (element for atomic operation)
 M := "M,"tpre","tpost","id","rw","opM","suc","pos               (element for operation on sync (rw)mutex)
@@ -15,6 +15,7 @@ C := "C,"tpre","tpost","id","opC","cl",oId","qSize","pos        (element for ope
 S := "S,"tpre","tpost","id","cases","pos                        (element for select)
 O := "O,"tpre",tpost","id","suco","pos                          (element for once)
 N := "N,"tpre",tpost","id","opN","pos                           (element for conditional)
+X := "X,"tpre","se                                              (start/stop signal, only in rewritten trace)
 tpre := ℕ                                                       (timer when the operation is started)
 tpost := ℕ                                                      (timer when the operation has finished)
 addr := ℕ                                                       (pointer to the atomic variable, used as id)
@@ -38,11 +39,11 @@ case := "C."tpre"."tpost"."id"."opC"."cl".oId"."qSize" | "d" | "D"     (case in 
 suco := t | f                                                   (true if function in once was executed, false if not)
 cId := ℕ                                                        (id of channel in select case) 
 opN := "W" | "S" | "B"                                          (operation for conditional: Wait, Signal, Broadcast)
+se := "s" | "e"                                                 (signalizes wether X is start or end)
 ```
 
-The trace is stored in one file. Each line in the trace file corresponds to one 
-routine in the executed program. The line number is equal to the id of the routine.
-The elements in each line are separated by 
+For each trace a separate file is stored.
+The elements in each file are separated by 
 semicolons (;). The different fields in each element are seperated by 
 commas (,). The first field always shows the type of the element:
 
@@ -55,6 +56,9 @@ commas (,). The first field always shows the type of the element:
 
 The other fields are explained in the corresponding files in the `traceElements` directory.
 These files also describe how the trace elements are recorded.
+For reordered traces, the trace can also include a stop signal "X".
+If this signal is reached, the trace recording is stopped, and the 
+program in allowed to continue freely.
 
 ## Implementation
 The runtime of Go creates a struct `g` for each routine (implemented in `go-patch/src/runtime/runtime2.go`). This routine is used to locally store the trace for each routine. 

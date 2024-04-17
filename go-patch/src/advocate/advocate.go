@@ -58,14 +58,15 @@ func writeTraceIfFull() {
 	}
 }
 
+// BUG: crashes bug
 func cleanTrace() {
-	println("Cleaning trace")
-	// stop new element from been added to the trace
-	runtime.BlockTrace()
-	writeToTraceFiles()
-	runtime.DeleteTrace()
-	runtime.UnblockTrace()
-	runtime.GC()
+	// println("Cleaning trace")
+	// // stop new element from been added to the trace
+	// runtime.BlockTrace()
+	// writeToTraceFiles()
+	// runtime.DeleteTrace()
+	// runtime.UnblockTrace()
+	// runtime.GC()
 }
 
 /*
@@ -184,6 +185,7 @@ func InitTracing(size int) {
 // ============== Reading =================
 
 var timeout = false
+var tracePath = "rewritten_trace"
 
 /*
  * Read the trace from the trace folder.
@@ -191,13 +193,19 @@ var timeout = false
  * The trace is added to the runtime by calling the AddReplayTrace function.
  */
 func EnableReplay() {
+	if _, err := os.Stat(tracePath); os.IsNotExist(err) {
+		tracePath = "trace"
+	}
+
 	// if trace folder does not exist, panic
-	if _, err := os.Stat("trace"); os.IsNotExist(err) {
+	if _, err := os.Stat(tracePath); os.IsNotExist(err) {
 		panic("Trace folder does not exist.")
 	}
 
+	println("Reading trace from " + tracePath)
+
 	// traverse all files in the trace folder
-	files, err := os.ReadDir("trace")
+	files, err := os.ReadDir(tracePath)
 	if err != nil {
 		panic(err)
 	}
@@ -210,7 +218,7 @@ func EnableReplay() {
 
 		// if the file is a log file, read the trace
 		if strings.HasSuffix(file.Name(), ".log") {
-			routineID, trace := readTraceFile("trace/" + file.Name())
+			routineID, trace := readTraceFile(tracePath + "/" + file.Name())
 			runtime.AddReplayTrace(uint64(routineID), trace)
 		}
 	}
@@ -247,7 +255,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	maxTokenSize := 1
 
 	// get the routine id from the file name
-	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, "trace/trace_"), ".log"))
+	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, tracePath+"/trace_"), ".log"))
 	if err != nil {
 		panic(err)
 	}
@@ -288,6 +296,12 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				fields := strings.Split(elem, ",")
 				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
+				case "X": // disable replay
+					if fields[2] == "s" {
+						op = runtime.OperationReplayStart
+					} else {
+						op = runtime.OperationReplayEnd
+					}
 				case "G":
 					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])
@@ -411,6 +425,26 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					pos := strings.Split(fields[6], ":")
 					file = pos[0]
 					line, _ = strconv.Atoi(pos[1])
+				case "N":
+					switch fields[4] {
+					case "W":
+						op = runtime.OperationCondWait
+					case "S":
+						op = runtime.OperationCondSignal
+					case "B":
+						op = runtime.OperationCondBroadcast
+					default:
+						panic("Unknown cond operation")
+					}
+					pos := strings.Split(fields[5], ":")
+					file = pos[0]
+					line, _ = strconv.Atoi(pos[1])
+					if fields[2] == "0" {
+						blocked = true
+					}
+
+				default:
+					panic("Unknown operation " + fields[0] + " in line " + elem + " in file " + fileName + ".")
 				}
 				if op != runtime.OperationNone && !runtime.AdvocateIgnore(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{
@@ -438,10 +472,6 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	// sort data by tpre
 	sortReplayDataByTime(replayData)
 
-	// for elem := range replayData {
-	// 	println(replayData[elem].Time, replayData[elem].Op, replayData[elem].File, replayData[elem].Line, replayData[elem].Blocked, replayData[elem].Suc)
-	// }
-	// println("\n\n")
 	return routineID, replayData
 }
 
@@ -500,7 +530,6 @@ func findReplayPartner(cID string, oID string, index int, chanWithoutPartner map
  * Sort the replay data structure by time.
  * The function returns the sorted replay data structure.
  */
-// TODO: LOCAL
 func sortReplayDataByTime(replayData runtime.AdvocateReplayTrace) runtime.AdvocateReplayTrace {
 	sort.Slice(replayData, func(i, j int) bool {
 		return replayData[i].Time < replayData[j].Time

@@ -1,24 +1,32 @@
 package analysis
 
+import "analyzer/clock"
+
 type VectorClockTID struct {
-	vc  VectorClock
+	vc  clock.VectorClock
 	tID string
 }
 
 type VectorClockTID2 struct {
-	vc      VectorClock
+	id      int
+	vc      clock.VectorClock
 	tID     string
 	typeVal int
 	val     int
 }
 
-type untriggeredSelectCase struct {
-	id    int            // channel id
-	vcTID VectorClockTID // vector clock and tID
-	send  bool           // true: send, false: receive
+type allSelectCase struct {
+	id       int            // channel id
+	vcTID    VectorClockTID // vector clock and tID
+	send     bool           // true: send, false: receive
+	buffered bool           // true: buffered, false: unbuffered
+	partner  bool           // true: partner found, false: no partner found
 }
 
 var (
+	// analysis cases to run
+	analysisCases = make(map[string]bool)
+
 	// vc of close on channel
 	closeData = make(map[int]VectorClockTID)
 	closeRout = make(map[int]int)
@@ -41,23 +49,32 @@ var (
 	bufferedVCsCount = make(map[int]int)
 
 	// add on waitGroup
-	addWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
+	wgAdd = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
 
 	// done on waitGroup
-	doneWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
+	wgDone = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
+
+	// wait on waitGroup
+	// wgWait = make(map[int]map[int][]VectorClockTID) // id -> routine -> []vcTID
 
 	// last acquire on mutex for each routine
-	lockSet           = make(map[int]map[int]string)         // routine -> id -> string
-	mostRecentAcquire = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID  // TODO: do we need to store the operation?
+	lockSet                = make(map[int]map[int]string)         // routine -> id -> string
+	mostRecentAcquire      = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID  // TODO: do we need to store the operation?
+	mostRecentAcquireTotal = make(map[int]VectorClockTID)         // id -> vcTID
 
 	// vector clocks for last release times
-	relW = make(map[int]VectorClock) // id -> vc
-	relR = make(map[int]VectorClock) // id -> vc
+	relW = make(map[int]clock.VectorClock) // id -> vc
+	relR = make(map[int]clock.VectorClock) // id -> vc
 
 	// for leak check
 	leakingChannels = make(map[int][]VectorClockTID2) // id -> vcTID
 
 	// for check of select without partner
-	// not triggered
-	selectCases = make([]untriggeredSelectCase, 0) // id -> vcTID
+	// store all select cases
+	selectCases = make([]allSelectCase, 0) // id -> vcTID
 )
+
+// InitAnalysis initializes the analysis cases
+func InitAnalysis(analysisCasesMap map[string]bool) {
+	analysisCases = analysisCasesMap
+}

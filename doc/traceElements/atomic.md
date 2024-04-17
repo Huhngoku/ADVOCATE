@@ -4,6 +4,9 @@ The recording of atomics records atomic operations, both on normal types and on 
 ## Info:
 The recording of atomic events is currently only implemented for `amd64`.
 
+The recording of atomic operations can be disabled by setting the value
+in the preamble call in `runtime.InitAtomics` to $-1$.
+
 ## Trace element:
 The basic form of the trace element is 
 ```
@@ -29,7 +32,7 @@ The following is an example containing atomic operations.
 package main
 
 func main() {  // routine 1
-    var a atomic.Int32
+	var a atomic.Int32
 	var b int32
 
 	a.Add(1)

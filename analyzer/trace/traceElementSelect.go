@@ -1,6 +1,8 @@
 package trace
 
 import (
+	"analyzer/analysis"
+	"analyzer/clock"
 	"errors"
 	"math"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 
 /*
  * TraceElementSelect is a trace element for a select statement
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpre (int): The timestamp at the start of the event
@@ -34,10 +37,12 @@ type TraceElementSelect struct {
 	chosenDefault   bool
 	pos             string
 	tID             string
+	vc              clock.VectorClock
 }
 
 /*
  * Add a new select statement trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tPre (string): The timestamp at the start of the event
@@ -64,12 +69,15 @@ func AddTraceElementSelect(routine int, tPre string,
 		return errors.New("id is not an integer")
 	}
 
+	tID := pos + "@" + tPre
+
 	elem := TraceElementSelect{
 		routine: routine,
 		tPre:    tPreInt,
 		tPost:   tPostInt,
 		id:      idInt,
 		pos:     pos,
+		tID:     tID,
 	}
 
 	cs := strings.Split(cases, "~")
@@ -101,9 +109,9 @@ func AddTraceElementSelect(routine int, tPre string,
 		if err != nil {
 			return errors.New("c_id is not an integer")
 		}
-		var cOpC = send
+		var cOpC = Send
 		if caseList[4] == "R" {
-			cOpC = recv
+			cOpC = Recv
 		} else if caseList[4] == "C" {
 			panic("Close in select case list")
 		}
@@ -152,12 +160,27 @@ func AddTraceElementSelect(routine int, tPre string,
 	elem.chosenDefault = chosenDefault
 	elem.cases = casesList
 
-	if elem.pos == "/home/erikkassubek/Uni/HiWi/Other/examples/gocrawl/popchannel.go:20" {
-		println(elem.ToString())
+	// check if partner was already processed, otherwise add to channelWithoutPartner
+	if tPostInt != 0 {
+		id := elem.chosenCase.id
+		oID := elem.chosenCase.oID
+		if _, ok := channelWithoutPartner[id][oID]; ok {
+			elem.chosenCase.partner = channelWithoutPartner[id][oID]
+			channelWithoutPartner[elem.chosenCase.id][oID].partner = &elem.chosenCase
+			delete(channelWithoutPartner[id], oID)
+		} else {
+			if _, ok := channelWithoutPartner[id]; !ok {
+				channelWithoutPartner[id] = make(map[int]*TraceElementChannel)
+			}
+
+			channelWithoutPartner[id][oID] = &elem.chosenCase
+		}
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
+
+// MARK: Getter
 
 /*
  * Get the id of the element
@@ -191,7 +214,7 @@ func (se *TraceElementSelect) GetRoutine() int {
  * Returns:
  *   int: The timestamp at the start of the event
  */
-func (se *TraceElementSelect) getTpre() int {
+func (se *TraceElementSelect) GetTPre() int {
 	return se.tPre
 }
 
@@ -236,12 +259,51 @@ func (se *TraceElementSelect) GetTID() string {
 }
 
 /*
+ * Get the vector clock of the element
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (se *TraceElementSelect) GetVC() clock.VectorClock {
+	return se.vc
+}
+
+/*
+ * Get the communication partner of the select
+ * Returns:
+ *   *TraceElementChannel: The communication partner of the select or nil
+ */
+func (se *TraceElementSelect) GetPartner() *TraceElementChannel {
+	if se.chosenCase.tPost != 0 {
+		return se.chosenCase.partner
+	}
+	return nil
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (se *TraceElementSelect) SetTPre(tPre int) {
+	se.tPre = tPre
+	if se.tPost != 0 && se.tPost < tPre {
+		se.tPost = tPre
+	}
+
+	se.chosenCase.SetTPre(tPre)
+}
+
+/*
  * Set the timer, that is used for the sorting of the trace
  * Args:
  *   tSort (int): The timer of the element
  */
-func (se *TraceElementSelect) SetTsort(tSort int) {
+func (se *TraceElementSelect) SetTSort(tSort int) {
+	se.SetTPre(tSort)
 	se.tPost = tSort
+	se.chosenCase.SetTSort(tSort)
 }
 
 /*
@@ -250,14 +312,17 @@ func (se *TraceElementSelect) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (se *TraceElementSelect) SetTsortWithoutNotExecuted(tSort int) {
+func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
+	se.SetTPre(tSort)
 	if se.tPost != 0 {
 		se.tPost = tSort
 	}
+	se.chosenCase.SetTSortWithoutNotExecuted(tSort)
 }
 
 /*
  * Get the simple string representation of the element
+ * MARK: ToString
  * Returns:
  *   string: The simple string representation of the element
  */
@@ -293,13 +358,33 @@ func (se *TraceElementSelect) ToString() string {
 
 /*
  * Update and calculate the vector clock of the select element.
- * For now, we assume the select acted like the chosen channel operation
- * was just a normal channel operation. For the default, we do not update the vc.
+ * MARK: VectorClock
  */
 func (se *TraceElementSelect) updateVectorClock() {
-	if se.chosenDefault { // no update for default
-		return
+	if se.chosenDefault || se.tPost == 0 {
+		currentVCHb[se.routine] = currentVCHb[se.routine].Inc(se.routine)
+	} else {
+		// update the vector clock
+		se.chosenCase.updateVectorClock()
 	}
 
-	se.chosenCase.updateVectorClock()
+	if analysisCases["selectWithoutPartner"] {
+		// check for select case without partner
+		ids := make([]int, 0)
+		buffered := make([]bool, 0)
+		sendInfo := make([]bool, 0)
+		for _, c := range se.cases {
+			ids = append(ids, c.id)
+			buffered = append(buffered, c.qSize > 0)
+			sendInfo = append(sendInfo, c.opC == Send)
+		}
+
+		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,
+			currentVCHb[se.routine], se.tID, se.chosenIndex)
+	}
+
+	se.vc = se.chosenCase.vc.Copy()
+	for _, c := range se.cases {
+		c.vc = se.vc.Copy()
+	}
 }

@@ -1,4 +1,4 @@
-package analysis
+package clock
 
 import (
 	"analyzer/logging"
@@ -37,8 +37,22 @@ func NewVectorClock(size int) VectorClock {
 	}
 }
 
+/*
+ * Get the size of the vector clock
+ * Returns:
+ *   (int): The size of the vector clock
+ */
 func (vc VectorClock) GetSize() int {
 	return vc.size
+}
+
+/*
+ * Get the vector clock
+ * Returns:
+ *   (map[int]int): The vector clock
+ */
+func (vc VectorClock) GetClock() map[int]int {
+	return vc.clock
 }
 
 /*
@@ -112,7 +126,7 @@ func (vc VectorClock) Copy() VectorClock {
 	if vc.size == 0 {
 		_, file, line, _ := runtime.Caller(1)
 		logging.Debug("Copy of empty vector clock: "+file+":"+strconv.Itoa(line), logging.ERROR)
-		panic("")
+		panic("Copy of empty vector clock: " + file + ":" + strconv.Itoa(line))
 	}
 	newVc := NewVectorClock(vc.size)
 	for i := 1; i <= vc.size; i++ {

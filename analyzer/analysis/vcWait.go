@@ -1,7 +1,9 @@
 package analysis
 
+import "analyzer/clock"
+
 // vector clock for each wait group
-var wg map[int]VectorClock = make(map[int]VectorClock)
+var wg map[int]clock.VectorClock = make(map[int]clock.VectorClock)
 
 /*
  * Create a new wg if needed
@@ -11,7 +13,7 @@ var wg map[int]VectorClock = make(map[int]VectorClock)
  */
 func newWg(index int, nRout int) {
 	if _, ok := wg[index]; !ok {
-		wg[index] = NewVectorClock(nRout)
+		wg[index] = clock.NewVectorClock(nRout)
 	}
 }
 
@@ -24,12 +26,14 @@ func newWg(index int, nRout int) {
  *   tID (string): The id of the trace element, contains the position and the tpre
  *   vc (map[int]VectorClock): The vector clocks
  */
-func Change(routine int, id int, delta int, tID string, vc map[int]VectorClock) {
-	newWg(id, vc[id].size)
+func Change(routine int, id int, delta int, tID string, vc map[int]clock.VectorClock) {
+	newWg(id, vc[id].GetSize())
 	wg[id] = wg[id].Sync(vc[routine])
 	vc[routine] = vc[routine].Inc(routine)
 
-	checkForDoneBeforeAdd(routine, id, delta, tID, vc[routine])
+	if analysisCases["doneBeforeAdd"] {
+		checkForDoneBeforeAddChange(routine, id, delta, tID, vc[routine])
+	}
 }
 
 /*
@@ -38,9 +42,12 @@ func Change(routine int, id int, delta int, tID string, vc map[int]VectorClock) 
  *   routine (int): The routine id
  *   id (int): The id of the wait group
  *   vc (*map[int]VectorClock): The vector clocks
+ *   notLeak (bool): If the wait group is not leaked (tpost = 0)
  */
-func Wait(routine int, id int, vc map[int]VectorClock) {
-	newWg(id, vc[id].size)
-	vc[routine] = vc[routine].Sync(wg[id])
-	vc[routine] = vc[routine].Inc(routine)
+func Wait(routine int, id int, tID string, vc map[int]clock.VectorClock, notLeak bool) {
+	newWg(id, vc[id].GetSize())
+	if notLeak {
+		vc[routine] = vc[routine].Sync(wg[id])
+		vc[routine] = vc[routine].Inc(routine)
+	}
 }

@@ -303,11 +303,11 @@ We drop send(tS,x,k) and rec(tR,x,k) from the trace and carry out the following 
 
 ~~~~
 sndRcvU(tS,tR,x) {
+  inc(Th(tS),tS)
+  inc(Th(tR),tR)
   V = sync(Th(tS), Th(tR))    -- Sync
   Th(tS) = V
   Th(tR) = V
-  inc(Th(tS),tS)
-  inc(Th(tR),tR)
 }
 ~~~~~~~~~
 
@@ -595,6 +595,12 @@ Revisit the analysis scenarios described in [Two-Phase Dynamic Analysis of Messa
 
 ### Analysis senario: "Send on closed"
 
+> [!NOTE]
+> #### Status
+> Detection: IMPLEMENTED\
+> Rewrite:   IMPLEMENTED
+
+
 Performing a send operation on a closed channel is a fatal operation.
 We wish to identify send operations that could possible be performed on a closed channel.
 For this purpose, we make use of `<HB`.
@@ -649,6 +655,10 @@ close(t,x) {
 
 ### Analysis scenario: "Receive on closed"
 
+> #### Status
+> Detection: IMPLEMENTED\
+> Rewrite:   IMPLEMENTED
+
 
 Performing a receive operation on a closed channel yields a default value.
 Our tracing scheme records if such a case actually happened.
@@ -700,23 +710,48 @@ close(t,x) {
 
 ### Analysis scenario: "done before add"
 
-Similar to "send on closed".
+> [!NOTE]
+> #### Status
+> Detection: IMPLEMENTED\
+> Rewrite:   IMPLEMENTED
 
 If "done" happens before "add", the waitgroup counter may become negative => panic.
 
-To detect this, we look at each done and count the number of add a, that 
-happen before the done, and the number of done, that happen before (d) or
-concurrent with (d') the done.
-If a < d + d', a "done before add" is possible. In this case, we return a warning.
-This method can result in false positives. To prevent those, we
+To detect such a situation, we do the following for each wait group:
 
-1. Reconstruct the trace such that the concurrent done happen directly after 
+We try to find an Add $A$ for each Done $D$,
+such that $A$ is before $D$ and for each $D$ there is a unique $A$.
+We therefore check, if
+$$
+(\forall D\ \exists (D, A): A < D)\ \land\ (\forall i, j\ (D_i \neq D_j \land (D_i, A_i) \land (D_j, A_j)) \Rightarrow A_i \neq A_j) 
+$$
+
+If a done has 
+a delta which not 1, we treat it,as if it would be delta separate adds.
+
+To see if this is possible we store for every $D$ all $A$ for which $A < D$.
+From this we build an bipartite st-graph as follows:
+![Done before add st-graph](./img/graphDoneBeforeAdd.png)
+
+For each Done $D$, there is an edge to the Add $A$ iff $A < D$.
+We now assume, that each edge has capacity 1 and use the Ford-Fulkerson
+algorithm to find the maximum flow in this graph. A done before add is possible, 
+if this maximum flow is less then the number of done.
+
+
+<!-- 1. Reconstruct the trace such that the concurrent done happen directly after 
 the done
 
-2. Replay the trace
+2. Replay the trace -->
 
 
 ### Analysis scenario: "Concurrent Receive"
+
+> [!NOTE]
+> #### Status
+> Detection: IMPLEMENTED\
+> Rewrite:   NOT IMPLEMENTED
+
 Having multiple potentially concurrent receives on the same channel can cause
 nondeterministic behavior, which is rarely desired. We therefor want to detect
 such situations.
@@ -762,8 +797,61 @@ This allows us to find concurrent receives on the same channel. It is not necess
 search for concurrent send on the same channel, because this can behavior
 can and often is useful, e.g. as a form of wait group.
 
+### Analysis scenario: Select with untriggered case
+
+> [!NOTE]
+> #### Status
+> Detection: IMPLEMENTED\
+> Rewrite:   NOT IMPLEMENTED
+
+Untriggered cases are easy to identify. There is a "pre" event but no "post" event.
+
+1. We could check if there is a potential partner. Can be done based on HB analysis.
+
+2. Reorder the trace so that we can enable the "pre" event.
+
+Things to consider.
+
+No potential partners. Sounds like a bug.
+
+Several potential partners. Try all? Select one, how?
+
+To check if a possible partner for an untriggered select case exists, 
+we must compare them with other channel operations. We also compare them 
+with other untriggered select cases.
+
+To see, if we can find a possible partner, we store all select operations as 
+follows:
+
+When a select case is processed, we iterate over all of its cases, and compare
+there vector clocks to to the most recent recv/send on this channel (see Receive on closed).
+If the most recent send/recv is a possible communication partner, meaning
+either being concurrent (unbuffered) or concurrent or Before/After (buffered),
+we mark the case as having a potential partner. Otherwise we store it and
+mark it as not having a potential partner (yet). The chosen case is stored
+as having a possible partner without any additional checks.
+
+If a channel operation (send/recv/close) is processed, we iterate over all
+stored select cases with the same channel and compatible operations, that
+are not marked as having a potential partner yet. If the operation is a 
+potential partner for this case, we mark the case as having an potential 
+partner.
+
+After all trace operations have been processed, we compare all combinations 
+of channels cases, for which at least one of them was not marked as having
+a partner yet. If they form a potential communication, we can mark them 
+as having a partner as well.
+
+After that, we return warnings for all select cases, that have not been 
+marked as having a potential communication partner.
+
 
 ### Analysis scenario: Goroutine leak
+
+> [!NOTE]
+> #### Status
+> Detection: MOSTLY IMPLEMENTED (no check for possible resolve of stuck mutex, waits or conds yet)\
+> Rewrite:   NOT IMPLEMENTED
 
 A goroutine leak is an indefinitely blocked goroutine.
 
@@ -775,3 +863,52 @@ where the last recorded event is a "pre" event.
 1. We could check if there is a potential partner. Can be done based on HB analysis.
 
 2. Reorder the trace so that we can enable the "pre" event.
+
+
+### Analysis Scenario: Cyclic Deadlock
+
+> [!NOTE]
+> #### Status
+> Detection: IMPLEMENTED\
+> Rewrite:   IMPLEMENTED
+
+
+A cyclic deadlock occurs, if locks from multiple routines block each other in 
+a cyclic manor. We use lock trees to find such circles. For an explanation see 
+![BachelorArbeit](../old/Arbeit.pdf). We additionally use the HB analysis,
+to see, if see, if the operations in the cycle are concurrent.
+
+Lets, as an example assume, the program trace with the mutexes m, n and o had
+the following form:
+~~~
+  T1         T2          T3
+lock(m)
+unlock(m)
+lock(m)
+lock(n)
+unlock(m)
+unlock(n)
+           lock(n)
+           lock(o)
+           unlock(o)
+           unlock(n)
+                       lock(o)
+                       lock(m)
+                       unlock(m)
+                       unlock(o)
+~~~
+Whis would result in the following lock trees:
+~~~
+ T1   T2  T3
+  m   n   o
+  |   |   |
+  n   o   m
+~~~
+which can be connected to a circle as follows:
+~~~
+ T1   T2  T3
+  m   n   o
+/ | / | / |
+| n   o   m
+\--------/
+~~~

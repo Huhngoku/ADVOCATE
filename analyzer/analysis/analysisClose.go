@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"analyzer/clock"
 	"analyzer/logging"
 	"strconv"
 )
@@ -13,15 +14,15 @@ Args:
 	id (int): the id of the channel
 	pos (string): the position of the close in the program
 */
-func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
+func checkForCommunicationOnClosedChannel(id int, pos string) {
 	// check if there is an earlier send, that could happen concurrently to close
-	if hasSend[id] {
+	if analysisCases["sendOnClosed"] && hasSend[id] {
 		logging.Debug("Check for possible send on closed channel "+
 			strconv.Itoa(id)+" with "+
 			mostRecentSend[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
 			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeData[id].vc, mostRecentSend[id].vc)
-		if happensBefore == Concurrent {
+		happensBefore := clock.GetHappensBefore(closeData[id].vc, mostRecentSend[id].vc)
+		if happensBefore == clock.Concurrent {
 			found := "Possible send on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
 			found += "\tsend : " + mostRecentSend[id].tID
@@ -29,13 +30,13 @@ func checkForPotentialCommunicationOnClosedChannel(id int, pos string) {
 		}
 	}
 	// check if there is an earlier receive, that could happen concurrently to close
-	if hasReceived[id] {
+	if analysisCases["receiveOnClosed"] && hasReceived[id] {
 		logging.Debug("Check for possible receive on closed channel "+
 			strconv.Itoa(id)+" with "+
 			mostRecentReceive[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
 			logging.DEBUG)
-		happensBefore := GetHappensBefore(closeData[id].vc, mostRecentReceive[id].vc)
-		if happensBefore == Concurrent || happensBefore == Before {
+		happensBefore := clock.GetHappensBefore(closeData[id].vc, mostRecentReceive[id].vc)
+		if happensBefore == clock.Concurrent || happensBefore == clock.Before {
 			found := "Possible receive on closed channel:\n"
 			found += "\tclose: " + pos + "\n"
 			found += "\trecv : " + mostRecentReceive[id].tID

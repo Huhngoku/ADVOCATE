@@ -63,6 +63,10 @@ advocate
 
 In some cases, we can get a `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)` until the problem disappears.
 
+In some cases, the trace files can get very big. If you want to simplify the 
+traces, you can set the value in `runtime.InitAtomics` to $-1$. In this case, 
+atomic variable operations are not recorded. 
+
 After that run the program with `./go run main.go` or `./go build && ./main`,
 using the new runtime.
 
@@ -150,22 +154,41 @@ The analyzer can also create a new reordered trace, in which a detected possible
 > [!WARNING]
 > The Reorder is still in development and may result in incorrect traces
 
+We can detect the following situations:
+- s: Send on closed channel
+- Receive on closed channel
+- Done before add on waitGroup
+- Close of closed channel
+- Concurrent receive on channel
+- Leaking routine
+- Select case without partner
+- Cyclic deadlock
+
 The analyzer can take the following command line arguments:
 
-- -c	Ignore happens before relations of critical sections (default false)
-- -d int
+
+ - -c	Ignore happens before relations of critical sections (default false)
+ - -d int
     	Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
-- -f	Assume a FIFO ordering for buffered channels (default false)
-- -i int
-    	Index of the result to use for the reordered trace file. Only needed if -n is set. 1 based (default -1)
-- -n	Create a reordered trace file from a given analysis result without running the analysis. -r and -i are required. If not set, a rewritten trace can be created from the current analysis results
-- -p	Do not print the results to the terminal (default false). Automatically set -x to true
-- -r string
+ - -f	Assume a FIFO ordering for buffered channels (default false)
+ - -p	Do not print the results to the terminal (default false). Automatically set -x to true
+ - -r string
     	Path to where the result file should be saved. If not set, it is saved in the trace folder
-- -t string
+ - -s string
+    	Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:
+  	- s: Send on closed channel
+  	- r: Receive on closed channel
+  	- w: Done before add on waitGroup
+  	- n: Close of closed channel
+  	- b: Concurrent receive on channel
+  	- l: Leaking routine
+  	- u: Select case without partner
+  	- c: Cyclic deadlock
+    	
+ - -t string
     	Path to the trace folder to analyze or rewrite
-  -w	Do not print warnings (default false)
-  -x	Do not ask to create a reordered trace file after the analysis (default false)
+ - -w	Do not print warnings (default false)
+ - -x	Do not ask to create a reordered trace file after the analysis (default false)
 
 If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
 ```
@@ -215,6 +238,8 @@ Also include the following import:
 "advocate"
 ```
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
+
+The trace files must be in the `/rewritten_trace` or `/trace` folder. If both folder exist, `/rewritten_trace` is used.
 
 It is important that the program is not changed between recording and replay.
 This is especially true for the positions of operations on the code. For this 

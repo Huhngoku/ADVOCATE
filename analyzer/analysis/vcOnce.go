@@ -1,7 +1,9 @@
 package analysis
 
+import "analyzer/clock"
+
 // vector clocks for the successful do
-var oSuc map[int]VectorClock = make(map[int]VectorClock)
+var oSuc map[int]clock.VectorClock = make(map[int]clock.VectorClock)
 
 /*
  * Create a new oSuc if needed
@@ -11,7 +13,7 @@ var oSuc map[int]VectorClock = make(map[int]VectorClock)
  */
 func newOSuc(index int, nRout int) {
 	if _, ok := oSuc[index]; !ok {
-		oSuc[index] = NewVectorClock(nRout)
+		oSuc[index] = clock.NewVectorClock(nRout)
 	}
 }
 
@@ -22,8 +24,8 @@ func newOSuc(index int, nRout int) {
  *   id (int): The id of the atomic variable
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func DoSuc(routine int, id int, vc map[int]VectorClock) {
-	newOSuc(id, vc[id].size)
+func DoSuc(routine int, id int, vc map[int]clock.VectorClock) {
+	newOSuc(id, vc[id].GetSize())
 	oSuc[id] = vc[routine]
 	vc[routine] = vc[routine].Inc(routine)
 }
@@ -35,8 +37,8 @@ func DoSuc(routine int, id int, vc map[int]VectorClock) {
  *   id (int): The id of the atomic variable
  *   vc (map[int]VectorClock): The current vector clocks
  */
-func DoFail(routine int, id int, vc map[int]VectorClock) {
-	newOSuc(id, vc[id].size)
+func DoFail(routine int, id int, vc map[int]clock.VectorClock) {
+	newOSuc(id, vc[id].GetSize())
 	vc[routine] = vc[routine].Sync(oSuc[id])
 	vc[routine] = vc[routine].Inc(routine)
 }

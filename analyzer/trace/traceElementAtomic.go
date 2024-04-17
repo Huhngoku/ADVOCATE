@@ -2,6 +2,7 @@ package trace
 
 import (
 	"analyzer/analysis"
+	"analyzer/clock"
 	"analyzer/logging"
 	"errors"
 	"strconv"
@@ -20,6 +21,7 @@ const (
 
 /*
  * Struct to save an atomic event in the trace
+ * MARK: Struct
  * Fields:
  *   routine (int): The routine id
  *   tpost (int): The timestamp of the event
@@ -35,6 +37,7 @@ type TraceElementAtomic struct {
 
 /*
  * Create a new atomic trace element
+ * MARK: New
  * Args:
  *   routine (int): The routine id
  *   tpost (string): The timestamp of the event
@@ -76,8 +79,10 @@ func AddTraceElementAtomic(routine int, tpost string,
 		opA:     opAInt,
 	}
 
-	return addElementToTrace(&elem)
+	return AddElementToTrace(&elem)
 }
+
+// MARK: Getter
 
 /*
  * Get the id of the element
@@ -102,7 +107,7 @@ func (at *TraceElementAtomic) GetRoutine() int {
  * Returns:
  *   int: The tpost of the element
  */
-func (at *TraceElementAtomic) getTpre() int {
+func (at *TraceElementAtomic) GetTPre() int {
 	return at.tPost
 }
 
@@ -139,7 +144,27 @@ func (at *TraceElementAtomic) GetPos() string {
  *   string: The tID of the element
  */
 func (at *TraceElementAtomic) GetTID() string {
-	return ""
+	return "A@" + strconv.Itoa(at.tPost)
+}
+
+/*
+ * Dummy function to implement the interface
+ * Returns:
+ *   VectorClock: The vector clock of the element
+ */
+func (at *TraceElementAtomic) GetVC() clock.VectorClock {
+	return clock.VectorClock{}
+}
+
+// MARK: Setter
+
+/*
+ * Set the tpre of the element.
+ * Args:
+ *   tPre (int): The tpost of the element
+ */
+func (at *TraceElementAtomic) SetTPre(tPre int) {
+	at.tPost = tPre
 }
 
 /*
@@ -147,7 +172,8 @@ func (at *TraceElementAtomic) GetTID() string {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementAtomic) SetTsort(tSort int) {
+func (at *TraceElementAtomic) SetTSort(tSort int) {
+	at.SetTPre(tSort)
 	at.tPost = tSort
 }
 
@@ -157,11 +183,14 @@ func (at *TraceElementAtomic) SetTsort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementAtomic) SetTsortWithoutNotExecuted(tSort int) {
+func (at *TraceElementAtomic) SetTSortWithoutNotExecuted(tSort int) {
+	at.SetTPre(tSort)
 	if at.tPost != 0 {
 		at.tPost = tSort
 	}
 }
+
+// MARK: ToString
 
 /*
  * Get the simple string representation of the element.
@@ -190,6 +219,8 @@ func (at *TraceElementAtomic) ToString() string {
 	return res
 }
 
+// MARK: Vector Clock
+
 /*
  * Update and calculate the vector clock of the element
  */
@@ -205,4 +236,5 @@ func (at *TraceElementAtomic) updateVectorClock() {
 		err := "Unknown operation: " + at.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+
 }

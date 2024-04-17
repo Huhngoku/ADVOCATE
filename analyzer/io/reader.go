@@ -1,7 +1,7 @@
 /*
 Package reader provides functions for reading and processing log files.
 */
-package reader
+package io
 
 import (
 	"bufio"
@@ -17,6 +17,8 @@ import (
 func CreateTraceFromFiles(filePath string) (int, error) {
 	maxTokenSize := 4
 	numberIds := 0
+
+	println("Read trace from " + filePath + "...")
 
 	// traverse all files in the folder
 	files, err := os.ReadDir(filePath)

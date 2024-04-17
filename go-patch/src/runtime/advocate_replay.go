@@ -55,6 +55,10 @@ func (ro Operation) ToString() string {
 		return "OperationCondBroadcast"
 	case OperationCondWait:
 		return "OperationCondWait"
+	case OperationReplayEnd:
+		return "OperationReplayEnd"
+	case OperationReplayStart:
+		return "OperationReplayStart"
 	default:
 		return "Unknown"
 	}
@@ -64,7 +68,7 @@ func (ro Operation) ToString() string {
  * The replay data structure.
  * The replay data structure is used to store the trace of the program.
  * op: identifier of the operation
- * time: time (tpre) of the operation
+ * time: int (tpre) of the operation
  * file: file in which the operation is executed
  * line: line number of the operation
  * blocked: true if the operation is blocked (never finised, tpost=0), false otherwise
@@ -93,7 +97,7 @@ type ReplayElement struct {
 type AdvocateReplayTrace []ReplayElement
 type AdvocateReplayTraces map[uint64]AdvocateReplayTrace // routine -> trace
 
-var replayEnabled bool
+var replayEnabled bool // replay is on
 var replayLock mutex
 var replayDone int
 var replayDoneLock mutex
@@ -164,7 +168,19 @@ func EnableReplay(timeout bool) {
 	go checkForTimeoutNoOperation()
 
 	replayEnabled = true
-	println("Replay enabled\n")
+	println("Replay enabled")
+}
+
+/*
+ * Disable the replay. This is called when a stop character in the trace is
+ * encountered.
+ */
+func DisableReplay() {
+	lock(&replayLock)
+	defer unlock(&replayLock)
+
+	replayEnabled = false
+	println("Replay disabled")
 }
 
 /*
@@ -182,6 +198,10 @@ func WaitForReplayFinish() {
 			break
 		}
 		unlock(&replayDoneLock)
+
+		if !replayEnabled {
+			break
+		}
 
 		// check for timeout
 		if timeoutCounter%timeoutMessageCycle == 0 {
@@ -288,28 +308,40 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		return true, false, ReplayElement{}
 	}
 
-	println("WaitForReplayPath", op.ToString(), file, line)
+	// println("WaitForReplayPath", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
+		if !replayEnabled { // check again if disabled by command
+			return false, false, ReplayElement{}
+		}
+
 		nextRoutine, next := getNextReplayElement()
 
-		// currentRoutine := currentRoutineA.id
+		// print message if the next operation is the next operation is the start of the important replay part
+		if next.Op == OperationReplayStart {
+			println("Start Character Found")
+			foundReplayElement(nextRoutine)
+			continue
+		}
+
+		// disable the replay, if the next operation is the disable replay operation
+		if next.Op == OperationReplayEnd {
+			println("Stop Character Found.")
+			DisableReplay()
+			foundReplayElement(nextRoutine)
+			return false, false, ReplayElement{}
+		}
 
 		// all elements in the trace have been executed
 		if nextRoutine == -1 {
 			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
-			replayEnabled = false
+			DisableReplay()
 			return false, false, ReplayElement{}
 		}
 
-		// if the routine is correct, but the next element is not the correct one,
-		// the program has diverged from the trace
-		// in this case, we print a message and disable the replay
+		// println("Try: ", next.Time, next.Op.ToString(), next.File, next.Line)
 
-		// print("Replay Wait:\n  Wait: ", op.ToString(), " ", file, " ", line,
-		// 	"\n  Next: ", next.Op.ToString(), " ", next.File, " ", next.Line, "\n")
-
-		if next.Time != 0 {
+		if next.Time != 0 && replayEnabled {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
 
@@ -321,9 +353,8 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			}
 		}
 
+		// println("Replay Run : ", next.Time, next.Op.ToString(), next.File, next.Line)
 		foundReplayElement(nextRoutine)
-
-		// println("Replay Run : ", next.Time, op.ToString(), file, line)
 
 		lock(&timeoutLock)
 		timeoutCounterGlobal = 0 // reset the global timeout counter
@@ -332,9 +363,6 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		lock(&replayDoneLock)
 		replayDone++
 		unlock(&replayDoneLock)
-
-		// _, next = getNextReplayElement()
-		// println("Replay Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
 
 		return true, true, next
 	}
@@ -349,8 +377,14 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
  * 	timeoutCounter: the current timeout counter
  * 	file: file in which the operation is executed
  * 	line: line number of the operation
+ * Return:
+ * 	bool: false
  */
-func checkForTimeout(timeoutCounter int, file string, line int) bool {
+func checkForTimeout(timeoutCounter int, file string, line int) {
+	if !replayEnabled {
+		return
+	}
+
 	messageCauses := "Possible causes are:\n"
 	messageCauses += "    - The program was altered between recording and replay\n"
 	messageCauses += "    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n"
@@ -358,44 +392,48 @@ func checkForTimeout(timeoutCounter int, file string, line int) bool {
 	messageCauses += "    - The program execution depends on outside input, that was not exactly reproduced\n"
 
 	if timeoutCounter == 250 { // ca. 5s
-		res := isPositionInTrace(file, line)
-		if !res {
-			errorMessage := "ReplayError: Program tried to execute an operation that is not in the trace:\n"
-			errorMessage += "    File: " + file + "\n"
-			errorMessage += "    Line: " + intToString(line) + "\n"
-			errorMessage += "This means, that the program replay was not successful.\n"
-			errorMessage += messageCauses
-			errorMessage += "If you suspect, that one of these causes is the reason for the error, you can try to change the program to avoid the problem.\n"
-			errorMessage += "If this is not possible, you can try to rerun the replay, hoping the error does not occur again.\n"
-			errorMessage += "If this is not possible or does not work, the program replay is currently not possible.\n\n"
+		// res := isPositionInTrace(file, line)
+		// if !res {
+		// 	errorMessage := "ReplayError: Program tried to execute an operation that is not in the trace:\n"
+		// 	errorMessage += "    File: " + file + "\n"
+		// 	errorMessage += "    Line: " + intToString(line) + "\n"
+		// 	errorMessage += "This means, that the program replay was not successful.\n"
+		// 	errorMessage += messageCauses
+		// 	errorMessage += "If you suspect, that one of these causes is the reason for the error, you can try to change the program to avoid the problem.\n"
+		// 	errorMessage += "If this is not possible, you can try to rerun the replay, hoping the error does not occur again.\n"
+		// 	errorMessage += "If this is not possible or does not work, the program replay is currently not possible.\n\n"
 
-			panic(errorMessage)
-		}
-	} else if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 10s
-		waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
-		warningMessage := "\nReplayWarning: Long wait time of approx. "
-		warningMessage += waitTime + "s.\n"
-		warningMessage += "The following operation is taking a long time to execute:\n"
-		warningMessage += "    File: " + file + "\n"
-		warningMessage += "    Line: " + intToString(line) + "\n"
-		warningMessage += "This can be caused by a stuck replay.\n"
-		warningMessage += messageCauses
-		warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
-		warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
-		warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
-		warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+		// 	panic(errorMessage)
+		// }
+		// } else
+		if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 10s
+			waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
+			warningMessage := "\nReplayWarning: Long wait time of approx. "
+			warningMessage += waitTime + "s.\n"
+			warningMessage += "The following operation is taking a long time to execute:\n"
+			warningMessage += "    File: " + file + "\n"
+			warningMessage += "    Line: " + intToString(line) + "\n"
+			warningMessage += "This can be caused by a stuck replay.\n"
+			warningMessage += messageCauses
+			warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
+			warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
+			warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
+			warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
 
-		println(warningMessage)
+			println(warningMessage)
 
-		if timeOutCancel {
-			panic("ReplayError: Replay stuck")
+			if timeOutCancel {
+				panic("ReplayError: Replay stuck")
+			}
 		}
 	}
-
-	return false
 }
 
 func checkForTimeoutNoOperation() {
+	if !replayEnabled {
+		return
+	}
+
 	waitTime := 500 // approx. 10s
 	warningMessage := "No traced operation has been executed for approx. 10s.\n"
 	warningMessage += "This can be caused by a stuck replay.\n"
@@ -414,6 +452,10 @@ func checkForTimeoutNoOperation() {
 		timeoutCounterGlobal++
 		timeoutCounter := timeoutCounterGlobal
 		unlock(&timeoutLock)
+
+		if !replayEnabled {
+			break
+		}
 
 		if timeoutCounter%waitTime == 0 {
 			message := "\nReplayWarning: Long wait time of approx. "
@@ -477,14 +519,14 @@ func getNextReplayElement() (int, ReplayElement) {
 
 	routine := -1
 	// set mintTime to max int
-	minTime := int(^uint(0) >> 1)
+	var minTime int = -1
 
 	for id, trace := range replayData {
 		if len(trace) == 0 {
 			continue
 		}
 		elem := trace[0]
-		if elem.Time < minTime {
+		if minTime == -1 || elem.Time < minTime {
 			minTime = elem.Time
 			routine = int(id)
 		}
