@@ -1,28 +1,5 @@
 package runtime
 
-type advocateAtomicElement struct {
-	timer     uint64 // global timer
-	index     uint64 // index of the atomic event in advocateAtomicMap
-	operation int    // type of operation
-}
-
-func (elem advocateAtomicElement) isAdvocateTraceElement() {}
-
-/*
- * Get a string representation of the element
- * Return:
- * 	string representation of the element "A,'addr'"
- *    'addr' (number): address of the atomic variable
- */
-// enum for atomic operation, must be the same as in advocate_atomic.go
-const (
-	LoadOp = iota
-	StoreOp
-	AddOp
-	SwapOp
-	CompSwapOp
-)
-
 func (elem advocateAtomicElement) toString() string {
 	lock(&advocateAtomicMapLock)
 	mapElement := advocateAtomicMap[elem.index]
@@ -52,27 +29,6 @@ func (elem advocateAtomicElement) toString() string {
 		res += "U"
 	}
 	return res
-}
-
-/*
- * Get the operation
- */
-func (elem advocateAtomicElement) getOperation() Operation {
-	return OperationAtomic
-}
-
-/*
- * Get the file
- */
-func (elem advocateAtomicElement) getFile() string {
-	return ""
-}
-
-/*
- * Get the line
- */
-func (elem advocateAtomicElement) getLine() int {
-	return 0
 }
 
 /*

@@ -6,29 +6,46 @@ package runtime
  * 	cases: cases of the select
  * 	nsends: number of send cases
  * 	block: true if the select is blocking (has no default), false otherwise
+ * 	lockOrder: internal order of the locks
  * Return:
  * 	index of the operation in the trace
  */
-func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
+func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint16) int {
 	timer := GetNextTimeStep()
 	if cases == nil {
 		return -1
 	}
 
 	id := GetAdvocateObjectID()
-	caseElements := make([]advocateChannelElement, len(*cases))
+	caseElements := ""
 	_, file, line, _ := Caller(2)
 
 	for i, ca := range *cases {
-		if ca.c != nil { // ignore nil cases
-			caseElements[i] = advocateChannelElement{id: ca.c.id,
-				op:    OperationChannelRecv,
-				qSize: uint32(ca.c.dataqsiz), tPre: timer}
+		if ca.c == nil { // ignore nil cases
+			continue
 		}
+
+		if len(caseElements) > 0 {
+			caseElements += "~"
+		}
+
+		chanOp := "R"
+		if lockOrder[i] < uint16(nsends) {
+			chanOp = "S"
+		}
+
+		caseElements += "C," + uint64ToString(ca.c.id) + "," +
+			uint64ToString(timer) + ",0," + chanOp + ",f,0," +
+			uint32ToString(uint32(ca.c.dataqsiz))
 	}
 
-	elem := advocateSelectElement{id: id, cases: caseElements, nsend: nsends,
-		defa: !block, file: file, line: line, tPre: timer}
+	if !block {
+		caseElements += "~d"
+	}
+
+	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
+		caseElements + "," + file + ":" + intToString(line)
+
 	return insertIntoTrace(elem)
 }
 
@@ -41,46 +58,55 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
  * 	lockOrder: order of the locks
  * 	rClosed: true if the channel was closed at another routine
  */
-func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
-	lockOrder []uint16, rClosed bool) {
+func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 
 	if index == -1 || c == nil {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(advocateSelectElement)
+	elem := currentGoRoutine().getElement(index)
 	timer := GetNextTimeStep()
 
-	elem.chosen = chosenIndex
-	elem.tPost = timer
+	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
 
-	for i, op := range lockOrder {
-		opChan := OperationChannelRecv
-		if op < uint16(elem.nsend) {
-			opChan = OperationChannelSend
-		}
-		elem.cases[i].op = opChan
-	}
+	split[1] = uint64ToString(timer) // set tpost of select
+
+	cases := splitStringAtSeparator(split[4], '~', nil)
 
 	if chosenIndex == -1 { // default case
-		elem.defaSel = true
+		if cases[len(cases)-1] != "d" {
+			panic("default case on select without default")
+		}
+		cases[len(cases)-1] = "D"
 	} else {
-		elem.cases[chosenIndex].tPost = timer
-		elem.cases[chosenIndex].closed = rClosed
+		// set tpost and cl of chosen case
 
-		// set oId
-		if elem.cases[chosenIndex].op == OperationChannelSend {
-			c.numberSend++
-			elem.cases[chosenIndex].opID = c.numberSend
-		} else {
-			c.numberRecv++
-			elem.cases[chosenIndex].opID = c.numberRecv
+		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
+		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndex], '.', []int{2, 3, 4, 5, 6, 7})
+		chosenCaseSplit[1] = uint64ToString(timer)
+		if rClosed {
+			chosenCaseSplit[4] = "t"
 		}
 
+		// set oId
+		if chosenCaseSplit[3] == "S" {
+			c.numberSend++
+			chosenCaseSplit[5] = uint64ToString(c.numberSend)
+		} else {
+			c.numberRecv++
+			chosenCaseSplit[5] = uint64ToString(c.numberRecv)
+		}
+
+		cases[chosenIndex] = mergeStringSep(chosenCaseSplit, ".")
 	}
+
+	split[4] = mergeStringSep(cases, "~")
+	elem = mergeString(split)
 
 	currentGoRoutine().updateElement(index, elem)
 }
+
+// MARK: OneNonDef
 
 /*
 * AdvocateSelectPreOneNonDef adds a new select element to the trace if the
@@ -99,24 +125,19 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	id := GetAdvocateObjectID()
 	timer := GetNextTimeStep()
 
-	opChan := OperationChannelRecv
+	opChan := "R"
 	if send {
-		opChan = OperationChannelSend
+		opChan = "S"
 	}
 
-	caseElements := make([]advocateChannelElement, 1)
-	caseElements[0] = advocateChannelElement{id: c.id,
-		qSize: uint32(c.dataqsiz), tPre: timer, op: opChan}
-
-	nSend := 0
-	if send {
-		nSend = 1
-	}
+	caseElements := "C," + uint64ToString(timer) + ",0," + uint64ToString(c.id) +
+		"," + opChan + ",f,0," + uint32ToString(uint32(c.dataqsiz))
 
 	_, file, line, _ := Caller(2)
 
-	elem := advocateSelectElement{id: id, cases: caseElements, nsend: nSend,
-		defa: true, file: file, line: line, tPre: timer}
+	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
+		caseElements + "~d," + file + ":" + intToString(line)
+
 	return insertIntoTrace(elem)
 }
 
@@ -125,7 +146,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
  * non-default and one default case
  * Args:
  * 	index: index of the operation in the trace
- * 	res: 0 for the non-default case, -1 for the default case
+ * 	res: true for channel, false for default
  */
 func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	if index == -1 {
@@ -133,23 +154,34 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	}
 
 	timer := GetNextTimeStep()
-	elem := currentGoRoutine().getElement(index).(advocateSelectElement)
+	elem := currentGoRoutine().getElement(index)
 
-	if res {
-		elem.chosen = 0
-		elem.cases[0].tPost = timer
-		if elem.cases[0].op == OperationChannelSend {
+	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
+
+	// update tPost
+	split[1] = uint64ToString(timer)
+
+	// update cases
+	cases := splitStringAtSeparator(split[4], '~', nil)
+	if res { // channel case
+		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
+		chosenCaseSplit := splitStringAtSeparator(cases[0], '.', []int{2, 3, 4, 5, 6, 7})
+		chosenCaseSplit[1] = uint64ToString(timer)
+
+		if chosenCaseSplit[3] == "S" {
 			c.numberSend++
-			elem.cases[0].opID = c.numberSend
+			chosenCaseSplit[5] = uint64ToString(c.numberSend)
 		} else {
 			c.numberRecv++
-			elem.cases[0].opID = c.numberRecv
+			chosenCaseSplit[5] = uint64ToString(c.numberRecv)
 		}
-	} else {
-		elem.chosen = -1
-		elem.defaSel = true
+		cases[0] = mergeStringSep(chosenCaseSplit, ".")
+	} else { // default case
+		cases[1] = "D"
 	}
-	elem.tPost = timer
+	split[4] = mergeStringSep(cases, "~")
+
+	elem = mergeString(split)
 
 	currentGoRoutine().updateElement(index, elem)
 }

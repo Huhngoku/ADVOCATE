@@ -110,23 +110,25 @@ func boolToString(b bool) string {
 // MARK: STR manipulation
 
 /*
- * Split a string at comma
+ * Split a string at a separator
  * Args:
  * 	s: string to split
- * 	indices: at witch commas to split the string, must be sorted, 1 based
+ * 	sep: separator
+ * 	indices: at witch separators to split the string, must be sorted, 1 based
+ * 		if nil split at all separators
  * Return:
- * 	splitted string
+ * 	split string
  */
-func splitStringAtCommas(s string, indices []int) []string {
+func splitStringAtSeparator(s string, sep rune, indices []int) []string {
 	var start int
 	result := make([]string, 0, len(indices)+1)
 
 	count := 0
 	for _, index := range indices {
 		for i, r := range s[start:] {
-			if r == ',' {
+			if r == sep {
 				count++
-				if count == index {
+				if indices == nil || count == index {
 					result = append(result, s[start:start+i])
 					start += i + 1
 					break
@@ -139,17 +141,42 @@ func splitStringAtCommas(s string, indices []int) []string {
 }
 
 /*
- * Merge a string slice to a string
+ * Split a string at comma
+ * Args:
+ * 	s: string to split
+ * 	indices: at witch commas to split the string, must be sorted, 1 based,
+ * 		if nil split at all commas
+ * Return:
+ * 	splitted string
+ */
+func splitStringAtCommas(s string, indices []int) []string {
+	return splitStringAtSeparator(s, ',', indices)
+}
+
+/*
+ * Merge a string slice to a string separated by comma
  * Args:
  * 	s: slice of strings to merge
  * Return:
  * 	merged string, separated by commas
  */
 func mergeString(s []string) string {
+	return mergeStringSep(s, ",")
+}
+
+/*
+ * Merge a string slice to a string
+ * Args:
+ * 	s: slice of strings to merge
+ * 	sep: separator
+ * Return:
+ * 	merged string, separated by commas
+ */
+func mergeStringSep(s []string, sep string) string {
 	var result string
 	for i, elem := range s {
 		if i != 0 {
-			result += ","
+			result += sep
 		}
 		result += elem
 	}
