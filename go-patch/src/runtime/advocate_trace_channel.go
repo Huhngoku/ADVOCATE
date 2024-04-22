@@ -2,6 +2,8 @@ package runtime
 
 var advocateCounterAtomic uint64
 
+// MARK: Pre
+
 /*
  * AdvocateChanSendPre adds a channel send to the trace.
  * If the channel send was created by an atomic
@@ -26,9 +28,11 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 		// they are not recorded in the trace
 		return -1
 	}
-	timer := GetAdvocateCounter()
-	elem := advocateChannelElement{id: id, op: OperationChannelSend,
-		opID: opID, file: file, line: line, tPre: timer, qSize: uint32(qSize)}
+	timer := GetNextTimeStep()
+	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",S,f," +
+		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
+		file + ":" + intToString(line)
+
 	return insertIntoTrace(elem)
 }
 
@@ -63,11 +67,14 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 		return -1
 	}
 
-	timer := GetAdvocateCounter()
-	elem := advocateChannelElement{id: id, op: OperationChannelRecv,
-		opID: opID, file: file, line: line, tPre: timer, qSize: uint32(qSize)}
+	timer := GetNextTimeStep()
+	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",R,f," +
+		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
+		file + ":" + intToString(line)
 	return insertIntoTrace(elem)
 }
+
+// MARK: Close
 
 /*
  * AdvocateChanClose adds a channel close to the trace
@@ -78,11 +85,14 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
  */
 func AdvocateChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
-	elem := advocateChannelElement{id: id, op: OperationChannelClose,
-		file: file, line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
+	timer := uint64ToString(GetNextTimeStep())
+	elem := "C," + timer + "," + timer + "," + uint64ToString(id) + ",C,f,0," +
+		uint32ToString(uint32(qSize)) + "," + file + ":" + intToString(line)
+
 	return insertIntoTrace(elem)
 }
+
+// MARK: Post
 
 /*
  * AdvocateChanPost sets the operation as successfully finished
@@ -94,8 +104,12 @@ func AdvocateChanPost(index int) {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(advocateChannelElement)
-	elem.tPost = GetAdvocateCounter()
+	elem := currentGoRoutine().getElement(index)
+
+	split := splitStringAtCommas(elem, []int{2, 3})
+	split[1] = uint64ToString(GetNextTimeStep())
+	elem = mergeString(split)
+
 	currentGoRoutine().updateElement(index, elem)
 }
 
@@ -108,7 +122,12 @@ func AdvocateChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().getElement(index).(advocateChannelElement)
-	elem.closed = true
+
+	elem := currentGoRoutine().getElement(index)
+	split := splitStringAtCommas(elem, []int{2, 3, 5, 6})
+	split[1] = uint64ToString(GetNextTimeStep())
+	split[3] = "t"
+	elem = mergeString(split)
+
 	currentGoRoutine().updateElement(index, elem)
 }

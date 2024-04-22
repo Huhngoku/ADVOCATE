@@ -66,7 +66,7 @@ func (elem advocateOnceElement) getLine() int {
  */
 func AdvocateOncePre(id uint64) int {
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	elem := advocateOnceElement{id: id, tpre: timer, file: file, line: line}
 	return insertIntoTrace(elem)
 }
@@ -81,7 +81,7 @@ func AdvocateOncePost(index int, suc bool) {
 	if index == -1 {
 		return
 	}
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index).(advocateOnceElement)
 	elem.tpost = timer
 	elem.suc = suc

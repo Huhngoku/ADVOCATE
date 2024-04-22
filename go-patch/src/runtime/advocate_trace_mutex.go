@@ -1,5 +1,7 @@
 package runtime
 
+// MARK: Pre
+
 /*
  * AdvocateMutexLockPre adds a mutex lock to the trace
  * Args:
@@ -29,7 +31,7 @@ func AdvocateMutexLockPre(id uint64, rw bool, r bool) int {
 	}
 
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := "M," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		rwStr + "," + op + "," + file + ":" + uint64ToString(uint64(line))
@@ -66,7 +68,7 @@ func AdvocateMutexLockTry(id uint64, rw bool, r bool) int {
 	}
 
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := "M," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		rwStr + "," + op + "," + file + ":" + uint64ToString(uint64(line))
@@ -102,13 +104,15 @@ func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
 		}
 	}
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := "M," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		rwStr + "," + op + "," + file + ":" + uint64ToString(uint64(line))
 
 	return insertIntoTrace(elem)
 }
+
+// MARK: Post
 
 /*
  * AdvocateMutexPost adds the end counter to an operation of the trace.
@@ -130,7 +134,7 @@ func AdvocateMutexPost(index int) {
 		return
 	}
 
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := currentGoRoutine().getElement(index)
 	split := splitStringAtCommas(elem, []int{2, 3})
@@ -152,7 +156,7 @@ func AdvocatePostTry(index int, suc bool) {
 		return
 	}
 
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := currentGoRoutine().getElement(index)
 	split := splitStringAtCommas(elem, []int{2, 3, 6, 7})

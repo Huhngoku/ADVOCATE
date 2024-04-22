@@ -207,11 +207,11 @@ func GetAdvocateObjectID() uint64 {
 }
 
 /*
- * GetAdvocateCounter returns a new counter
+ * GetAdvocateCounter will update the timer and return the new value
  * Return:
- * 	new counter value
+ * 	new time value
  */
-func GetAdvocateCounter() uint64 {
+func GetNextTimeStep() uint64 {
 	lock(&advocateGlobalCounterMutex)
 	defer unlock(&advocateGlobalCounterMutex)
 	advocateGlobalCounter++

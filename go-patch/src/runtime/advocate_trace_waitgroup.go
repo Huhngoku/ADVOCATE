@@ -2,6 +2,7 @@ package runtime
 
 /*
  * AdvocateWaitGroupAdd adds a waitgroup add or done to the trace
+ * MARK: Add
  * Args:
  * 	id: id of the waitgroup
  *  delta: delta of the waitgroup
@@ -17,7 +18,7 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 	} else {
 		_, file, line, _ = Caller(3)
 	}
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := "W," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",A," +
 		intToString(delta) + "," + int32ToString(val) + "," + file + ":" +
@@ -29,6 +30,7 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 
 /*
  * AdvocateWaitGroupWaitPre adds a waitgroup wait to the trace
+ * MARK: Wait Pre
  * Args:
  * 	id: id of the waitgroup
  * Return:
@@ -36,7 +38,7 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
  */
 func AdvocateWaitGroupWaitPre(id uint64) int {
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := "W," + uint64ToString(timer) + ",0," + uint64ToString(id) +
 		",W,0,0," + file + ":" + intToString(line)
@@ -46,6 +48,7 @@ func AdvocateWaitGroupWaitPre(id uint64) int {
 
 /*
  * AdvocateWaitGroupWaitPost adds the end counter to an operation of the trace
+ * MARKL: Wait Post
  * Args:
  * 	index: index of the operation in the trace
  */
@@ -61,7 +64,7 @@ func AdvocateWaitGroupPost(index int) {
 		return
 	}
 
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := currentGoRoutine().getElement(index)
 	split := splitStringAtCommas(elem, []int{2, 3})

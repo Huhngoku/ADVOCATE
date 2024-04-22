@@ -81,7 +81,7 @@ func (elem advocateAtomicElement) getLine() int {
  * 	index: index of the atomic event in advocateAtomicMap
  */
 func AdvocateAtomic(index uint64) {
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	elem := advocateAtomicElement{index: index, timer: timer}
 	insertIntoTrace(elem)
 }

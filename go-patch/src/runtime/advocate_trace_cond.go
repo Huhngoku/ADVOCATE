@@ -2,6 +2,7 @@ package runtime
 
 /*
  * AdvocateCondPre adds a cond wait to the trace
+ * MARK: Pre
  * Args:
  * 	id: id of the cond
  * 	op: 0 for wait, 1 for signal, 2 for broadcast
@@ -10,7 +11,7 @@ package runtime
  */
 func AdvocateCondPre(id uint64, op int) int {
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	var opC string
 	switch op {
 	case 0:
@@ -30,6 +31,7 @@ func AdvocateCondPre(id uint64, op int) int {
 
 /*
  * AdvocateCondPost adds the end counter to an operation of the trace
+ * MARK: Post
  * Args:
  * 	index: index of the operation in the trace
  */
@@ -37,7 +39,7 @@ func AdvocateCondPost(index int) {
 	if index == -1 {
 		return
 	}
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index)
 
 	split := splitStringAtCommas(elem, []int{2, 3})

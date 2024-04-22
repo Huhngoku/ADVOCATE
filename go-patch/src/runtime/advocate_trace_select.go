@@ -1,87 +1,5 @@
 package runtime
 
-type advocateSelectElement struct {
-	tPre    uint64                   // global timer before the operation
-	tPost   uint64                   // global timer after the operation
-	id      uint64                   // id of the select
-	cases   []advocateChannelElement // cases of the select
-	chosen  int                      // index of the chosen case in cases (0 indexed, -1 for default)
-	nsend   int                      // number of send cases
-	defa    bool                     // set true if a default case exists
-	defaSel bool                     // set true if a default case was chosen
-	file    string                   // file where the operation was called
-	line    int                      // line where the operation was called
-}
-
-func (elem advocateSelectElement) isAdvocateTraceElement() {}
-
-/*
- * Get a string representation of the element
- * Return:
- * 	string representation of the element "S,'tPre','tPost','id','cases','opId','file':'line'"
- *    'tPre' (number): global timer before the operation
- *    'tPost' (number): global timer after the operation
- *    'id' (number): id of the mutex
- *	  'cases' (string): cases of the select, d for default
- *    'chosen' (number): index of the chosen case in cases (0 indexed, -1 for default)
- *	  'opId' (number): id of the operation on the channel
- *    'file' (string): file where the operation was called
- *    'line' (number): line where the operation was called
- */
-func (elem advocateSelectElement) toString() string {
-	res := "S,"
-	res += uint64ToString(elem.tPre) + "," + uint64ToString(elem.tPost) + ","
-	res += uint64ToString(elem.id) + ","
-
-	notNil := 0
-	for _, ca := range elem.cases { // cases
-		if ca.tPre != 0 { // ignore nil cases
-			if notNil != 0 {
-				res += "~"
-			}
-			res += ca.toStringSep(".", false)
-			notNil++
-		}
-	}
-
-	if elem.defa { // default
-		if notNil != 0 {
-			res += "~"
-		}
-		if elem.defaSel {
-			res += "D"
-		} else {
-			res += "d"
-		}
-	}
-
-	res += "," + intToString(elem.chosen) // case index
-
-	res += "," + elem.file + ":" + intToString(elem.line)
-	return res
-}
-
-/*
- * Get the operation
- */
-func (elem advocateSelectElement) getOperation() Operation {
-	return OperationSelect
-}
-
-/*
- * Get the file
- */
-func (elem advocateSelectElement) getFile() string {
-	return elem.file
-}
-
-/*
- * Get the line
- */
-func (elem advocateSelectElement) getLine() int {
-	return elem.line
-}
-
 /*
  * AdvocateSelectPre adds a select to the trace
  * Args:
@@ -92,7 +10,7 @@ func (elem advocateSelectElement) getLine() int {
  * 	index of the operation in the trace
  */
 func AdvocateSelectPre(cases *[]scase, nsends int, block bool) int {
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	if cases == nil {
 		return -1
 	}
@@ -131,7 +49,7 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int,
 	}
 
 	elem := currentGoRoutine().getElement(index).(advocateSelectElement)
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem.chosen = chosenIndex
 	elem.tPost = timer
@@ -179,7 +97,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	}
 
 	id := GetAdvocateObjectID()
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	opChan := OperationChannelRecv
 	if send {
@@ -214,7 +132,7 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 		return
 	}
 
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index).(advocateSelectElement)
 
 	if res {

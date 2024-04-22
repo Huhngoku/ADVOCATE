@@ -9,7 +9,7 @@ package runtime
  * 	line: line where the routine was created
  */
 func AdvocateSpawnCaller(callerRoutine *AdvocateRoutine, newID uint64, file string, line int32) {
-	timer := GetAdvocateCounter()
+	timer := GetNextTimeStep()
 
 	elem := "G," + uint64ToString(timer) + "," + uint64ToString(newID) + "," + file + ":" + int32ToString(line)
 
