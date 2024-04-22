@@ -12,6 +12,7 @@ import (
 	"flag"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -1089,28 +1090,10 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
+	var v int32 = 3
 
-	c := make(chan int, 0)
-	d := make(chan int, 0)
-
-	go func() {
-		select {
-		case <-c:
-			println("C")
-		case <-d:
-			println("D")
-		}
-	}()
-
-	go func() {
-		c <- 1
-	}()
-
-	time.Sleep(100 * time.Millisecond)
-	<-c
-
-	time.Sleep(500 * time.Millisecond)
-
+	atomic.AddInt32(&v, 1)
+	println(atomic.LoadInt32(&v))
 }
 
 func main() {
