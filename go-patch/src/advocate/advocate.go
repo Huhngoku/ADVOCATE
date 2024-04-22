@@ -26,10 +26,6 @@ func Finish() {
 	runtime.DisableTrace()
 	backgroundMemoryTestRunning = false
 
-	numRout := runtime.GetNumberOfRoutines()
-
-	setAtomicValues()
-
 	writeToTraceFiles()
 	// deleteEmptyFiles()
 }

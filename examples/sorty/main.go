@@ -8,7 +8,7 @@ import (
 func main() {
 	if true {
 		// init tracing
-		advocate.InitTracing(-1)
+		advocate.InitTracing(0)
 		defer advocate.Finish()
 	} else {
 		// init replay
@@ -16,7 +16,7 @@ func main() {
 		defer advocate.WaitForReplayFinish()
 	}
 
-	l := 10000000
+	l := 100000
 	input := make([]int, l)
 	rand.Seed(1) // added to create same sequence in replay
 	for i := 0; i < l; i++ {
