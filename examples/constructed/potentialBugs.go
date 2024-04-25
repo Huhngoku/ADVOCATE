@@ -12,6 +12,7 @@ import (
 	"flag"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -1089,6 +1090,10 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
+	var v int32 = 3
+
+	atomic.AddInt32(&v, 1)
+	println(atomic.LoadInt32(&v))
 
 	c := make(chan int, 0)
 	d := make(chan int, 0)

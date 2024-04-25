@@ -85,9 +85,6 @@ func cleanTrace() {
  * Write the trace to a set of files. The traces are written into a folder
  * with name trace. For each routine, a file is created. The file is named
  * trace_routineId.log. The trace of the routine is written into the file.
- * Args:
- * 	- remove: If true, and a file with the same name already exists, the file is removed, before the trace is written.
- *      If false, the trace is appended to the file.
  */
 func writeToTraceFiles() {
 	numRout := runtime.GetNumberOfRoutines()

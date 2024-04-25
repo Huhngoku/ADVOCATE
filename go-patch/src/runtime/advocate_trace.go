@@ -68,11 +68,9 @@ type advocateAtomicMapElem struct {
 
 var advocateDisabled = true
 var advocateAtomicMap = make(map[uint64]advocateAtomicMapElem)
-var advocateAtomicMapRoutine = make(map[uint64]uint64)
 var advocateAtomicMapToID = make(map[uint64]uint64)
 var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
-var advocateAtomicMapRoutineLock mutex
 var advocateAtomicMapToIDLock mutex
 
 var advocateTraceWritingDisabled = false
@@ -140,7 +138,6 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringByID(id uint64) (string, bool) {
-	println("TraceToStringById", id)
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
 	if routine, ok := AdvocateRoutines[id]; ok {
@@ -167,6 +164,10 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 		for i, elem := range routine.Trace {
 			if i != 0 {
 				res += ";"
+			}
+
+			if elem[0] == 'A' {
+				elem = addAtomicInfo(elem)
 			}
 
 			res += elem
@@ -246,12 +247,8 @@ func InitAdvocate(size int) {
 
 	go func() {
 		for atomic := range c {
-			lock(&advocateAtomicMapLock)
-			advocateAtomicMap[atomic.Index] = advocateAtomicMapElem{
-				addr:      atomic.Addr,
-				operation: atomic.Operation,
-			}
-			unlock(&advocateAtomicMapLock)
+			AdvocateAtomicPost(atomic)
+
 			// go func() {
 			// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
 			// 	atomic.ChanReturn <- true

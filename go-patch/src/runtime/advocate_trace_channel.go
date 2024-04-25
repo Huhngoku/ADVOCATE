@@ -20,10 +20,7 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
 		advocateCounterAtomic++
-		lock(&advocateAtomicMapRoutineLock)
-		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineID()
-		unlock(&advocateAtomicMapRoutineLock)
-		AdvocateAtomic(advocateCounterAtomic)
+		AdvocateAtomicPre(advocateCounterAtomic)
 
 		// they are not recorded in the trace
 		return -1
