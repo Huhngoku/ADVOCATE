@@ -34,8 +34,8 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 			chanOp = "S"
 		}
 
-		caseElements += "C," + uint64ToString(ca.c.id) + "," +
-			uint64ToString(timer) + ",0," + chanOp + ",f,0," +
+		caseElements += "C." + uint64ToString(timer) + ".0." +
+			uint64ToString(ca.c.id) + "." + chanOp + ".f.0." +
 			uint32ToString(uint32(ca.c.dataqsiz))
 	}
 
@@ -65,13 +65,15 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	}
 
 	elem := currentGoRoutine().getElement(index)
+	println(elem)
 	timer := GetNextTimeStep()
 
 	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
 
 	split[1] = uint64ToString(timer) // set tpost of select
 
-	cases := splitStringAtSeparator(split[4], '~', nil)
+	println(split[3])
+	cases := splitStringAtSeparator(split[3], '~', nil)
 
 	if chosenIndex == -1 { // default case
 		if cases[len(cases)-1] != "d" {
@@ -100,8 +102,10 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 		cases[chosenIndex] = mergeStringSep(chosenCaseSplit, ".")
 	}
 
-	split[4] = mergeStringSep(cases, "~")
+	split[3] = mergeStringSep(cases, "~")
 	elem = mergeString(split)
+
+	println(elem)
 
 	currentGoRoutine().updateElement(index, elem)
 }

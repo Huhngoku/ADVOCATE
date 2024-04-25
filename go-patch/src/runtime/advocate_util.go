@@ -123,15 +123,24 @@ func splitStringAtSeparator(s string, sep rune, indices []int) []string {
 	var start int
 	result := make([]string, 0, len(indices)+1)
 
-	count := 0
-	for _, index := range indices {
+	if indices == nil {
 		for i, r := range s[start:] {
 			if r == sep {
-				count++
-				if indices == nil || count == index {
-					result = append(result, s[start:start+i])
-					start += i + 1
-					break
+				result = append(result, s[start:start+i])
+				start += i + 1
+			}
+		}
+	} else {
+		count := 0
+		for _, index := range indices {
+			for i, r := range s[start:] {
+				if r == sep {
+					count++
+					if count == index {
+						result = append(result, s[start:start+i])
+						start += i + 1
+						break
+					}
 				}
 			}
 		}

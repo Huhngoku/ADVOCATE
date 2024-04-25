@@ -10,10 +10,8 @@ import "fmt"
 import (
 	"advocate"
 	"flag"
-	"fmt"
 	"os"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -1091,52 +1089,19 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
-	var counter int64
-	var once sync.Once
-	var mutex sync.Mutex
-	var cond = sync.NewCond(&mutex)
-	var wg sync.WaitGroup
-
-	ch := make(chan bool)
-
-	wg.Add(2)
+	c := make(chan int, 0)
+	d := make(chan int, 0)
 
 	go func() {
-		defer wg.Done()
-
-		once.Do(func() {
-			fmt.Println("This will be printed only once.")
-		})
-
-		atomic.AddInt64(&counter, 1)
-		ch <- true
+		c <- 1
 	}()
 
 	go func() {
-		defer wg.Done()
-
-		once.Do(func() {
-			fmt.Println("This will not be printed because once.Do() has already been called.")
-		})
-
-		<-ch
-		atomic.AddInt64(&counter, 1)
-
-		mutex.Lock()
-		cond.Signal()
-		mutex.Unlock()
+		select {
+		case <-c:
+		case <-d:
+		}
 	}()
-
-	go func() {
-		mutex.Lock()
-		cond.Wait()
-		mutex.Unlock()
-
-		fmt.Println("Counter:", atomic.LoadInt64(&counter))
-	}()
-
-	wg.Wait()
-	time.Sleep(1 * time.Second)
 
 }
 
