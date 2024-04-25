@@ -10,6 +10,7 @@ import "fmt"
 import (
 	"advocate"
 	"flag"
+	"fmt"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -1090,33 +1091,52 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
-	var v int32 = 3
+	var counter int64
+	var once sync.Once
+	var mutex sync.Mutex
+	var cond = sync.NewCond(&mutex)
+	var wg sync.WaitGroup
 
-	atomic.AddInt32(&v, 1)
-	println(atomic.LoadInt32(&v))
+	ch := make(chan bool)
 
-	c := make(chan int, 0)
-	d := make(chan int, 0)
+	wg.Add(2)
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
-		select {
-		case <-c:
-			println("C")
-		case <-d:
-			println("D")
-		}
-		println("Select")
+		defer wg.Done()
+
+		once.Do(func() {
+			fmt.Println("This will be printed only once.")
+		})
+
+		atomic.AddInt64(&counter, 1)
+		ch <- true
 	}()
 
 	go func() {
-		c <- 1
+		defer wg.Done()
+
+		once.Do(func() {
+			fmt.Println("This will not be printed because once.Do() has already been called.")
+		})
+
+		<-ch
+		atomic.AddInt64(&counter, 1)
+
+		mutex.Lock()
+		cond.Signal()
+		mutex.Unlock()
 	}()
 
-	time.Sleep(100 * time.Millisecond)
-	<-c
+	go func() {
+		mutex.Lock()
+		cond.Wait()
+		mutex.Unlock()
 
-	time.Sleep(500 * time.Millisecond)
+		fmt.Println("Counter:", atomic.LoadInt64(&counter))
+	}()
+
+	wg.Wait()
+	time.Sleep(1 * time.Second)
 
 }
 
