@@ -2,24 +2,6 @@ package runtime
 
 import at "runtime/internal/atomic"
 
-// func (elem advocateAtomicElement) toString() string {
-// 	lock(&advocateAtomicMapLock)
-// 	mapElement := advocateAtomicMap[elem.index]
-// 	unlock(&advocateAtomicMapLock)
-// 	lock(&advocateAtomicMapToIDLock)
-// 	if _, ok := advocateAtomicMapToID[mapElement.addr]; !ok {
-// 		advocateAtomicMapToID[mapElement.addr] = advocateAtomicMapIDCounter
-// 		advocateAtomicMapIDCounter++
-// 	}
-// 	id := advocateAtomicMapToID[mapElement.addr]
-// 	unlock(&advocateAtomicMapToIDLock)
-
-// 	res := "A," + uint64ToString(elem.timer) + "," +
-// 		uint64ToString(id) + ","
-//
-// 	return res
-// }
-
 /*
  * Add an atomic operation to the trace
  * Args:
