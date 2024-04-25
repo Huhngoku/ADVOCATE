@@ -1,3 +1,0 @@
-Leak on unbuffered channel or select with possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1098@47
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/potentialBugs.go:1111@43

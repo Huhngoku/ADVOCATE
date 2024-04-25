@@ -49,11 +49,10 @@ type TraceElementSelect struct {
  *   tPost (string): The timestamp at the end of the event
  *   id (string): The id of the select statement
  *   cases (string): The cases of the select statement
- *   index (string): The internal index of chosen case
  *   pos (string): The position of the select statement in the code
  */
 func AddTraceElementSelect(routine int, tPre string,
-	tPost string, id string, cases string, index string, pos string) error {
+	tPost string, id string, cases string, pos string) error {
 	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -84,7 +83,7 @@ func AddTraceElementSelect(routine int, tPre string,
 	casesList := make([]TraceElementChannel, 0)
 	containsDefault := false
 	chosenDefault := false
-	for _, c := range cs {
+	for i, c := range cs {
 		if c == "d" {
 			containsDefault = true
 			break
@@ -92,6 +91,7 @@ func AddTraceElementSelect(routine int, tPre string,
 		if c == "D" {
 			containsDefault = true
 			chosenDefault = true
+			elem.chosenIndex = -1
 			break
 		}
 
@@ -149,13 +149,10 @@ func AddTraceElementSelect(routine int, tPre string,
 		casesList = append(casesList, elemCase)
 		if elemCase.tPost != 0 {
 			elem.chosenCase = elemCase
+			elem.chosenIndex = i
 		}
 	}
 
-	elem.chosenIndex, err = strconv.Atoi(index)
-	if err != nil {
-		return errors.New("index is not an integer")
-	}
 	elem.containsDefault = containsDefault
 	elem.chosenDefault = chosenDefault
 	elem.cases = casesList
@@ -351,7 +348,6 @@ func (se *TraceElementSelect) ToString() string {
 			res += "d"
 		}
 	}
-	res += "," + strconv.Itoa(se.chosenIndex)
 	res += "," + se.pos
 	return res
 }

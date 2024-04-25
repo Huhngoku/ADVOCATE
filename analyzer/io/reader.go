@@ -88,7 +88,7 @@ func CreateTraceFromFile(filePath string, routine int, maxTokenSize int) (int, e
 		if err := scanner.Err(); err != nil {
 			if err == bufio.ErrTooLong {
 				maxTokenSize *= 2 // max buffer was to short, restart
-				println("Increase max file size to " + strconv.Itoa(maxTokenSize) + "MB")
+				// println("Increase max file size to " + strconv.Itoa(maxTokenSize) + "MB")
 			} else {
 				return maxTokenSize, err
 			}
@@ -148,7 +148,7 @@ func processElement(element string, routine int) error {
 		err = trace.AddTraceElementFork(routine, fields[1], fields[2], fields[3])
 	case "S":
 		err = trace.AddTraceElementSelect(routine, fields[1], fields[2], fields[3],
-			fields[4], fields[5], fields[6])
+			fields[4], fields[5])
 	case "W":
 		err = trace.AddTraceElementWait(routine, fields[1], fields[2], fields[3],
 			fields[4], fields[5], fields[6], fields[7])

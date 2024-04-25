@@ -10,6 +10,7 @@ import "fmt"
 import (
 	"advocate"
 	"flag"
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -1089,19 +1090,26 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
-	c := make(chan int, 0)
-	d := make(chan int, 0)
+	var once sync.Once
+	var wg sync.WaitGroup
+
+	action := func() {
+		fmt.Println("Executed only once")
+	}
+
+	wg.Add(2)
 
 	go func() {
-		c <- 1
+		defer wg.Done()
+		once.Do(action)
 	}()
 
 	go func() {
-		select {
-		case <-c:
-		case <-d:
-		}
+		defer wg.Done()
+		once.Do(action)
 	}()
+
+	wg.Wait()
 
 }
 

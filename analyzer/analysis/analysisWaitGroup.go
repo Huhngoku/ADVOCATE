@@ -5,6 +5,7 @@ import (
 	"analyzer/logging"
 	"analyzer/utils"
 	"errors"
+	"strconv"
 )
 
 func checkForDoneBeforeAddChange(routine int, id int, delta int, pos string, vc clock.VectorClock) {
@@ -28,6 +29,9 @@ func checkForDoneBeforeAddAdd(routine int, id int, pos string, vc clock.VectorCl
 
 	// add the vector clock and position to the list
 	for i := 0; i < delta; i++ {
+		if delta > 1 {
+			pos = pos + "+" + strconv.Itoa(i) // add a unique identifier to the position
+		}
 		wgAdd[id][routine] = append(wgAdd[id][routine], VectorClockTID{vc.Copy(), pos})
 	}
 }
@@ -87,6 +91,7 @@ func buildResidualGraph(adds map[int][]VectorClockTID, dones map[int][]VectorClo
 				for _, vcAdd := range add {
 					if clock.GetHappensBefore(vcAdd.vc, vcDone.vc) == clock.Before {
 						graph[vcDone.tID] = append(graph[vcDone.tID], vcAdd.tID)
+
 					}
 				}
 			}
@@ -246,6 +251,9 @@ func CheckForDoneBeforeAdd() {
 			message := "Possible negative waitgroup counter:\n"
 			message += "\tadd: "
 			for _, add := range addsVcTIDSorted {
+				if add.tID == "\n" {
+					message += add.tID + " (unknown); "
+				}
 				message += add.tID + "; "
 			}
 
