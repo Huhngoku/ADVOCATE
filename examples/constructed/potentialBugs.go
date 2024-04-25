@@ -1094,16 +1094,17 @@ func nTest() {
 	d := make(chan int, 0)
 
 	go func() {
+		time.Sleep(100 * time.Millisecond)
 		select {
 		case <-c:
 			println("C")
 		case <-d:
 			println("D")
 		}
+		println("Select")
 	}()
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
 		<-c
 	}()
 

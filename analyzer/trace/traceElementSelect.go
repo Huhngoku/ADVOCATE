@@ -361,7 +361,9 @@ func (se *TraceElementSelect) ToString() string {
  * MARK: VectorClock
  */
 func (se *TraceElementSelect) updateVectorClock() {
-	if se.chosenDefault || se.tPost == 0 {
+	leak := se.chosenDefault || se.tPost == 0
+
+	if leak {
 		currentVCHb[se.routine] = currentVCHb[se.routine].Inc(se.routine)
 	} else {
 		// update the vector clock
@@ -383,7 +385,12 @@ func (se *TraceElementSelect) updateVectorClock() {
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
 
-	se.vc = se.chosenCase.vc.Copy()
+	if leak {
+		se.vc = currentVCHb[se.routine].Copy()
+	} else {
+		se.vc = se.chosenCase.vc.Copy()
+	}
+
 	for _, c := range se.cases {
 		c.vc = se.vc.Copy()
 	}
