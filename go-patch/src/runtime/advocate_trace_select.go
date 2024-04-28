@@ -157,6 +157,11 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	elem := currentGoRoutine().getElement(index)
 
 	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
+	println(split[0])
+	println(split[1])
+	println(split[2])
+	println(split[3])
+	println(split[4])
 
 	// update tPost
 	split[1] = uint64ToString(timer)
@@ -179,7 +184,7 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	} else { // default case
 		cases[1] = "D"
 	}
-	split[4] = mergeStringSep(cases, "~")
+	split[3] = mergeStringSep(cases, "~")
 
 	elem = mergeString(split)
 
