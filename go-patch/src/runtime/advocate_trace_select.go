@@ -65,14 +65,12 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	}
 
 	elem := currentGoRoutine().getElement(index)
-	println(elem)
 	timer := GetNextTimeStep()
 
 	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
 
 	split[1] = uint64ToString(timer) // set tpost of select
 
-	println(split[3])
 	cases := splitStringAtSeparator(split[3], '~', nil)
 
 	if chosenIndex == -1 { // default case
@@ -105,8 +103,6 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	split[3] = mergeStringSep(cases, "~")
 	elem = mergeString(split)
 
-	println(elem)
-
 	currentGoRoutine().updateElement(index, elem)
 }
 
@@ -134,8 +130,8 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 		opChan = "S"
 	}
 
-	caseElements := "C," + uint64ToString(timer) + ",0," + uint64ToString(c.id) +
-		"," + opChan + ",f,0," + uint32ToString(uint32(c.dataqsiz))
+	caseElements := "C." + uint64ToString(timer) + ".0." + uint64ToString(c.id) +
+		"." + opChan + ".f.0." + uint32ToString(uint32(c.dataqsiz))
 
 	_, file, line, _ := Caller(2)
 
@@ -166,7 +162,7 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	split[1] = uint64ToString(timer)
 
 	// update cases
-	cases := splitStringAtSeparator(split[4], '~', nil)
+	cases := splitStringAtSeparator(split[3], '~', nil)
 	if res { // channel case
 		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
 		chosenCaseSplit := splitStringAtSeparator(cases[0], '.', []int{2, 3, 4, 5, 6, 7})

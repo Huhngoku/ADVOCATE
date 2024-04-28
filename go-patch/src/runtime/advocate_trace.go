@@ -309,7 +309,6 @@ func DeleteTrace() {
  * Return:
  * 	bool: true if the operation should be ignored, false otherwise
  */
-// TODO: check if all of them are necessary
 func AdvocateIgnore(operation Operation, file string, line int) bool {
 	if hasSuffix(file, "advocate/advocate.go") ||
 		hasSuffix(file, "advocate/advocate_replay.go") ||
@@ -321,6 +320,10 @@ func AdvocateIgnore(operation Operation, file string, line int) bool {
 	}
 
 	if hasSuffix(file, "syscall/env_unix.go") {
+		return true
+	}
+
+	if hasSuffix(file, "runtime/signal_unix.go") {
 		return true
 	}
 
