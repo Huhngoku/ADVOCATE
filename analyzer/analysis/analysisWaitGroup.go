@@ -72,15 +72,15 @@ func buildResidualGraph(adds map[int][]VectorClockTID, dones map[int][]VectorClo
 	// add edges from s to all done operations
 	for _, done := range dones {
 		for _, vc := range done {
-			graph[vc.tID] = []string{}
-			graph["s"] = append(graph["s"], vc.tID)
+			graph[vc.TID] = []string{}
+			graph["s"] = append(graph["s"], vc.TID)
 		}
 	}
 
 	// add edges from all add operations to t
 	for _, add := range adds {
 		for _, vc := range add {
-			graph[vc.tID] = []string{"t"}
+			graph[vc.TID] = []string{"t"}
 		}
 	}
 
@@ -89,8 +89,8 @@ func buildResidualGraph(adds map[int][]VectorClockTID, dones map[int][]VectorClo
 		for _, vcDone := range done {
 			for _, add := range adds {
 				for _, vcAdd := range add {
-					if clock.GetHappensBefore(vcAdd.vc, vcDone.vc) == clock.Before {
-						graph[vcDone.tID] = append(graph[vcDone.tID], vcAdd.tID)
+					if clock.GetHappensBefore(vcAdd.Vc, vcDone.Vc) == clock.Before {
+						graph[vcDone.TID] = append(graph[vcDone.TID], vcAdd.TID)
 
 					}
 				}
@@ -216,7 +216,7 @@ func CheckForDoneBeforeAdd() {
 
 			for _, adds := range wgAdd[id] {
 				for _, add := range adds {
-					if !utils.Contains(graph["t"], add.tID) {
+					if !utils.Contains(graph["t"], add.TID) {
 						addsVcTIDs = append(addsVcTIDs, add)
 					}
 				}
@@ -235,7 +235,7 @@ func CheckForDoneBeforeAdd() {
 
 			for i := 0; i < len(addsVcTIDs); i++ {
 				for j := 0; j < len(donesVcTIDs); j++ {
-					if clock.GetHappensBefore(addsVcTIDs[i].vc, addsVcTIDs[j].vc) == clock.Concurrent {
+					if clock.GetHappensBefore(addsVcTIDs[i].Vc, addsVcTIDs[j].Vc) == clock.Concurrent {
 						addsVcTIDSorted = append(addsVcTIDSorted, addsVcTIDs[i])
 						donesVcTIDSorted = append(donesVcTIDSorted, donesVcTIDs[j])
 						// remove the element from the list
@@ -251,15 +251,15 @@ func CheckForDoneBeforeAdd() {
 			message := "Possible negative waitgroup counter:\n"
 			message += "\tadd: "
 			for _, add := range addsVcTIDSorted {
-				if add.tID == "\n" {
-					message += add.tID + " (unknown); "
+				if add.TID == "\n" {
+					message += add.TID + " (unknown); "
 				}
-				message += add.tID + "; "
+				message += add.TID + "; "
 			}
 
 			message += "\n\tdone: "
 			for _, done := range donesVcTIDSorted {
-				message += done.tID + "; "
+				message += done.TID + "; "
 			}
 
 			logging.Result(message, logging.CRITICAL)
@@ -270,7 +270,7 @@ func CheckForDoneBeforeAdd() {
 func getDoneVcTIDFromTID(id int, tID string) (VectorClockTID, error) {
 	for _, dones := range wgDone[id] {
 		for _, done := range dones {
-			if done.tID == tID {
+			if done.TID == tID {
 				return done, nil
 			}
 		}

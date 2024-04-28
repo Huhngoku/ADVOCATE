@@ -30,7 +30,7 @@ import (
 // MARK: Channel/Select
 
 /*
- * Rewrite a trace where a leaking unbuffered channel with possible partner was found.
+ * Rewrite a trace where a leaking unbuffered channel/select with possible partner was found.
  * Args:
  *   bug (Bug): The bug to create a trace for
  * Returns:
@@ -38,14 +38,50 @@ import (
  */
 // TODO: panics if bug param contains select
 func rewriteUnbufChanLeak(bug bugs.Bug) error {
+	// check if one or both of the bug elements are select
+	t1Sel := false
+	t2Sel := false
+	switch (*bug.TraceElement1[0]).(type) {
+	case *trace.TraceElementSelect:
+		t1Sel = true
+	}
+	switch (*bug.TraceElement2[0]).(type) {
+	case *trace.TraceElementSelect:
+		t2Sel = true
+	}
+
+	if !t1Sel && !t2Sel { // both are channel operations
+		return rewriteUnbufChanLeakChanChan(bug)
+	} else if !t1Sel && t2Sel { // first is channel operation, second is select
+		return rewriteUnbufChanLeakChanSel(bug)
+	} else if t1Sel && !t2Sel { // first is select, second is channel operation
+		return rewriteUnbufChanLeakSelChan(bug)
+	} // both are select
+	return rewriteUnbufChanLeakSelSel(bug)
+
+	// TODO: if at least one is select
+
+	// return errors.New("Rewriting trace for select without partner is not completely implemented yet")
+
+}
+
+/*
+ * Rewrite a trace where a leaking unbuffered channel/select with possible partner was found
+ * if both elements are channel operations.
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func rewriteUnbufChanLeakChanChan(bug bugs.Bug) error {
 	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
 	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel)
 	possiblePartnerPartner := possiblePartner.GetPartner()
 
 	hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
-	if hb == clock.Before {
-		return errors.New("The actual partner of the potential partner is HB " +
-			"before the stuck element. Cannot rewrite trace.")
+	if hb != clock.Concurrent {
+		return errors.New("The actual partner of the potential partner is not HB " +
+			"concurrent to the stuck element. Cannot rewrite trace.")
 	}
 
 	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
@@ -57,10 +93,96 @@ func rewriteUnbufChanLeak(bug bugs.Bug) error {
 	trace.ShortenTrace(earlierTime, false)
 
 	// add the communication back in
-	if stuck.Operation() == trace.Send {
+	if stuck.Operation() == trace.Recv {
+		stuck.SetTSort(earlierTime + 1)
+		possiblePartner.SetTSort(earlierTime)
+	} else {
 		stuck.SetTSort(earlierTime)
 		possiblePartner.SetTSort(earlierTime + 1)
-	} else if stuck.Operation() == trace.Recv {
+	}
+
+	trace.AddElementToTrace(stuck)
+	trace.AddElementToTrace(possiblePartner)
+
+	// add the start and stop signal to release the program from the guided replay
+	trace.AddTraceElementReplay(earlierTime-1, true)
+	trace.AddTraceElementReplay(earlierTime+2, false)
+
+	return nil
+}
+
+/*
+ * Rewrite a trace where a leaking unbuffered channel/select with possible partner was found
+ * if both elements are channel operations.
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func rewriteUnbufChanLeakChanSel(bug bugs.Bug) error {
+	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
+	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementSelect)
+	possiblePartnerPartner := possiblePartner.GetPartner()
+
+	hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
+	if hb != clock.Concurrent {
+		return errors.New("The actual partner of the potential partner is not HB " +
+			"concurrent to the stuck element. Cannot rewrite trace.")
+	}
+
+	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
+	// all concurrent, we can therefore reorder
+	// remove the potential partner partner from the trace
+	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+
+	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
+	trace.ShortenTrace(earlierTime, false)
+
+	// add the communication back in
+	if stuck.Operation() == trace.Recv {
+		stuck.SetTSort(earlierTime + 1)
+		possiblePartner.SetTSort(earlierTime)
+	} else {
+		stuck.SetTSort(earlierTime)
+		possiblePartner.SetTSort(earlierTime + 1)
+	}
+
+	trace.AddElementToTrace(stuck)
+	trace.AddElementToTrace(possiblePartner)
+
+	// add the start and stop signal to release the program from the guided replay
+	trace.AddTraceElementReplay(earlierTime-1, true)
+	trace.AddTraceElementReplay(earlierTime+2, false)
+
+	return nil
+}
+
+/*
+ * Rewrite a trace where a leaking unbuffered channel/select with possible partner was found
+ * if both elements are channel operations.
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func rewriteUnbufChanLeakSelChan(bug bugs.Bug) error {
+	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementSelect)
+	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel)
+	possiblePartnerPartner := possiblePartner.GetPartner()
+
+	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
+	// all concurrent, we can therefore reorder
+	// remove the potential partner partner from the trace
+	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+
+	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
+	trace.ShortenTrace(earlierTime, false)
+
+	// add the communication back in
+	if possiblePartner.Operation() == trace.Recv {
+		stuck.SetTSort(earlierTime)
+		possiblePartner.SetTSort(earlierTime + 1)
+	} else {
 		stuck.SetTSort(earlierTime + 1)
 		possiblePartner.SetTSort(earlierTime)
 	}
@@ -73,9 +195,68 @@ func rewriteUnbufChanLeak(bug bugs.Bug) error {
 	trace.AddTraceElementReplay(earlierTime+2, false)
 
 	return nil
-
 }
 
+/*
+ * Rewrite a trace where a leaking unbuffered channel/select with possible partner was found
+ * if both elements are channel operations.
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
+	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementSelect)
+	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementSelect)
+	possiblePartnerPartner := possiblePartner.GetPartner()
+
+	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
+	// all concurrent, we can therefore reorder
+	// remove the potential partner partner from the trace
+	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+
+	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
+	trace.ShortenTrace(earlierTime, false)
+
+	// find direction of communication
+	found := false
+	for _, c := range stuck.GetCases() {
+		for _, d := range possiblePartner.GetCases() {
+			if c.GetID() != d.GetID() {
+				continue
+			}
+
+			if c.Operation() == d.Operation() {
+				continue
+			}
+
+			if c.Operation() == trace.Recv {
+				stuck.SetTSort(earlierTime + 1)
+				possiblePartner.SetTSort(earlierTime)
+			} else {
+				stuck.SetTSort(earlierTime)
+				possiblePartner.SetTSort(earlierTime + 1)
+			}
+			found = true
+			break
+		}
+
+		if found {
+			break
+		}
+	}
+
+	trace.AddElementToTrace(stuck)
+	trace.AddElementToTrace(possiblePartner)
+
+	// add the start and stop signal to release the program from the guided replay
+	trace.AddTraceElementReplay(earlierTime-1, true)
+	trace.AddTraceElementReplay(earlierTime+2, false)
+
+	return nil
+}
+
+// TODO: Does this work with buffered channels?
 /*
  * Rewrite a trace for a leaking buffered channel
  * Args:

@@ -34,6 +34,13 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 			checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
 		}
 
+		if mostRecentReceive[routRecv] == nil {
+			mostRecentReceive[routRecv] = make(map[int]VectorClockTID)
+		}
+		if mostRecentSend[routSend] == nil {
+			mostRecentSend[routSend] = make(map[int]VectorClockTID)
+		}
+
 		vc[routSend] = vc[routSend].Inc(routSend)
 		vc[routRecv] = vc[routRecv].Inc(routRecv)
 		vc[routRecv] = vc[routRecv].Sync(vc[routSend])
@@ -41,13 +48,14 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 		// for detection of send on closed
 		hasSend[id] = true
-		mostRecentSend[id] = VectorClockTID{mostRecentSend[id].vc.Sync(vc[routSend]).Copy(), tIDSend}
+		mostRecentSend[routSend][id] = VectorClockTID{mostRecentSend[routSend][id].Vc.Sync(vc[routSend]).Copy(), tIDSend}
 
 		// for detection of receive on closed
 		hasReceived[id] = true
-		mostRecentReceive[id] = VectorClockTID{mostRecentReceive[id].vc.Sync(vc[routRecv]).Copy(), tIDRecv}
+		mostRecentReceive[routRecv][id] = VectorClockTID{mostRecentReceive[routRecv][id].Vc.Sync(vc[routRecv]).Copy(), tIDRecv}
 
-		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[id].vc.ToString(), logging.DEBUG)
+		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[routSend][id].Vc.ToString(), logging.DEBUG)
+		logging.Debug("Set most recent recv of "+strconv.Itoa(id)+" to "+mostRecentReceive[routRecv][id].Vc.ToString(), logging.DEBUG)
 
 	} else {
 		vc[routSend] = vc[routSend].Inc(routSend)
@@ -91,6 +99,10 @@ func Send(rout int, id int, oID int, size int, tID string,
 		return
 	}
 
+	if mostRecentSend[rout] == nil {
+		mostRecentSend[rout] = make(map[int]VectorClockTID)
+	}
+
 	newBufferedVCs(id, size, vc[rout].GetSize())
 
 	count := bufferedVCsCount[id]
@@ -107,8 +119,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 	vc[rout] = vc[rout].Sync(v)
 
 	if fifo {
-		vc[rout] = vc[rout].Sync(mostRecentSend[id].vc)
-		mostRecentSend[id] = VectorClockTID{vc[rout].Copy(), mostRecentSend[id].tID}
+		vc[rout] = vc[rout].Sync(mostRecentSend[rout][id].Vc)
 	}
 
 	bufferedVCs[id][count] = bufferedVC{true, oID, vc[rout].Copy(), rout, tID}
@@ -117,7 +128,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 
 	// for detection of send on closed
 	hasSend[id] = true
-	mostRecentSend[id] = VectorClockTID{mostRecentSend[id].vc.Sync(vc[rout]), tID}
+	mostRecentSend[rout][id] = VectorClockTID{mostRecentSend[rout][id].Vc.Sync(vc[rout]), tID}
 
 	vc[rout] = vc[rout].Inc(rout)
 
@@ -148,6 +159,10 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	if tPost == 0 {
 		vc[rout] = vc[rout].Inc(rout)
 		return
+	}
+
+	if mostRecentReceive[rout] == nil {
+		mostRecentReceive[rout] = make(map[int]VectorClockTID)
 	}
 
 	newBufferedVCs(id, size, vc[rout].GetSize())
@@ -183,8 +198,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	vc[rout] = vc[rout].Sync(v)
 
 	if fifo {
-		vc[rout] = vc[rout].Sync(mostRecentReceive[id].vc)
-		mostRecentReceive[id] = VectorClockTID{vc[rout].Copy(), mostRecentReceive[id].tID}
+		vc[rout] = vc[rout].Sync(mostRecentReceive[rout][id].Vc)
 	}
 
 	bufferedVCs[id] = bufferedVCs[id][1:]
@@ -192,7 +206,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 
 	// for detection of receive on closed
 	hasReceived[id] = true
-	mostRecentReceive[id] = VectorClockTID{mostRecentReceive[id].vc.Sync(vc[rout]), tID}
+	mostRecentReceive[rout][id] = VectorClockTID{mostRecentReceive[rout][id].Vc.Sync(vc[rout]), tID}
 
 	vc[rout] = vc[rout].Inc(rout)
 
@@ -206,6 +220,16 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
 	}
+}
+
+/*
+ * Update and calculate the vector clocks for a stuck channel element
+ * Args:
+ *  routint (int): the route of the operation
+ *  vc (map[int]VectorClock): the current vector clocks
+ */
+func StuckChan(routine int, vc map[int]clock.VectorClock) {
+	vc[routine] = vc[routine].Inc(routine)
 }
 
 /*
@@ -260,9 +284,9 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		return
 	}
 
-	foundReceiveOnClosedChannel(closeData[id].tID, tID)
+	foundReceiveOnClosedChannel(closeData[id].TID, tID)
 
-	vc[rout] = vc[rout].Sync(closeData[id].vc)
+	vc[rout] = vc[rout].Sync(closeData[id].Vc)
 	vc[rout] = vc[rout].Inc(rout)
 
 	if analysisCases["selectWithoutPartner"] {
@@ -270,7 +294,7 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	}
 
 	if analysisCases["mixedDeadlock"] {
-		checkForMixedDeadlock(closeRout[id], rout, closeData[id].tID, tID)
+		checkForMixedDeadlock(closeRout[id], rout, closeData[id].TID, tID)
 	}
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)

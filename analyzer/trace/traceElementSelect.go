@@ -49,10 +49,11 @@ type TraceElementSelect struct {
  *   tPost (string): The timestamp at the end of the event
  *   id (string): The id of the select statement
  *   cases (string): The cases of the select statement
+ *   chosenIndex (string): The internal index of chosen case
  *   pos (string): The position of the select statement in the code
  */
 func AddTraceElementSelect(routine int, tPre string,
-	tPost string, id string, cases string, pos string) error {
+	tPost string, id string, cases string, chosenIndex string, pos string) error {
 	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -68,22 +69,28 @@ func AddTraceElementSelect(routine int, tPre string,
 		return errors.New("id is not an integer")
 	}
 
+	chosenIndexInt, err := strconv.Atoi(chosenIndex)
+	if err != nil {
+		return errors.New("chosenIndex is not an integer")
+	}
+
 	tID := pos + "@" + tPre
 
 	elem := TraceElementSelect{
-		routine: routine,
-		tPre:    tPreInt,
-		tPost:   tPostInt,
-		id:      idInt,
-		pos:     pos,
-		tID:     tID,
+		routine:     routine,
+		tPre:        tPreInt,
+		tPost:       tPostInt,
+		id:          idInt,
+		chosenIndex: chosenIndexInt,
+		pos:         pos,
+		tID:         tID,
 	}
 
 	cs := strings.Split(cases, "~")
 	casesList := make([]TraceElementChannel, 0)
 	containsDefault := false
 	chosenDefault := false
-	for i, c := range cs {
+	for _, c := range cs {
 		if c == "d" {
 			containsDefault = true
 			break
@@ -91,7 +98,6 @@ func AddTraceElementSelect(routine int, tPre string,
 		if c == "D" {
 			containsDefault = true
 			chosenDefault = true
-			elem.chosenIndex = -1
 			break
 		}
 
@@ -149,7 +155,6 @@ func AddTraceElementSelect(routine int, tPre string,
 		casesList = append(casesList, elemCase)
 		if elemCase.tPost != 0 {
 			elem.chosenCase = elemCase
-			elem.chosenIndex = i
 		}
 	}
 
@@ -289,7 +294,44 @@ func (se *TraceElementSelect) SetTPre(tPre int) {
 		se.tPost = tPre
 	}
 
-	se.chosenCase.SetTPre(tPre)
+	for _, c := range se.cases {
+		c.SetTPre2(tPre)
+	}
+}
+
+/*
+ * Set the tpre of the element. Do not update the chosen case
+ * Args:
+ *   tPre (int): The tpre of the element
+ */
+func (se *TraceElementSelect) SetTPre2(tPre int) {
+	se.tPre = tPre
+	if se.tPost != 0 && se.tPost < tPre {
+		se.tPost = tPre
+	}
+
+	for _, c := range se.cases {
+		c.SetTPre2(tPre)
+	}
+}
+
+/*
+ * Set tPost
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (se *TraceElementSelect) SetTPost(tPost int) {
+	se.tPost = tPost
+	se.chosenCase.SetTPost2(tPost)
+}
+
+/*
+ * Set tPost. Do not update the chosen case
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (se *TraceElementSelect) SetTPost2(tPost int) {
+	se.tPost = tPost
 }
 
 /*
@@ -300,21 +342,43 @@ func (se *TraceElementSelect) SetTPre(tPre int) {
 func (se *TraceElementSelect) SetTSort(tSort int) {
 	se.SetTPre(tSort)
 	se.tPost = tSort
-	se.chosenCase.SetTSort(tSort)
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace. Do not update the chosen case
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (se *TraceElementSelect) SetTSort2(tSort int) {
+	se.SetTPre2(tSort)
+	se.tPost = tSort
 }
 
 /*
  * Set the timer, that is used for the sorting of the trace, only if the original
  * value was not 0
  * Args:
- *   tSort (int): The timer of the element
+ * tSort (int): The timer of the element
  */
 func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
 	se.SetTPre(tSort)
 	if se.tPost != 0 {
 		se.tPost = tSort
 	}
-	se.chosenCase.SetTSortWithoutNotExecuted(tSort)
+	se.chosenCase.SetTSortWithoutNotExecuted2(tSort)
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0. Do not update the chosen case
+ * Args:
+ * tSort (int): The timer of the element
+ */
+func (se *TraceElementSelect) SetTSortWithoutNotExecuted2(tSort int) {
+	se.SetTPre2(tSort)
+	if se.tPost != 0 {
+		se.tPost = tSort
+	}
 }
 
 /*
@@ -348,6 +412,7 @@ func (se *TraceElementSelect) ToString() string {
 			res += "d"
 		}
 	}
+	res += "," + strconv.Itoa(se.chosenIndex)
 	res += "," + se.pos
 	return res
 }
@@ -389,5 +454,15 @@ func (se *TraceElementSelect) updateVectorClock() {
 
 	for _, c := range se.cases {
 		c.vc = se.vc.Copy()
+	}
+
+	if analysisCases["leak"] {
+		for _, c := range se.cases {
+			analysis.CheckForLeakChannelRun(c.id,
+				analysis.VectorClockTID{
+					Vc:  se.vc.Copy(),
+					TID: se.tID},
+				int(c.opC))
+		}
 	}
 }

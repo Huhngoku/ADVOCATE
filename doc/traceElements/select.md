@@ -9,7 +9,7 @@ Select statements with only one case are not recorded as select statements. If t
 ## Trace element
 The basic form of the trace element is 
 ```
-S,[tpre],[tpost],[id],[cases],[pos]
+S,[tpre],[tpost],[id],[cases],[selIndex],[pos]
 ```
 where `S` identifies the element as a select element.
 The other fields are set as follows:
@@ -28,6 +28,7 @@ element also includes the operation id `oId`, to connect the sending and
 receiving operations. If the 
 select contains a default case, it is denoted with a single `d` as the last 
 element in the cases list. If the default value was chosen it is capitalized (`D`).
+- [selIndex]: The internal index of the selected case.
 - [pos]: The last field show the position in the code, where the select is implemented. It consists of the file and line number separated by a colon (:). It the select only contains one case, the line number is 
 equal to the line of this case.
 
@@ -67,10 +68,10 @@ func main() {  // Routine 1
 ``` 
 If we ignore all internal operations, we get the following trace:
 ```txt
-G,1,2;S,3,8,5,C.3.0.2.R.f.0.0~C.3.8.1.R.f.1.0,example_file.go:20
+G,1,2;S,3,8,5,C.3.0.2.R.f.0.0~C.3.8.1.R.f.1.0,1,example_file.go:20
 ```
 ```txt
-S,4,5,4,C.4.0.3.R.f.0.1~C.4.0.2.R.f.0.0~D,example_file.go:8;C,6,7,1,S,1,0,example_file.go:17
+S,4,5,4,C.4.0.3.R.f.0.1~C.4.0.2.R.f.0.0~D,-1,example_file.go:8;C,6,7,1,S,1,0,example_file.go:17
 ```
 
 ## Implementation

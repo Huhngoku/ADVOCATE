@@ -44,7 +44,7 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 	}
 
 	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
-		caseElements + "," + file + ":" + intToString(line)
+		caseElements + ",0," + file + ":" + intToString(line)
 
 	return insertIntoTrace(elem)
 }
@@ -67,7 +67,8 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	elem := currentGoRoutine().getElement(index)
 	timer := GetNextTimeStep()
 
-	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
+	// split into S,[tpre] - [tPost] - [id] - [cases] - [chosenIndex] - [file:line]
+	split := splitStringAtCommas(elem, []int{2, 3, 4, 5, 6})
 
 	split[1] = uint64ToString(timer) // set tpost of select
 
@@ -101,6 +102,7 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	}
 
 	split[3] = mergeStringSep(cases, "~")
+	split[4] = uint32ToString(uint32(chosenIndex))
 	elem = mergeString(split)
 
 	currentGoRoutine().updateElement(index, elem)
@@ -136,7 +138,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	_, file, line, _ := Caller(2)
 
 	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
-		caseElements + "~d," + file + ":" + intToString(line)
+		caseElements + "~d,0," + file + ":" + intToString(line)
 
 	return insertIntoTrace(elem)
 }
@@ -156,12 +158,8 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index)
 
-	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})
-	println(split[0])
-	println(split[1])
-	println(split[2])
-	println(split[3])
-	println(split[4])
+	// split into S,[tpre] - [tPost] - [id] - [cases] - [chosenIndex] - [file:line]
+	split := splitStringAtCommas(elem, []int{2, 3, 4, 5, 6})
 
 	// update tPost
 	split[1] = uint64ToString(timer)
@@ -181,8 +179,10 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 			chosenCaseSplit[5] = uint64ToString(c.numberRecv)
 		}
 		cases[0] = mergeStringSep(chosenCaseSplit, ".")
+		split[4] = "0"
 	} else { // default case
 		cases[1] = "D"
+		split[4] = "-1"
 	}
 	split[3] = mergeStringSep(cases, "~")
 

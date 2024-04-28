@@ -66,10 +66,10 @@ func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tID
 	for m := range lockSet[routineSend] {
 		_, ok1 := mostRecentAcquire[routineRevc][m]
 		_, ok2 := mostRecentAcquire[routineSend][m]
-		if ok1 && ok2 && mostRecentAcquire[routineSend][m].tID != mostRecentAcquire[routineRevc][m].tID {
+		if ok1 && ok2 && mostRecentAcquire[routineSend][m].TID != mostRecentAcquire[routineRevc][m].TID {
 			// found possible mixed deadlock
 			found := "Possible mixed deadlock:\n"
-			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].tID + "\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
+			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].TID + "\t\t" + mostRecentAcquire[routineRevc][m].TID + "\n"
 			found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
 
 			logging.Result(found, logging.CRITICAL)
@@ -79,10 +79,10 @@ func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tID
 	for m := range lockSet[routineRevc] {
 		_, ok1 := mostRecentAcquire[routineRevc][m]
 		_, ok2 := mostRecentAcquire[routineSend][m]
-		if ok1 && ok2 && mostRecentAcquire[routineSend][m].tID != mostRecentAcquire[routineRevc][m].tID {
+		if ok1 && ok2 && mostRecentAcquire[routineSend][m].TID != mostRecentAcquire[routineRevc][m].TID {
 			// found possible mixed deadlock
 			found := "Possible mixed deadlock:\n"
-			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].tID + "\t\t" + mostRecentAcquire[routineRevc][m].tID + "\n"
+			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].TID + "\t\t" + mostRecentAcquire[routineRevc][m].TID + "\n"
 			found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
 
 			logging.Result(found, logging.CRITICAL)

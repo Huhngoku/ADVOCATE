@@ -3,8 +3,8 @@ package analysis
 import "analyzer/clock"
 
 type VectorClockTID struct {
-	vc  clock.VectorClock
-	tID string
+	Vc  clock.VectorClock
+	TID string
 }
 
 type VectorClockTID2 struct {
@@ -35,12 +35,12 @@ var (
 	lastRecvRoutine = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
 
 	// most recent send, used for detection of send on closed
-	hasSend        = make(map[int]bool)           // id -> bool
-	mostRecentSend = make(map[int]VectorClockTID) // id -> vcTID
+	hasSend        = make(map[int]bool)                   // id -> bool
+	mostRecentSend = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
 
 	// most recent send, used for detection of received on closed
-	hasReceived       = make(map[int]bool)           // id -> bool
-	mostRecentReceive = make(map[int]VectorClockTID) // id -> vcTID
+	hasReceived       = make(map[int]bool)                   // id -> bool
+	mostRecentReceive = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
 
 	// vector clock for each buffer place in vector clock
 	// the map key is the channel id. The slice is used for the buffer positions

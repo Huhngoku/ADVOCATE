@@ -451,6 +451,8 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					if fields[2] == "0" {
 						blocked = true
 					}
+				case "A":
+					// do nothing
 
 				default:
 					panic("Unknown operation " + fields[0] + " in line " + elem + " in file " + fileName + ".")

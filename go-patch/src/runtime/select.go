@@ -293,11 +293,12 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		c = cas.c
 
 		// ADVOCATE-CHANGE-START
-		if replayEnabled {
-			if casi != replayElem.SelIndex {
-				continue
-			}
-		}
+		// TODO: can this be fixed?
+		// if replayEnabled {
+		// 	if casi != replayElem.SelIndex {
+		// 		continue
+		// 	}
+		// }
 		// ADVOCATE-CHANGE-END
 
 		if casi >= nsends {

@@ -12,7 +12,7 @@ A := "A,"tpre","addr","opA                                      (element for ato
 M := "M,"tpre","tpost","id","rw","opM","suc","pos               (element for operation on sync (rw)mutex)
 W := "W,"tpre","tpost","id","opW","delta","val","pos            (element for operation on sync wait group)
 C := "C,"tpre","tpost","id","opC","cl",oId","qSize","pos        (element for operation on channel)
-S := "S,"tpre","tpost","id","cases","pos                        (element for select)
+S := "S,"tpre","tpost","id","cases","selIndex","pos             (element for select)
 O := "O,"tpre",tpost","id","suco","pos                          (element for once)
 N := "N,"tpre",tpost","id","opN","pos                           (element for conditional)
 X := "X,"tpre","se                                              (start/stop signal, only in rewritten trace)
@@ -39,6 +39,7 @@ case := "C."tpre"."tpost"."id"."opC"."cl".oId"."qSize" | "d" | "D"     (case in 
 suco := t | f                                                   (true if function in once was executed, false if not)
 cId := ℕ                                                        (id of channel in select case) 
 opN := "W" | "S" | "B"                                          (operation for conditional: Wait, Signal, Broadcast)
+selIndex := ℕ | -1                                              (internal index for the selected select case)
 se := "s" | "e"                                                 (signalizes wether X is start or end)
 ```
 
