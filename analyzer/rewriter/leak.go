@@ -19,11 +19,6 @@ import (
  *  - mutex operation without a post event
  *  - waitgroup operation without a post event
  *  - cond operation without a post event
- * TODO:
- *  - implement rewriteChannelLeak
- *  - implement rewriteWaitGroupLeak -> not possible????
- *  - implement rewriteCondLeak
- *  - look at stuck select
  */
 
 // =============== Channel/Select ====================
