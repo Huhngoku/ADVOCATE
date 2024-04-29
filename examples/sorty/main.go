@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	if false {
+	if true {
 		// init tracing
 		advocate.InitTracing(0)
 		defer advocate.Finish()

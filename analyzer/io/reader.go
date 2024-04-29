@@ -88,7 +88,7 @@ func CreateTraceFromFile(filePath string, routine int, maxTokenSize int) (int, e
 		if err := scanner.Err(); err != nil {
 			if err == bufio.ErrTooLong {
 				maxTokenSize *= 2 // max buffer was to short, restart
-				println("Increase max file size to " + strconv.Itoa(maxTokenSize) + "MB")
+				// println("Increase max file size to " + strconv.Itoa(maxTokenSize) + "MB")
 			} else {
 				return maxTokenSize, err
 			}

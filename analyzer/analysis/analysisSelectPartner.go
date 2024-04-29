@@ -19,7 +19,7 @@ func CheckForSelectCaseWithoutPartner() {
 				continue
 			}
 
-			if c1.id != c2.id || c1.vcTID.tID == c2.vcTID.tID || c1.send == c2.send {
+			if c1.id != c2.id || c1.vcTID.TID == c2.vcTID.TID || c1.send == c2.send {
 				continue
 			}
 
@@ -27,7 +27,7 @@ func CheckForSelectCaseWithoutPartner() {
 				c1, c2 = c2, c1
 			}
 
-			hb := clock.GetHappensBefore(c1.vcTID.vc, c2.vcTID.vc)
+			hb := clock.GetHappensBefore(c1.vcTID.Vc, c2.vcTID.Vc)
 			found := false
 			if c1.buffered && (hb == clock.Concurrent || hb == clock.After) {
 				found = true
@@ -49,7 +49,7 @@ func CheckForSelectCaseWithoutPartner() {
 		}
 
 		logging.Result("Possible select case without partner:\n\tselect: "+
-			c.vcTID.tID+"\n\t\n", logging.WARNING)
+			c.vcTID.TID+"\n\t\n", logging.WARNING)
 	}
 }
 
@@ -77,21 +77,27 @@ func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
 		} else {
 			// not select cases
 			if send {
-				if possiblePartner, ok := mostRecentReceive[id]; ok {
-					hb := clock.GetHappensBefore(vc, possiblePartner.vc)
-					if buffered && (hb == clock.Concurrent || hb == clock.Before) {
-						found = true
-					} else if !buffered && hb == clock.Concurrent {
-						found = true
+				for _, mrr := range mostRecentReceive {
+					if possiblePartner, ok := mrr[id]; ok {
+						hb := clock.GetHappensBefore(vc, possiblePartner.Vc)
+						if buffered && (hb == clock.Concurrent || hb == clock.Before) {
+							found = true
+							break
+						} else if !buffered && hb == clock.Concurrent {
+							found = true
+							break
+						}
 					}
 				}
 			} else { // recv
-				if possiblePartner, ok := mostRecentSend[id]; ok {
-					hb := clock.GetHappensBefore(vc, possiblePartner.vc)
-					if buffered && (hb == clock.Concurrent || hb == clock.After) {
-						found = true
-					} else if !buffered && hb == clock.Concurrent {
-						found = true
+				for _, mrs := range mostRecentSend {
+					if possiblePartner, ok := mrs[id]; ok {
+						hb := clock.GetHappensBefore(vc, possiblePartner.Vc)
+						if buffered && (hb == clock.Concurrent || hb == clock.After) {
+							found = true
+						} else if !buffered && hb == clock.Concurrent {
+							found = true
+						}
 					}
 				}
 			}
@@ -118,11 +124,11 @@ func CheckForSelectCaseWithoutPartnerChannel(id int, vc clock.VectorClock, tID s
 	send bool, buffered bool) {
 
 	for i, c := range selectCases {
-		if c.partner || c.id != id || c.send == send || c.vcTID.tID == tID {
+		if c.partner || c.id != id || c.send == send || c.vcTID.TID == tID {
 			continue
 		}
 
-		hb := clock.GetHappensBefore(vc, c.vcTID.vc)
+		hb := clock.GetHappensBefore(vc, c.vcTID.Vc)
 		found := false
 		if send {
 			if buffered && (hb == clock.Concurrent || hb == clock.Before) {
@@ -157,7 +163,7 @@ func CheckForSelectCaseWithoutPartnerClose(id int, vc clock.VectorClock) {
 			continue
 		}
 
-		hb := clock.GetHappensBefore(vc, c.vcTID.vc)
+		hb := clock.GetHappensBefore(vc, c.vcTID.Vc)
 		found := false
 		if c.buffered && (hb == clock.Concurrent || hb == clock.After) {
 			found = true

@@ -38,15 +38,23 @@ func WaitForReplayFinish() {
 }
 
 func writeTraceIfFull() {
+	var m runtime.MemStats
+	var stat syscall.Sysinfo_t
+	err := syscall.Sysinfo(&stat)
+	if err != nil {
+		panic(err)
+	}
+	totalRAM := stat.Totalram
 	for {
 		time.Sleep(5 * time.Second)
 		// get the amount of free space on ram
-		var stat syscall.Sysinfo_t
-		err := syscall.Sysinfo(&stat)
-		if err != nil {
-			panic(err)
-		}
-		if stat.Freeram*5 < stat.Totalram {
+		runtime.ReadMemStats(&m)
+		heap := m.Alloc
+		stack := m.StackSys
+		freeRam := stat.Totalram - heap - stack
+		// println(toGB(heap), toGB(stack), toGB(freeRam), toGB(stat.Totalram/5))
+		if freeRam < totalRAM/5 {
+			println("Memory full")
 			cleanTrace()
 			time.Sleep(15 * time.Second)
 		}
@@ -58,9 +66,13 @@ func writeTraceIfFull() {
 	}
 }
 
+func toGB(bytes uint64) float64 {
+	return float64(bytes) / 1024 / 1024 / 1024
+}
+
 // BUG: crashes bug
 func cleanTrace() {
-	// println("Cleaning trace")
+	println("Cleaning trace")
 	// // stop new element from been added to the trace
 	// runtime.BlockTrace()
 	// writeToTraceFiles()
@@ -73,15 +85,12 @@ func cleanTrace() {
  * Write the trace to a set of files. The traces are written into a folder
  * with name trace. For each routine, a file is created. The file is named
  * trace_routineId.log. The trace of the routine is written into the file.
- * Args:
- * 	- remove: If true, and a file with the same name already exists, the file is removed, before the trace is written.
- *      If false, the trace is appended to the file.
  */
 func writeToTraceFiles() {
 	numRout := runtime.GetNumberOfRoutines()
 	for i := 1; i <= numRout; i++ {
 		// write the trace to the file
-		writeToTraceFile(i) // TODO: make this parallel
+		writeToTraceFile(i)
 	}
 }
 
@@ -103,7 +112,7 @@ func writeToTraceFile(routine int) {
 
 	// get the runtime to send the trace
 	advocateChan := make(chan string)
-	go func() { // TODO: do not record this routines or
+	go func() {
 		runtime.TraceToStringByIDChannel(routine, advocateChan)
 		close(advocateChan)
 	}()
@@ -442,6 +451,8 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					if fields[2] == "0" {
 						blocked = true
 					}
+				case "A":
+					// do nothing
 
 				default:
 					panic("Unknown operation " + fields[0] + " in line " + elem + " in file " + fileName + ".")
@@ -475,8 +486,6 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	return routineID, replayData
 }
 
-// TODO: swap timer for rwmutix.Trylock
-// TODO: LOCAL
 func swapTimerRwMutex(op string, time int, file string, line int, replayData *runtime.AdvocateReplayTrace) int {
 	if op == "L" {
 		if !strings.HasSuffix(file, "sync/rwmutex.go") || line != 266 {

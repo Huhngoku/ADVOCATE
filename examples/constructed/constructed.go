@@ -1089,28 +1089,27 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
-
 	c := make(chan int, 0)
 	d := make(chan int, 0)
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
 		select {
 		case <-c:
-			println("C")
 		case <-d:
-			println("D")
 		}
-		println("Select")
 	}()
 
 	go func() {
-		<-c
+		c <- 1
 	}()
 
-	c <- 1
+	time.Sleep(100 * time.Millisecond)
+	select {
+	case c <- 1:
+	case d <- 1:
+	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
 }
 
@@ -1198,7 +1197,7 @@ func main() {
 
 	if replay == nil || !*replay {
 		// init tracing
-		advocate.InitTracing(-1)
+		advocate.InitTracing(0)
 		defer advocate.Finish()
 	} else {
 		// init replay

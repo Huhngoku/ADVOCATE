@@ -1,95 +1,8 @@
 package runtime
 
-type advocateChannelElement struct {
-	id     uint64    // id of the channel
-	op     Operation // operation
-	qSize  uint32    // size of the channel, 0 for unbuffered
-	opID   uint64    // id of the operation
-	file   string    // file where the operation was called
-	line   int       // line where the operation was called
-	tPre   uint64    // global timer before the operation
-	tPost  uint64    // global timer after the operation
-	closed bool      // true if the channel operation was finished, because the channel was closed at another routine
-}
-
-func (elem advocateChannelElement) isAdvocateTraceElement() {}
-
-/*
- * Get a string representation of the element
- * Return:
- * 	string representation of the element "C,'tPre','tPost','id','op','pId','file':'line'"
- *    'tPre' (number): global timer before the operation
- *    'tPost' (number): global timer after the operation
- *    'id' (number): id of the channel
- *	  'op' (S/R/C): S if it is a send, R if it is a receive, C if it is a close
- *	  'pId' (number): id of the channel with witch the communication took place
- *    'file' (string): file where the operation was called
- *    'line' (number): line where the operation was called
- */
-func (elem advocateChannelElement) toString() string {
-	return elem.toStringSep(",", true)
-}
-
-/*
- * Get the operation
- */
-func (elem advocateChannelElement) getOperation() Operation {
-	return elem.op
-}
-
-/*
- * Get the file
- */
-func (elem advocateChannelElement) getFile() string {
-	return elem.file
-}
-
-/*
- * Get the line
- */
-func (elem advocateChannelElement) getLine() int {
-	return elem.line
-}
-
-/*
-* Get a string representation of the element given a separator
-* Args:
-* 	sep: separator to use
-* 	showPos: true if the position of the operation should be shown
-* Return:
-* 	string representation of the element
- */
-func (elem advocateChannelElement) toStringSep(sep string, showPos bool) string {
-	res := "C" + sep
-	res += uint64ToString(elem.tPre) + sep + uint64ToString(elem.tPost) + sep
-	res += uint64ToString(elem.id) + sep
-
-	switch elem.op {
-	case OperationChannelSend:
-		res += "S"
-	case OperationChannelRecv:
-		res += "R"
-	case OperationChannelClose:
-		res += "C"
-	default:
-		panic("Unknown channel operation" + intToString(int(elem.op)))
-	}
-
-	if elem.closed {
-		res += sep + "t"
-	} else {
-		res += sep + "f"
-	}
-
-	res += sep + uint64ToString(elem.opID)
-	res += sep + uint32ToString(elem.qSize)
-	if showPos {
-		res += sep + elem.file + ":" + intToString(elem.line)
-	}
-	return res
-}
-
 var advocateCounterAtomic uint64
+
+// MARK: Pre
 
 /*
  * AdvocateChanSendPre adds a channel send to the trace.
@@ -107,17 +20,16 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
 		advocateCounterAtomic++
-		lock(&advocateAtomicMapRoutineLock)
-		advocateAtomicMapRoutine[advocateCounterAtomic] = GetRoutineID()
-		unlock(&advocateAtomicMapRoutineLock)
-		AdvocateAtomic(advocateCounterAtomic)
+		AdvocateAtomicPre(advocateCounterAtomic)
 
 		// they are not recorded in the trace
 		return -1
 	}
-	timer := GetAdvocateCounter()
-	elem := advocateChannelElement{id: id, op: OperationChannelSend,
-		opID: opID, file: file, line: line, tPre: timer, qSize: uint32(qSize)}
+	timer := GetNextTimeStep()
+	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",S,f," +
+		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
+		file + ":" + intToString(line)
+
 	return insertIntoTrace(elem)
 }
 
@@ -152,11 +64,14 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 		return -1
 	}
 
-	timer := GetAdvocateCounter()
-	elem := advocateChannelElement{id: id, op: OperationChannelRecv,
-		opID: opID, file: file, line: line, tPre: timer, qSize: uint32(qSize)}
+	timer := GetNextTimeStep()
+	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",R,f," +
+		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
+		file + ":" + intToString(line)
 	return insertIntoTrace(elem)
 }
+
+// MARK: Close
 
 /*
  * AdvocateChanClose adds a channel close to the trace
@@ -167,11 +82,14 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
  */
 func AdvocateChanClose(id uint64, qSize uint) int {
 	_, file, line, _ := Caller(2)
-	timer := GetAdvocateCounter()
-	elem := advocateChannelElement{id: id, op: OperationChannelClose,
-		file: file, line: line, tPre: timer, tPost: timer, qSize: uint32(qSize)}
+	timer := uint64ToString(GetNextTimeStep())
+	elem := "C," + timer + "," + timer + "," + uint64ToString(id) + ",C,f,0," +
+		uint32ToString(uint32(qSize)) + "," + file + ":" + intToString(line)
+
 	return insertIntoTrace(elem)
 }
+
+// MARK: Post
 
 /*
  * AdvocateChanPost sets the operation as successfully finished
@@ -183,8 +101,12 @@ func AdvocateChanPost(index int) {
 		return
 	}
 
-	elem := currentGoRoutine().getElement(index).(advocateChannelElement)
-	elem.tPost = GetAdvocateCounter()
+	elem := currentGoRoutine().getElement(index)
+
+	split := splitStringAtCommas(elem, []int{2, 3})
+	split[1] = uint64ToString(GetNextTimeStep())
+	elem = mergeString(split)
+
 	currentGoRoutine().updateElement(index, elem)
 }
 
@@ -197,7 +119,12 @@ func AdvocateChanPostCausedByClose(index int) {
 	if index == -1 {
 		return
 	}
-	elem := currentGoRoutine().getElement(index).(advocateChannelElement)
-	elem.closed = true
+
+	elem := currentGoRoutine().getElement(index)
+	split := splitStringAtCommas(elem, []int{2, 3, 5, 6})
+	split[1] = uint64ToString(GetNextTimeStep())
+	split[3] = "t"
+	elem = mergeString(split)
+
 	currentGoRoutine().updateElement(index, elem)
 }

@@ -17,7 +17,7 @@ var projectPath string
 type AdvocateRoutine struct {
 	id    uint64
 	G     *g
-	Trace []advocateTraceElement
+	Trace []string
 	lock  *mutex
 }
 
@@ -30,7 +30,7 @@ type AdvocateRoutine struct {
  */
 func newAdvocateRoutine(g *g) *AdvocateRoutine {
 	routine := &AdvocateRoutine{id: GetAdvocateRoutineID(), G: g,
-		Trace: make([]advocateTraceElement, 0),
+		Trace: make([]string, 0),
 		lock:  &mutex{}}
 
 	lock(&AdvocateRoutinesLock)
@@ -52,8 +52,7 @@ func newAdvocateRoutine(g *g) *AdvocateRoutine {
  * Return:
  * 	the index of the element in the trace
  */
-// TODO: make the writing during execution working
-func (gi *AdvocateRoutine) addToTrace(elem advocateTraceElement) int {
+func (gi *AdvocateRoutine) addToTrace(elem string) int {
 	// do nothing if tracer disabled
 	if advocateDisabled {
 		return -1
@@ -74,14 +73,14 @@ func (gi *AdvocateRoutine) addToTrace(elem advocateTraceElement) int {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	if gi.Trace == nil {
-		gi.Trace = make([]advocateTraceElement, 0)
+		gi.Trace = make([]string, 0)
 	}
 
 	gi.Trace = append(gi.Trace, elem)
 	return len(gi.Trace) - 1
 }
 
-func (gi *AdvocateRoutine) getElement(index int) advocateTraceElement {
+func (gi *AdvocateRoutine) getElement(index int) string {
 	lock(gi.lock)
 	defer unlock(gi.lock)
 	return gi.Trace[index]
@@ -93,7 +92,7 @@ func (gi *AdvocateRoutine) getElement(index int) advocateTraceElement {
  * 	index: the index of the element to update
  * 	elem: the new element
  */
-func (gi *AdvocateRoutine) updateElement(index int, elem advocateTraceElement) {
+func (gi *AdvocateRoutine) updateElement(index int, elem string) {
 	if advocateDisabled {
 		return
 	}

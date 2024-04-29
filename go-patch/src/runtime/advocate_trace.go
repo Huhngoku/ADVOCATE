@@ -53,13 +53,13 @@ const (
 	none
 )
 
-type advocateTraceElement interface {
-	isAdvocateTraceElement()
-	toString() string
-	getOperation() Operation
-	getFile() string
-	getLine() int
-}
+// type advocateTraceElement interface {
+// 	isAdvocateTraceElement()
+// 	toString() string
+// 	getOperation() Operation
+// 	getFile() string
+// 	getLine() int
+// }
 
 type advocateAtomicMapElem struct {
 	addr      uint64
@@ -68,11 +68,9 @@ type advocateAtomicMapElem struct {
 
 var advocateDisabled = true
 var advocateAtomicMap = make(map[uint64]advocateAtomicMapElem)
-var advocateAtomicMapRoutine = make(map[uint64]uint64)
 var advocateAtomicMapToID = make(map[uint64]uint64)
 var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
-var advocateAtomicMapRoutineLock mutex
 var advocateAtomicMapToIDLock mutex
 
 var advocateTraceWritingDisabled = false
@@ -88,7 +86,7 @@ func CurrentTraceToString() string {
 		if i != 0 {
 			res += ";"
 		}
-		res += elem.toString()
+		res += elem
 	}
 
 	return res
@@ -101,13 +99,13 @@ func CurrentTraceToString() string {
  * Return:
  * 	string representation of the trace
  */
-func traceToString(trace *[]advocateTraceElement) string {
+func traceToString(trace *[]string) string {
 	res := ""
 	for i, elem := range *trace {
 		if i != 0 {
 			res += ";"
 		}
-		res += elem.toString()
+		res += elem
 	}
 	return res
 }
@@ -119,7 +117,7 @@ func traceToString(trace *[]advocateTraceElement) string {
  * Return:
  * 	index of the element in the trace
  */
-func insertIntoTrace(elem advocateTraceElement) int {
+func insertIntoTrace(elem string) int {
 	return currentGoRoutine().addToTrace(elem)
 }
 
@@ -140,7 +138,6 @@ func PrintTrace() {
  * 	bool: true if the routine exists, false otherwise
  */
 func TraceToStringByID(id uint64) (string, bool) {
-	println("TraceToStringById", id)
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
 	if routine, ok := AdvocateRoutines[id]; ok {
@@ -169,7 +166,11 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 				res += ";"
 			}
 
-			res += elem.toString()
+			if elem[0] == 'A' {
+				elem = addAtomicInfo(elem)
+			}
+
+			res += elem
 
 			if i%1000 == 0 {
 				c <- res
@@ -246,12 +247,8 @@ func InitAdvocate(size int) {
 
 	go func() {
 		for atomic := range c {
-			lock(&advocateAtomicMapLock)
-			advocateAtomicMap[atomic.Index] = advocateAtomicMapElem{
-				addr:      atomic.Addr,
-				operation: atomic.Operation,
-			}
-			unlock(&advocateAtomicMapLock)
+			AdvocateAtomicPost(atomic)
+
 			// go func() {
 			// 	WaitForReplayAtomic(atomic.Operation, atomic.Index)
 			// 	atomic.ChanReturn <- true
@@ -312,7 +309,6 @@ func DeleteTrace() {
  * Return:
  * 	bool: true if the operation should be ignored, false otherwise
  */
-// TODO: check if all of them are necessary
 func AdvocateIgnore(operation Operation, file string, line int) bool {
 	if hasSuffix(file, "advocate/advocate.go") ||
 		hasSuffix(file, "advocate/advocate_replay.go") ||
@@ -324,6 +320,10 @@ func AdvocateIgnore(operation Operation, file string, line int) bool {
 	}
 
 	if hasSuffix(file, "syscall/env_unix.go") {
+		return true
+	}
+
+	if hasSuffix(file, "runtime/signal_unix.go") {
 		return true
 	}
 

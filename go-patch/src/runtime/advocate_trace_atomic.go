@@ -1,31 +1,52 @@
 package runtime
 
-type advocateAtomicElement struct {
-	timer     uint64 // global timer
-	index     uint64 // index of the atomic event in advocateAtomicMap
-	operation int    // type of operation
-}
-
-func (elem advocateAtomicElement) isAdvocateTraceElement() {}
+import at "runtime/internal/atomic"
 
 /*
- * Get a string representation of the element
- * Return:
- * 	string representation of the element "A,'addr'"
- *    'addr' (number): address of the atomic variable
+ * Add an atomic operation to the trace
+ * Args:
+ * 	index: index of the atomic event in advocateAtomicMap
  */
-// enum for atomic operation, must be the same as in advocate_atomic.go
-const (
-	LoadOp = iota
-	StoreOp
-	AddOp
-	SwapOp
-	CompSwapOp
-)
+func AdvocateAtomicPre(index uint64) {
+	timer := GetNextTimeStep()
 
-func (elem advocateAtomicElement) toString() string {
+	elem := "A," + uint64ToString(timer) + "," + uint64ToString(index) + ",-"
+
+	// // elem := advocateAtomicElement{index: index, timer: timer}
+	insertIntoTrace(elem)
+}
+
+/*
+ * Update the atomic operation in the trace after received
+ * Args:
+ * 	atomic: atomic operation to add to the trace
+ */
+func AdvocateAtomicPost(atomic at.AtomicElem) {
 	lock(&advocateAtomicMapLock)
-	mapElement := advocateAtomicMap[elem.index]
+	advocateAtomicMap[atomic.Index] = advocateAtomicMapElem{
+		addr:      atomic.Addr,
+		operation: atomic.Operation,
+	}
+	unlock(&advocateAtomicMapLock)
+}
+
+/*
+ * Add the id and operation to an atomic operation
+ * Args:
+ * 	elem: the atomic operation
+ * Return:
+ * 	the atomic operation with the id and operation
+ */
+func addAtomicInfo(elem string) string {
+	split := splitStringAtCommas(elem, []int{2, 3}) // A,[tpre] - id - operation
+	if split[2] != "-" {
+		return elem
+	}
+
+	index := uint64(stringToInt(split[1]))
+
+	lock(&advocateAtomicMapLock)
+	mapElement := advocateAtomicMap[index]
 	unlock(&advocateAtomicMapLock)
 	lock(&advocateAtomicMapToIDLock)
 	if _, ok := advocateAtomicMapToID[mapElement.addr]; !ok {
@@ -35,53 +56,24 @@ func (elem advocateAtomicElement) toString() string {
 	id := advocateAtomicMapToID[mapElement.addr]
 	unlock(&advocateAtomicMapToIDLock)
 
-	res := "A," + uint64ToString(elem.timer) + "," +
-		uint64ToString(id) + ","
+	operation := ""
 	switch mapElement.operation {
-	case LoadOp:
-		res += "L"
-	case StoreOp:
-		res += "S"
-	case AddOp:
-		res += "A"
-	case SwapOp:
-		res += "W"
-	case CompSwapOp:
-		res += "C"
+	case at.LoadOp:
+		operation = "L"
+	case at.StoreOp:
+		operation = "S"
+	case at.AddOp:
+		operation = "A"
+	case at.SwapOp:
+		operation = "W"
+	case at.CompSwapOp:
+		operation = "C"
 	default:
-		res += "U"
+		operation = "U"
 	}
-	return res
-}
 
-/*
- * Get the operation
- */
-func (elem advocateAtomicElement) getOperation() Operation {
-	return OperationAtomic
-}
+	split[1] = uint64ToString(id)
+	split[2] = operation
 
-/*
- * Get the file
- */
-func (elem advocateAtomicElement) getFile() string {
-	return ""
-}
-
-/*
- * Get the line
- */
-func (elem advocateAtomicElement) getLine() int {
-	return 0
-}
-
-/*
- * Add an atomic operation to the trace
- * Args:
- * 	index: index of the atomic event in advocateAtomicMap
- */
-func AdvocateAtomic(index uint64) {
-	timer := GetAdvocateCounter()
-	elem := advocateAtomicElement{index: index, timer: timer}
-	insertIntoTrace(elem)
+	return mergeString(split)
 }

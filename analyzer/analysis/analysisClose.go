@@ -17,30 +17,34 @@ Args:
 func checkForCommunicationOnClosedChannel(id int, pos string) {
 	// check if there is an earlier send, that could happen concurrently to close
 	if analysisCases["sendOnClosed"] && hasSend[id] {
-		logging.Debug("Check for possible send on closed channel "+
-			strconv.Itoa(id)+" with "+
-			mostRecentSend[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
-			logging.DEBUG)
-		happensBefore := clock.GetHappensBefore(closeData[id].vc, mostRecentSend[id].vc)
-		if happensBefore == clock.Concurrent {
-			found := "Possible send on closed channel:\n"
-			found += "\tclose: " + pos + "\n"
-			found += "\tsend : " + mostRecentSend[id].tID
-			logging.Result(found, logging.CRITICAL)
+		for _, mrs := range mostRecentSend {
+			logging.Debug("Check for possible send on closed channel "+
+				strconv.Itoa(id)+" with "+
+				mrs[id].Vc.ToString()+" and "+closeData[id].Vc.ToString(),
+				logging.DEBUG)
+			happensBefore := clock.GetHappensBefore(closeData[id].Vc, mrs[id].Vc)
+			if happensBefore == clock.Concurrent {
+				found := "Possible send on closed channel:\n"
+				found += "\tclose: " + pos + "\n"
+				found += "\tsend : " + mrs[id].TID
+				logging.Result(found, logging.CRITICAL)
+			}
 		}
 	}
 	// check if there is an earlier receive, that could happen concurrently to close
 	if analysisCases["receiveOnClosed"] && hasReceived[id] {
-		logging.Debug("Check for possible receive on closed channel "+
-			strconv.Itoa(id)+" with "+
-			mostRecentReceive[id].vc.ToString()+" and "+closeData[id].vc.ToString(),
-			logging.DEBUG)
-		happensBefore := clock.GetHappensBefore(closeData[id].vc, mostRecentReceive[id].vc)
-		if happensBefore == clock.Concurrent || happensBefore == clock.Before {
-			found := "Possible receive on closed channel:\n"
-			found += "\tclose: " + pos + "\n"
-			found += "\trecv : " + mostRecentReceive[id].tID
-			logging.Result(found, logging.WARNING)
+		for _, mrr := range mostRecentReceive {
+			logging.Debug("Check for possible receive on closed channel "+
+				strconv.Itoa(id)+" with "+
+				mrr[id].Vc.ToString()+" and "+closeData[id].Vc.ToString(),
+				logging.DEBUG)
+			happensBefore := clock.GetHappensBefore(closeData[id].Vc, mrr[id].Vc)
+			if happensBefore == clock.Concurrent || happensBefore == clock.Before {
+				found := "Possible receive on closed channel:\n"
+				found += "\tclose: " + pos + "\n"
+				found += "\trecv : " + mrr[id].TID
+				logging.Result(found, logging.WARNING)
+			}
 		}
 	}
 
@@ -64,7 +68,7 @@ func checkForClosedOnClosed(id int, pos string) {
 	if posOld, ok := closeData[id]; ok {
 		found := "Found close on closed channel:\n"
 		found += "\tclose: " + pos + "\n"
-		found += "\tclose: " + posOld.tID
+		found += "\tclose: " + posOld.TID
 		logging.Result(found, logging.CRITICAL)
 	}
 }

@@ -266,18 +266,6 @@ func (ch *TraceElementChannel) getTpost() int {
 // MARK: Setter
 
 /*
-* Set the tpre of the element.
-* Args:
- *   tPre (int): The tpre of the element
-*/
-func (ch *TraceElementChannel) SetTPre(tPre int) {
-	ch.tPre = tPre
-	if ch.tPost != 0 && ch.tPost < tPre {
-		ch.tPost = tPre
-	}
-}
-
-/*
  * Set the partner of the channel operation
  * Args:
  *   partner (*TraceElementChannel): The partner of the channel operation
@@ -287,11 +275,51 @@ func (ch *TraceElementChannel) SetPartner(partner *TraceElementChannel) {
 }
 
 /*
+* Set the tpre of the element.
+* Args:
+ *   tPre (int): The tpre of the element
+*/
+func (ch *TraceElementChannel) SetTPre(tPre int) {
+	ch.tPre = tPre
+	if ch.tPost != 0 && ch.tPost < tPre {
+		ch.tPost = tPre
+	}
+
+	if ch.sel != nil {
+		ch.sel.SetTPre2(tPre)
+	}
+}
+
+/*
+* Set the tpre of the element. Do not set the tpre of the select operation
+* Args:
+ *   tPre (int): The tpre of the element
+*/
+func (ch *TraceElementChannel) SetTPre2(tPre int) {
+	ch.tPre = tPre
+	if ch.tPost != 0 && ch.tPost < tPre {
+		ch.tPost = tPre
+	}
+}
+
+/*
  * Set the tpost of the element.
  * Args:
  *   tPost (int): The tpost of the element
  */
 func (ch *TraceElementChannel) SetTPost(tPost int) {
+	ch.tPost = tPost
+	if ch.sel != nil {
+		ch.sel.SetTPost2(tPost)
+	}
+}
+
+/*
+ * Set the tpost of the element. Do not set the tpost of the select operation
+ * Args:
+ *   tPost (int): The tpost of the element
+ */
+func (ch *TraceElementChannel) SetTPost2(tPost int) {
 	ch.tPost = tPost
 }
 
@@ -303,6 +331,20 @@ func (ch *TraceElementChannel) SetTPost(tPost int) {
 func (ch *TraceElementChannel) SetTSort(tpost int) {
 	ch.SetTPre(tpost)
 	ch.tPost = tpost
+
+	if ch.sel != nil {
+		ch.sel.SetTSort2(tpost)
+	}
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace. Do not set the tpost of the select operation
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (ch *TraceElementChannel) SetTSort2(tpost int) {
+	ch.SetTPre(tpost)
+	ch.tPost = tpost
 }
 
 /*
@@ -312,6 +354,23 @@ func (ch *TraceElementChannel) SetTSort(tpost int) {
  *   tSort (int): The timer of the element
  */
 func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tSort int) {
+	ch.SetTPre(tSort)
+	if ch.tPost != 0 {
+		ch.tPost = tSort
+	}
+
+	if ch.sel != nil {
+		ch.sel.SetTSortWithoutNotExecuted2(tSort)
+	}
+}
+
+/*
+ * Set the timer, that is used for the sorting of the trace, only if the original
+ * value was not 0. Do not set the tpost of the select operation
+ * Args:
+ *   tSort (int): The timer of the element
+ */
+func (ch *TraceElementChannel) SetTSortWithoutNotExecuted2(tSort int) {
 	ch.SetTPre(tSort)
 	if ch.tPost != 0 {
 		ch.tPost = tSort
@@ -417,6 +476,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 						currentVCHb, ch.tPost, false)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
+					analysis.StuckChan(ch.routine, currentVCHb)
 				}
 			}
 
@@ -438,6 +498,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 						currentVCHb, ch.tPost, false)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
+					analysis.StuckChan(ch.routine, currentVCHb)
 				}
 			}
 		case Close:

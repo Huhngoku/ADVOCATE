@@ -15,7 +15,8 @@ We use a counter to represent the global time.
 Each event is annotated with a pre/post counter.
 The pre counter represents the time before the underlying operation is executed.
 The post counter represents the time after the operation could be successfully executed.
-A send communicating with a receive is identified via a unique id.
+
+The following conditions are guaranteed by our tracing scheme:
 
 
 * post >= pre + 1
@@ -271,13 +272,17 @@ wait(t,g) {
 
 ## Channels
 
+
+A send communicating with a receive is identified via a unique id i.
+
+
 Events:
 
 ~~~~
 snd(t,x,i)      -- unbuffered send on x with communication partner i in thread t
 rcv(t,x,i)
 sndB(t,x,i)     -- buffered version, we assume that size(x) denotes the buffer size
-rcvB(t,xi)
+rcvB(t,x,i)
 
 close(t,x)      -- closing a channel
 rcvC(t,x)       -- receive on a closed channel (send on closed fails immediately)
@@ -303,11 +308,11 @@ We drop send(tS,x,k) and rec(tR,x,k) from the trace and carry out the following 
 
 ~~~~
 sndRcvU(tS,tR,x) {
-  inc(Th(tS),tS)
-  inc(Th(tR),tR)
   V = sync(Th(tS), Th(tR))    -- Sync
   Th(tS) = V
   Th(tR) = V
+  inc(Th(tS),tS)
+  inc(Th(tR),tR)
 }
 ~~~~~~~~~
 
@@ -411,12 +416,13 @@ Similarly, we can adapt the (buffered) receive case.
 
 The Go memory model specifies:
 
+
 *The closing of a channel is synchronized before a receive that returns a zero value because the channel is closed. *
 
 The resulting vector clock computations are as follows.
 
 
-Cl(x) records the closing of channel x.
+Cl(x) records the vector clock of the close operation on channel x.
 
 ~~~~
 close(t,x) {
@@ -489,7 +495,7 @@ Events:
 ~~~
 Wait(t, x)          -- Wait
 Signal(t, x)        -- Release on wait
-Broadcast(t, x)     -- Release all 
+Broadcast(t, x)     -- Release all
 ~~~
 
 [Conditional variables description](https://pkg.go.dev/sync#Cond)
@@ -722,9 +728,7 @@ To detect such a situation, we do the following for each wait group:
 We try to find an Add $A$ for each Done $D$,
 such that $A$ is before $D$ and for each $D$ there is a unique $A$.
 We therefore check, if
-$$
-(\forall D\ \exists (D, A): A < D)\ \land\ (\forall i, j\ (D_i \neq D_j \land (D_i, A_i) \land (D_j, A_j)) \Rightarrow A_i \neq A_j) 
-$$
+$$(\forall D\ \exists (D, A): A < D)\ \land\ (\forall i, j\ (D_i \neq D_j \land (D_i, A_i) \land (D_j, A_j)) \Rightarrow A_i \neq A_j)$$
 
 If a done has 
 a delta which not 1, we treat it,as if it would be delta separate adds.
@@ -737,6 +741,7 @@ For each Done $D$, there is an edge to the Add $A$ iff $A < D$.
 We now assume, that each edge has capacity 1 and use the Ford-Fulkerson
 algorithm to find the maximum flow in this graph. A done before add is possible, 
 if this maximum flow is less then the number of done.
+
 
 
 <!-- 1. Reconstruct the trace such that the concurrent done happen directly after 
@@ -850,19 +855,45 @@ marked as having a potential communication partner.
 
 > [!NOTE]
 > #### Status
-> Detection: MOSTLY IMPLEMENTED (no check for possible resolve of stuck mutex, waits or conds yet)\
-> Rewrite:   NOT IMPLEMENTED
+> Detection: IMPLEMENTED\
+> Rewrite:   IMPLEMENTED
 
 A goroutine leak is an indefinitely blocked goroutine.
 
 The [goleak](https://github.com/uber-go/goleak) checks for goroutine leaks.
 
 In our approach, we can identify potential leaks by checking for goroutines
-where the last recorded event is a "pre" event.
+where the last recorded event is a "pre" event (tpost = 0).
 
-1. We could check if there is a potential partner. Can be done based on HB analysis.
+For channel operation, we try to find a possible partner, which is 
+used in the trace reorder to get the operation unstuck. 
 
-2. Reorder the trace so that we can enable the "pre" event.
+For the other operation, no additional analysis besides finding them is done.
+This is done in the following way. For each channel and each routine, 
+the last processed send and receive is recorded (the elements are processed 
+in the order of there execution in the trace).
+If a stuck channel or select element is processed, we check if one of the elements 
+in the last processes send or receives is a possible partner. If a possible 
+partner is found, the stuck element with its partner is added to the 
+analysis results. If no partner can be found, the operation is added to
+a list of stuck channel elements without partner $s$.
+For each non stuck channel or select element, we go through $s$
+to check if the element would be a potential 
+partner for one of the stuck elements. If it is, the element and its partner are
+added to the analysis result and the element is removed from $s$.
+If all elements are processed, we traverse through $s$ and add a result 
+for an stuck channel element without possible partner to the analysis result 
+for each element in $s$.
+
+For a leaking mutex $m$, we add the mutex and the last successful lock of this 
+mutex before $m$ to the analysis result.
+
+For all other stuck elements, we only add the stuck element to the analysis 
+result.
+
+<!-- 1. We could check if there is a potential partner. Can be done based on HB analysis.
+
+2. Reorder the trace so that we can enable the "pre" event. -->
 
 
 ### Analysis Scenario: Cyclic Deadlock

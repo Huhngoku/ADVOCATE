@@ -17,15 +17,15 @@ func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]clock.Ve
 			continue
 		}
 
-		if elem[id].vc.GetClock() == nil {
+		if elem[id].Vc.GetClock() == nil {
 			continue
 		}
 
-		happensBefore := clock.GetHappensBefore(elem[id].vc, vc[routine])
+		happensBefore := clock.GetHappensBefore(elem[id].Vc, vc[routine])
 		if happensBefore == clock.Concurrent {
 			found := "Found concurrent Recv on same channel:\n"
 			found += "\trecv: " + pos + "\n"
-			found += "\trecv : " + lastRecvRoutine[r][id].tID
+			found += "\trecv : " + lastRecvRoutine[r][id].TID
 			logging.Result(found, logging.CRITICAL)
 		}
 	}

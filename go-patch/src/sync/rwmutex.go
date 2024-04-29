@@ -94,7 +94,7 @@ func (rw *RWMutex) RLock() {
 	// this information. advocateIndex is used for AdvocatePost to find the
 	// pre event.
 	advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, true)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateMutexPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
@@ -197,7 +197,7 @@ func (rw *RWMutex) RUnlock() {
 	// AdvocateUnlockPre is used to record the unlocking of a mutex.
 	// AdvocatePost records the successful unlocking of a mutex.
 	advocateIndex := runtime.AdvocateUnlockPre(rw.id, true, true)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateMutexPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
@@ -255,7 +255,7 @@ func (rw *RWMutex) Lock() {
 	// this information. advocateIndex is used for AdvocatePost to find the
 	// pre event.
 	advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, false)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateMutexPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
@@ -367,7 +367,7 @@ func (rw *RWMutex) Unlock() {
 	// For non rw mutexe, the unlock cannot fail. Therefore it is not
 	// strictly necessary to record the post for the unlocking of a mutex.
 	advocateIndex := runtime.AdvocateUnlockPre(rw.id, true, false)
-	defer runtime.AdvocatePost(advocateIndex)
+	defer runtime.AdvocateMutexPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
