@@ -58,11 +58,6 @@ func rewriteUnbufChanLeak(bug bugs.Bug) error {
 		return rewriteUnbufChanLeakSelChan(bug)
 	} // both are select
 	return rewriteUnbufChanLeakSelSel(bug)
-
-	// TODO: if at least one is select
-
-	// return errors.New("Rewriting trace for select without partner is not completely implemented yet")
-
 }
 
 /*
