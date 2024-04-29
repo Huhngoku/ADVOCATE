@@ -121,13 +121,13 @@ func boolToString(b bool) string {
  */
 func splitStringAtSeparator(s string, sep rune, indices []int) []string {
 	var start int
-	result := make([]string, 0, len(indices)+1)
+	result := make([]string, 0)
 
 	if indices == nil {
-		for i, r := range s[start:] {
+		for i, r := range s {
 			if r == sep {
-				result = append(result, s[start:start+i])
-				start += i + 1
+				result = append(result, s[start:i])
+				start = i + 1
 			}
 		}
 	} else {
