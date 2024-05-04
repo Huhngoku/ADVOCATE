@@ -2,6 +2,7 @@ package advocate
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -9,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
+	"time"
 )
 
 // ============== Recording =================
@@ -34,38 +37,39 @@ func WaitForReplayFinish() {
 	runtime.WaitForReplayFinish()
 }
 
+/*
+ * Ignore atomics if there is not enough memory
+ * The function checks the available memory every 5 seconds.
+ * If the available memory is less than 10%, the recorder will ignore atomic operations.
+ * If there are less then 1% available, the program will panic.
+ */
 func removeAtomicsIfFull() {
+	var stat syscall.Sysinfo_t
 
+	for {
+		time.Sleep(2 * time.Second)
+		err := syscall.Sysinfo(&stat)
+		if err != nil {
+			panic(err)
+		}
+
+		// TODO: For some readons, the memory is not equal to the memory in the system monitor.
+		freeRAM := toGB(stat.Freeram)
+		totalRAM := toGB(stat.Totalram)
+		perc := freeRAM / totalRAM
+
+		fmt.Println(freeRAM, totalRAM, perc, 1-perc)
+
+		if perc < 0.01 {
+			panic("Not enough memory.")
+		}
+
+		if !runtime.GetIgnoreAtomicOperations() && !runtime.GetAdvocateDisabled() && perc < 0.1 {
+			println("Not enough memory. Ignore atomic operations.")
+			runtime.IgnoreAtomicOperations()
+		}
+	}
 }
-
-// func writeTraceIfFull() {
-// 	var m runtime.MemStats
-// 	var stat syscall.Sysinfo_t
-// 	err := syscall.Sysinfo(&stat)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	totalRAM := stat.Totalram
-// 	for {
-// 		time.Sleep(5 * time.Second)
-// 		// get the amount of free space on ram
-// 		runtime.ReadMemStats(&m)
-// 		heap := m.Alloc
-// 		stack := m.StackSys
-// 		freeRam := stat.Totalram - heap - stack
-// 		// println(toGB(heap), toGB(stack), toGB(freeRam), toGB(stat.Totalram/5))
-// 		if freeRam < totalRAM/5 {
-// 			println("Memory full")
-// 			// cleanTrace()
-// 			time.Sleep(15 * time.Second)
-// 		}
-
-// 		// end if background memory test is not running anymore
-// 		if !backgroundMemoryTestRunning {
-// 			break
-// 		}
-// 	}
-// }
 
 func toGB(bytes uint64) float64 {
 	return float64(bytes) / 1024 / 1024 / 1024
@@ -95,7 +99,6 @@ func writeToTraceFiles() {
 		wg.Add(1)
 		go writeToTraceFile(i, &wg)
 	}
-
 
 	wg.Wait()
 }
@@ -190,8 +193,15 @@ func InitTracing(size int) {
 	signal.Notify(interuptSignal, os.Interrupt)
 	go func() {
 		<-interuptSignal
-		Finish()
-		os.Exit(0)
+		println("\nCancel Run. Write trace. Cancel again to force exit.")
+		go func() {
+			<-interuptSignal
+			os.Exit(1)
+		}()
+		if !runtime.GetAdvocateDisabled() {
+			Finish()
+		}
+		os.Exit(1)
 	}()
 
 	// go writeTraceIfFull()

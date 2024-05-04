@@ -344,6 +344,15 @@ func DisableTrace() {
 	advocateDisabled = true
 }
 
+/*
+ * GetAdvocateDisabled returns if the trace collection is disabled
+ * Return:
+ * 	true if the trace collection is disabled, false otherwise
+ */
+func GetAdvocateDisabled() bool {
+	return advocateDisabled
+}
+
 // /*
 //  * BockTrace blocks the trace collection
 //  * Resume using UnblockTrace
