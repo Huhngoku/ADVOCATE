@@ -73,7 +73,7 @@ var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
 var advocateAtomicMapToIDLock mutex
 
-var advocateTraceWritingDisabled = false
+// var advocateTraceWritingDisabled = false
 
 /*
  * Return a string representation of the trace
@@ -102,6 +102,7 @@ func CurrentTraceToString() string {
 func traceToString(trace *[]string, atomics *[]string) string {
 	res := ""
 
+	println("TraceToString", len(*trace), len(*atomics), len(*trace)+len(*atomics))
 	if !atomicRecordingDisabled {
 		traceIndex := 0
 		atomicIndex := 0
@@ -203,25 +204,57 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 
 	if routine, ok := AdvocateRoutines[uint64(id)]; ok {
 		unlock(&AdvocateRoutinesLock)
-		c <- traceToString(&routine.Trace, &routine.Atomics)
-		// res := ""
-		// for i, elem := range routine.Trace {
-		// 	if i != 0 {
-		// 		res += ";"
-		// 	}
+		res := ""
 
-		// 	if elem[0] == 'A' {
-		// 		elem = addAtomicInfo(elem)
-		// 	}
+		if !atomicRecordingDisabled {
+			traceIndex := 0
+			atomicIndex := 0
 
-		// 	res += elem
+			// merge trace and atomics based on the time
+			for i := 0; i < len(routine.Trace)+len(routine.Atomics); i++ {
+				if i != 0 {
+					res += ";"
+				}
+				if traceIndex < len(routine.Trace) && atomicIndex < len(routine.Atomics) {
+					traceTime := getTpre(routine.Trace[traceIndex])
+					atomicTime := getTpre(routine.Atomics[atomicIndex])
+					if traceTime < atomicTime {
+						res += (routine.Trace)[traceIndex]
+						traceIndex++
+					} else {
+						res += addAtomicInfo(routine.Atomics[atomicIndex])
+						atomicIndex++
+					}
+				} else if traceIndex < len(routine.Trace) {
+					res += (routine.Trace)[traceIndex]
+					traceIndex++
+				} else {
+					res += addAtomicInfo(routine.Atomics[atomicIndex])
+					atomicIndex++
+				}
 
-		// 	if i%1000 == 0 {
-		// 		c <- res
-		// 		res = ""
-		// 	}
-		// }
-		// c <- res
+				if i%1000 == 0 {
+					c <- res
+					res = ""
+				}
+			}
+			c <- res
+			return
+		}
+
+		// if atomic recording is disabled
+		for i, elem := range routine.Trace {
+			if i != 0 {
+				res += ";"
+			}
+			res += elem
+
+			if i%1000 == 0 {
+				c <- res
+				res = ""
+			}
+		}
+		c <- res
 	} else {
 		unlock(&AdvocateRoutinesLock)
 	}
@@ -311,21 +344,21 @@ func DisableTrace() {
 	advocateDisabled = true
 }
 
-/*
- * BockTrace blocks the trace collection
- * Resume using UnblockTrace
- */
-func BlockTrace() {
-	advocateTraceWritingDisabled = true
-}
+// /*
+//  * BockTrace blocks the trace collection
+//  * Resume using UnblockTrace
+//  */
+// func BlockTrace() {
+// 	advocateTraceWritingDisabled = true
+// }
 
-/*
- * UnblockTrace resumes the trace collection
- * Block using BlockTrace
- */
-func UnblockTrace() {
-	advocateTraceWritingDisabled = false
-}
+// /*
+//  * UnblockTrace resumes the trace collection
+//  * Block using BlockTrace
+//  */
+// func UnblockTrace() {
+// 	advocateTraceWritingDisabled = false
+// }
 
 /*
  * DeleteTrace removes all trace elements from the trace

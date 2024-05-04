@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // ============== Recording =================
@@ -88,10 +89,15 @@ func toGB(bytes uint64) float64 {
  */
 func writeToTraceFiles() {
 	numRout := runtime.GetNumberOfRoutines()
+	var wg sync.WaitGroup
 	for i := 1; i <= numRout; i++ {
 		// write the trace to the file
-		writeToTraceFile(i)
+		wg.Add(1)
+		go writeToTraceFile(i, &wg)
 	}
+
+
+	wg.Wait()
 }
 
 /*
@@ -101,8 +107,9 @@ func writeToTraceFiles() {
  * Args:
  * 	- routine: The id of the routine
  */
-func writeToTraceFile(routine int) {
+func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	// create the file if it does not exist and open it
+	defer wg.Done()
 	fileName := "trace/trace_" + strconv.Itoa(routine) + ".log"
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
