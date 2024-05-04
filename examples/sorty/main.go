@@ -16,7 +16,7 @@ func main() {
 		defer advocate.WaitForReplayFinish()
 	}
 
-	l := 100000
+	l := 10000
 	input := make([]int, l)
 	rand.Seed(1) // added to create same sequence in replay
 	for i := 0; i < l; i++ {

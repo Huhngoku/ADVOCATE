@@ -13,7 +13,7 @@ func AdvocateAtomicPre(index uint64) {
 	elem := "A," + uint64ToString(timer) + "," + uint64ToString(index) + ",-"
 
 	// // elem := advocateAtomicElement{index: index, timer: timer}
-	insertIntoTrace(elem)
+	insertIntoTrace(elem, true)
 }
 
 /*

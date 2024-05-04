@@ -30,7 +30,7 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
 		file + ":" + intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*
@@ -68,7 +68,7 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",R,f," +
 		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
 		file + ":" + intToString(line)
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 // MARK: Close
@@ -86,7 +86,7 @@ func AdvocateChanClose(id uint64, qSize uint) int {
 	elem := "C," + timer + "," + timer + "," + uint64ToString(id) + ",C,f,0," +
 		uint32ToString(uint32(qSize)) + "," + file + ":" + intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 // MARK: Post

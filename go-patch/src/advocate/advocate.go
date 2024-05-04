@@ -8,13 +8,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
-	"time"
 )
 
 // ============== Recording =================
 
-var backgroundMemoryTestRunning = true
 var traceFileCounter = 0
 
 /*
@@ -24,7 +21,6 @@ var traceFileCounter = 0
  */
 func Finish() {
 	runtime.DisableTrace()
-	backgroundMemoryTestRunning = false
 
 	writeToTraceFiles()
 	// deleteEmptyFiles()
@@ -37,49 +33,53 @@ func WaitForReplayFinish() {
 	runtime.WaitForReplayFinish()
 }
 
-func writeTraceIfFull() {
-	var m runtime.MemStats
-	var stat syscall.Sysinfo_t
-	err := syscall.Sysinfo(&stat)
-	if err != nil {
-		panic(err)
-	}
-	totalRAM := stat.Totalram
-	for {
-		time.Sleep(5 * time.Second)
-		// get the amount of free space on ram
-		runtime.ReadMemStats(&m)
-		heap := m.Alloc
-		stack := m.StackSys
-		freeRam := stat.Totalram - heap - stack
-		// println(toGB(heap), toGB(stack), toGB(freeRam), toGB(stat.Totalram/5))
-		if freeRam < totalRAM/5 {
-			println("Memory full")
-			cleanTrace()
-			time.Sleep(15 * time.Second)
-		}
+func removeAtomicsIfFull() {
 
-		// end if background memory test is not running anymore
-		if !backgroundMemoryTestRunning {
-			break
-		}
-	}
 }
+
+// func writeTraceIfFull() {
+// 	var m runtime.MemStats
+// 	var stat syscall.Sysinfo_t
+// 	err := syscall.Sysinfo(&stat)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	totalRAM := stat.Totalram
+// 	for {
+// 		time.Sleep(5 * time.Second)
+// 		// get the amount of free space on ram
+// 		runtime.ReadMemStats(&m)
+// 		heap := m.Alloc
+// 		stack := m.StackSys
+// 		freeRam := stat.Totalram - heap - stack
+// 		// println(toGB(heap), toGB(stack), toGB(freeRam), toGB(stat.Totalram/5))
+// 		if freeRam < totalRAM/5 {
+// 			println("Memory full")
+// 			// cleanTrace()
+// 			time.Sleep(15 * time.Second)
+// 		}
+
+// 		// end if background memory test is not running anymore
+// 		if !backgroundMemoryTestRunning {
+// 			break
+// 		}
+// 	}
+// }
 
 func toGB(bytes uint64) float64 {
 	return float64(bytes) / 1024 / 1024 / 1024
 }
 
 // BUG: crashes bug
-func cleanTrace() {
-	println("Cleaning trace")
-	// // stop new element from been added to the trace
-	// runtime.BlockTrace()
-	// writeToTraceFiles()
-	// runtime.DeleteTrace()
-	// runtime.UnblockTrace()
-	// runtime.GC()
-}
+// func cleanTrace() {
+// println("Cleaning trace")
+// // stop new element from been added to the trace
+// runtime.BlockTrace()
+// writeToTraceFiles()
+// runtime.DeleteTrace()
+// runtime.UnblockTrace()
+// runtime.GC()
+// }
 
 /*
  * Write the trace to a set of files. The traces are written into a folder
@@ -187,7 +187,8 @@ func InitTracing(size int) {
 		os.Exit(0)
 	}()
 
-	go writeTraceIfFull()
+	// go writeTraceIfFull()
+	go removeAtomicsIfFull()
 	runtime.InitAdvocate(size)
 }
 

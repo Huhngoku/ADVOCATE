@@ -25,7 +25,7 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 		intToString(delta) + "," + int32ToString(val) + "," + file + ":" +
 		intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 
 }
 
@@ -44,7 +44,7 @@ func AdvocateWaitGroupWaitPre(id uint64) int {
 	elem := "W," + uint64ToString(timer) + ",0," + uint64ToString(id) +
 		",W,0,0," + file + ":" + intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*

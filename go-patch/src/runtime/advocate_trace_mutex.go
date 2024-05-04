@@ -36,7 +36,7 @@ func AdvocateMutexLockPre(id uint64, rw bool, r bool) int {
 	elem := "M," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		rwStr + "," + op + ",t," + file + ":" + uint64ToString(uint64(line))
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*
@@ -73,7 +73,7 @@ func AdvocateMutexLockTry(id uint64, rw bool, r bool) int {
 	elem := "M," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		rwStr + "," + op + ",f," + file + ":" + uint64ToString(uint64(line))
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*
@@ -109,7 +109,7 @@ func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
 	elem := "M," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		rwStr + "," + op + ",t," + file + ":" + uint64ToString(uint64(line))
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 // MARK: Post

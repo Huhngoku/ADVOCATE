@@ -99,8 +99,41 @@ func CurrentTraceToString() string {
  * Return:
  * 	string representation of the trace
  */
-func traceToString(trace *[]string) string {
+func traceToString(trace *[]string, atomics *[]string) string {
 	res := ""
+
+	if !atomicRecordingDisabled {
+		traceIndex := 0
+		atomicIndex := 0
+
+		// merge trace and atomics based on the time
+		for i := 0; i < len(*trace)+len(*atomics); i++ {
+			if i != 0 {
+				res += ";"
+			}
+			if traceIndex < len(*trace) && atomicIndex < len(*atomics) {
+				traceTime := getTpre((*trace)[traceIndex])
+				atomicTime := getTpre((*atomics)[atomicIndex])
+				if traceTime < atomicTime {
+					res += (*trace)[traceIndex]
+					traceIndex++
+				} else {
+					res += addAtomicInfo((*atomics)[atomicIndex])
+					atomicIndex++
+				}
+			} else if traceIndex < len(*trace) {
+				res += (*trace)[traceIndex]
+				traceIndex++
+			} else {
+				res += addAtomicInfo((*atomics)[atomicIndex])
+				atomicIndex++
+			}
+		}
+
+		return res
+	}
+
+	// if atomic recording is disabled
 	for i, elem := range *trace {
 		if i != 0 {
 			res += ";"
@@ -110,14 +143,24 @@ func traceToString(trace *[]string) string {
 	return res
 }
 
+func getTpre(elem string) int {
+	split := splitStringAtCommas(elem, []int{1, 2})
+	return stringToInt(split[1])
+}
+
 /*
  * Add an operation to the trace
  * Args:
  *  elem: element to add to the trace
+ *  atomic: if true, the operation is atomic
  * Return:
  * 	index of the element in the trace
  */
-func insertIntoTrace(elem string) int {
+func insertIntoTrace(elem string, atomic bool) int {
+	if atomic {
+		currentGoRoutine().addAtomicToTrace(elem)
+		return -1
+	}
 	return currentGoRoutine().addToTrace(elem)
 }
 
@@ -141,7 +184,7 @@ func TraceToStringByID(id uint64) (string, bool) {
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
 	if routine, ok := AdvocateRoutines[id]; ok {
-		return traceToString(&routine.Trace), true
+		return traceToString(&routine.Trace, &routine.Atomics), true
 	}
 	return "", false
 }
@@ -160,24 +203,25 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 
 	if routine, ok := AdvocateRoutines[uint64(id)]; ok {
 		unlock(&AdvocateRoutinesLock)
-		res := ""
-		for i, elem := range routine.Trace {
-			if i != 0 {
-				res += ";"
-			}
+		c <- traceToString(&routine.Trace, &routine.Atomics)
+		// res := ""
+		// for i, elem := range routine.Trace {
+		// 	if i != 0 {
+		// 		res += ";"
+		// 	}
 
-			if elem[0] == 'A' {
-				elem = addAtomicInfo(elem)
-			}
+		// 	if elem[0] == 'A' {
+		// 		elem = addAtomicInfo(elem)
+		// 	}
 
-			res += elem
+		// 	res += elem
 
-			if i%1000 == 0 {
-				c <- res
-				res = ""
-			}
-		}
-		c <- res
+		// 	if i%1000 == 0 {
+		// 		c <- res
+		// 		res = ""
+		// 	}
+		// }
+		// c <- res
 	} else {
 		unlock(&AdvocateRoutinesLock)
 	}
@@ -200,7 +244,7 @@ func AllTracesToString() string {
 		if routine == nil {
 			panic("Trace is nil")
 		}
-		res += traceToString(&routine.Trace) + "\n"
+		res += traceToString(&routine.Trace, &routine.Atomics) + "\n"
 
 	}
 	return res

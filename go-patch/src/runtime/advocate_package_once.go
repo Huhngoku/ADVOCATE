@@ -14,7 +14,7 @@ func AdvocateOncePre(id uint64) int {
 	elem := "O," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",f," +
 		file + ":" + intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*
