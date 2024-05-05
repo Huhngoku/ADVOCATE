@@ -504,6 +504,45 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 }
 
 /*
+ * Shift all elements that are concurrent or HB-later than the element such
+ * that they are after the element without changeing the order of these elements
+ * Only shift elements that are after start
+ * Args:
+ *   element (traceElement): The element
+ *   start (traceElement): The time to start shifting (not including)
+ */
+func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, start int) {
+	elemsToShift := make([]TraceElement, 0)
+	minTime := -1
+
+	for _, trace := range traces {
+		for _, elem := range trace {
+			if elem.GetTID() == (*element).GetTID() {
+				continue
+			}
+
+			if elem.GetTSort() <= start {
+				continue
+			}
+
+			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
+				elemsToShift = append(elemsToShift, elem)
+				if minTime == -1 || elem.GetTPre() < minTime {
+					minTime = elem.GetTPre()
+				}
+			}
+		}
+	}
+
+	distance := (*element).GetTPre() - minTime + 1
+
+	for _, elem := range elemsToShift {
+		tSort := elem.GetTPre()
+		elem.SetTSort(tSort + distance)
+	}
+}
+
+/*
  * Shift the element to be after all elements, that are concurrent to it
  * Args:
  *   element (traceElement): The element

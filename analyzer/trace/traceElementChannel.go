@@ -2,6 +2,7 @@ package trace
 
 import (
 	"errors"
+	"math"
 	"strconv"
 
 	"analyzer/analysis"
@@ -194,8 +195,7 @@ func (ch *TraceElementChannel) GetTPre() int {
  */
 func (ch *TraceElementChannel) GetTSort() int {
 	if ch.tPost == 0 {
-		// if operation was not executed, return tPre. When updating vc, check that tPre is not 0
-		return ch.tPre
+		return math.MaxInt
 	}
 	return ch.tPost
 }

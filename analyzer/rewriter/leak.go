@@ -31,8 +31,37 @@ import (
  * Returns:
  *   error: An error if the trace could not be created
  */
-// TODO: panics if bug param contains select
 func rewriteUnbufChanLeak(bug bugs.Bug) error {
+	// check if one or both of the bug elements are select
+	t1Sel := false
+	t2Sel := false
+	switch (*bug.TraceElement1[0]).(type) {
+	case *trace.TraceElementSelect:
+		t1Sel = true
+	}
+	switch (*bug.TraceElement2[0]).(type) {
+	case *trace.TraceElementSelect:
+		t2Sel = true
+	}
+
+	if !t1Sel && !t2Sel { // both are channel operations
+		return rewriteUnbufChanLeakChanChan(bug)
+	} else if !t1Sel && t2Sel { // first is channel operation, second is select
+		return rewriteUnbufChanLeakChanSel(bug)
+	} else if t1Sel && !t2Sel { // first is select, second is channel operation
+		return rewriteUnbufChanLeakSelChan(bug)
+	} // both are select
+	return rewriteUnbufChanLeakSelSel(bug)
+}
+
+/*
+ * Rewrite a trace for a leaking buffered channel
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func LeakBufChan(bug bugs.Bug) error {
 	// check if one or both of the bug elements are select
 	t1Sel := false
 	t2Sel := false
@@ -74,29 +103,41 @@ func rewriteUnbufChanLeakChanChan(bug bugs.Bug) error {
 			"concurrent to the stuck element. Cannot rewrite trace.")
 	}
 
-	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
-	// all concurrent, we can therefore reorder
+	// T = T1 ++ [f] ++ T2 ++ [g] ++ T3 ++ [e]
+
 	// remove the potential partner partner from the trace
 	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
 
-	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
-	trace.ShortenTrace(earlierTime, false)
+	// T = T1 ++ [f] ++ T2 ++ T3 ++ [e]
 
-	// add the communication back in
-	if stuck.Operation() == trace.Recv {
-		stuck.SetTSort(earlierTime + 1)
-		possiblePartner.SetTSort(earlierTime)
-	} else {
-		stuck.SetTSort(earlierTime)
-		possiblePartner.SetTSort(earlierTime + 1)
+	if stuck.Operation() == trace.Recv { // Case 3
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+		// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+
+		// add replay signals
+		trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
+		trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+
+	} else { // Case 4
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartnerPartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+		// T = T1 ++ T2' ++ T3' ++ [e] ++ T4 ++ [f]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+		// and T4 = [h in T4 | h >= e]
+
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement2[0], stuck.GetTSort()) // bug.TraceElement2[0] = possiblePartner
+
+		// T = T1 ++ T2' ++ T3' ++ [e] ++ T4' ++ [f]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+		// and T4' = [h in T4 | h >= e and h < f]
+
 	}
 
-	trace.AddElementToTrace(stuck)
-	trace.AddElementToTrace(possiblePartner)
-
-	// add the start and stop signal to release the program from the guided replay
-	trace.AddTraceElementReplay(earlierTime-1, true)
-	trace.AddTraceElementReplay(earlierTime+2, false)
+	// add replay signals
+	trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
+	trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
 
 	return nil
 }
@@ -120,29 +161,41 @@ func rewriteUnbufChanLeakChanSel(bug bugs.Bug) error {
 			"concurrent to the stuck element. Cannot rewrite trace.")
 	}
 
-	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
-	// all concurrent, we can therefore reorder
+	// T = T1 ++ [f] ++ T2 ++ [g] ++ T3 ++ [e]
+
 	// remove the potential partner partner from the trace
 	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
 
-	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
-	trace.ShortenTrace(earlierTime, false)
+	// T = T1 ++ [f] ++ T2 ++ T3 ++ [e]
 
-	// add the communication back in
-	if stuck.Operation() == trace.Recv {
-		stuck.SetTSort(earlierTime + 1)
-		possiblePartner.SetTSort(earlierTime)
-	} else {
-		stuck.SetTSort(earlierTime)
-		possiblePartner.SetTSort(earlierTime + 1)
+	if stuck.Operation() == trace.Recv { // Case 3
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+		// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+
+		// add replay signals
+		trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
+		trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+
+	} else { // Case 4
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartnerPartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+		// T = T1 ++ T2' ++ T3' ++ [e] ++ T4 ++ [f]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+		// and T4 = [h in T4 | h >= e]
+
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement2[0], stuck.GetTSort()) // bug.TraceElement2[0] = possiblePartner
+
+		// T = T1 ++ T2' ++ T3' ++ [e] ++ T4' ++ [f]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+		// and T4' = [h in T4 | h >= e and h < f]
+
 	}
 
-	trace.AddElementToTrace(stuck)
-	trace.AddElementToTrace(possiblePartner)
-
-	// add the start and stop signal to release the program from the guided replay
-	trace.AddTraceElementReplay(earlierTime-1, true)
-	trace.AddTraceElementReplay(earlierTime+2, false)
+	// add replay signals
+	trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
+	trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
 
 	return nil
 }
@@ -160,29 +213,47 @@ func rewriteUnbufChanLeakSelChan(bug bugs.Bug) error {
 	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementChannel)
 	possiblePartnerPartner := possiblePartner.GetPartner()
 
-	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
-	// all concurrent, we can therefore reorder
+	hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
+	if hb != clock.Concurrent {
+		return errors.New("The actual partner of the potential partner is not HB " +
+			"concurrent to the stuck element. Cannot rewrite trace.")
+	}
+
+	// T = T1 ++ [f] ++ T2 ++ [g] ++ T3 ++ [e]
+
 	// remove the potential partner partner from the trace
 	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
 
-	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
-	trace.ShortenTrace(earlierTime, false)
+	// T = T1 ++ [f] ++ T2 ++ T3 ++ [e]
 
-	// add the communication back in
-	if possiblePartner.Operation() == trace.Recv {
-		stuck.SetTSort(earlierTime)
-		possiblePartner.SetTSort(earlierTime + 1)
-	} else {
-		stuck.SetTSort(earlierTime + 1)
-		possiblePartner.SetTSort(earlierTime)
+	if possiblePartner.Operation() == trace.Recv { // Case 4
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartnerPartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+		// T = T1 ++ T2' ++ T3' ++ [e] ++ T4 ++ [f]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+		// and T4 = [h in T4 | h >= e]
+
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement2[0], stuck.GetTSort()) // bug.TraceElement2[0] = possiblePartner
+
+		// T = T1 ++ T2' ++ T3' ++ [e] ++ T4' ++ [f]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+		// and T4' = [h in T4 | h >= e and h < f]
+
+	} else { // Case 3
+		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+		// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
+		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+
+		// add replay signals
+		trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
+		trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+
 	}
 
-	trace.AddElementToTrace(stuck)
-	trace.AddElementToTrace(possiblePartner)
-
-	// add the start and stop signal to release the program from the guided replay
-	trace.AddTraceElementReplay(earlierTime-1, true)
-	trace.AddTraceElementReplay(earlierTime+2, false)
+	// add replay signals
+	trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
+	trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
 
 	return nil
 }
@@ -200,16 +271,18 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 	possiblePartner := (*bug.TraceElement2[0]).(*trace.TraceElementSelect)
 	possiblePartnerPartner := possiblePartner.GetPartner()
 
-	// now we know, that stuck, possiblePartner and possiblePartnerPartner are
-	// all concurrent, we can therefore reorder
+	hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
+	if hb != clock.Concurrent {
+		return errors.New("The actual partner of the potential partner is not HB " +
+			"concurrent to the stuck element. Cannot rewrite trace.")
+	}
+
+	// T = T1 ++ [f] ++ T2 ++ [g] ++ T3 ++ [e]
+
 	// remove the potential partner partner from the trace
 	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
 
-	earlierTime := min(possiblePartner.GetTPre(), stuck.GetTPre())
-	trace.ShortenTrace(earlierTime, false)
-
-	// find direction of communication
-	found := false
+	// find communication
 	for _, c := range stuck.GetCases() {
 		for _, d := range possiblePartner.GetCases() {
 			if c.GetID() != d.GetID() {
@@ -220,73 +293,40 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 				continue
 			}
 
-			if c.Operation() == trace.Recv {
-				stuck.SetTSort(earlierTime + 1)
-				possiblePartner.SetTSort(earlierTime)
-			} else {
-				stuck.SetTSort(earlierTime)
-				possiblePartner.SetTSort(earlierTime + 1)
+			// T = T1 ++ [f] ++ T2 ++ T3 ++ [e]
+
+			if c.Operation() == trace.Recv { // Case 3
+				trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+				// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
+				// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+
+				// add replay signals
+				trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
+				trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+				return nil
 			}
-			found = true
-			break
-		}
 
-		if found {
-			break
+			// Case 4
+			trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartner.GetTSort()) // bug.TraceElement1[0] = stuck
+
+			// T = T1 ++ T2' ++ T3' ++ [e] ++ T4 ++ [f]
+			// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+			// and T4 = [h in T4 | h >= e]
+
+			trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement2[0], stuck.GetTSort()) // bug.TraceElement2[0] = possiblePartner
+
+			// T = T1 ++ T2' ++ T3' ++ [e] ++ T4' ++ [f]
+			// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
+			// and T4' = [h in T4 | h >= e and h < f]
+
+			// add replay signals
+			trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
+			trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
 		}
 	}
 
-	trace.AddElementToTrace(stuck)
-	trace.AddElementToTrace(possiblePartner)
-
-	// add the start and stop signal to release the program from the guided replay
-	trace.AddTraceElementReplay(earlierTime-1, true)
-	trace.AddTraceElementReplay(earlierTime+2, false)
-
-	return nil
-}
-
-// TODO: Does this work with buffered channels?
-/*
- * Rewrite a trace for a leaking buffered channel
- * Args:
- *   bug (Bug): The bug to create a trace for
- * Returns:
- *   error: An error if the trace could not be created
- */
-func LeakBufChan(bug bugs.Bug) error {
-	stuck := (*bug.TraceElement1[0]).(*trace.TraceElementChannel)
-
-	if stuck.Operation() == trace.Send {
-		// a buffered channel send operation is stuck, if the channel is full
-		// and there is no receive operation to empty the channel
-		// -> we can rewrite the trace by moving all concurrent send operations
-		// to be after stuck. In practice, we move all concurrent operations to
-		// be after the stuck element
-		trace.ShiftConcurrentOrAfterToAfter(bug.TraceElement1[0])
-		stuck.SetTSort(stuck.GetTPre())
-
-		// add a start and stop signal to release the program from the guided replay
-		trace.AddTraceElementReplay(stuck.GetTPre()-1, true)
-		trace.AddTraceElementReplay(stuck.GetTPre()+1, false)
-	} else if stuck.Operation() == trace.Recv {
-		// a buffered channel receive operation is stuck, if the channel is empty
-		// and there is no send operation to fill the channel
-		// -> we can rewrite the trace by moving all concurrent receive operations
-		// to be after stuck. In practice, we remove all concurrent revc as well
-		// as all elements after them in the same routine
-		concurrentRevc := trace.GetConcurrentEarliest(bug.TraceElement1[0])
-		for routine, recv := range concurrentRevc {
-			trace.ShortenRoutine(routine, (*recv).GetTSort())
-		}
-
-		stuck.SetTSort(stuck.GetTPre())
-		// add a start and stop signal to release the program from the guided replay
-		trace.AddTraceElementReplay(stuck.GetTPre()-1, true)
-		trace.AddTraceElementReplay(stuck.GetTPre()+1, false)
-	}
-
-	return nil
+	return errors.New("Could not establish communication between two selects. Cannot rewrite trace.")
 }
 
 // ================== Mutex ====================
