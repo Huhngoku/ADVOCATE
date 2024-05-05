@@ -73,7 +73,7 @@ var advocateAtomicMapIDCounter uint64 = 1
 var advocateAtomicMapLock mutex
 var advocateAtomicMapToIDLock mutex
 
-var advocateTraceWritingDisabled = false
+// var advocateTraceWritingDisabled = false
 
 /*
  * Return a string representation of the trace
@@ -99,8 +99,42 @@ func CurrentTraceToString() string {
  * Return:
  * 	string representation of the trace
  */
-func traceToString(trace *[]string) string {
+func traceToString(trace *[]string, atomics *[]string) string {
 	res := ""
+
+	println("TraceToString", len(*trace), len(*atomics), len(*trace)+len(*atomics))
+	if !atomicRecordingDisabled {
+		traceIndex := 0
+		atomicIndex := 0
+
+		// merge trace and atomics based on the time
+		for i := 0; i < len(*trace)+len(*atomics); i++ {
+			if i != 0 {
+				res += ";"
+			}
+			if traceIndex < len(*trace) && atomicIndex < len(*atomics) {
+				traceTime := getTpre((*trace)[traceIndex])
+				atomicTime := getTpre((*atomics)[atomicIndex])
+				if traceTime < atomicTime {
+					res += (*trace)[traceIndex]
+					traceIndex++
+				} else {
+					res += addAtomicInfo((*atomics)[atomicIndex])
+					atomicIndex++
+				}
+			} else if traceIndex < len(*trace) {
+				res += (*trace)[traceIndex]
+				traceIndex++
+			} else {
+				res += addAtomicInfo((*atomics)[atomicIndex])
+				atomicIndex++
+			}
+		}
+
+		return res
+	}
+
+	// if atomic recording is disabled
 	for i, elem := range *trace {
 		if i != 0 {
 			res += ";"
@@ -110,14 +144,24 @@ func traceToString(trace *[]string) string {
 	return res
 }
 
+func getTpre(elem string) int {
+	split := splitStringAtCommas(elem, []int{1, 2})
+	return stringToInt(split[1])
+}
+
 /*
  * Add an operation to the trace
  * Args:
  *  elem: element to add to the trace
+ *  atomic: if true, the operation is atomic
  * Return:
  * 	index of the element in the trace
  */
-func insertIntoTrace(elem string) int {
+func insertIntoTrace(elem string, atomic bool) int {
+	if atomic {
+		currentGoRoutine().addAtomicToTrace(elem)
+		return -1
+	}
 	return currentGoRoutine().addToTrace(elem)
 }
 
@@ -141,7 +185,7 @@ func TraceToStringByID(id uint64) (string, bool) {
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
 	if routine, ok := AdvocateRoutines[id]; ok {
-		return traceToString(&routine.Trace), true
+		return traceToString(&routine.Trace, &routine.Atomics), true
 	}
 	return "", false
 }
@@ -161,15 +205,48 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 	if routine, ok := AdvocateRoutines[uint64(id)]; ok {
 		unlock(&AdvocateRoutinesLock)
 		res := ""
+
+		if !atomicRecordingDisabled {
+			traceIndex := 0
+			atomicIndex := 0
+
+			// merge trace and atomics based on the time
+			for i := 0; i < len(routine.Trace)+len(routine.Atomics); i++ {
+				if i != 0 {
+					res += ";"
+				}
+				if traceIndex < len(routine.Trace) && atomicIndex < len(routine.Atomics) {
+					traceTime := getTpre(routine.Trace[traceIndex])
+					atomicTime := getTpre(routine.Atomics[atomicIndex])
+					if traceTime < atomicTime {
+						res += (routine.Trace)[traceIndex]
+						traceIndex++
+					} else {
+						res += addAtomicInfo(routine.Atomics[atomicIndex])
+						atomicIndex++
+					}
+				} else if traceIndex < len(routine.Trace) {
+					res += (routine.Trace)[traceIndex]
+					traceIndex++
+				} else {
+					res += addAtomicInfo(routine.Atomics[atomicIndex])
+					atomicIndex++
+				}
+
+				if i%1000 == 0 {
+					c <- res
+					res = ""
+				}
+			}
+			c <- res
+			return
+		}
+
+		// if atomic recording is disabled
 		for i, elem := range routine.Trace {
 			if i != 0 {
 				res += ";"
 			}
-
-			if elem[0] == 'A' {
-				elem = addAtomicInfo(elem)
-			}
-
 			res += elem
 
 			if i%1000 == 0 {
@@ -200,7 +277,7 @@ func AllTracesToString() string {
 		if routine == nil {
 			panic("Trace is nil")
 		}
-		res += traceToString(&routine.Trace) + "\n"
+		res += traceToString(&routine.Trace, &routine.Atomics) + "\n"
 
 	}
 	return res
@@ -268,20 +345,29 @@ func DisableTrace() {
 }
 
 /*
- * BockTrace blocks the trace collection
- * Resume using UnblockTrace
+ * GetAdvocateDisabled returns if the trace collection is disabled
+ * Return:
+ * 	true if the trace collection is disabled, false otherwise
  */
-func BlockTrace() {
-	advocateTraceWritingDisabled = true
+func GetAdvocateDisabled() bool {
+	return advocateDisabled
 }
 
-/*
- * UnblockTrace resumes the trace collection
- * Block using BlockTrace
- */
-func UnblockTrace() {
-	advocateTraceWritingDisabled = false
-}
+// /*
+//  * BockTrace blocks the trace collection
+//  * Resume using UnblockTrace
+//  */
+// func BlockTrace() {
+// 	advocateTraceWritingDisabled = true
+// }
+
+// /*
+//  * UnblockTrace resumes the trace collection
+//  * Block using BlockTrace
+//  */
+// func UnblockTrace() {
+// 	advocateTraceWritingDisabled = false
+// }
 
 /*
  * DeleteTrace removes all trace elements from the trace

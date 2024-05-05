@@ -26,7 +26,7 @@ func AdvocateCondPre(id uint64, op int) int {
 
 	elem := "N," + uint64ToString(timer) + ",0," + uint64ToString(id) +
 		"," + opC + "," + file + ":" + uint64ToString(uint64(line))
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*
