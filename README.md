@@ -13,11 +13,7 @@ To analyze the program, we first need
 to record it. To do this, we modify the go runtime
 to automatically record a program while it runs. The modified runtime can 
 be found in the `go-patch` directory. Running a program with this modified 
-go runtime will create a trace of the program including 
-
-- spawning of new routineshappens before relations of
-- wait group operations
-- once operations
+go runtime will create a trace of the program.
 
 The following is a short explanation about how to build and run the 
 new runtime and create the trace. A full explanation of the created trace can be found in the 
