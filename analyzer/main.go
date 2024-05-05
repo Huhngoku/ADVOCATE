@@ -21,6 +21,7 @@ func main() {
 	noWarning := flag.Bool("w", false, "Do not print warnings (default false)")
 	noPrint := flag.Bool("p", false, "Do not print the results to the terminal (default false). Automatically set -x to true")
 	resultFolder := flag.String("r", "", "Path to where the result file should be saved.")
+	ignoreAtomics := flag.Bool("a", false, "Ignore atomic operations (default false). Use to reduce memory overhead for large traces.")
 
 	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
 		"\ts: Send on closed channel\n"+
@@ -68,7 +69,7 @@ func main() {
 	// based on the analysis results
 
 	logging.InitLogging(*level, outReadable, outMachine)
-	numberOfRoutines, err := io.CreateTraceFromFiles(*pathTrace)
+	numberOfRoutines, err := io.CreateTraceFromFiles(*pathTrace, *ignoreAtomics)
 	if err != nil {
 		panic(err)
 	}

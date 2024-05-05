@@ -15,11 +15,7 @@ to automatically record a program while it runs. The modified runtime can
 be found in the `go-patch` directory. Running a program with this modified 
 go runtime will create a trace of the program including 
 
-- spawning of new routines
-- atomic operations
-- mutex operations
-- channel operations
-- select operations
+- spawning of new routineshappens before relations of
 - wait group operations
 - once operations
 
@@ -166,7 +162,7 @@ We can detect the following situations:
 
 The analyzer can take the following command line arguments:
 
-
+ - -a Ignore atomic operations (default false). Use to reduce memory overhead for large traces.
  - -c	Ignore happens before relations of critical sections (default false)
  - -d int
     	Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
