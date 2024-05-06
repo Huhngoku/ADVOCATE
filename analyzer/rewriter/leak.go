@@ -117,8 +117,7 @@ func rewriteUnbufChanLeakChanChan(bug bugs.Bug) error {
 		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
 
 		// add replay signals
-		trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
-		trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+		trace.AddTraceElementReplay(stuck.GetTSort() + 1)
 
 	} else { // Case 4
 		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartnerPartner.GetTSort()) // bug.TraceElement1[0] = stuck
@@ -135,9 +134,8 @@ func rewriteUnbufChanLeakChanChan(bug bugs.Bug) error {
 
 	}
 
-	// add replay signals
-	trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
-	trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
+	// add replay signal
+	trace.AddTraceElementReplay(possiblePartner.GetTSort() + 1)
 
 	return nil
 }
@@ -174,9 +172,8 @@ func rewriteUnbufChanLeakChanSel(bug bugs.Bug) error {
 		// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
 		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
 
-		// add replay signals
-		trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
-		trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+		// add replay signal
+		trace.AddTraceElementReplay(stuck.GetTSort() + 1)
 
 	} else { // Case 4
 		trace.ShiftConcurrentOrAfterToAfterStartingFromElement(bug.TraceElement1[0], possiblePartnerPartner.GetTSort()) // bug.TraceElement1[0] = stuck
@@ -193,9 +190,8 @@ func rewriteUnbufChanLeakChanSel(bug bugs.Bug) error {
 
 	}
 
-	// add replay signals
-	trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
-	trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
+	// add replay signal
+	trace.AddTraceElementReplay(possiblePartner.GetTSort() + 1)
 
 	return nil
 }
@@ -245,15 +241,13 @@ func rewriteUnbufChanLeakSelChan(bug bugs.Bug) error {
 		// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
 		// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
 
-		// add replay signals
-		trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
-		trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+		// add replay signal
+		trace.AddTraceElementReplay(stuck.GetTSort() + 1)
 
 	}
 
 	// add replay signals
-	trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
-	trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
+	trace.AddTraceElementReplay(possiblePartner.GetTSort() + 1)
 
 	return nil
 }
@@ -301,9 +295,8 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 				// T = T1 ++ [f] ++ T2' ++ T3' ++ [e]
 				// where T2' = [h in T2 | h < e] and T3' = [h in T3 | h < e]
 
-				// add replay signals
-				trace.AddTraceElementReplay(possiblePartner.GetTSort()-1, true)
-				trace.AddTraceElementReplay(stuck.GetTSort()+1, false)
+				// add replay signal
+				trace.AddTraceElementReplay(stuck.GetTSort() + 1)
 				return nil
 			}
 
@@ -321,8 +314,7 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 			// and T4' = [h in T4 | h >= e and h < f]
 
 			// add replay signals
-			trace.AddTraceElementReplay(stuck.GetTSort()-1, true)
-			trace.AddTraceElementReplay(possiblePartner.GetTSort()+1, false)
+			trace.AddTraceElementReplay(possiblePartner.GetTSort() + 1)
 		}
 	}
 
@@ -374,8 +366,7 @@ func rewriteMutexLeak(bug bugs.Bug) error {
 	lockOp.SetTSort(lockOp.GetTPre())
 
 	// add the start and stop signal after l -> T_1' + T_2' + [X_s, l, X_e]
-	trace.AddTraceElementReplay(lockOp.GetTPre()-1, true)
-	trace.AddTraceElementReplay(lockOp.GetTPre()+1, false)
+	trace.AddTraceElementReplay(lockOp.GetTPre() + 1)
 
 	return nil
 }
@@ -397,8 +388,7 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
 
 	trace.ShiftConcurrentOrAfterToAfter(wait)
 
-	trace.AddTraceElementReplay((*wait).GetTPre()-1, true)
-	trace.AddTraceElementReplay((*wait).GetTPre()+1, false)
+	trace.AddTraceElementReplay((*wait).GetTPre() + 1)
 
 	return nil
 }
@@ -442,8 +432,7 @@ func rewriteCondLeak(bug bugs.Bug) error {
 
 	(*wait).SetTSort((*wait).GetTPre())
 
-	trace.AddTraceElementReplay((*wait).GetTPre()-1, true)
-	trace.AddTraceElementReplay((*wait).GetTPre()+1, false)
+	trace.AddTraceElementReplay((*wait).GetTPre() + 1)
 
 	if couldRewrite {
 		return nil

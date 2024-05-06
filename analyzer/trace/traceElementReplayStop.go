@@ -6,15 +6,13 @@ import (
 )
 
 /*
- * Struct to save an atomic event in the trace
- * MARK: Struct
- * Fields:
- *   tpost (int): The timestamp of the event
- *   start (int): True if before the important event, false if after
+* Struct to save an atomic event in the trace
+* MARK: Struct
+* Fields:
+*   tpost (int): The timestamp of the event
  */
 type TraceElementReplay struct {
 	tPost int
-	start bool
 }
 
 /*
@@ -22,12 +20,10 @@ type TraceElementReplay struct {
  * MARK: New
  * Args:
  *   t (string): The timestamp of the event
- *   start (int): True if before the important event, false if after
  */
-func AddTraceElementReplay(t int, start bool) error {
+func AddTraceElementReplay(t int) error {
 	elem := TraceElementReplay{
 		tPost: t,
-		start: start,
 	}
 
 	return AddElementToTrace(&elem)
@@ -114,6 +110,7 @@ func (at *TraceElementReplay) GetVC() clock.VectorClock {
  *   tPre (int): The tpre of the element
  */
 func (mu *TraceElementReplay) SetTPre(tPre int) {
+	tPre = max(1, tPre)
 	mu.tPost = tPre
 }
 
@@ -123,6 +120,7 @@ func (mu *TraceElementReplay) SetTPre(tPre int) {
  *   tSort (int): The timer of the element
  */
 func (at *TraceElementReplay) SetTSort(tSort int) {
+	tSort = max(1, tSort)
 	at.SetTPre(tSort)
 	at.tPost = tSort
 }
@@ -134,6 +132,7 @@ func (at *TraceElementReplay) SetTSort(tSort int) {
  *   tSort (int): The timer of the element
  */
 func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
+	tSort = max(1, tSort)
 	at.SetTPre(tSort)
 	at.tPost = tSort
 }
@@ -145,12 +144,7 @@ func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
  *   string: The simple string representation of the element
  */
 func (at *TraceElementReplay) ToString() string {
-	res := "X," + strconv.Itoa(at.tPost) + ","
-	if at.start {
-		res += "s"
-	} else {
-		res += "e"
-	}
+	res := "X," + strconv.Itoa(at.tPost)
 	return res
 }
 

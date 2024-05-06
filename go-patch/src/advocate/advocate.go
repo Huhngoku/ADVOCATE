@@ -2,7 +2,6 @@ package advocate
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -57,8 +56,6 @@ func removeAtomicsIfFull() {
 		freeRAM := toGB(stat.Freeram)
 		totalRAM := toGB(stat.Totalram)
 		perc := freeRAM / totalRAM
-
-		fmt.Println(freeRAM, totalRAM, perc, 1-perc)
 
 		if perc < 0.01 {
 			panic("Not enough memory.")
@@ -324,11 +321,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
 				case "X": // disable replay
-					if fields[2] == "s" {
-						op = runtime.OperationReplayStart
-					} else {
-						op = runtime.OperationReplayEnd
-					}
+					op = runtime.OperationReplayEnd
 				case "G":
 					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])
@@ -346,7 +339,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					default:
 						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + fileName + ".")
 					}
-					// time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}
@@ -367,7 +360,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					if fields[4] == "R" {
 						rw = true
 					}
-					// time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[2])
 					if fields[6] == "f" {
 						suc = false
 					}

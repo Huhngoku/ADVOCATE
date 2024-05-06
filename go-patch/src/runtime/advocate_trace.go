@@ -42,7 +42,6 @@ const (
 
 	OperationAtomic
 
-	OperationReplayStart
 	OperationReplayEnd
 )
 

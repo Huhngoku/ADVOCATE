@@ -145,7 +145,6 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
  */
 func CheckForLeak() {
 	// channel
-	println(len(leakingChannels), len(selectCases))
 	for _, vcTIDs := range leakingChannels {
 		for _, vcTID := range vcTIDs {
 			if vcTID.tID == "" {

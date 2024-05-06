@@ -32,8 +32,7 @@ func rewriteWaitGroup(bug bugs.Bug) error {
 
 	// add start and end
 	if !(minTime == -1 && maxTime == -1) {
-		trace.AddTraceElementReplay(minTime-1, true)
-		trace.AddTraceElementReplay(maxTime+1, false)
+		trace.AddTraceElementReplay(maxTime + 1)
 	}
 
 	return nil

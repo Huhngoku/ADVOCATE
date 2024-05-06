@@ -514,6 +514,7 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, start int) {
 	elemsToShift := make([]TraceElement, 0)
 	minTime := -1
+	maxNotMoved := 0
 
 	for _, trace := range traces {
 		for _, elem := range trace {
@@ -521,25 +522,32 @@ func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, sta
 				continue
 			}
 
-			if elem.GetTSort() <= start {
-				continue
-			}
-
 			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
+				if elem.GetTSort() <= start {
+					continue
+				}
+
 				elemsToShift = append(elemsToShift, elem)
-				if minTime == -1 || elem.GetTPre() < minTime {
-					minTime = elem.GetTPre()
+				if minTime == -1 || elem.GetTSort() < minTime {
+					minTime = elem.GetTSort()
+				}
+			} else {
+				if maxNotMoved == 0 || elem.GetTSort() > maxNotMoved {
+					maxNotMoved = elem.GetTSort()
 				}
 			}
 		}
 	}
 
-	distance := (*element).GetTPre() - minTime + 1
+	(*element).SetTSort(maxNotMoved + 1)
+
+	distance := (*element).getTpost() - minTime + 1
 
 	for _, elem := range elemsToShift {
-		tSort := elem.GetTPre()
+		tSort := elem.GetTSort()
 		elem.SetTSort(tSort + distance)
 	}
+
 }
 
 /*
@@ -548,26 +556,7 @@ func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, sta
  *   element (traceElement): The element
  */
 func ShiftConcurrentToBefore(element *TraceElement) {
-	lastConcurrentTime := (*element).GetTPre()
-	elementsToShift := make([]TraceElement, 0)
-
-	for _, trace := range traces {
-		for _, elem := range trace {
-			hb := clock.GetHappensBefore(elem.GetVC(), (*element).GetVC())
-			if elem.GetTID() == (*element).GetTID() || hb == clock.After {
-				elementsToShift = append(elementsToShift, elem)
-			} else if hb == clock.Concurrent && elem.GetTPre() > lastConcurrentTime {
-				lastConcurrentTime = elem.GetTPre()
-			}
-		}
-	}
-
-	distance := lastConcurrentTime - (*element).GetTPre()
-
-	for _, elem := range elementsToShift {
-		tSort := elem.GetTPre()
-		elem.SetTSort(tSort + distance)
-	}
+	ShiftConcurrentOrAfterToAfterStartingFromElement(element, 0)
 }
 
 /*
