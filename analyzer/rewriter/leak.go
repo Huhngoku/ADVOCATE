@@ -55,36 +55,6 @@ func rewriteUnbufChanLeak(bug bugs.Bug) error {
 }
 
 /*
- * Rewrite a trace for a leaking buffered channel
- * Args:
- *   bug (Bug): The bug to create a trace for
- * Returns:
- *   error: An error if the trace could not be created
- */
-func LeakBufChan(bug bugs.Bug) error {
-	// check if one or both of the bug elements are select
-	t1Sel := false
-	t2Sel := false
-	switch (*bug.TraceElement1[0]).(type) {
-	case *trace.TraceElementSelect:
-		t1Sel = true
-	}
-	switch (*bug.TraceElement2[0]).(type) {
-	case *trace.TraceElementSelect:
-		t2Sel = true
-	}
-
-	if !t1Sel && !t2Sel { // both are channel operations
-		return rewriteUnbufChanLeakChanChan(bug)
-	} else if !t1Sel && t2Sel { // first is channel operation, second is select
-		return rewriteUnbufChanLeakChanSel(bug)
-	} else if t1Sel && !t2Sel { // first is select, second is channel operation
-		return rewriteUnbufChanLeakSelChan(bug)
-	} // both are select
-	return rewriteUnbufChanLeakSelSel(bug)
-}
-
-/*
  * Rewrite a trace where a leaking unbuffered channel/select with possible partner was found
  * if both elements are channel operations.
  * Args:
@@ -319,6 +289,44 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 	}
 
 	return errors.New("Could not establish communication between two selects. Cannot rewrite trace.")
+}
+
+/*
+ * Rewrite a trace for a leaking buffered channel
+ * Args:
+ *   bug (Bug): The bug to create a trace for
+ * Returns:
+ *   error: An error if the trace could not be created
+ */
+func LeakBufChan(bug bugs.Bug) error {
+	stuck := (*bug.TraceElement1[0])
+	possiblePartner := (*bug.TraceElement2[0])
+	var possiblePartnerPartner *trace.TraceElementChannel
+	switch z := possiblePartner.(type) {
+	case *trace.TraceElementChannel:
+		possiblePartnerPartner = z.GetPartner()
+	case *trace.TraceElementSelect:
+		possiblePartnerPartner = z.GetPartner()
+	}
+
+	hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
+	if hb != clock.Concurrent {
+		return errors.New("The actual partner of the potential partner is not HB " +
+			"concurrent to the stuck element. Cannot rewrite trace.")
+	}
+
+	// T = T1 ++ [g] ++ T2 ++ [e]
+
+	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+
+	// T = T1 ++ T2 ++ [e]
+
+	trace.ShiftConcurrentOrAfterToAfterStartingFromElement(&stuck, possiblePartnerPartner.GetTSort())
+
+	// T = T1 ++ T2' ++ [e]
+	// where T2' = [ h | h in T2 and h <HB e]
+
+	return nil
 }
 
 // ================== Mutex ====================
