@@ -16,6 +16,12 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 		return -1
 	}
 
+	// TODO: (advocate): if cases in the select are nil, scase and lockOrder will
+	// have different lengths. This will cause a panic in the next for loop.
+	// We can use counter instead of i (only advance if ca.c != nil)
+	// But this will still make a problem in AdvocateSelectPost with the
+	// chosenIndex. We need to find a way to fix this.
+
 	id := GetAdvocateObjectID()
 	caseElements := ""
 	_, file, line, _ := Caller(2)
@@ -46,7 +52,7 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		caseElements + ",0," + file + ":" + intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*
@@ -140,7 +146,7 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
 		caseElements + "~d,0," + file + ":" + intToString(line)
 
-	return insertIntoTrace(elem)
+	return insertIntoTrace(elem, false)
 }
 
 /*

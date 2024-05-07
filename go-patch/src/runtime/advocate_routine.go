@@ -7,18 +7,20 @@ var AdvocateRoutinesLock = mutex{}
 
 var projectPath string
 
+var atomicRecordingDisabled = false
+
 /*
  * AdvocateRoutine is a struct to store the trace of a routine
  * id: the id of the routine
  * G: the g struct of the routine
  * Trace: the trace of the routine
- * lock: a lock to protect the trace
  */
 type AdvocateRoutine struct {
-	id    uint64
-	G     *g
-	Trace []string
-	lock  *mutex
+	id      uint64
+	G       *g
+	Trace   []string
+	Atomics []string
+	// lock    *mutex
 }
 
 /*
@@ -30,8 +32,8 @@ type AdvocateRoutine struct {
  */
 func newAdvocateRoutine(g *g) *AdvocateRoutine {
 	routine := &AdvocateRoutine{id: GetAdvocateRoutineID(), G: g,
-		Trace: make([]string, 0),
-		lock:  &mutex{}}
+		Trace:   make([]string, 0),
+		Atomics: make([]string, 0)}
 
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
@@ -70,19 +72,59 @@ func (gi *AdvocateRoutine) addToTrace(elem string) int {
 		return -1
 	}
 
-	lock(gi.lock)
-	defer unlock(gi.lock)
-	if gi.Trace == nil {
-		gi.Trace = make([]string, 0)
-	}
-
 	gi.Trace = append(gi.Trace, elem)
 	return len(gi.Trace) - 1
 }
 
+/*
+ * Ignore the atomic operations. Use if not enough memory is available.
+ */
+func IgnoreAtomicOperations() {
+	atomicRecordingDisabled = true
+	sum := 0
+	for _, routine := range AdvocateRoutines {
+		println("Delete ", len(routine.Atomics), " atomic operations")
+		sum += len(routine.Atomics)
+		routine.Atomics = nil
+	}
+	println("Deleted ", sum, " atomic operations")
+	GC() // run the garbage collector
+}
+
+/*
+ * Get if atomic operations are ignored
+ */
+func GetIgnoreAtomicOperations() bool {
+	return atomicRecordingDisabled
+}
+
+/*
+ * Add an atomic operation to the trace of the current routine
+ * Params:
+ * 	elem: the element to add
+ */
+func (gi *AdvocateRoutine) addAtomicToTrace(elem string) {
+	if advocateDisabled {
+		return
+	}
+
+	if gi == nil {
+		return
+	}
+
+	// delete atomic operations if disabled
+	if atomicRecordingDisabled {
+		// if gi.Atomics != nil {
+		// 	println("Delete ", len(gi.Atomics), " atomic operations")
+		// }
+		// gi.Atomics = nil
+		return
+	}
+
+	gi.Atomics = append(gi.Atomics, elem)
+}
+
 func (gi *AdvocateRoutine) getElement(index int) string {
-	lock(gi.lock)
-	defer unlock(gi.lock)
 	return gi.Trace[index]
 }
 
@@ -109,8 +151,6 @@ func (gi *AdvocateRoutine) updateElement(index int, elem string) {
 		panic("Tried to update element out of bounds")
 	}
 
-	lock(gi.lock)
-	defer unlock(gi.lock)
 	gi.Trace[index] = elem
 }
 
@@ -133,6 +173,13 @@ func GetRoutineID() uint64 {
 		return 0
 	}
 	return currentGoRoutine().id
+}
+
+/*
+ * DisableAtomicRecording disables the recording of atomic operations
+ */
+func DisableAtomicRecording() {
+	atomicRecordingDisabled = true
 }
 
 // ADVOCATE-FILE-END

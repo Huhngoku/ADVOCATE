@@ -11,10 +11,9 @@ If the potential bug / situation is passed without crashing the program
 it would most likely get stuck, because the run was altered by the rewrite.
 
 ## Trace element
-In the routine, where the new routine is created, the following element is added.
+To signal the end of the rewritten trace, the following element is added.
 ```
-X,[tpost],[se]
+X,[tpost]
 ```
 where `X` identifies the element as an replay control element.\
-- [tpost] $\in \mathbb N$: This is the time. It is replaced by the float value of the global counter at the moment when it is supposed to be run
-- [se]: `s` or `e` signals wether it is an start or end marker.
+- [tpost] $\in \mathbb N$: This is the time. It is replaced by the int value of the global counter at the moment when it is supposed to be run

@@ -57,8 +57,6 @@ func (ro Operation) ToString() string {
 		return "OperationCondWait"
 	case OperationReplayEnd:
 		return "OperationReplayEnd"
-	case OperationReplayStart:
-		return "OperationReplayStart"
 	default:
 		return "Unknown"
 	}
@@ -317,16 +315,9 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 
 		nextRoutine, next := getNextReplayElement()
 
-		// print message if the next operation is the next operation is the start of the important replay part
-		if next.Op == OperationReplayStart {
-			println("Start Character Found")
-			foundReplayElement(nextRoutine)
-			continue
-		}
-
 		// disable the replay, if the next operation is the disable replay operation
 		if next.Op == OperationReplayEnd {
-			println("Stop Character Found.")
+			println("Stop Character Found. Disable Replay.")
 			DisableReplay()
 			foundReplayElement(nextRoutine)
 			return false, false, ReplayElement{}

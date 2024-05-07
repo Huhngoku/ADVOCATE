@@ -14,7 +14,16 @@ import (
 	"analyzer/trace"
 )
 
-func CreateTraceFromFiles(filePath string) (int, error) {
+/*
+ * Create the trace from all files in a folder.
+ * Args:
+ *   filePath (string): The path to the folder
+ *   ignoreAtomics (bool): If atomic operations should be ignored
+ * Returns:
+ *   int: The number of routines
+ *   error: An error if the trace could not be created
+ */
+func CreateTraceFromFiles(filePath string, ignoreAtomics bool) (int, error) {
 	maxTokenSize := 4
 	numberIds := 0
 
@@ -37,7 +46,7 @@ func CreateTraceFromFiles(filePath string) (int, error) {
 		}
 		numberIds = max(numberIds, routine)
 
-		maxTokenSize, err = CreateTraceFromFile(filePath+"/"+file.Name(), routine, maxTokenSize)
+		maxTokenSize, err = CreateTraceFromFile(filePath+"/"+file.Name(), routine, maxTokenSize, ignoreAtomics)
 		if err != nil {
 			return 0, err
 		}
@@ -55,10 +64,11 @@ func CreateTraceFromFiles(filePath string) (int, error) {
  *   filePath (string): The path to the log file
  *   routine (int): The routine id
  *   maxTokenSize (int): The max token size
+ *   ignoreAtomics (bool): If atomic operations should be ignored
  * Returns:
  *   int: The max token size
  */
-func CreateTraceFromFile(filePath string, routine int, maxTokenSize int) (int, error) {
+func CreateTraceFromFile(filePath string, routine int, maxTokenSize int, ignoreAtomics bool) (int, error) {
 	logging.Debug("Create trace from file "+filePath+"...", logging.INFO)
 	mb := 1048576 // 1 MB
 
@@ -79,7 +89,7 @@ func CreateTraceFromFile(filePath string, routine int, maxTokenSize int) (int, e
 			}
 
 			line := scanner.Text()
-			processLine(line, routine)
+			processLine(line, routine, ignoreAtomics)
 			alreadyRead = true
 		}
 
@@ -105,14 +115,15 @@ func CreateTraceFromFile(filePath string, routine int, maxTokenSize int) (int, e
  * Args:
  *   line (string): The line to process
  *   routine (int): The routine id, equal to the line number
+ *   ignoreAtomics (bool): If atomic operations should be ignored
  * Returns:
  *   error: An error if the line could not be processed
  */
-func processLine(line string, routine int) error {
+func processLine(line string, routine int, ignoreAtomics bool) error {
 	logging.Debug("Read routine "+strconv.Itoa(routine), logging.DEBUG)
 	elements := strings.Split(line, ";")
 	for _, element := range elements {
-		err := processElement(element, routine)
+		err := processElement(element, routine, ignoreAtomics)
 		if err != nil {
 			return err
 		}
@@ -125,10 +136,11 @@ func processLine(line string, routine int) error {
  * Args:
  *   element (string): The element to process
  *   routine (int): The routine id, equal to the line number
+ *   ignoreAtomics (bool): If atomic operations should be ignored
  * Returns:
  *   error: An error if the element could not be processed
  */
-func processElement(element string, routine int) error {
+func processElement(element string, routine int, ignoreAtomics bool) error {
 	if element == "" {
 		logging.Debug("Routine "+strconv.Itoa(routine)+" is empty", logging.DEBUG)
 		return errors.New("Element is empty")
@@ -137,6 +149,9 @@ func processElement(element string, routine int) error {
 	var err error
 	switch fields[0] {
 	case "A":
+		if ignoreAtomics {
+			return nil
+		}
 		err = trace.AddTraceElementAtomic(routine, fields[1], fields[2], fields[3])
 	case "C":
 		err = trace.AddTraceElementChannel(routine, fields[1], fields[2],

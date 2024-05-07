@@ -8,13 +8,13 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 )
 
 // ============== Recording =================
 
-var backgroundMemoryTestRunning = true
 var traceFileCounter = 0
 
 /*
@@ -24,7 +24,6 @@ var traceFileCounter = 0
  */
 func Finish() {
 	runtime.DisableTrace()
-	backgroundMemoryTestRunning = false
 
 	writeToTraceFiles()
 	// deleteEmptyFiles()
@@ -37,31 +36,34 @@ func WaitForReplayFinish() {
 	runtime.WaitForReplayFinish()
 }
 
-func writeTraceIfFull() {
-	var m runtime.MemStats
+/*
+ * Ignore atomics if there is not enough memory
+ * The function checks the available memory every 5 seconds.
+ * If the available memory is less than 10%, the recorder will ignore atomic operations.
+ * If there are less then 1% available, the program will panic.
+ */
+func removeAtomicsIfFull() {
 	var stat syscall.Sysinfo_t
-	err := syscall.Sysinfo(&stat)
-	if err != nil {
-		panic(err)
-	}
-	totalRAM := stat.Totalram
+
 	for {
-		time.Sleep(5 * time.Second)
-		// get the amount of free space on ram
-		runtime.ReadMemStats(&m)
-		heap := m.Alloc
-		stack := m.StackSys
-		freeRam := stat.Totalram - heap - stack
-		// println(toGB(heap), toGB(stack), toGB(freeRam), toGB(stat.Totalram/5))
-		if freeRam < totalRAM/5 {
-			println("Memory full")
-			cleanTrace()
-			time.Sleep(15 * time.Second)
+		time.Sleep(2 * time.Second)
+		err := syscall.Sysinfo(&stat)
+		if err != nil {
+			panic(err)
 		}
 
-		// end if background memory test is not running anymore
-		if !backgroundMemoryTestRunning {
-			break
+		// TODO: For some readons, the memory is not equal to the memory in the system monitor.
+		freeRAM := toGB(stat.Freeram)
+		totalRAM := toGB(stat.Totalram)
+		perc := freeRAM / totalRAM
+
+		if perc < 0.01 {
+			panic("Not enough memory.")
+		}
+
+		if !runtime.GetIgnoreAtomicOperations() && !runtime.GetAdvocateDisabled() && perc < 0.1 {
+			println("Not enough memory. Ignore atomic operations.")
+			runtime.IgnoreAtomicOperations()
 		}
 	}
 }
@@ -71,15 +73,15 @@ func toGB(bytes uint64) float64 {
 }
 
 // BUG: crashes bug
-func cleanTrace() {
-	println("Cleaning trace")
-	// // stop new element from been added to the trace
-	// runtime.BlockTrace()
-	// writeToTraceFiles()
-	// runtime.DeleteTrace()
-	// runtime.UnblockTrace()
-	// runtime.GC()
-}
+// func cleanTrace() {
+// println("Cleaning trace")
+// // stop new element from been added to the trace
+// runtime.BlockTrace()
+// writeToTraceFiles()
+// runtime.DeleteTrace()
+// runtime.UnblockTrace()
+// runtime.GC()
+// }
 
 /*
  * Write the trace to a set of files. The traces are written into a folder
@@ -88,10 +90,14 @@ func cleanTrace() {
  */
 func writeToTraceFiles() {
 	numRout := runtime.GetNumberOfRoutines()
+	var wg sync.WaitGroup
 	for i := 1; i <= numRout; i++ {
 		// write the trace to the file
-		writeToTraceFile(i)
+		wg.Add(1)
+		go writeToTraceFile(i, &wg)
 	}
+
+	wg.Wait()
 }
 
 /*
@@ -101,8 +107,9 @@ func writeToTraceFiles() {
  * Args:
  * 	- routine: The id of the routine
  */
-func writeToTraceFile(routine int) {
+func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	// create the file if it does not exist and open it
+	defer wg.Done()
 	fileName := "trace/trace_" + strconv.Itoa(routine) + ".log"
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -183,11 +190,19 @@ func InitTracing(size int) {
 	signal.Notify(interuptSignal, os.Interrupt)
 	go func() {
 		<-interuptSignal
-		Finish()
-		os.Exit(0)
+		println("\nCancel Run. Write trace. Cancel again to force exit.")
+		go func() {
+			<-interuptSignal
+			os.Exit(1)
+		}()
+		if !runtime.GetAdvocateDisabled() {
+			Finish()
+		}
+		os.Exit(1)
 	}()
 
-	go writeTraceIfFull()
+	// go writeTraceIfFull()
+	go removeAtomicsIfFull()
 	runtime.InitAdvocate(size)
 }
 
@@ -306,11 +321,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				time, _ = strconv.Atoi(fields[1])
 				switch fields[0] {
 				case "X": // disable replay
-					if fields[2] == "s" {
-						op = runtime.OperationReplayStart
-					} else {
-						op = runtime.OperationReplayEnd
-					}
+					op = runtime.OperationReplayEnd
 				case "G":
 					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])
@@ -328,7 +339,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					default:
 						panic("Unknown channel operation " + fields[4] + " in line " + elem + " in file " + fileName + ".")
 					}
-					// time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}
@@ -349,7 +360,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					if fields[4] == "R" {
 						rw = true
 					}
-					// time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[2])
 					if fields[6] == "f" {
 						suc = false
 					}

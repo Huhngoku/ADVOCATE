@@ -166,6 +166,9 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// cases correctly, and they are rare enough not to bother
 	// optimizing (and needing to test).
 
+	// TODO: (advocate): this leads to error if cases are nil
+	// e.g. net/http/transport.go:1389, rew.Cancel and req.Context.Done() are nil when running gocrawl
+
 	// generate permuted order
 	norder := 0
 	for i := range scases {

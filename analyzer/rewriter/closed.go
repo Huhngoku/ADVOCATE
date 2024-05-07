@@ -68,9 +68,8 @@ func rewriteClosedChannel(bug bugs.Bug) error {
 	(*bug.TraceElement2[0]).SetTSort(t1 + 1)
 	trace.AddElementToTrace(*bug.TraceElement2[0])
 
-	// add a start and stop marker -> T1 ++ T2' ++ [X, c, a, X']
-	trace.AddTraceElementReplay(t1-1, true)
-	trace.AddTraceElementReplay(t1+2, false)
+	// add a stop marker -> T1 ++ T2' ++ [c, a, X']
+	trace.AddTraceElementReplay(t1 + 2)
 
 	return nil
 }
