@@ -151,8 +151,6 @@ func Add(x int) {
 func goDummy() {
 }
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 func testCthread(t *testing.T) {
 	if (runtime.GOOS == "darwin" || runtime.GOOS == "ios") && runtime.GOARCH == "arm64" {
 		t.Skip("the iOS exec wrapper is unable to properly handle the panic from Add")
@@ -165,8 +163,6 @@ func testCthread(t *testing.T) {
 		t.Fatalf("sum=%d, want %d", sum.i, want)
 	}
 }
-*/
-// ADVOCATE-REMOVE_TEST-END
 
 // Benchmark measuring overhead from C to Go in a C thread.
 // Create a new C thread and invoke Go function repeatedly in the new C thread.

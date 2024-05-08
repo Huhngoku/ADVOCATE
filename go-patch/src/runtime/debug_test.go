@@ -9,7 +9,7 @@
 // spends all of its time in the race runtime, which isn't a safe
 // point.
 
-//go:build (amd64 || arm64) && linux && !race
+//go:build (amd64 || arm64 || ppc64le) && linux && !race
 
 package runtime_test
 
@@ -237,8 +237,6 @@ func debugCallUnsafePointWorker(gpp **runtime.G, ready, stop *uint32) {
 	}
 }
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 func TestDebugCallUnsafePoint(t *testing.T) {
 	skipUnderDebugger(t)
 
@@ -267,8 +265,6 @@ func TestDebugCallUnsafePoint(t *testing.T) {
 		t.Fatalf("want %q, got %s", msg, err)
 	}
 }
-*/
-// ADVOCATE-REMOVE_TEST-END
 
 func TestDebugCallPanic(t *testing.T) {
 	skipUnderDebugger(t)

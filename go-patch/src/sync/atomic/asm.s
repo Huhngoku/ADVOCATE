@@ -52,22 +52,22 @@ TEXT ·AddUint64(SB),NOSPLIT,$0
 	JMP	runtime∕internal∕atomic·Xadd64(SB)
 
 TEXT ·LoadInt32(SB),NOSPLIT,$0
-	JMP	runtime∕internal∕atomic·LoadAdvocate(SB)
+	JMP	runtime∕internal∕atomic·Load(SB)
 
 TEXT ·LoadUint32(SB),NOSPLIT,$0
-	JMP	runtime∕internal∕atomic·LoadAdvocate(SB)
+	JMP	runtime∕internal∕atomic·Load(SB)
 
 TEXT ·LoadInt64(SB),NOSPLIT,$0
-	JMP	runtime∕internal∕atomic·Load64Advocate(SB)
+	JMP	runtime∕internal∕atomic·Load64(SB)
 
 TEXT ·LoadUint64(SB),NOSPLIT,$0
-	JMP	runtime∕internal∕atomic·Load64Advocate(SB)
+	JMP	runtime∕internal∕atomic·Load64(SB)
 
 TEXT ·LoadUintptr(SB),NOSPLIT,$0
 	JMP	runtime∕internal∕atomic·Loaduintptr(SB)
 
 TEXT ·LoadPointer(SB),NOSPLIT,$0
-	JMP	runtime∕internal∕atomic·LoadpAdvocate(SB)
+	JMP	runtime∕internal∕atomic·Loadp(SB)
 
 TEXT ·StoreInt32(SB),NOSPLIT,$0
 	JMP	runtime∕internal∕atomic·Store(SB)

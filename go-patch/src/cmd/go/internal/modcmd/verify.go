@@ -14,6 +14,7 @@ import (
 	"runtime"
 
 	"cmd/go/internal/base"
+	"cmd/go/internal/gover"
 	"cmd/go/internal/modfetch"
 	"cmd/go/internal/modload"
 
@@ -56,9 +57,12 @@ func runVerify(ctx context.Context, cmd *base.Command, args []string) {
 	type token struct{}
 	sem := make(chan token, runtime.GOMAXPROCS(0))
 
+	mg, err := modload.LoadModGraph(ctx, "")
+	if err != nil {
+		base.Fatal(err)
+	}
+	mods := mg.BuildList()
 	// Use a slice of result channels, so that the output is deterministic.
-	const defaultGoVersion = ""
-	mods := modload.LoadModGraph(ctx, defaultGoVersion).BuildList()[modload.MainModules.Len():]
 	errsChans := make([]<-chan []error, len(mods))
 
 	for i, mod := range mods {
@@ -86,6 +90,13 @@ func runVerify(ctx context.Context, cmd *base.Command, args []string) {
 }
 
 func verifyMod(ctx context.Context, mod module.Version) []error {
+	if gover.IsToolchain(mod.Path) {
+		// "go" and "toolchain" have no disk footprint; nothing to verify.
+		return nil
+	}
+	if modload.MainModules.Contains(mod.Path) {
+		return nil
+	}
 	var errs []error
 	zip, zipErr := modfetch.CachePath(ctx, mod, "zip")
 	if zipErr == nil {

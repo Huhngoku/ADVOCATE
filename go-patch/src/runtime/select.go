@@ -166,9 +166,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// cases correctly, and they are rare enough not to bother
 	// optimizing (and needing to test).
 
-	// TODO: (advocate): this leads to error if cases are nil
-	// e.g. net/http/transport.go:1389, rew.Cancel and req.Context.Done() are nil when running gocrawl
-
 	// generate permuted order
 	norder := 0
 	for i := range scases {
@@ -180,7 +177,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			continue
 		}
 
-		j := fastrandn(uint32(norder + 1))
+		j := cheaprandn(uint32(norder + 1))
 		pollorder[norder] = pollorder[j]
 		pollorder[j] = uint16(i)
 		norder++
@@ -288,21 +285,11 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 			goto retc
 		}
 	}
-	// ADVOCATE-CHANGE-END
 
 	for _, casei := range pollorder {
 		casi = int(casei)
 		cas = &scases[casi]
 		c = cas.c
-
-		// ADVOCATE-CHANGE-START
-		// TODO: can this be fixed?
-		// if replayEnabled {
-		// 	if casi != replayElem.SelIndex {
-		// 		continue
-		// 	}
-		// }
-		// ADVOCATE-CHANGE-END
 
 		if casi >= nsends {
 			// ADVOCATE-CHANGE-START
@@ -355,7 +342,6 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		casi = int(casei)
 		cas = &scases[casi]
 		c = cas.c
-
 		sg := acquireSudog()
 		sg.g = gp
 		sg.isSelect = true
@@ -424,15 +410,8 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		sg1.c = nil
 	}
 	gp.waiting = nil
-	for _, casei := range lockorder {
-		// ADVOCATE-CHANGE-START
-		// if replayEnabled {
-		// 	if int(casei) != replayElem.SelIndex {
-		// 		continue
-		// 	}
-		// }
-		// ADVOCATE-CHANGE-END
 
+	for _, casei := range lockorder {
 		k = &scases[casei]
 		if sg == sglist {
 			// sg has already been dequeued by the G that woke us up.
@@ -529,9 +508,6 @@ bufrecv:
 	}
 	c.qcount--
 	selunlock(scases, lockorder)
-	// ADVOCATE-CHANGE-START
-	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
-	// ADVOCATE-CHANGE-END
 	goto retc
 
 bufsend:
@@ -556,6 +532,9 @@ bufsend:
 	}
 	c.qcount++
 	selunlock(scases, lockorder)
+	// ADVOCATE-CHANGE-START
+	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
+	// ADVOCATE-CHANGE-END
 	goto retc
 
 recv:
@@ -610,7 +589,6 @@ retc:
 	if caseReleaseTime > 0 {
 		blockevent(caseReleaseTime-t0, 1)
 	}
-
 	return casi, recvOK
 
 sclose:

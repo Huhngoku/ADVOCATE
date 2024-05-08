@@ -10,5 +10,13 @@ package runtime
 func load_g()
 func save_g()
 
-// getcallerfp returns the address of the frame pointer in the callers frame or 0 if not implemented.
-func getcallerfp() uintptr { return 0 }
+// Used by reflectcall and the reflect package.
+//
+// Spills/loads arguments in registers to/from an internal/abi.RegArgs
+// respectively. Does not follow the Go ABI.
+func spillArgs()
+func unspillArgs()
+
+// getfp returns the frame pointer register of its caller or 0 if not implemented.
+// TODO: Make this a compiler intrinsic
+func getfp() uintptr { return 0 }

@@ -206,7 +206,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p := s.Prog(v.Op.Asm())
 		p.From = obj.Addr{Type: obj.TYPE_REG, Reg: v.Args[2].Reg()}
 		p.To = obj.Addr{Type: obj.TYPE_REG, Reg: v.Reg()}
-		p.SetFrom3Reg(v.Args[1].Reg())
+		p.AddRestSourceReg(v.Args[1].Reg())
 	case ssa.OpAMD64ADDQ, ssa.OpAMD64ADDL:
 		r := v.Reg()
 		r1 := v.Args[0].Reg()
@@ -252,7 +252,8 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		ssa.OpAMD64RORQ, ssa.OpAMD64RORL, ssa.OpAMD64RORW, ssa.OpAMD64RORB,
 		ssa.OpAMD64ADDSS, ssa.OpAMD64ADDSD, ssa.OpAMD64SUBSS, ssa.OpAMD64SUBSD,
 		ssa.OpAMD64MULSS, ssa.OpAMD64MULSD, ssa.OpAMD64DIVSS, ssa.OpAMD64DIVSD,
-		ssa.OpAMD64PXOR,
+		ssa.OpAMD64MINSS, ssa.OpAMD64MINSD,
+		ssa.OpAMD64POR, ssa.OpAMD64PXOR,
 		ssa.OpAMD64BTSL, ssa.OpAMD64BTSQ,
 		ssa.OpAMD64BTCL, ssa.OpAMD64BTCQ,
 		ssa.OpAMD64BTRL, ssa.OpAMD64BTRQ:
@@ -265,7 +266,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p.From.Reg = bits
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = lo
-		p.SetFrom3Reg(hi)
+		p.AddRestSourceReg(hi)
 
 	case ssa.OpAMD64BLSIQ, ssa.OpAMD64BLSIL,
 		ssa.OpAMD64BLSMSKQ, ssa.OpAMD64BLSMSKL,
@@ -287,13 +288,13 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p.From.Reg = v.Args[0].Reg()
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = v.Reg()
-		p.SetFrom3Reg(v.Args[1].Reg())
+		p.AddRestSourceReg(v.Args[1].Reg())
 
 	case ssa.OpAMD64SARXL, ssa.OpAMD64SARXQ,
 		ssa.OpAMD64SHLXL, ssa.OpAMD64SHLXQ,
 		ssa.OpAMD64SHRXL, ssa.OpAMD64SHRXQ:
 		p := opregreg(s, v.Op.Asm(), v.Reg(), v.Args[1].Reg())
-		p.SetFrom3Reg(v.Args[0].Reg())
+		p.AddRestSourceReg(v.Args[0].Reg())
 
 	case ssa.OpAMD64SHLXLload, ssa.OpAMD64SHLXQload,
 		ssa.OpAMD64SHRXLload, ssa.OpAMD64SHRXQload,
@@ -301,7 +302,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p := opregreg(s, v.Op.Asm(), v.Reg(), v.Args[1].Reg())
 		m := obj.Addr{Type: obj.TYPE_MEM, Reg: v.Args[0].Reg()}
 		ssagen.AddAux(&m, v)
-		p.SetFrom3(m)
+		p.AddRestSource(m)
 
 	case ssa.OpAMD64SHLXLloadidx1, ssa.OpAMD64SHLXLloadidx4, ssa.OpAMD64SHLXLloadidx8,
 		ssa.OpAMD64SHRXLloadidx1, ssa.OpAMD64SHRXLloadidx4, ssa.OpAMD64SHRXLloadidx8,
@@ -313,7 +314,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		m := obj.Addr{Type: obj.TYPE_MEM}
 		memIdx(&m, v)
 		ssagen.AddAux(&m, v)
-		p.SetFrom3(m)
+		p.AddRestSource(m)
 
 	case ssa.OpAMD64DIVQU, ssa.OpAMD64DIVLU, ssa.OpAMD64DIVWU:
 		// Arg[0] (the dividend) is in AX.
@@ -631,7 +632,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p.From.Offset = v.AuxInt
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = r
-		p.SetFrom3Reg(v.Args[0].Reg())
+		p.AddRestSourceReg(v.Args[0].Reg())
 
 	case ssa.OpAMD64ANDQconst:
 		asm := v.Op.Asm()
@@ -713,9 +714,9 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p.To.Offset = v.AuxInt
 	case ssa.OpAMD64BTLconst, ssa.OpAMD64BTQconst,
 		ssa.OpAMD64TESTQconst, ssa.OpAMD64TESTLconst, ssa.OpAMD64TESTWconst, ssa.OpAMD64TESTBconst,
-		ssa.OpAMD64BTSLconst, ssa.OpAMD64BTSQconst,
-		ssa.OpAMD64BTCLconst, ssa.OpAMD64BTCQconst,
-		ssa.OpAMD64BTRLconst, ssa.OpAMD64BTRQconst:
+		ssa.OpAMD64BTSQconst,
+		ssa.OpAMD64BTCQconst,
+		ssa.OpAMD64BTRQconst:
 		op := v.Op
 		if op == ssa.OpAMD64BTQconst && v.AuxInt < 32 {
 			// Emit 32-bit version because it's shorter
@@ -850,7 +851,8 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		}
 		fallthrough
 	case ssa.OpAMD64ANDQconstmodify, ssa.OpAMD64ANDLconstmodify, ssa.OpAMD64ORQconstmodify, ssa.OpAMD64ORLconstmodify,
-		ssa.OpAMD64XORQconstmodify, ssa.OpAMD64XORLconstmodify:
+		ssa.OpAMD64XORQconstmodify, ssa.OpAMD64XORLconstmodify,
+		ssa.OpAMD64BTSQconstmodify, ssa.OpAMD64BTRQconstmodify, ssa.OpAMD64BTCQconstmodify:
 		sc := v.AuxValAndOff()
 		off := sc.Off64()
 		val := sc.Val64()
@@ -1030,7 +1032,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p.From.Reg = v.Args[0].Reg()
 		ssagen.AddrAuto(&p.To, v)
 	case ssa.OpAMD64LoweredHasCPUFeature:
-		p := s.Prog(x86.AMOVBQZX)
+		p := s.Prog(x86.AMOVBLZX)
 		p.From.Type = obj.TYPE_MEM
 		ssagen.AddAux(&p.From, v)
 		p.To.Type = obj.TYPE_REG
@@ -1147,7 +1149,7 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		}
 		p.From.Offset = val
 		p.From.Type = obj.TYPE_CONST
-		p.SetFrom3Reg(v.Args[0].Reg())
+		p.AddRestSourceReg(v.Args[0].Reg())
 		p.To.Type = obj.TYPE_REG
 		p.To.Reg = v.Reg()
 	case ssa.OpAMD64POPCNTQ, ssa.OpAMD64POPCNTL,
@@ -1185,6 +1187,15 @@ func ssaGenValue(s *ssagen.State, v *ssa.Value) {
 		p := s.Prog(v.Op.Asm())
 		p.To.Type = obj.TYPE_MEM
 		p.To.Reg = v.Args[0].Reg()
+		ssagen.AddAux(&p.To, v)
+
+	case ssa.OpAMD64SETEQstoreidx1, ssa.OpAMD64SETNEstoreidx1,
+		ssa.OpAMD64SETLstoreidx1, ssa.OpAMD64SETLEstoreidx1,
+		ssa.OpAMD64SETGstoreidx1, ssa.OpAMD64SETGEstoreidx1,
+		ssa.OpAMD64SETBstoreidx1, ssa.OpAMD64SETBEstoreidx1,
+		ssa.OpAMD64SETAstoreidx1, ssa.OpAMD64SETAEstoreidx1:
+		p := s.Prog(v.Op.Asm())
+		memIdx(&p.To, v)
 		ssagen.AddAux(&p.To, v)
 
 	case ssa.OpAMD64SETNEF:

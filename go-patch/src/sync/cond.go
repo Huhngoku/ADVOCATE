@@ -27,7 +27,7 @@ import (
 // that it unblocks.
 //
 // For many simple use cases, users will be better off using channels than a
-// Cond (Broadcast corresponds to closing a channel, and Signal corresponds toAdvocateReplaySelectDefault
+// Cond (Broadcast corresponds to closing a channel, and Signal corresponds to
 // sending on a channel).
 //
 // For more on replacements for sync.Cond, see [Roberto Clapis's series on
@@ -81,6 +81,7 @@ func (c *Cond) Wait() {
 	advocateIndex := runtime.AdvocateCondPre(c.id, 0)
 	defer runtime.AdvocateCondPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
+
 	c.checker.check()
 	t := runtime_notifyListAdd(&c.notify)
 	c.L.Unlock()
@@ -125,6 +126,7 @@ func (c *Cond) Broadcast() {
 	advocateIndex := runtime.AdvocateCondPre(c.id, 2)
 	defer runtime.AdvocateCondPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
+
 	c.checker.check()
 	runtime_notifyListNotifyAll(&c.notify)
 }
@@ -133,6 +135,10 @@ func (c *Cond) Broadcast() {
 type copyChecker uintptr
 
 func (c *copyChecker) check() {
+	// Check if c has been copied in three steps:
+	// 1. The first comparison is the fast-path. If c has been initialized and not copied, this will return immediately. Otherwise, c is either not initialized, or has been copied.
+	// 2. Ensure c is initialized. If the CAS succeeds, we're done. If it fails, c was either initialized concurrently and we simply lost the race, or c has been copied.
+	// 3. Do step 1 again. Now that c is definitely initialized, if this fails, c was copied.
 	if uintptr(*c) != uintptr(unsafe.Pointer(c)) &&
 		!atomic.CompareAndSwapUintptr((*uintptr)(c), 0, uintptr(unsafe.Pointer(c))) &&
 		uintptr(*c) != uintptr(unsafe.Pointer(c)) {

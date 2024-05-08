@@ -24,10 +24,16 @@ const enableReverseTypeInference = true // disable for debugging
 // based on the given type parameters tparams, type arguments targs, function parameters params, and
 // function arguments args, if any. There must be at least one type parameter, no more type arguments
 // than type parameters, and params and args must match in number (incl. zero).
+// If reverse is set, an error message's contents are reversed for a better error message for some
+// errors related to reverse type inference (where the function call is synthetic).
 // If successful, infer returns the complete list of given and inferred type arguments, one for each
 // type parameter. Otherwise the result is nil and appropriate errors will be reported.
-func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, params *Tuple, args []*operand) (inferred []Type) {
-	if debug {
+func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, params *Tuple, args []*operand, reverse bool) (inferred []Type) {
+	// Don't verify result conditions if there's no error handler installed:
+	// in that case, an error leads to an exit panic and the result value may
+	// be incorrect. But in that case it doesn't matter because callers won't
+	// be able to use it either.
+	if check.conf.Error != nil {
 		defer func() {
 			assert(inferred == nil || len(inferred) == len(tparams) && !containsNil(inferred))
 		}()
@@ -50,6 +56,14 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 	// If we already have all type arguments, we're done.
 	if len(targs) == n && !containsNil(targs) {
 		return targs
+	}
+
+	// If we have invalid (ordinary) arguments, an error was reported before.
+	// Avoid additional inference errors and exit early (go.dev/issue/60434).
+	for _, arg := range args {
+		if arg.mode == invalid {
+			return nil
+		}
 	}
 
 	// Make sure we have a "full" list of type arguments, some of which may
@@ -96,9 +110,9 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 	// Unify parameter and argument types for generic parameters with typed arguments
 	// and collect the indices of generic parameters with untyped arguments.
 	// Terminology: generic parameter = function parameter with a type-parameterized type
-	u := newUnifier(tparams, targs)
+	u := newUnifier(tparams, targs, check.allowVersion(check.pkg, pos, go1_21))
 
-	errorf := func(kind string, tpar, targ Type, arg *operand) {
+	errorf := func(tpar, targ Type, arg *operand) {
 		// provide a better error message if we can
 		targs := u.inferred(tparams)
 		if targs[0] == nil {
@@ -113,7 +127,7 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 				}
 			}
 			if allFailed {
-				check.errorf(arg, CannotInferTypeArgs, "%s %s of %s does not match %s (cannot infer %s)", kind, targ, arg.expr, tpar, typeParamsString(tparams))
+				check.errorf(arg, CannotInferTypeArgs, "type %s of %s does not match %s (cannot infer %s)", targ, arg.expr, tpar, typeParamsString(tparams))
 				return
 			}
 		}
@@ -125,9 +139,13 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 		// InvalidTypeArg). We can't differentiate these cases, so fall back on
 		// the more general CannotInferTypeArgs.
 		if inferred != tpar {
-			check.errorf(arg, CannotInferTypeArgs, "%s %s of %s does not match inferred type %s for %s", kind, targ, arg.expr, inferred, tpar)
+			if reverse {
+				check.errorf(arg, CannotInferTypeArgs, "inferred type %s for %s does not match type %s of %s", inferred, tpar, targ, arg.expr)
+			} else {
+				check.errorf(arg, CannotInferTypeArgs, "type %s of %s does not match inferred type %s for %s", targ, arg.expr, inferred, tpar)
+			}
 		} else {
-			check.errorf(arg, CannotInferTypeArgs, "%s %s of %s does not match %s", kind, targ, arg.expr, tpar)
+			check.errorf(arg, CannotInferTypeArgs, "type %s of %s does not match %s", targ, arg.expr, tpar)
 		}
 	}
 
@@ -155,8 +173,8 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 			// Function parameters are always typed. Arguments may be untyped.
 			// Collect the indices of untyped arguments and handle them later.
 			if isTyped(arg.typ) {
-				if !u.unify(par.typ, arg.typ) {
-					errorf("type", par.typ, arg.typ, arg)
+				if !u.unify(par.typ, arg.typ, assign) {
+					errorf(par.typ, arg.typ, arg)
 					return nil
 				}
 			} else if _, ok := par.typ.(*TypeParam); ok && !arg.isNil() {
@@ -230,8 +248,11 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 					//    core type.
 					// 2) If the core type doesn't have a tilde, we also must unify tx
 					//    with the core type.
-					if !u.unify(tx, core.typ) {
-						check.errorf(pos, CannotInferTypeArgs, "%s does not match %s", tpar, core.typ)
+					if !u.unify(tx, core.typ, 0) {
+						// TODO(gri) Type parameters that appear in the constraint and
+						//           for which we have type arguments inferred should
+						//           use those type arguments for a better error message.
+						check.errorf(pos, CannotInferTypeArgs, "%s (type %s) does not satisfy %s", tpar, tx, tpar.Constraint())
 						return nil
 					}
 				case single && !core.tilde:
@@ -246,10 +267,17 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 					// It must have (at least) all the methods of the type constraint,
 					// and the method signatures must unify; otherwise tx cannot satisfy
 					// the constraint.
+					// TODO(gri) Now that unification handles interfaces, this code can
+					//           be reduced to calling u.unify(tx, tpar.iface(), assign)
+					//           (which will compare signatures exactly as we do below).
+					//           We leave it as is for now because missingMethod provides
+					//           a failure cause which allows for a better error message.
+					//           Eventually, unify should return an error with cause.
 					var cause string
 					constraint := tpar.iface()
-					if m, _ := check.missingMethod(tx, constraint, true, u.unify, &cause); m != nil {
-						check.errorf(pos, CannotInferTypeArgs, "%s does not satisfy %s %s", tx, constraint, cause)
+					if m, _ := check.missingMethod(tx, constraint, true, func(x, y Type) bool { return u.unify(x, y, exact) }, &cause); m != nil {
+						// TODO(gri) better error message (see TODO above)
+						check.errorf(pos, CannotInferTypeArgs, "%s (type %s) does not satisfy %s %s", tpar, tx, tpar.Constraint(), cause)
 						return nil
 					}
 				}
@@ -273,78 +301,37 @@ func (check *Checker) infer(pos syntax.Pos, tparams []*TypeParam, targs []Type, 
 		u.tracef("== untyped arguments: %v", untyped)
 	}
 
-	// We need a poser/positioner for check.allowVersion below.
-	// We should really use pos (argument to infer) but currently
-	// the generator that generates go/types/infer.go has trouble
-	// with that. For now, do a little dance to get a position if
-	// we need one. (If we don't have untyped arguments left, it
-	// doesn't matter which branch we take below.)
-	// TODO(gri) adjust infer signature or adjust the rewriter.
-	var at syntax.Pos
-	if len(untyped) > 0 {
-		at = params.At(untyped[0]).pos
+	// Some generic parameters with untyped arguments may have been given a type by now.
+	// Collect all remaining parameters that don't have a type yet and determine the
+	// maximum untyped type for each of those parameters, if possible.
+	var maxUntyped map[*TypeParam]Type // lazily allocated (we may not need it)
+	for _, index := range untyped {
+		tpar := params.At(index).typ.(*TypeParam) // is type parameter by construction of untyped
+		if u.at(tpar) == nil {
+			arg := args[index] // arg corresponding to tpar
+			if maxUntyped == nil {
+				maxUntyped = make(map[*TypeParam]Type)
+			}
+			max := maxUntyped[tpar]
+			if max == nil {
+				max = arg.typ
+			} else {
+				m := maxType(max, arg.typ)
+				if m == nil {
+					check.errorf(arg, CannotInferTypeArgs, "mismatched types %s and %s (cannot infer %s)", max, arg.typ, tpar)
+					return nil
+				}
+				max = m
+			}
+			maxUntyped[tpar] = max
+		}
 	}
-
-	if check.allowVersion(check.pkg, atPos(at), go1_21) {
-		// Some generic parameters with untyped arguments may have been given a type by now.
-		// Collect all remaining parameters that don't have a type yet and determine the
-		// maximum untyped type for each of those parameters, if possible.
-		var maxUntyped map[*TypeParam]Type // lazily allocated (we may not need it)
-		for _, index := range untyped {
-			tpar := params.At(index).typ.(*TypeParam) // is type parameter by construction of untyped
-			if u.at(tpar) == nil {
-				arg := args[index] // arg corresponding to tpar
-				if maxUntyped == nil {
-					maxUntyped = make(map[*TypeParam]Type)
-				}
-				max := maxUntyped[tpar]
-				if max == nil {
-					max = arg.typ
-				} else {
-					m := maxType(max, arg.typ)
-					if m == nil {
-						check.errorf(arg, CannotInferTypeArgs, "mismatched types %s and %s (cannot infer %s)", max, arg.typ, tpar)
-						return nil
-					}
-					max = m
-				}
-				maxUntyped[tpar] = max
-			}
-		}
-		// maxUntyped contains the maximum untyped type for each type parameter
-		// which doesn't have a type yet. Set the respective default types.
-		for tpar, typ := range maxUntyped {
-			d := Default(typ)
-			assert(isTyped(d))
-			u.set(tpar, d)
-		}
-	} else {
-		// Some generic parameters with untyped arguments may have been given a type by now.
-		// Collect all remaining parameters that don't have a type yet and unify them with
-		// the default types of the untyped arguments.
-		// We need to collect them all before unifying them with their untyped arguments;
-		// otherwise a parameter type that appears multiple times will have a type after
-		// the first unification and will be skipped later on, leading to incorrect results.
-		j := 0
-		for _, i := range untyped {
-			tpar := params.At(i).typ.(*TypeParam) // is type parameter by construction of untyped
-			if u.at(tpar) == nil {
-				untyped[j] = i
-				j++
-			}
-		}
-		// untyped[:j] are the indices of parameters without a type yet.
-		// The respective default types are typed (not untyped) by construction.
-		for _, i := range untyped[:j] {
-			tpar := params.At(i).typ.(*TypeParam)
-			arg := args[i]
-			typ := Default(arg.typ)
-			assert(isTyped(typ))
-			if !u.unify(tpar, typ) {
-				errorf("default type", tpar, typ, arg)
-				return nil
-			}
-		}
+	// maxUntyped contains the maximum untyped type for each type parameter
+	// which doesn't have a type yet. Set the respective default types.
+	for tpar, typ := range maxUntyped {
+		d := Default(typ)
+		assert(isTyped(d))
+		u.set(tpar, d)
 	}
 
 	// --- simplify ---
@@ -569,6 +556,9 @@ func (w *tpWalker) isParameterized(typ Type) (res bool) {
 	case *Basic:
 		// nothing to do
 
+	case *Alias:
+		return w.isParameterized(Unalias(t))
+
 	case *Array:
 		return w.isParameterized(t.elem)
 
@@ -719,6 +709,9 @@ func (w *cycleFinder) typ(typ Type) {
 	switch t := typ.(type) {
 	case *Basic:
 		// nothing to do
+
+	case *Alias:
+		w.typ(Unalias(t))
 
 	case *Array:
 		w.typ(t.elem)

@@ -16,6 +16,7 @@ import (
 	"go/token"
 	"internal/lazytemplate"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"unicode"
@@ -23,7 +24,6 @@ import (
 
 	"cmd/go/internal/cfg"
 	"cmd/go/internal/fsys"
-	"cmd/go/internal/slices"
 	"cmd/go/internal/str"
 	"cmd/go/internal/trace"
 )
@@ -198,7 +198,7 @@ func TestPackagesAndErrors(ctx context.Context, done func(), opts PackageOpts, p
 		ptest.Internal.Imports = append(imports, p.Internal.Imports...)
 		ptest.Internal.RawImports = str.StringList(rawTestImports, p.Internal.RawImports)
 		ptest.Internal.ForceLibrary = true
-		ptest.Internal.BuildInfo = ""
+		ptest.Internal.BuildInfo = nil
 		ptest.Internal.Build = new(build.Package)
 		*ptest.Internal.Build = *p.Internal.Build
 		m := map[string][]token.Position{}
@@ -298,7 +298,11 @@ func TestPackagesAndErrors(ctx context.Context, done func(), opts PackageOpts, p
 	// Also the linker introduces implicit dependencies reported by LinkerDeps.
 	stk.Push("testmain")
 	deps := TestMainDeps // cap==len, so safe for append
-	for _, d := range LinkerDeps(p) {
+	ldDeps, err := LinkerDeps(p)
+	if err != nil && pmain.Error == nil {
+		pmain.Error = &PackageError{Err: err}
+	}
+	for _, d := range ldDeps {
 		deps = append(deps, d)
 	}
 	for _, dep := range deps {
@@ -384,15 +388,15 @@ func TestPackagesAndErrors(ctx context.Context, done func(), opts PackageOpts, p
 				// it contains p's Go files), whereas pmain contains only
 				// test harness code (don't want to instrument it, and
 				// we don't want coverage hooks in the pkg init).
-				ptest.Internal.CoverMode = p.Internal.CoverMode
-				pmain.Internal.CoverMode = "testmain"
+				ptest.Internal.Cover.Mode = p.Internal.Cover.Mode
+				pmain.Internal.Cover.Mode = "testmain"
 			}
 			// Should we apply coverage analysis locally, only for this
 			// package and only for this test? Yes, if -cover is on but
 			// -coverpkg has not specified a list of packages for global
 			// coverage.
 			if cover.Local {
-				ptest.Internal.CoverMode = cover.Mode
+				ptest.Internal.Cover.Mode = cover.Mode
 
 				if !cfg.Experiment.CoverageRedesign {
 					var coverFiles []string
@@ -471,8 +475,9 @@ func recompileForTest(pmain, preal, ptest, pxtest *Package) *PackageError {
 			copy(p1.Imports, p.Imports)
 			p = p1
 			p.Target = ""
-			p.Internal.BuildInfo = ""
+			p.Internal.BuildInfo = nil
 			p.Internal.ForceLibrary = true
+			p.Internal.PGOProfile = preal.Internal.PGOProfile
 		}
 
 		// Update p.Internal.Imports to use test copies.
@@ -494,6 +499,11 @@ func recompileForTest(pmain, preal, ptest, pxtest *Package) *PackageError {
 		// compiled with '-p main' causes duplicate symbol errors.
 		// See golang.org/issue/30907, golang.org/issue/34114.
 		if p.Name == "main" && p != pmain && p != ptest {
+			split()
+		}
+		// Split and attach PGO information to test dependencies if preal
+		// is built with PGO.
+		if preal.Internal.PGOProfile != "" && p.Internal.PGOProfile == "" {
 			split()
 		}
 	}
@@ -520,11 +530,22 @@ func recompileForTest(pmain, preal, ptest, pxtest *Package) *PackageError {
 		p := q[0]
 		q = q[1:]
 		if p == ptest {
+			// The stack is supposed to be in the order x imports y imports z.
+			// We collect in the reverse order: z is imported by y is imported
+			// by x, and then we reverse it.
 			var stk []string
 			for p != nil {
 				stk = append(stk, p.ImportPath)
 				p = importerOf[p]
 			}
+			// complete the cycle: we set importer[p] = nil to break the cycle
+			// in importerOf, it's an implicit importerOf[p] == pTest. Add it
+			// back here since we reached nil in the loop above to demonstrate
+			// the cycle as (for example) package p imports package q imports package r
+			// imports package p.
+			stk = append(stk, ptest.ImportPath)
+			slices.Reverse(stk)
+
 			return &PackageError{
 				ImportStack:   stk,
 				Err:           errors.New("import cycle not allowed in test"),
@@ -932,10 +953,13 @@ func init() {
 func runtime_coverage_processCoverTestDir(dir string, cfile string, cmode string, cpkgs string) error
 
 //go:linkname testing_registerCover2 testing.registerCover2
-func testing_registerCover2(mode string, tearDown func(coverprofile string, gocoverdir string) (string, error))
+func testing_registerCover2(mode string, tearDown func(coverprofile string, gocoverdir string) (string, error), snapcov func() float64)
 
 //go:linkname runtime_coverage_markProfileEmitted runtime/coverage.markProfileEmitted
 func runtime_coverage_markProfileEmitted(val bool)
+
+//go:linkname runtime_coverage_snapshot runtime/coverage.snapshot
+func runtime_coverage_snapshot() float64
 
 func coverTearDown(coverprofile string, gocoverdir string) (string, error) {
 	var err error
@@ -957,7 +981,7 @@ func coverTearDown(coverprofile string, gocoverdir string) (string, error) {
 
 func main() {
 {{if .Cover}}
-	testing_registerCover2({{printf "%q" .Cover.Mode}}, coverTearDown)
+	testing_registerCover2({{printf "%q" .Cover.Mode}}, coverTearDown, runtime_coverage_snapshot)
 {{end}}
 	m := testing.MainStart(testdeps.TestDeps{}, tests, benchmarks, fuzzTargets, examples)
 {{with .TestMain}}

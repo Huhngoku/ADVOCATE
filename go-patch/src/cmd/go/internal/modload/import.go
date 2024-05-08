@@ -18,6 +18,7 @@ import (
 
 	"cmd/go/internal/cfg"
 	"cmd/go/internal/fsys"
+	"cmd/go/internal/gover"
 	"cmd/go/internal/modfetch"
 	"cmd/go/internal/modindex"
 	"cmd/go/internal/par"
@@ -25,7 +26,6 @@ import (
 	"cmd/go/internal/str"
 
 	"golang.org/x/mod/module"
-	"golang.org/x/mod/semver"
 )
 
 type ImportMissingError struct {
@@ -318,30 +318,41 @@ func importFromModules(ctx context.Context, path string, rs *Requirements, mg *M
 		mods = append(mods, module.Version{})
 	}
 	// -mod=vendor is special.
-	// Everything must be in the main module or the main module's vendor directory.
+	// Everything must be in the main modules or the main module's or workspace's vendor directory.
 	if cfg.BuildMod == "vendor" {
-		mainModule := MainModules.mustGetSingleMainModule()
-		modRoot := MainModules.ModRoot(mainModule)
 		var mainErr error
-		if modRoot != "" {
-			mainDir, mainOK, err := dirInModule(path, MainModules.PathPrefix(mainModule), modRoot, true)
-			mainErr = err
-			if mainOK {
-				mods = append(mods, mainModule)
-				dirs = append(dirs, mainDir)
-				roots = append(roots, modRoot)
+		for _, mainModule := range MainModules.Versions() {
+			modRoot := MainModules.ModRoot(mainModule)
+			if modRoot != "" {
+				dir, mainOK, err := dirInModule(path, MainModules.PathPrefix(mainModule), modRoot, true)
+				if mainErr == nil {
+					mainErr = err
+				}
+				if mainOK {
+					mods = append(mods, mainModule)
+					dirs = append(dirs, dir)
+					roots = append(roots, modRoot)
+				}
 			}
-			vendorDir, vendorOK, _ := dirInModule(path, "", filepath.Join(modRoot, "vendor"), false)
+		}
+
+		if HasModRoot() {
+			vendorDir := VendorDir()
+			dir, vendorOK, _ := dirInModule(path, "", vendorDir, false)
 			if vendorOK {
-				readVendorList(mainModule)
+				readVendorList(vendorDir)
+				// TODO(#60922): It's possible for a package to manually have been added to the
+				// vendor directory, causing the dirInModule to succeed, but no vendorPkgModule
+				// to exist, causing an empty module path to be reported. Do better checking
+				// here.
 				mods = append(mods, vendorPkgModule[path])
-				dirs = append(dirs, vendorDir)
-				roots = append(roots, modRoot)
+				dirs = append(dirs, dir)
+				roots = append(roots, vendorDir)
 			}
 		}
 
 		if len(dirs) > 1 {
-			return module.Version{}, modRoot, "", nil, &AmbiguousImportError{importPath: path, Dirs: dirs}
+			return module.Version{}, "", "", nil, &AmbiguousImportError{importPath: path, Dirs: dirs}
 		}
 
 		if mainErr != nil {
@@ -349,7 +360,7 @@ func importFromModules(ctx context.Context, path string, rs *Requirements, mg *M
 		}
 
 		if len(dirs) == 0 {
-			return module.Version{}, modRoot, "", nil, &ImportMissingError{Path: path}
+			return module.Version{}, "", "", nil, &ImportMissingError{Path: path}
 		}
 
 		return mods[0], roots[0], dirs[0], nil, nil
@@ -371,6 +382,10 @@ func importFromModules(ctx context.Context, path string, rs *Requirements, mg *M
 	for {
 		var sumErrMods, altMods []module.Version
 		for prefix := path; prefix != "."; prefix = pathpkg.Dir(prefix) {
+			if gover.IsToolchain(prefix) {
+				// Do not use the synthetic "go" module for "go/ast".
+				continue
+			}
 			var (
 				v  string
 				ok bool
@@ -509,7 +524,7 @@ func queryImport(ctx context.Context, path string, rs *Requirements) (module.Ver
 			if err != nil {
 				return module.Version{}, err
 			}
-			if cmpVersion(mg.Selected(mp), mv) >= 0 {
+			if gover.ModCompare(mp, mg.Selected(mp), mv) >= 0 {
 				// We can't resolve the import by adding mp@mv to the module graph,
 				// because the selected version of mp is already at least mv.
 				continue
@@ -602,7 +617,7 @@ func queryImport(ctx context.Context, path string, rs *Requirements) (module.Ver
 
 	candidate0MissingVersion := ""
 	for i, c := range candidates {
-		if v := mg.Selected(c.Mod.Path); semver.Compare(v, c.Mod.Version) > 0 {
+		if v := mg.Selected(c.Mod.Path); gover.ModCompare(c.Mod.Path, v, c.Mod.Version) > 0 {
 			// QueryPattern proposed that we add module c.Mod to provide the package,
 			// but we already depend on a newer version of that module (and that
 			// version doesn't have the package).
@@ -691,7 +706,7 @@ func dirInModule(path, mpath, mdir string, isLocal bool) (dir string, haveGoFile
 	// Now committed to returning dir (not "").
 
 	// Are there Go source files in the directory?
-	// We don't care about build tags, not even "+build ignore".
+	// We don't care about build tags, not even "go:build ignore".
 	// We're just looking for a plausible directory.
 	haveGoFiles, err = haveGoFilesCache.Do(dir, func() (bool, error) {
 		// modindex.GetPackage will return ErrNotIndexed for any directories which
@@ -728,6 +743,9 @@ func fetch(ctx context.Context, mod module.Version) (dir string, isLocal bool, e
 			// so if we don't report the error now, later failures will be
 			// very mysterious.
 			if _, err := fsys.Stat(dir); err != nil {
+				// TODO(bcmills): We should also read dir/go.mod here and check its Go version,
+				// and return a gover.TooNewError if appropriate.
+
 				if os.IsNotExist(err) {
 					// Semantically the module version itself “exists” — we just don't
 					// have its source code. Remove the equivalence to os.ErrNotExist,

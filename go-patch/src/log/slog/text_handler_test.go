@@ -9,6 +9,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"internal/testenv"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -137,8 +139,6 @@ func TestTextHandlerPreformatted(t *testing.T) {
 	}
 }
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 func TestTextHandlerAlloc(t *testing.T) {
 	testenv.SkipIfOptimizationOff(t)
 	r := NewRecord(time.Now(), LevelInfo, "msg", 0)
@@ -152,8 +152,6 @@ func TestTextHandlerAlloc(t *testing.T) {
 	r.AddAttrs(Group("g", Int("a", 1)))
 	wantAllocs(t, 0, func() { h.Handle(context.Background(), r) })
 }
-*/
-// ADVOCATE-REMOVE_TEST-END
 
 func TestNeedsQuoting(t *testing.T) {
 	for _, test := range []struct {
@@ -167,6 +165,8 @@ func TestNeedsQuoting(t *testing.T) {
 		{"\a\b", true},
 		{"a\tb", true},
 		{"µåπ", false},
+		{"a b", true},
+		{"badutf8\xF6", true},
 	} {
 		got := needsQuoting(test.in)
 		if got != test.want {

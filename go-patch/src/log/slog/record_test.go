@@ -24,14 +24,17 @@ func TestRecordAttrs(t *testing.T) {
 	}
 
 	// Early return.
-	var got []Attr
-	r.Attrs(func(a Attr) bool {
-		got = append(got, a)
-		return len(got) < 2
-	})
-	want := as[:2]
-	if !attrsEqual(got, want) {
-		t.Errorf("got %v, want %v", got, want)
+	// Hit both loops in Record.Attrs: front and back.
+	for _, stop := range []int{2, 6} {
+		var got []Attr
+		r.Attrs(func(a Attr) bool {
+			got = append(got, a)
+			return len(got) < stop
+		})
+		want := as[:stop]
+		if !attrsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
 	}
 }
 
@@ -93,12 +96,15 @@ func TestAliasingAndClone(t *testing.T) {
 	r1.back = b
 	// Make a copy that shares state.
 	r2 := r1
-	// Adding to both should panic.
+	// Adding to both should insert a special Attr in the second.
+	r1AttrsBefore := attrsSlice(r1)
 	r1.AddAttrs(Int("p", 0))
-	if !panics(func() { r2.AddAttrs(Int("p", 1)) }) {
-		t.Error("expected panic")
-	}
+	r2.AddAttrs(Int("p", 1))
+	check(r1, append(slices.Clip(r1AttrsBefore), Int("p", 0)))
 	r1Attrs := attrsSlice(r1)
+	check(r2, append(slices.Clip(r1AttrsBefore),
+		String("!BUG", "AddAttrs unsafely called on copy of Record made without using Record.Clone"), Int("p", 1)))
+
 	// Adding to a clone is fine.
 	r2 = r1.Clone()
 	check(r2, r1Attrs)

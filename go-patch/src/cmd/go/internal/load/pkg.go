@@ -18,7 +18,6 @@ import (
 	"internal/platform"
 	"io/fs"
 	"os"
-	"os/exec"
 	pathpkg "path"
 	"path/filepath"
 	"runtime"
@@ -34,6 +33,7 @@ import (
 	"cmd/go/internal/base"
 	"cmd/go/internal/cfg"
 	"cmd/go/internal/fsys"
+	"cmd/go/internal/gover"
 	"cmd/go/internal/imports"
 	"cmd/go/internal/modfetch"
 	"cmd/go/internal/modindex"
@@ -227,12 +227,11 @@ type PackageInternal struct {
 	LocalPrefix       string               // interpret ./ and ../ imports relative to this prefix
 	ExeName           string               // desired name for temporary executable
 	FuzzInstrument    bool                 // package should be instrumented for fuzzing
-	CoverMode         string               // preprocess Go source files with the coverage tool in this mode
+	Cover             CoverSetup           // coverage mode and other setup info of -cover is being applied to this package
 	CoverVars         map[string]*CoverVar // variables created by coverage analysis
-	CoverageCfg       string               // coverage info config file path (passed to compiler)
 	OmitDebug         bool                 // tell linker not to write debug information
 	GobinSubdir       bool                 // install target would be subdir of GOBIN
-	BuildInfo         string               // add this info to package main
+	BuildInfo         *debug.BuildInfo     // add this info to package main
 	TestmainGo        *[]byte              // content for _testmain.go
 	Embed             map[string][]string  // //go:embed comment mapping
 	OrigImportPath    string               // original import path before adding '_test' suffix
@@ -374,6 +373,13 @@ func (p *Package) Resolve(imports []string) []string {
 type CoverVar struct {
 	File string // local file name
 	Var  string // name of count struct
+}
+
+// CoverSetup holds parameters related to coverage setup for a given package (covermode, etc).
+type CoverSetup struct {
+	Mode    string // coverage mode for this package
+	Cfg     string // path to config file to pass to "go tool cover"
+	GenMeta bool   // ask cover tool to emit a static meta data if set
 }
 
 func (p *Package) copyBuild(opts PackageOpts, pp *build.Package) {
@@ -602,9 +608,7 @@ var packageCache = map[string]*Package{}
 // It is only for use by GOPATH-based "go get".
 // TODO(jayconrod): When GOPATH-based "go get" is removed, delete this function.
 func ClearPackageCache() {
-	for name := range packageCache {
-		delete(packageCache, name)
-	}
+	clear(packageCache)
 	resolvedImportCache.Clear()
 	packageDataCache.Clear()
 }
@@ -940,7 +944,7 @@ func loadPackageData(ctx context.Context, path, parentPath, parentDir, parentRoo
 					data.p, data.err = rp.Import(cfg.BuildContext, buildMode)
 					goto Happy
 				} else if !errors.Is(err, modindex.ErrNotIndexed) {
-					base.Fatalf("go: %v", err)
+					base.Fatal(err)
 				}
 			}
 			data.p, data.err = buildContext.ImportDir(r.dir, buildMode)
@@ -968,7 +972,7 @@ func loadPackageData(ctx context.Context, path, parentPath, parentDir, parentRoo
 					// accepting them.
 					//
 					// TODO(#41410: Figure out how this actually ought to work and fix
-					// this mess.
+					// this mess).
 				} else {
 					data.err = r.err
 				}
@@ -1921,7 +1925,12 @@ func (p *Package) load(ctx context.Context, opts PackageOpts, path string, stk *
 
 		// The linker loads implicit dependencies.
 		if p.Name == "main" && !p.Internal.ForceLibrary {
-			for _, dep := range LinkerDeps(p) {
+			ldDeps, err := LinkerDeps(p)
+			if err != nil {
+				setError(err)
+				return
+			}
+			for _, dep := range ldDeps {
 				addImport(dep, false)
 			}
 		}
@@ -1992,6 +2001,10 @@ func (p *Package) load(ctx context.Context, opts PackageOpts, path string, stk *
 	}
 	if name := pathpkg.Base(p.ImportPath); !SafeArg(name) {
 		setError(fmt.Errorf("invalid input directory name %q", name))
+		return
+	}
+	if strings.ContainsAny(p.Dir, "\r\n") {
+		setError(fmt.Errorf("invalid package directory %q", p.Dir))
 		return
 	}
 
@@ -2259,9 +2272,15 @@ func isBadEmbedName(name string) bool {
 // to their VCS information.
 var vcsStatusCache par.ErrCache[string, vcs.Status]
 
-// setBuildInfo gathers build information, formats it as a string to be
-// embedded in the binary, then sets p.Internal.BuildInfo to that string.
-// setBuildInfo should only be called on a main package with no errors.
+func appendBuildSetting(info *debug.BuildInfo, key, value string) {
+	value = strings.ReplaceAll(value, "\n", " ") // make value safe
+	info.Settings = append(info.Settings, debug.BuildSetting{Key: key, Value: value})
+}
+
+// setBuildInfo gathers build information and sets it into
+// p.Internal.BuildInfo, which will later be formatted as a string and embedded
+// in the binary. setBuildInfo should only be called on a main package with no
+// errors.
 //
 // This information can be retrieved using debug.ReadBuildInfo.
 //
@@ -2321,7 +2340,7 @@ func (p *Package) setBuildInfo(ctx context.Context, autoVCS bool) {
 	for mod := range mdeps {
 		sortedMods = append(sortedMods, mod)
 	}
-	module.Sort(sortedMods)
+	gover.ModSort(sortedMods)
 	deps := make([]*debug.Module, len(sortedMods))
 	for i, mod := range sortedMods {
 		deps[i] = mdeps[mod]
@@ -2337,8 +2356,7 @@ func (p *Package) setBuildInfo(ctx context.Context, autoVCS bool) {
 		Deps: deps,
 	}
 	appendSetting := func(key, value string) {
-		value = strings.ReplaceAll(value, "\n", " ") // make value safe
-		info.Settings = append(info.Settings, debug.BuildSetting{Key: key, Value: value})
+		appendBuildSetting(info, key, value)
 	}
 
 	// Add command-line flags relevant to the build.
@@ -2379,16 +2397,10 @@ func (p *Package) setBuildInfo(ctx context.Context, autoVCS bool) {
 			appendSetting("-ldflags", ldflags)
 		}
 	}
-	if p.Internal.PGOProfile != "" {
-		if cfg.BuildTrimpath {
-			appendSetting("-pgo", filepath.Base(p.Internal.PGOProfile))
-		} else {
-			appendSetting("-pgo", p.Internal.PGOProfile)
-		}
-	}
 	if cfg.BuildMSan {
 		appendSetting("-msan", "true")
 	}
+	// N.B. -pgo added later by setPGOProfilePath.
 	if cfg.BuildRace {
 		appendSetting("-race", "true")
 	}
@@ -2476,7 +2488,7 @@ func (p *Package) setBuildInfo(ctx context.Context, autoVCS bool) {
 			goto omitVCS
 		}
 		if cfg.BuildBuildvcs == "auto" && vcsCmd != nil && vcsCmd.Cmd != "" {
-			if _, err := exec.LookPath(vcsCmd.Cmd); err != nil {
+			if _, err := cfg.LookPath(vcsCmd.Cmd); err != nil {
 				// We fould a repository, but the required VCS tool is not present.
 				// "-buildvcs=auto" means that we should silently drop the VCS metadata.
 				goto omitVCS
@@ -2533,7 +2545,7 @@ func (p *Package) setBuildInfo(ctx context.Context, autoVCS bool) {
 	}
 omitVCS:
 
-	p.Internal.BuildInfo = info.String()
+	p.Internal.BuildInfo = info
 }
 
 // SafeArg reports whether arg is a "safe" command-line argument,
@@ -2554,12 +2566,15 @@ func SafeArg(name string) bool {
 }
 
 // LinkerDeps returns the list of linker-induced dependencies for main package p.
-func LinkerDeps(p *Package) []string {
+func LinkerDeps(p *Package) ([]string, error) {
 	// Everything links runtime.
 	deps := []string{"runtime"}
 
 	// External linking mode forces an import of runtime/cgo.
-	if externalLinkingForced(p) && cfg.BuildContext.Compiler != "gccgo" {
+	if what := externalLinkingReason(p); what != "" && cfg.BuildContext.Compiler != "gccgo" {
+		if !cfg.BuildContext.CgoEnabled {
+			return nil, fmt.Errorf("%s requires external (cgo) linking, but cgo is not enabled", what)
+		}
 		deps = append(deps, "runtime/cgo")
 	}
 	// On ARM with GOARM=5, it forces an import of math, for soft floating point.
@@ -2583,30 +2598,27 @@ func LinkerDeps(p *Package) []string {
 		deps = append(deps, "runtime/coverage")
 	}
 
-	return deps
+	return deps, nil
 }
 
-// externalLinkingForced reports whether external linking is being
-// forced even for programs that do not use cgo.
-func externalLinkingForced(p *Package) bool {
-	if !cfg.BuildContext.CgoEnabled {
-		return false
-	}
-
+// externalLinkingReason reports the reason external linking is required
+// even for programs that do not use cgo, or the empty string if external
+// linking is not required.
+func externalLinkingReason(p *Package) (what string) {
 	// Some targets must use external linking even inside GOROOT.
-	if platform.MustLinkExternal(cfg.BuildContext.GOOS, cfg.BuildContext.GOARCH, false) {
-		return true
+	if platform.MustLinkExternal(cfg.Goos, cfg.Goarch, false) {
+		return cfg.Goos + "/" + cfg.Goarch
 	}
 
 	// Some build modes always require external linking.
 	switch cfg.BuildBuildmode {
 	case "c-shared", "plugin":
-		return true
+		return "-buildmode=" + cfg.BuildBuildmode
 	}
 
 	// Using -linkshared always requires external linking.
 	if cfg.BuildLinkshared {
-		return true
+		return "-linkshared"
 	}
 
 	// Decide whether we are building a PIE,
@@ -2621,27 +2633,29 @@ func externalLinkingForced(p *Package) bool {
 	// that does not support PIE with internal linking mode,
 	// then we must use external linking.
 	if isPIE && !platform.InternalLinkPIESupported(cfg.BuildContext.GOOS, cfg.BuildContext.GOARCH) {
-		return true
+		if cfg.BuildBuildmode == "pie" {
+			return "-buildmode=pie"
+		}
+		return "default PIE binary"
 	}
 
 	// Using -ldflags=-linkmode=external forces external linking.
 	// If there are multiple -linkmode options, the last one wins.
-	linkmodeExternal := false
 	if p != nil {
 		ldflags := BuildLdflags.For(p)
 		for i := len(ldflags) - 1; i >= 0; i-- {
 			a := ldflags[i]
 			if a == "-linkmode=external" ||
 				a == "-linkmode" && i+1 < len(ldflags) && ldflags[i+1] == "external" {
-				linkmodeExternal = true
-				break
+				return a
 			} else if a == "-linkmode=internal" ||
 				a == "-linkmode" && i+1 < len(ldflags) && ldflags[i+1] == "internal" {
-				break
+				return ""
 			}
 		}
 	}
-	return linkmodeExternal
+
+	return ""
 }
 
 // mkAbs rewrites list, which must be paths relative to p.Dir,
@@ -2915,6 +2929,23 @@ func PackagesAndErrors(ctx context.Context, opts PackageOpts, patterns []string)
 // setPGOProfilePath sets the PGO profile path for pkgs.
 // In -pgo=auto mode, it finds the default PGO profile.
 func setPGOProfilePath(pkgs []*Package) {
+	updateBuildInfo := func(p *Package, file string) {
+		// Don't create BuildInfo for packages that didn't already have it.
+		if p.Internal.BuildInfo == nil {
+			return
+		}
+
+		if cfg.BuildTrimpath {
+			appendBuildSetting(p.Internal.BuildInfo, "-pgo", filepath.Base(file))
+		} else {
+			appendBuildSetting(p.Internal.BuildInfo, "-pgo", file)
+		}
+		// Adding -pgo breaks the sort order in BuildInfo.Settings. Restore it.
+		slices.SortFunc(p.Internal.BuildInfo.Settings, func(x, y debug.BuildSetting) int {
+			return strings.Compare(x.Key, y.Key)
+		})
+	}
+
 	switch cfg.BuildPGO {
 	case "off":
 		return
@@ -2923,7 +2954,7 @@ func setPGOProfilePath(pkgs []*Package) {
 		// Locate PGO profiles from the main packages, and
 		// attach the profile to the main package and its
 		// dependencies.
-		// If we're builing multiple main packages, they may
+		// If we're building multiple main packages, they may
 		// have different profiles. We may need to split (unshare)
 		// the dependency graph so they can attach different
 		// profiles.
@@ -2937,17 +2968,21 @@ func setPGOProfilePath(pkgs []*Package) {
 				continue // no profile
 			}
 
-			copied := make(map[*Package]*Package)
+			// Packages already visited. The value should replace
+			// the key, as it may be a forked copy of the original
+			// Package.
+			visited := make(map[*Package]*Package)
 			var split func(p *Package) *Package
 			split = func(p *Package) *Package {
+				if p1 := visited[p]; p1 != nil {
+					return p1
+				}
+
 				if len(pkgs) > 1 && p != pmain {
 					// Make a copy, then attach profile.
 					// No need to copy if there is only one root package (we can
 					// attach profile directly in-place).
 					// Also no need to copy the main package.
-					if p1 := copied[p]; p1 != nil {
-						return p1
-					}
 					if p.Internal.PGOProfile != "" {
 						panic("setPGOProfilePath: already have profile")
 					}
@@ -2956,11 +2991,14 @@ func setPGOProfilePath(pkgs []*Package) {
 					// Unalias the Internal.Imports slice, which is we're going to
 					// modify. We don't copy other slices as we don't change them.
 					p1.Internal.Imports = slices.Clone(p.Internal.Imports)
-					copied[p] = p1
+					p1.Internal.ForMain = pmain.ImportPath
+					visited[p] = p1
 					p = p1
-					p.Internal.ForMain = pmain.ImportPath
+				} else {
+					visited[p] = p
 				}
 				p.Internal.PGOProfile = file
+				updateBuildInfo(p, file)
 				// Recurse to dependencies.
 				for i, pp := range p.Internal.Imports {
 					p.Internal.Imports[i] = split(pp)
@@ -2982,6 +3020,7 @@ func setPGOProfilePath(pkgs []*Package) {
 
 		for _, p := range PackageList(pkgs) {
 			p.Internal.PGOProfile = file
+			updateBuildInfo(p, file)
 		}
 	}
 }
@@ -3230,9 +3269,10 @@ func PackagesAndErrorsOutsideModule(ctx context.Context, opts PackageOpts, args 
 
 	// Check that the arguments satisfy syntactic constraints.
 	var version string
+	var firstPath string
 	for _, arg := range args {
 		if i := strings.Index(arg, "@"); i >= 0 {
-			version = arg[i+1:]
+			firstPath, version = arg[:i], arg[i+1:]
 			if version == "" {
 				return nil, fmt.Errorf("%s: version must not be empty", arg)
 			}
@@ -3270,7 +3310,7 @@ func PackagesAndErrorsOutsideModule(ctx context.Context, opts PackageOpts, args 
 	// later arguments, and other modules would. Let's not try to be too
 	// magical though.
 	allowed := modload.CheckAllowed
-	if modload.IsRevisionQuery(version) {
+	if modload.IsRevisionQuery(firstPath, version) {
 		// Don't check for retractions if a specific revision is requested.
 		allowed = nil
 	}
@@ -3461,7 +3501,7 @@ func SelectCoverPackages(roots []*Package, match []func(*Package) bool, op strin
 		}
 
 		// Mark package for instrumentation.
-		p.Internal.CoverMode = cmode
+		p.Internal.Cover.Mode = cmode
 		covered = append(covered, p)
 
 		// Force import of sync/atomic into package if atomic mode.

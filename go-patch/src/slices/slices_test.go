@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package slices
+package slices_test
 
 import (
+	"cmp"
 	"internal/race"
 	"internal/testenv"
 	"math"
+	. "slices"
 	"strings"
 	"testing"
 )
@@ -131,6 +133,213 @@ func BenchmarkEqualFunc_Large(b *testing.B) {
 	ys := make([]Large, 1024)
 	for i := 0; i < b.N; i++ {
 		_ = EqualFunc(xs, ys, func(x, y Large) bool { return x == y })
+	}
+}
+
+var compareIntTests = []struct {
+	s1, s2 []int
+	want   int
+}{
+	{
+		[]int{1},
+		[]int{1},
+		0,
+	},
+	{
+		[]int{1},
+		[]int{},
+		1,
+	},
+	{
+		[]int{},
+		[]int{1},
+		-1,
+	},
+	{
+		[]int{},
+		[]int{},
+		0,
+	},
+	{
+		[]int{1, 2, 3},
+		[]int{1, 2, 3},
+		0,
+	},
+	{
+		[]int{1, 2, 3},
+		[]int{1, 2, 3, 4},
+		-1,
+	},
+	{
+		[]int{1, 2, 3, 4},
+		[]int{1, 2, 3},
+		+1,
+	},
+	{
+		[]int{1, 2, 3},
+		[]int{1, 4, 3},
+		-1,
+	},
+	{
+		[]int{1, 4, 3},
+		[]int{1, 2, 3},
+		+1,
+	},
+	{
+		[]int{1, 4, 3},
+		[]int{1, 2, 3, 8, 9},
+		+1,
+	},
+}
+
+var compareFloatTests = []struct {
+	s1, s2 []float64
+	want   int
+}{
+	{
+		[]float64{},
+		[]float64{},
+		0,
+	},
+	{
+		[]float64{1},
+		[]float64{1},
+		0,
+	},
+	{
+		[]float64{math.NaN()},
+		[]float64{math.NaN()},
+		0,
+	},
+	{
+		[]float64{1, 2, math.NaN()},
+		[]float64{1, 2, math.NaN()},
+		0,
+	},
+	{
+		[]float64{1, math.NaN(), 3},
+		[]float64{1, math.NaN(), 4},
+		-1,
+	},
+	{
+		[]float64{1, math.NaN(), 3},
+		[]float64{1, 2, 4},
+		-1,
+	},
+	{
+		[]float64{1, math.NaN(), 3},
+		[]float64{1, 2, math.NaN()},
+		-1,
+	},
+	{
+		[]float64{1, 2, 3},
+		[]float64{1, 2, math.NaN()},
+		+1,
+	},
+	{
+		[]float64{1, 2, 3},
+		[]float64{1, math.NaN(), 3},
+		+1,
+	},
+	{
+		[]float64{1, math.NaN(), 3, 4},
+		[]float64{1, 2, math.NaN()},
+		-1,
+	},
+}
+
+func TestCompare(t *testing.T) {
+	intWant := func(want bool) string {
+		if want {
+			return "0"
+		}
+		return "!= 0"
+	}
+	for _, test := range equalIntTests {
+		if got := Compare(test.s1, test.s2); (got == 0) != test.want {
+			t.Errorf("Compare(%v, %v) = %d, want %s", test.s1, test.s2, got, intWant(test.want))
+		}
+	}
+	for _, test := range equalFloatTests {
+		if got := Compare(test.s1, test.s2); (got == 0) != test.wantEqualNaN {
+			t.Errorf("Compare(%v, %v) = %d, want %s", test.s1, test.s2, got, intWant(test.wantEqualNaN))
+		}
+	}
+
+	for _, test := range compareIntTests {
+		if got := Compare(test.s1, test.s2); got != test.want {
+			t.Errorf("Compare(%v, %v) = %d, want %d", test.s1, test.s2, got, test.want)
+		}
+	}
+	for _, test := range compareFloatTests {
+		if got := Compare(test.s1, test.s2); got != test.want {
+			t.Errorf("Compare(%v, %v) = %d, want %d", test.s1, test.s2, got, test.want)
+		}
+	}
+}
+
+func equalToCmp[T comparable](eq func(T, T) bool) func(T, T) int {
+	return func(v1, v2 T) int {
+		if eq(v1, v2) {
+			return 0
+		}
+		return 1
+	}
+}
+
+func TestCompareFunc(t *testing.T) {
+	intWant := func(want bool) string {
+		if want {
+			return "0"
+		}
+		return "!= 0"
+	}
+	for _, test := range equalIntTests {
+		if got := CompareFunc(test.s1, test.s2, equalToCmp(equal[int])); (got == 0) != test.want {
+			t.Errorf("CompareFunc(%v, %v, equalToCmp(equal[int])) = %d, want %s", test.s1, test.s2, got, intWant(test.want))
+		}
+	}
+	for _, test := range equalFloatTests {
+		if got := CompareFunc(test.s1, test.s2, equalToCmp(equal[float64])); (got == 0) != test.wantEqual {
+			t.Errorf("CompareFunc(%v, %v, equalToCmp(equal[float64])) = %d, want %s", test.s1, test.s2, got, intWant(test.wantEqual))
+		}
+	}
+
+	for _, test := range compareIntTests {
+		if got := CompareFunc(test.s1, test.s2, cmp.Compare[int]); got != test.want {
+			t.Errorf("CompareFunc(%v, %v, cmp[int]) = %d, want %d", test.s1, test.s2, got, test.want)
+		}
+	}
+	for _, test := range compareFloatTests {
+		if got := CompareFunc(test.s1, test.s2, cmp.Compare[float64]); got != test.want {
+			t.Errorf("CompareFunc(%v, %v, cmp[float64]) = %d, want %d", test.s1, test.s2, got, test.want)
+		}
+	}
+
+	s1 := []int{1, 2, 3}
+	s2 := []int{2, 3, 4}
+	if got := CompareFunc(s1, s2, equalToCmp(offByOne)); got != 0 {
+		t.Errorf("CompareFunc(%v, %v, offByOne) = %d, want 0", s1, s2, got)
+	}
+
+	s3 := []string{"a", "b", "c"}
+	s4 := []string{"A", "B", "C"}
+	if got := CompareFunc(s3, s4, strings.Compare); got != 1 {
+		t.Errorf("CompareFunc(%v, %v, strings.Compare) = %d, want 1", s3, s4, got)
+	}
+
+	compareLower := func(v1, v2 string) int {
+		return strings.Compare(strings.ToLower(v1), strings.ToLower(v2))
+	}
+	if got := CompareFunc(s3, s4, compareLower); got != 0 {
+		t.Errorf("CompareFunc(%v, %v, compareLower) = %d, want 0", s3, s4, got)
+	}
+
+	cmpIntString := func(v1 int, v2 string) int {
+		return strings.Compare(string(rune(v1)-1+'a'), v2)
+	}
+	if got := CompareFunc(s1, s3, cmpIntString); got != 0 {
+		t.Errorf("CompareFunc(%v, %v, cmpIntString) = %d, want 0", s1, s3, got)
 	}
 }
 
@@ -327,6 +536,33 @@ func TestInsertOverlap(t *testing.T) {
 	}
 }
 
+func TestInsertPanics(t *testing.T) {
+	a := [3]int{}
+	b := [1]int{}
+	for _, test := range []struct {
+		name string
+		s    []int
+		i    int
+		v    []int
+	}{
+		// There are no values.
+		{"with negative index", a[:1:1], -1, nil},
+		{"with out-of-bounds index and > cap", a[:1:1], 2, nil},
+		{"with out-of-bounds index and = cap", a[:1:2], 2, nil},
+		{"with out-of-bounds index and < cap", a[:1:3], 2, nil},
+
+		// There are values.
+		{"with negative index", a[:1:1], -1, b[:]},
+		{"with out-of-bounds index and > cap", a[:1:1], 2, b[:]},
+		{"with out-of-bounds index and = cap", a[:1:2], 2, b[:]},
+		{"with out-of-bounds index and < cap", a[:1:3], 2, b[:]},
+	} {
+		if !panics(func() { _ = Insert(test.s, test.i, test.v...) }) {
+			t.Errorf("Insert %s: got no panic, want panic", test.name)
+		}
+	}
+}
+
 var deleteTests = []struct {
 	s    []int
 	i, j int
@@ -430,6 +666,10 @@ func panics(f func()) (b bool) {
 }
 
 func TestDeletePanics(t *testing.T) {
+	s := []int{0, 1, 2, 3, 4}
+	s = s[0:2]
+	_ = s[0:4] // this is a valid slice of s
+
 	for _, test := range []struct {
 		name string
 		s    []int
@@ -439,11 +679,47 @@ func TestDeletePanics(t *testing.T) {
 		{"with negative second index", []int{42}, 1, -1},
 		{"with out-of-bounds first index", []int{42}, 2, 3},
 		{"with out-of-bounds second index", []int{42}, 0, 2},
+		{"with out-of-bounds both indexes", []int{42}, 2, 2},
 		{"with invalid i>j", []int{42}, 1, 0},
+		{"s[i:j] is valid and j > len(s)", s, 0, 4},
+		{"s[i:j] is valid and i == j > len(s)", s, 3, 3},
 	} {
-		if !panics(func() { Delete(test.s, test.i, test.j) }) {
+		if !panics(func() { _ = Delete(test.s, test.i, test.j) }) {
 			t.Errorf("Delete %s: got no panic, want panic", test.name)
 		}
+	}
+}
+
+func TestDeleteClearTail(t *testing.T) {
+	mem := []*int{new(int), new(int), new(int), new(int), new(int), new(int)}
+	s := mem[0:5] // there is 1 element beyond len(s), within cap(s)
+
+	s = Delete(s, 2, 4)
+
+	if mem[3] != nil || mem[4] != nil {
+		// Check that potential memory leak is avoided
+		t.Errorf("Delete: want nil discarded elements, got %v, %v", mem[3], mem[4])
+	}
+	if mem[5] == nil {
+		t.Errorf("Delete: want unchanged elements beyond original len, got nil")
+	}
+}
+
+func TestDeleteFuncClearTail(t *testing.T) {
+	mem := []*int{new(int), new(int), new(int), new(int), new(int), new(int)}
+	*mem[2], *mem[3] = 42, 42
+	s := mem[0:5] // there is 1 element beyond len(s), within cap(s)
+
+	s = DeleteFunc(s, func(i *int) bool {
+		return i != nil && *i == 42
+	})
+
+	if mem[3] != nil || mem[4] != nil {
+		// Check that potential memory leak is avoided
+		t.Errorf("DeleteFunc: want nil discarded elements, got %v, %v", mem[3], mem[4])
+	}
+	if mem[5] == nil {
+		t.Errorf("DeleteFunc: want unchanged elements beyond original len, got nil")
 	}
 }
 
@@ -550,6 +826,53 @@ func TestCompactFunc(t *testing.T) {
 	}
 }
 
+func TestCompactClearTail(t *testing.T) {
+	one, two, three, four := 1, 2, 3, 4
+	mem := []*int{&one, &one, &two, &two, &three, &four}
+	s := mem[0:5] // there is 1 element beyond len(s), within cap(s)
+	copy := Clone(s)
+
+	s = Compact(s)
+
+	if want := []*int{&one, &two, &three}; !Equal(s, want) {
+		t.Errorf("Compact(%v) = %v, want %v", copy, s, want)
+	}
+
+	if mem[3] != nil || mem[4] != nil {
+		// Check that potential memory leak is avoided
+		t.Errorf("Compact: want nil discarded elements, got %v, %v", mem[3], mem[4])
+	}
+	if mem[5] != &four {
+		t.Errorf("Compact: want unchanged element beyond original len, got %v", mem[5])
+	}
+}
+
+func TestCompactFuncClearTail(t *testing.T) {
+	a, b, c, d, e, f := 1, 1, 2, 2, 3, 4
+	mem := []*int{&a, &b, &c, &d, &e, &f}
+	s := mem[0:5] // there is 1 element beyond len(s), within cap(s)
+	copy := Clone(s)
+
+	s = CompactFunc(s, func(x, y *int) bool {
+		if x == nil || y == nil {
+			return x == y
+		}
+		return *x == *y
+	})
+
+	if want := []*int{&a, &c, &e}; !Equal(s, want) {
+		t.Errorf("CompactFunc(%v) = %v, want %v", copy, s, want)
+	}
+
+	if mem[3] != nil || mem[4] != nil {
+		// Check that potential memory leak is avoided
+		t.Errorf("CompactFunc: want nil discarded elements, got %v, %v", mem[3], mem[4])
+	}
+	if mem[5] != &f {
+		t.Errorf("CompactFunc: want unchanged elements beyond original len, got %v", mem[5])
+	}
+}
+
 func BenchmarkCompactFunc_Large(b *testing.B) {
 	type Large [4 * 1024]byte
 
@@ -583,10 +906,10 @@ func TestGrow(t *testing.T) {
 	}
 
 	// Test number of allocations.
-	if n := testing.AllocsPerRun(100, func() { Grow(s2, cap(s2)-len(s2)) }); n != 0 {
+	if n := testing.AllocsPerRun(100, func() { _ = Grow(s2, cap(s2)-len(s2)) }); n != 0 {
 		t.Errorf("Grow should not allocate when given sufficient capacity; allocated %v times", n)
 	}
-	if n := testing.AllocsPerRun(100, func() { Grow(s2, cap(s2)-len(s2)+1) }); n != 1 {
+	if n := testing.AllocsPerRun(100, func() { _ = Grow(s2, cap(s2)-len(s2)+1) }); n != 1 {
 		errorf := t.Errorf
 		if race.Enabled || testenv.OptimizationOff() {
 			errorf = t.Logf // this allocates multiple times in race detector mode
@@ -598,7 +921,7 @@ func TestGrow(t *testing.T) {
 	var gotPanic bool
 	func() {
 		defer func() { gotPanic = recover() != nil }()
-		Grow(s1, -1)
+		_ = Grow(s1, -1)
 	}()
 	if !gotPanic {
 		t.Errorf("Grow(-1) did not panic; expected a panic")
@@ -648,7 +971,7 @@ func TestReverse(t *testing.T) {
 		t.Errorf("Reverse(singeleton) = %v, want %v", singleton, want)
 	}
 
-	Reverse[string](nil)
+	Reverse[[]string](nil)
 }
 
 // naiveReplace is a baseline implementation to the Replace function.
@@ -699,6 +1022,10 @@ func TestReplace(t *testing.T) {
 }
 
 func TestReplacePanics(t *testing.T) {
+	s := []int{0, 1, 2, 3, 4}
+	s = s[0:2]
+	_ = s[0:4] // this is a valid slice of s
+
 	for _, test := range []struct {
 		name string
 		s, v []int
@@ -707,11 +1034,62 @@ func TestReplacePanics(t *testing.T) {
 		{"indexes out of order", []int{1, 2}, []int{3}, 2, 1},
 		{"large index", []int{1, 2}, []int{3}, 1, 10},
 		{"negative index", []int{1, 2}, []int{3}, -1, 2},
+		{"s[i:j] is valid and j > len(s)", s, nil, 0, 4},
 	} {
 		ss, vv := Clone(test.s), Clone(test.v)
-		if !panics(func() { Replace(ss, test.i, test.j, vv...) }) {
+		if !panics(func() { _ = Replace(ss, test.i, test.j, vv...) }) {
 			t.Errorf("Replace %s: should have panicked", test.name)
 		}
+	}
+}
+
+func TestReplaceGrow(t *testing.T) {
+	// When Replace needs to allocate a new slice, we want the original slice
+	// to not be changed.
+	a, b, c, d, e, f := 1, 2, 3, 4, 5, 6
+	mem := []*int{&a, &b, &c, &d, &e, &f}
+	memcopy := Clone(mem)
+	s := mem[0:5] // there is 1 element beyond len(s), within cap(s)
+	copy := Clone(s)
+	original := s
+
+	// The new elements don't fit within cap(s), so Replace will allocate.
+	z := 99
+	s = Replace(s, 1, 3, &z, &z, &z, &z)
+
+	if want := []*int{&a, &z, &z, &z, &z, &d, &e}; !Equal(s, want) {
+		t.Errorf("Replace(%v, 1, 3, %v, %v, %v, %v) = %v, want %v", copy, &z, &z, &z, &z, s, want)
+	}
+
+	if !Equal(original, copy) {
+		t.Errorf("original slice has changed, got %v, want %v", original, copy)
+	}
+
+	if !Equal(mem, memcopy) {
+		// Changing the original tail s[len(s):cap(s)] is unwanted
+		t.Errorf("original backing memory has changed, got %v, want %v", mem, memcopy)
+	}
+}
+
+func TestReplaceClearTail(t *testing.T) {
+	a, b, c, d, e, f := 1, 2, 3, 4, 5, 6
+	mem := []*int{&a, &b, &c, &d, &e, &f}
+	s := mem[0:5] // there is 1 element beyond len(s), within cap(s)
+	copy := Clone(s)
+
+	y, z := 8, 9
+	s = Replace(s, 1, 4, &y, &z)
+
+	if want := []*int{&a, &y, &z, &e}; !Equal(s, want) {
+		t.Errorf("Replace(%v) = %v, want %v", copy, s, want)
+	}
+
+	if mem[4] != nil {
+		// Check that potential memory leak is avoided
+		t.Errorf("Replace: want nil discarded element, got %v", mem[4])
+	}
+	if mem[5] != &f {
+		t.Errorf("Replace: want unchanged elements beyond original len, got %v", mem[5])
 	}
 }
 
@@ -791,25 +1169,6 @@ func BenchmarkReplace(b *testing.B) {
 
 }
 
-func TestRotate(t *testing.T) {
-	const N = 10
-	s := make([]int, 0, N)
-	for n := 0; n < N; n++ {
-		for r := 0; r < n; r++ {
-			s = s[:0]
-			for i := 0; i < n; i++ {
-				s = append(s, i)
-			}
-			rotateLeft(s, r)
-			for i := 0; i < n; i++ {
-				if s[i] != (i+r)%n {
-					t.Errorf("expected n=%d r=%d i:%d want:%d got:%d", n, r, i, (i+r)%n, s[i])
-				}
-			}
-		}
-	}
-}
-
 func TestInsertGrowthRate(t *testing.T) {
 	b := make([]byte, 1)
 	maxCap := cap(b)
@@ -843,5 +1202,123 @@ func TestReplaceGrowthRate(t *testing.T) {
 	want := int(math.Log(N) / math.Log(1.25)) // 1.25 == growth rate for large slices
 	if nGrow > want {
 		t.Errorf("too many grows. got:%d want:%d", nGrow, want)
+	}
+}
+
+func apply[T any](v T, f func(T)) {
+	f(v)
+}
+
+// Test type inference with a named slice type.
+func TestInference(t *testing.T) {
+	s1 := []int{1, 2, 3}
+	apply(s1, Reverse)
+	if want := []int{3, 2, 1}; !Equal(s1, want) {
+		t.Errorf("Reverse(%v) = %v, want %v", []int{1, 2, 3}, s1, want)
+	}
+
+	type S []int
+	s2 := S{4, 5, 6}
+	apply(s2, Reverse)
+	if want := (S{6, 5, 4}); !Equal(s2, want) {
+		t.Errorf("Reverse(%v) = %v, want %v", S{4, 5, 6}, s2, want)
+	}
+}
+
+func TestConcat(t *testing.T) {
+	cases := []struct {
+		s    [][]int
+		want []int
+	}{
+		{
+			s:    [][]int{nil},
+			want: nil,
+		},
+		{
+			s:    [][]int{{1}},
+			want: []int{1},
+		},
+		{
+			s:    [][]int{{1}, {2}},
+			want: []int{1, 2},
+		},
+		{
+			s:    [][]int{{1}, nil, {2}},
+			want: []int{1, 2},
+		},
+	}
+	for _, tc := range cases {
+		got := Concat(tc.s...)
+		if !Equal(tc.want, got) {
+			t.Errorf("Concat(%v) = %v, want %v", tc.s, got, tc.want)
+		}
+		var sink []int
+		allocs := testing.AllocsPerRun(5, func() {
+			sink = Concat(tc.s...)
+		})
+		_ = sink
+		if allocs > 1 {
+			errorf := t.Errorf
+			if testenv.OptimizationOff() || race.Enabled {
+				errorf = t.Logf
+			}
+			errorf("Concat(%v) allocated %v times; want 1", tc.s, allocs)
+		}
+	}
+}
+
+func TestConcat_too_large(t *testing.T) {
+	// Use zero length element to minimize memory in testing
+	type void struct{}
+	cases := []struct {
+		lengths     []int
+		shouldPanic bool
+	}{
+		{
+			lengths:     []int{0, 0},
+			shouldPanic: false,
+		},
+		{
+			lengths:     []int{math.MaxInt, 0},
+			shouldPanic: false,
+		},
+		{
+			lengths:     []int{0, math.MaxInt},
+			shouldPanic: false,
+		},
+		{
+			lengths:     []int{math.MaxInt - 1, 1},
+			shouldPanic: false,
+		},
+		{
+			lengths:     []int{math.MaxInt - 1, 1, 1},
+			shouldPanic: true,
+		},
+		{
+			lengths:     []int{math.MaxInt, 1},
+			shouldPanic: true,
+		},
+		{
+			lengths:     []int{math.MaxInt, math.MaxInt},
+			shouldPanic: true,
+		},
+	}
+	for _, tc := range cases {
+		var r any
+		ss := make([][]void, 0, len(tc.lengths))
+		for _, l := range tc.lengths {
+			s := make([]void, l)
+			ss = append(ss, s)
+		}
+		func() {
+			defer func() {
+				r = recover()
+			}()
+			_ = Concat(ss...)
+		}()
+		if didPanic := r != nil; didPanic != tc.shouldPanic {
+			t.Errorf("slices.Concat(lens(%v)) got panic == %v",
+				tc.lengths, didPanic)
+		}
 	}
 }

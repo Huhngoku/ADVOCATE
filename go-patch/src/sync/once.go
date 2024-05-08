@@ -5,7 +5,7 @@
 package sync
 
 import (
-	// ADVOCATE-CHANGE-BEGIN
+	// ADVOCATE-CHANGE-START
 	"runtime"
 	// ADVOCATE-CHANGE-END
 	"sync/atomic"
@@ -24,8 +24,9 @@ type Once struct {
 	// The hot path is inlined at every call site.
 	// Placing done first allows more compact instructions on some architectures (amd64/386),
 	// and fewer instructions (to calculate offset) on other architectures.
-	done uint32
+	done atomic.Uint32
 	m    Mutex
+
 	// ADVOCATE-CHANGE-BEGIN
 	id uint64 // id of the once
 	// ADVOCATE-CHANGE-END
@@ -54,7 +55,7 @@ type Once struct {
 func (o *Once) Do(f func()) {
 	// Note: Here is an incorrect implementation of Do:
 	//
-	//	if atomic.CompareAndSwapUint32(&o.done, 0, 1) {
+	//	if o.done.CompareAndSwap(0, 1) {
 	//		f()
 	//	}
 	//
@@ -64,7 +65,7 @@ func (o *Once) Do(f func()) {
 	// call f, and the second would return immediately, without
 	// waiting for the first's call to f to complete.
 	// This is why the slow path falls back to a mutex, and why
-	// the atomic.StoreUint32 must be delayed until after f returns.
+	// the o.done.Store must be delayed until after f returns.
 
 	// ADVOCATE-CHANGE-START
 	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationOnce, 2)
@@ -86,7 +87,7 @@ func (o *Once) Do(f func()) {
 		// 	return
 		// }
 	}
-	// ADVOCATE-CHANGE-END
+
 	if o.id == 0 {
 		o.id = runtime.GetAdvocateObjectID()
 	}
@@ -94,7 +95,7 @@ func (o *Once) Do(f func()) {
 	res := false
 	// ADVOCATE-CHANGE-END
 
-	if atomic.LoadUint32(&o.done) == 0 {
+	if o.done.Load() == 0 {
 		// Outlined slow-path to allow inlining of the fast-path.
 		// ADVOCATE-CHANGE-START
 		res = o.doSlow(f)
@@ -112,16 +113,16 @@ func (o *Once) Do(f func()) {
 // ADVOCATE-CHANGE-START
 func (o *Once) doSlow(f func()) bool {
 	// ADVOCATE-CHANGE-END
-	o.m.Lock()         // MUST BE LINE 115, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
-	defer o.m.Unlock() // MUST BE LINE 116, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
-	if o.done == 0 {
-		defer atomic.StoreUint32(&o.done, 1)
+	o.m.Lock()         // MUST BE LINE 116, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	defer o.m.Unlock() // MUST BE LINE 117, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	if o.done.Load() == 0 {
+		defer o.done.Store(1)
 		f()
 		// ADVOCATE-CHANGE-START
-		return true // MUST BE LINE 121, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+		return true // MUST BE LINE 122, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 		// ADVOCATE-CHANGE-END
 	}
 	// ADVOCATE-CHANGE-START
-	return false // MUST BE LINE 125, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	return false // MUST BE LINE 126, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 	// ADVOCATE-CHANGE-END
 }

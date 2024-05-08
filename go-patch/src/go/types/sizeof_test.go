@@ -4,8 +4,6 @@
 
 package types
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 import (
 	"reflect"
 	"testing"
@@ -48,7 +46,7 @@ func TestSizeof(t *testing.T) {
 
 		// Misc
 		{Scope{}, 44, 88},
-		{Package{}, 36, 72},
+		{Package{}, 44, 88},
 		{_TypeSet{}, 28, 56},
 	}
 	for _, test := range tests {
@@ -62,5 +60,3 @@ func TestSizeof(t *testing.T) {
 		}
 	}
 }
-*/
-// ADVOCATE-REMOVE_TEST-END

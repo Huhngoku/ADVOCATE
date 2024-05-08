@@ -42,6 +42,10 @@ stdout 1.18
 go mod tidy -go=1.20
 go clean -modcache  # Remove checksums from the module cache, so that only go.sum is used.
 
+# Issue 60667: 'go list' without -mod=mod shouldn't report the checksums as
+# dirty either.
+go list -m -u all
+
 env OLDSUMDB=$GOSUMDB
 env GOSUMDB=bad
 go mod tidy
@@ -76,7 +80,7 @@ import _ "example.com/m2/q"
 -- m2/go.mod --
 module example.com/m2
 
-go 1.21
+go 1.19
 
 require example.com/generics v1.0.0
 -- m2/q/q.go --

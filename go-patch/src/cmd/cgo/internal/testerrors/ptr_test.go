@@ -14,7 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -252,7 +252,10 @@ var ptrTests = []ptrTest{
 	{
 		// Exported functions may not return Go pointers.
 		name: "export1",
-		c:    `extern unsigned char *GoFn21();`,
+		c: `#ifdef _WIN32
+		    __declspec(dllexport)
+			#endif
+		    extern unsigned char *GoFn21();`,
 		support: `//export GoFn21
 		          func GoFn21() *byte { return new(byte) }`,
 		body: `C.GoFn21()`,
@@ -262,6 +265,9 @@ var ptrTests = []ptrTest{
 		// Returning a C pointer is fine.
 		name: "exportok",
 		c: `#include <stdlib.h>
+		    #ifdef _WIN32
+		    __declspec(dllexport)
+			#endif
 		    extern unsigned char *GoFn22();`,
 		support: `//export GoFn22
 		          func GoFn22() *byte { return (*byte)(C.malloc(1)) }`,
@@ -444,15 +450,33 @@ var ptrTests = []ptrTest{
 		body:    `s := &S40{p: new(int)}; C.f40((*C.struct_S40i)(&s.a))`,
 		fail:    false,
 	},
+	{
+		// Test that we handle unsafe.StringData.
+		name:    "stringdata",
+		c:       `void f41(void* p) {}`,
+		imports: []string{"unsafe"},
+		body:    `s := struct { a [4]byte; p *int }{p: new(int)}; str := unsafe.String(&s.a[0], 4); C.f41(unsafe.Pointer(unsafe.StringData(str)))`,
+		fail:    false,
+	},
+	{
+		name:    "slicedata",
+		c:       `void f42(void* p) {}`,
+		imports: []string{"unsafe"},
+		body:    `s := []*byte{nil, new(byte)}; C.f42(unsafe.Pointer(unsafe.SliceData(s)))`,
+		fail:    true,
+	},
+	{
+		name:    "slicedata2",
+		c:       `void f43(void* p) {}`,
+		imports: []string{"unsafe"},
+		body:    `s := struct { a [4]byte; p *int }{p: new(int)}; C.f43(unsafe.Pointer(unsafe.SliceData(s.a[:])))`,
+		fail:    false,
+	},
 }
 
 func TestPointerChecks(t *testing.T) {
 	testenv.MustHaveGoBuild(t)
 	testenv.MustHaveCGO(t)
-	if runtime.GOOS == "windows" {
-		// TODO: Skip just the cases that fail?
-		t.Skipf("some tests fail to build on %s", runtime.GOOS)
-	}
 
 	var gopath string
 	var dir string
@@ -497,7 +521,7 @@ func buildPtrTests(t *testing.T, gopath string, cgocheck2 bool) (exe string) {
 	if err := os.MkdirAll(src, 0777); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(src, "go.mod"), []byte("module ptrtest"), 0666); err != nil {
+	if err := os.WriteFile(filepath.Join(src, "go.mod"), []byte("module ptrtest\ngo 1.20"), 0666); err != nil {
 		t.Fatal(err)
 	}
 
@@ -571,18 +595,25 @@ func buildPtrTests(t *testing.T, gopath string, cgocheck2 bool) (exe string) {
 	cmd := exec.Command("go", "build", "-o", exeName)
 	cmd.Dir = src
 	cmd.Env = append(os.Environ(), "GOPATH="+gopath)
-	if cgocheck2 {
-		found := false
-		for i, e := range cmd.Env {
-			if strings.HasPrefix(e, "GOEXPERIMENT=") {
-				cmd.Env[i] = e + ",cgocheck2"
-				found = true
-			}
-		}
-		if !found {
-			cmd.Env = append(cmd.Env, "GOEXPERIMENT=cgocheck2")
-		}
+
+	// Set or remove cgocheck2 from the environment.
+	goexperiment := strings.Split(os.Getenv("GOEXPERIMENT"), ",")
+	if len(goexperiment) == 1 && goexperiment[0] == "" {
+		goexperiment = nil
 	}
+	i := slices.Index(goexperiment, "cgocheck2")
+	changed := false
+	if cgocheck2 && i < 0 {
+		goexperiment = append(goexperiment, "cgocheck2")
+		changed = true
+	} else if !cgocheck2 && i >= 0 {
+		goexperiment = append(goexperiment[:i], goexperiment[i+1:]...)
+		changed = true
+	}
+	if changed {
+		cmd.Env = append(cmd.Env, "GOEXPERIMENT="+strings.Join(goexperiment, ","))
+	}
+
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)

@@ -61,7 +61,7 @@ func moduleHash(modroot string, ismodcache bool) (cache.ActionID, error) {
 		//
 		// Note that this is true even for modules in GOROOT/src: non-release builds
 		// of the Go toolchain may have arbitrary development changes on top of the
-		// commit reported by runtime.Version, or could be completly artificial due
+		// commit reported by runtime.Version, or could be completely artificial due
 		// to lacking a `git` binary (like "devel gomote.XXXXX", as synthesized by
 		// "gomote push" as of 2022-06-15). (Release builds shouldn't have
 		// modifications, but we don't want to use a behavior for releases that we
@@ -160,7 +160,7 @@ func GetModule(modroot string) (*Module, error) {
 		return nil, errNotFromModuleCache
 	}
 	modroot = filepath.Clean(modroot)
-	if !str.HasFilePathPrefix(modroot, cfg.GOMODCACHE) {
+	if str.HasFilePathPrefix(modroot, cfg.GOROOTsrc) || !str.HasFilePathPrefix(modroot, cfg.GOMODCACHE) {
 		return nil, errNotFromModuleCache
 	}
 	return openIndexModule(modroot, true)
@@ -178,7 +178,7 @@ func openIndexModule(modroot string, ismodcache bool) (*Module, error) {
 		if err != nil {
 			return nil, err
 		}
-		data, _, err := cache.Default().GetMmap(id)
+		data, _, err := cache.GetMmap(cache.Default(), id)
 		if err != nil {
 			// Couldn't read from modindex. Assume we couldn't read from
 			// the index because the module hasn't been indexed yet.
@@ -186,7 +186,7 @@ func openIndexModule(modroot string, ismodcache bool) (*Module, error) {
 			if err != nil {
 				return nil, err
 			}
-			if err = cache.Default().PutBytes(id, data); err != nil {
+			if err = cache.PutBytes(cache.Default(), id, data); err != nil {
 				return nil, err
 			}
 		}
@@ -207,12 +207,12 @@ func openIndexPackage(modroot, pkgdir string) (*IndexPackage, error) {
 		if err != nil {
 			return nil, err
 		}
-		data, _, err := cache.Default().GetMmap(id)
+		data, _, err := cache.GetMmap(cache.Default(), id)
 		if err != nil {
 			// Couldn't read from index. Assume we couldn't read from
 			// the index because the package hasn't been indexed yet.
 			data = indexPackage(modroot, pkgdir)
-			if err = cache.Default().PutBytes(id, data); err != nil {
+			if err = cache.PutBytes(cache.Default(), id, data); err != nil {
 				return nil, err
 			}
 		}

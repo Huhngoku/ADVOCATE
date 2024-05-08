@@ -76,7 +76,9 @@ type poolLocal struct {
 }
 
 // from runtime
-func fastrandn(n uint32) uint32
+//
+//go:linkname runtime_randn runtime.randn
+func runtime_randn(n uint32) uint32
 
 var poolRaceHash [128]uint64
 
@@ -97,7 +99,7 @@ func (p *Pool) Put(x any) {
 		return
 	}
 	if race.Enabled {
-		if fastrandn(4) == 0 {
+		if runtime_randn(4) == 0 {
 			// Randomly drop x on floor.
 			return
 		}
@@ -196,6 +198,13 @@ func (p *Pool) getSlow(pid int) any {
 // returns poolLocal pool for the P and the P's id.
 // Caller must call runtime_procUnpin() when done with the pool.
 func (p *Pool) pin() (*poolLocal, int) {
+	// Check whether p is nil to get a panic.
+	// Otherwise the nil dereference happens while the m is pinned,
+	// causing a fatal error rather than a panic.
+	if p == nil {
+		panic("nil Pool")
+	}
+
 	pid := runtime_procPin()
 	// In pinSlow we store to local and then to localSize, here we load in opposite order.
 	// Since we've disabled preemption, GC cannot happen in between.
@@ -213,15 +222,15 @@ func (p *Pool) pinSlow() (*poolLocal, int) {
 	// Retry under the mutex.
 	// Can not lock the mutex while pinned.
 	runtime_procUnpin()
-	// ADVOCATE-CHANGE-START (only comments)
-	allPoolsMu.Lock()         // MUST BE LINE 217, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
-	defer allPoolsMu.Unlock() // MUST BE LINE 218, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	// ADVOCATE-CHANGE-START, only comment
+	allPoolsMu.Lock()         // MUST BE LINE 226, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	defer allPoolsMu.Unlock() // MUST BE LINE 227, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 	pid := runtime_procPin()
 	// poolCleanup won't be called while we are pinned.
 	s := p.localSize
 	l := p.local
 	if uintptr(pid) < s {
-		return indexLocal(l, pid), pid // MUST BE LINE 224, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+		return indexLocal(l, pid), pid
 	}
 	if p.local == nil {
 		allPools = append(allPools, p)
@@ -231,8 +240,7 @@ func (p *Pool) pinSlow() (*poolLocal, int) {
 	local := make([]poolLocal, size)
 	atomic.StorePointer(&p.local, unsafe.Pointer(&local[0])) // store-release
 	runtime_StoreReluintptr(&p.localSize, uintptr(size))     // store-release
-	return &local[pid], pid                                  // MUST BE LINE 234, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
-	// ADVOCATE-CHANGE-END
+	return &local[pid], pid
 }
 
 func poolCleanup() {

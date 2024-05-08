@@ -9,45 +9,82 @@ import (
 	"unsafe"
 )
 
-// Pinner represents a set of pinned Go objects. An object can be pinned with
-// the Pin method and all pinned objects of a Pinner can be unpinned with the
-// Unpin method.
+// A Pinner is a set of Go objects each pinned to a fixed location in memory. The
+// [Pinner.Pin] method pins one object, while [Pinner.Unpin] unpins all pinned
+// objects. See their comments for more information.
 type Pinner struct {
 	*pinner
 }
 
-// Pin a Go object. The object will not be moved or freed by the garbage
-// collector until the Unpin method has been called. The pointer to a pinned
-// object can be directly stored in C memory or can be contained in Go memory
-// passed to C functions. If the pinned object iftself contains pointers to Go
-// objects, these objects must be pinned separately if they are going to be
-// accessed from C code. The argument must be a pointer of any type or an
-// unsafe.Pointer. It must be a pointer to an object allocated by calling new,
-// by taking the address of a composite literal, or by taking the address of a
-// local variable. If one of these conditions is not met, Pin will panic.
+// Pin pins a Go object, preventing it from being moved or freed by the garbage
+// collector until the [Pinner.Unpin] method has been called.
+//
+// A pointer to a pinned object can be directly stored in C memory or can be
+// contained in Go memory passed to C functions. If the pinned object itself
+// contains pointers to Go objects, these objects must be pinned separately if they
+// are going to be accessed from C code.
+//
+// The argument must be a pointer of any type or an [unsafe.Pointer].
+// It's safe to call Pin on non-Go pointers, in which case Pin will do nothing.
 func (p *Pinner) Pin(pointer any) {
 	if p.pinner == nil {
-		p.pinner = new(pinner)
-		SetFinalizer(p.pinner, func(i *pinner) {
-			if i.refs != nil {
-				i.unpin() // only required to make the test idempotent
-				pinnerLeakPanic()
-			}
-		})
+		// Check the pinner cache first.
+		mp := acquirem()
+		if pp := mp.p.ptr(); pp != nil {
+			p.pinner = pp.pinnerCache
+			pp.pinnerCache = nil
+		}
+		releasem(mp)
+
+		if p.pinner == nil {
+			// Didn't get anything from the pinner cache.
+			p.pinner = new(pinner)
+			p.refs = p.refStore[:0]
+
+			// We set this finalizer once and never clear it. Thus, if the
+			// pinner gets cached, we'll reuse it, along with its finalizer.
+			// This lets us avoid the relatively expensive SetFinalizer call
+			// when reusing from the cache. The finalizer however has to be
+			// resilient to an empty pinner being finalized, which is done
+			// by checking p.refs' length.
+			SetFinalizer(p.pinner, func(i *pinner) {
+				if len(i.refs) != 0 {
+					i.unpin() // only required to make the test idempotent
+					pinnerLeakPanic()
+				}
+			})
+		}
 	}
 	ptr := pinnerGetPtr(&pointer)
-
-	setPinned(ptr, true)
-	p.refs = append(p.refs, ptr)
+	if setPinned(ptr, true) {
+		p.refs = append(p.refs, ptr)
+	}
 }
 
-// Unpin all pinned objects of the Pinner.
+// Unpin unpins all pinned objects of the [Pinner].
 func (p *Pinner) Unpin() {
 	p.pinner.unpin()
+
+	mp := acquirem()
+	if pp := mp.p.ptr(); pp != nil && pp.pinnerCache == nil {
+		// Put the pinner back in the cache, but only if the
+		// cache is empty. If application code is reusing Pinners
+		// on its own, we want to leave the backing store in place
+		// so reuse is more efficient.
+		pp.pinnerCache = p.pinner
+		p.pinner = nil
+	}
+	releasem(mp)
 }
 
+const (
+	pinnerSize         = 64
+	pinnerRefStoreSize = (pinnerSize - unsafe.Sizeof([]unsafe.Pointer{})) / unsafe.Sizeof(unsafe.Pointer(nil))
+)
+
 type pinner struct {
-	refs []unsafe.Pointer
+	refs     []unsafe.Pointer
+	refStore [pinnerRefStoreSize]unsafe.Pointer
 }
 
 func (p *pinner) unpin() {
@@ -56,9 +93,12 @@ func (p *pinner) unpin() {
 	}
 	for i := range p.refs {
 		setPinned(p.refs[i], false)
-		p.refs[i] = nil
 	}
-	p.refs = nil
+	// The following two lines make all pointers to references
+	// in p.refs unreachable, either by deleting them or dropping
+	// p.refs' backing store (if it was not backed by refStore).
+	p.refStore = [pinnerRefStoreSize]unsafe.Pointer{}
+	p.refs = p.refStore[:0]
 }
 
 func pinnerGetPtr(i *any) unsafe.Pointer {
@@ -101,15 +141,19 @@ func isPinned(ptr unsafe.Pointer) bool {
 	return pinState.isPinned()
 }
 
-// setPinned marks or unmarks a Go pointer as pinned.
-func setPinned(ptr unsafe.Pointer, pin bool) {
+// setPinned marks or unmarks a Go pointer as pinned, when the ptr is a Go pointer.
+// It will be ignored while try to pin a non-Go pointer,
+// and it will be panic while try to unpin a non-Go pointer,
+// which should not happen in normal usage.
+func setPinned(ptr unsafe.Pointer, pin bool) bool {
 	span := spanOfHeap(uintptr(ptr))
 	if span == nil {
-		if isGoPointerWithoutSpan(ptr) {
-			// this is a linker-allocated or zero size object, nothing to do.
-			return
+		if !pin {
+			panic(errorString("tried to unpin non-Go pointer"))
 		}
-		panic(errorString("runtime.Pinner.Pin: argument is not a Go pointer"))
+		// This is a linker-allocated, zero size object or other object,
+		// nothing to do, silently ignore it.
+		return false
 	}
 
 	// ensure that the span is swept, b/c sweeping accesses the specials list
@@ -167,7 +211,7 @@ func setPinned(ptr unsafe.Pointer, pin bool) {
 	}
 	unlock(&span.speciallock)
 	releasem(mp)
-	return
+	return true
 }
 
 type pinState struct {
@@ -223,14 +267,14 @@ func (p *pinnerBits) ofObject(n uintptr) pinState {
 }
 
 func (s *mspan) pinnerBitSize() uintptr {
-	return divRoundUp(s.nelems*2, 8)
+	return divRoundUp(uintptr(s.nelems)*2, 8)
 }
 
 // newPinnerBits returns a pointer to 8 byte aligned bytes to be used for this
 // span's pinner bits. newPinneBits is used to mark objects that are pinned.
 // They are copied when the span is swept.
 func (s *mspan) newPinnerBits() *pinnerBits {
-	return (*pinnerBits)(newMarkBits(s.nelems * 2))
+	return (*pinnerBits)(newMarkBits(uintptr(s.nelems) * 2))
 }
 
 // nosplit, because it's called by isPinned, which is nosplit

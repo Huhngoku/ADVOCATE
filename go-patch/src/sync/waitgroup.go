@@ -6,12 +6,11 @@ package sync
 
 import (
 	"internal/race"
-	"sync/atomic"
-	"unsafe"
-
 	// ADVOCATE-CHANGE-START
 	"runtime"
 	// ADVOCATE-CHANGE-END
+	"sync/atomic"
+	"unsafe"
 )
 
 // A WaitGroup waits for a collection of goroutines to finish.
@@ -56,6 +55,7 @@ func (wg *WaitGroup) Add(delta int) {
 	}
 	_, _, _ = runtime.WaitForReplay(runtime.OperationWaitgroupAddDone, skip)
 	// ADVOCATE-CHANGE-END
+
 	if race.Enabled {
 		if delta < 0 {
 			// Synchronize decrements with Wait.
@@ -91,7 +91,6 @@ func (wg *WaitGroup) Add(delta int) {
 		// several concurrent wg.counter transitions from 0.
 		race.Read(unsafe.Pointer(&wg.sema))
 	}
-
 	if v < 0 {
 		panic("sync: negative WaitGroup counter")
 	}
@@ -156,6 +155,7 @@ func (wg *WaitGroup) Wait() {
 	advocateIndex := runtime.AdvocateWaitGroupWaitPre(wg.id)
 	defer runtime.AdvocateWaitGroupPost(advocateIndex)
 	// ADVOCATE-CHANGE-END
+
 	for {
 		state := wg.state.Load()
 		v := int32(state >> 32)

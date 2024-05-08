@@ -499,7 +499,7 @@ func rewriteToUseGot(ctxt *obj.Link, p *obj.Prog, newprog obj.ProgAlloc) {
 	p2.From = p.From
 	p2.To = p.To
 	if from3 := p.GetFrom3(); from3 != nil {
-		p2.SetFrom3(*from3)
+		p2.AddRestSource(*from3)
 	}
 	if p.From.Name == obj.NAME_EXTERN {
 		p2.From.Reg = reg
@@ -1226,10 +1226,11 @@ func stacksplit(ctxt *obj.Link, cursym *obj.LSym, p *obj.Prog, newprog obj.ProgA
 		progedit(ctxt, callend.Link, newprog)
 	}
 
-	pcdata = cursym.Func().UnspillRegisterArgs(callend, newprog)
-	pcdata = ctxt.EndUnsafePoint(pcdata, newprog, -1)
+	// The instructions which unspill regs should be preemptible.
+	pcdata = ctxt.EndUnsafePoint(callend, newprog, -1)
+	unspill := cursym.Func().UnspillRegisterArgs(pcdata, newprog)
 
-	jmp := obj.Appendp(pcdata, newprog)
+	jmp := obj.Appendp(unspill, newprog)
 	jmp.As = obj.AJMP
 	jmp.To.Type = obj.TYPE_BRANCH
 	jmp.To.SetTarget(startPred.Link)

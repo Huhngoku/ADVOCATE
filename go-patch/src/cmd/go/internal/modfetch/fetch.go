@@ -23,6 +23,7 @@ import (
 	"cmd/go/internal/base"
 	"cmd/go/internal/cfg"
 	"cmd/go/internal/fsys"
+	"cmd/go/internal/gover"
 	"cmd/go/internal/lockedfile"
 	"cmd/go/internal/par"
 	"cmd/go/internal/robustio"
@@ -36,12 +37,17 @@ import (
 
 var downloadCache par.ErrCache[module.Version, string] // version → directory
 
+var ErrToolchain = errors.New("internal error: invalid operation on toolchain module")
+
 // Download downloads the specific module version to the
 // local download cache and returns the name of the directory
 // corresponding to the root of the module's file tree.
 func Download(ctx context.Context, mod module.Version) (dir string, err error) {
+	if gover.IsToolchain(mod.Path) {
+		return "", ErrToolchain
+	}
 	if err := checkCacheDir(ctx); err != nil {
-		base.Fatalf("go: %v", err)
+		base.Fatal(err)
 	}
 
 	// The par.Cache here avoids duplicate work.
@@ -51,6 +57,17 @@ func Download(ctx context.Context, mod module.Version) (dir string, err error) {
 			return "", err
 		}
 		checkMod(ctx, mod)
+
+		// If go.mod exists (not an old legacy module), check version is not too new.
+		if data, err := os.ReadFile(filepath.Join(dir, "go.mod")); err == nil {
+			goVersion := gover.GoModLookup(data, "go")
+			if gover.Compare(goVersion, gover.Local()) > 0 {
+				return "", &gover.TooNewError{What: mod.String(), GoVersion: goVersion}
+			}
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			return "", err
+		}
+
 		return dir, nil
 	})
 }
@@ -487,7 +504,7 @@ const emptyGoModHash = "h1:G7mAYYxgmS0lVkHyy2hEOLQCFB0DlQFTMLWggykrydY="
 
 // readGoSum parses data, which is the content of file,
 // and adds it to goSum.m. The goSum lock must be held.
-func readGoSum(dst map[module.Version][]string, file string, data []byte) error {
+func readGoSum(dst map[module.Version][]string, file string, data []byte) {
 	lineno := 0
 	for len(data) > 0 {
 		var line []byte
@@ -504,7 +521,12 @@ func readGoSum(dst map[module.Version][]string, file string, data []byte) error 
 			continue
 		}
 		if len(f) != 3 {
-			return fmt.Errorf("malformed go.sum:\n%s:%d: wrong number of fields %v", file, lineno, len(f))
+			if cfg.CmdName == "mod tidy" {
+				// ignore malformed line so that go mod tidy can fix go.sum
+				continue
+			} else {
+				base.Fatalf("malformed go.sum:\n%s:%d: wrong number of fields %v\n", file, lineno, len(f))
+			}
 		}
 		if f[2] == emptyGoModHash {
 			// Old bug; drop it.
@@ -513,7 +535,6 @@ func readGoSum(dst map[module.Version][]string, file string, data []byte) error 
 		mod := module.Version{Path: f[0], Version: f[1]}
 		dst[mod] = append(dst[mod], f[2])
 	}
-	return nil
 }
 
 // HaveSum returns true if the go.sum file contains an entry for mod.
@@ -548,7 +569,7 @@ func HaveSum(mod module.Version) bool {
 	return false
 }
 
-// checkMod checks the given module's checksum.
+// checkMod checks the given module's checksum and Go version.
 func checkMod(ctx context.Context, mod module.Version) {
 	// Do the file I/O before acquiring the go.sum lock.
 	ziphash, err := CachePath(ctx, mod, "ziphash")

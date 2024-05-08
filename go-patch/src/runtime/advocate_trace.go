@@ -421,12 +421,12 @@ func AdvocateIgnore(operation Operation, file string, line int) bool {
 	case OperationMutexLock, OperationMutexUnlock:
 		// mutex operations in the once can cause the replay to get stuck,
 		// if the once was called by the poll/fd_poll_runtime.go init.
-		if hasSuffix(file, "sync/once.go") && (line == 115 || line == 116 ||
-			line == 121 || line == 125) {
+		if hasSuffix(file, "sync/once.go") && (line == 116 || line == 117 ||
+			line == 122 || line == 126) {
 			return true
 		}
 		// pools
-		if hasSuffix(file, "sync/pool.go") && (line == 217 || line == 218 ||
+		if hasSuffix(file, "sync/pool.go") && (line == 226 || line == 227 ||
 			line == 224 || line == 234) {
 			return true
 		}

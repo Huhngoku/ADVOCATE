@@ -85,11 +85,7 @@ func FlushErrors() {
 	sort.Stable(byPos(errorMsgs))
 	for i, err := range errorMsgs {
 		if i == 0 || err.msg != errorMsgs[i-1].msg {
-			fmt.Printf("%s", err.msg)
-			if Flag.Url && err.code != 0 {
-				// TODO(gri) we should come up with a better URL eventually
-				fmt.Printf("\thttps://pkg.go.dev/internal/types/errors#%s\n", err.code)
-			}
+			fmt.Print(err.msg)
 		}
 	}
 	errorMsgs = errorMsgs[:0]
@@ -148,11 +144,6 @@ func ErrorfAt(pos src.XPos, code errors.Code, format string, args ...interface{}
 		fmt.Printf("%v: too many errors\n", FmtPos(pos))
 		ErrorExit()
 	}
-}
-
-// ErrorfVers reports that a language feature (format, args) requires a later version of Go.
-func ErrorfVers(lang string, format string, args ...interface{}) {
-	Errorf("%s requires %s or later (-lang was set to %s; check go.mod)", fmt.Sprintf(format, args...), lang, Flag.Lang)
 }
 
 // UpdateErrorDot is a clumsy hack that rewrites the last error,

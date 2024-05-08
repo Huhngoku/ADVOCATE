@@ -76,9 +76,12 @@ func (jsonMarshalerError) Error() string { return "oops" }
 func TestAppendJSONValue(t *testing.T) {
 	// jsonAppendAttrValue should always agree with json.Marshal.
 	for _, value := range []any{
-		"hello",
+		"hello\r\n\t\a",
 		`"[{escape}]"`,
 		"<escapeHTML&>",
+		// \u2028\u2029 is an edge case in JavaScript vs JSON.
+		// \xF6 is an incomplete encoding.
+		"\u03B8\u2028\u2029\uFFFF\xF6",
 		`-123`,
 		int64(-9_200_123_456_789_123_456),
 		uint64(9_200_123_456_789_123_456),
@@ -171,6 +174,7 @@ func BenchmarkJSONHandler(b *testing.B) {
 		}},
 	} {
 		b.Run(bench.name, func(b *testing.B) {
+			ctx := context.Background()
 			l := New(NewJSONHandler(io.Discard, &bench.opts)).With(
 				String("program", "my-test-program"),
 				String("package", "log/slog"),
@@ -179,7 +183,7 @@ func BenchmarkJSONHandler(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				l.LogAttrs(nil, LevelInfo, "this is a typical log message",
+				l.LogAttrs(ctx, LevelInfo, "this is a typical log message",
 					String("module", "github.com/google/go-cmp"),
 					String("version", "v1.23.4"),
 					Int("count", 23),
@@ -235,12 +239,13 @@ func BenchmarkPreformatting(b *testing.B) {
 		{"struct", io.Discard, structAttrs},
 		{"struct file", outFile, structAttrs},
 	} {
+		ctx := context.Background()
 		b.Run(bench.name, func(b *testing.B) {
 			l := New(NewJSONHandler(bench.wc, nil)).With(bench.attrs...)
 			b.ReportAllocs()
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				l.LogAttrs(nil, LevelInfo, "this is a typical log message",
+				l.LogAttrs(ctx, LevelInfo, "this is a typical log message",
 					String("module", "github.com/google/go-cmp"),
 					String("version", "v1.23.4"),
 					Int("count", 23),
