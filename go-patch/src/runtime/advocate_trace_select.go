@@ -26,7 +26,8 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 	caseElements := ""
 	_, file, line, _ := Caller(2)
 
-	for i, ca := range *cases {
+	i := 0
+	for _, ca := range *cases {
 		if ca.c == nil { // ignore nil cases
 			continue
 		}
@@ -39,6 +40,8 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 		if lockOrder[i] < uint16(nsends) {
 			chanOp = "S"
 		}
+
+		i++
 
 		caseElements += "C." + uint64ToString(timer) + ".0." +
 			uint64ToString(ca.c.id) + "." + chanOp + ".f.0." +
