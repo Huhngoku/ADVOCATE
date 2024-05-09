@@ -16,6 +16,7 @@ import (
 // ============== Recording =================
 
 var traceFileCounter = 0
+var tracePathRecorded = "advocateTrace"
 
 /*
  * Write the trace of the program to a file.
@@ -110,7 +111,7 @@ func writeToTraceFiles() {
 func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	// create the file if it does not exist and open it
 	defer wg.Done()
-	fileName := "trace/trace_" + strconv.Itoa(routine) + ".log"
+	fileName := "advocateTrace/trace_" + strconv.Itoa(routine) + ".log"
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
@@ -137,7 +138,7 @@ func writeToTraceFile(routine int, wg *sync.WaitGroup) {
  * The function deletes all files in the trace folder that are empty.
  */
 func deleteEmptyFiles() {
-	files, err := os.ReadDir("trace")
+	files, err := os.ReadDir(tracePathRecorded)
 	if err != nil {
 		panic(err)
 	}
@@ -147,12 +148,12 @@ func deleteEmptyFiles() {
 			continue
 		}
 
-		stat, err := os.Stat("trace/" + file.Name())
+		stat, err := os.Stat(tracePathRecorded + "/" + file.Name())
 		if err != nil {
 			continue
 		}
 		if stat.Size() == 0 {
-			err := os.Remove("trace/" + file.Name())
+			err := os.Remove(tracePathRecorded + "/" + file.Name())
 			if err != nil {
 				panic(err)
 			}
@@ -169,7 +170,7 @@ func deleteEmptyFiles() {
  */
 func InitTracing(size int) {
 	// remove the trace folder if it exists
-	err := os.RemoveAll("trace")
+	err := os.RemoveAll(tracePathRecorded)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			panic(err)
@@ -177,7 +178,7 @@ func InitTracing(size int) {
 	}
 
 	// create the trace folder
-	err = os.Mkdir("trace", 0755)
+	err = os.Mkdir(tracePathRecorded, 0755)
 	if err != nil {
 		if !os.IsExist(err) {
 			panic(err)
@@ -209,7 +210,7 @@ func InitTracing(size int) {
 // ============== Reading =================
 
 var timeout = false
-var tracePath = "rewritten_trace"
+var tracePathRewritten = "rewritten_trace"
 
 /*
  * Read the trace from the trace folder.
@@ -217,19 +218,15 @@ var tracePath = "rewritten_trace"
  * The trace is added to the runtime by calling the AddReplayTrace function.
  */
 func EnableReplay() {
-	if _, err := os.Stat(tracePath); os.IsNotExist(err) {
-		tracePath = "trace"
-	}
-
 	// if trace folder does not exist, panic
-	if _, err := os.Stat(tracePath); os.IsNotExist(err) {
+	if _, err := os.Stat(tracePathRewritten); os.IsNotExist(err) {
 		panic("Trace folder does not exist.")
 	}
 
-	println("Reading trace from " + tracePath)
+	println("Reading trace from " + tracePathRewritten)
 
 	// traverse all files in the trace folder
-	files, err := os.ReadDir(tracePath)
+	files, err := os.ReadDir(tracePathRewritten)
 	if err != nil {
 		panic(err)
 	}
@@ -242,7 +239,7 @@ func EnableReplay() {
 
 		// if the file is a log file, read the trace
 		if strings.HasSuffix(file.Name(), ".log") {
-			routineID, trace := readTraceFile(tracePath + "/" + file.Name())
+			routineID, trace := readTraceFile(tracePathRewritten + "/" + file.Name())
 			runtime.AddReplayTrace(uint64(routineID), trace)
 		}
 	}
@@ -279,7 +276,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 	maxTokenSize := 1
 
 	// get the routine id from the file name
-	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, tracePath+"/trace_"), ".log"))
+	routineID, err := strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(fileName, tracePathRewritten+"/trace_"), ".log"))
 	if err != nil {
 		panic(err)
 	}

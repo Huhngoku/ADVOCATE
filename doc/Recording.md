@@ -21,7 +21,7 @@ defer advocate.Finish()
 
 It has to be included before any other code. It is also necessary to import the `advocate` library. 
 
-We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace files will be automatically created. It will be created in the folder `/trace`.
+We now run the program like normal (with the created `./go` program in `go-patch/bin`). The trace files will be automatically created. It will be created in the folder `advocateTrace`.
 
 ## Known problems
 
