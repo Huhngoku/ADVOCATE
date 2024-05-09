@@ -1,9 +1,5 @@
 ```
 ==================== Summary ====================
 
--------------------- Critical -------------------
-
-1 Leak on unbuffered channel or select with possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1103@47
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
+No bugs found
 ```

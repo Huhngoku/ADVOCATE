@@ -679,7 +679,6 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 		c.numberRecv++
 		unlock(&c.numberRecvMutex)
 		advocateIndex = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
-		defer AdvocateChanPost(advocateIndex)
 	}
 	// ADVOCATE-CHANGE-END
 
@@ -709,12 +708,20 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 			// directly from sender. Otherwise, receive from head of queue
 			// and add sender's value to the tail of the queue (both map to
 			// the same buffer slot because the queue is full).
+			// ADVOCATE-CHANGE-START
+			if !ignored && !c.advocateIgnore {
+				AdvocateChanPost(advocateIndex)
+			}
+			// ADVOCATE-CHANGE-END
 			recv(c, sg, ep, func() { unlock(&c.lock) }, 3)
 			return true, true
 		}
 	}
 
 	if c.qcount > 0 {
+		// ADVOCATE-CHANGE-START
+		AdvocateChanPost(advocateIndex)
+		// ADVOCATE-CHANGE-END
 		// Receive directly from queue
 		qp := chanbuf(c, c.recvx)
 		if raceenabled {
@@ -734,6 +741,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 	}
 
 	if !block {
+		// ADVOCATE-CHANGE-START
+		if !ignored && !c.advocateIgnore {
+			AdvocateChanPost(advocateIndex)
+		}
+		// ADVOCATE-CHANGE-END
 		unlock(&c.lock)
 		return false, false
 	}
@@ -780,6 +792,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 	if mysg != gp.waiting {
 		throw("G waiting list is corrupted")
 	}
+	// ADVOCATE-CHANGE-START
+	if !ignored && !c.advocateIgnore {
+		AdvocateChanPost(advocateIndex)
+	}
+	// ADVOCATE-CHANGE-END
 	gp.waiting = nil
 	gp.activeStackChans = false
 	if mysg.releasetime > 0 {

@@ -23,7 +23,7 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 				mrs[id].Vc.ToString()+" and "+closeData[id].Vc.ToString(),
 				logging.DEBUG)
 			happensBefore := clock.GetHappensBefore(closeData[id].Vc, mrs[id].Vc)
-			if happensBefore == clock.Concurrent {
+			if mrs[id].TID != "" && happensBefore == clock.Concurrent {
 				found := "Possible send on closed channel:\n"
 				found += "\tclose: " + pos + "\n"
 				found += "\tsend : " + mrs[id].TID
@@ -39,7 +39,7 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 				mrr[id].Vc.ToString()+" and "+closeData[id].Vc.ToString(),
 				logging.DEBUG)
 			happensBefore := clock.GetHappensBefore(closeData[id].Vc, mrr[id].Vc)
-			if happensBefore == clock.Concurrent || happensBefore == clock.Before {
+			if mrr[id].TID != "" && (happensBefore == clock.Concurrent || happensBefore == clock.Before) {
 				found := "Possible receive on closed channel:\n"
 				found += "\tclose: " + pos + "\n"
 				found += "\trecv : " + mrr[id].TID

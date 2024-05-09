@@ -475,11 +475,11 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 		}
 	}
 
-	selunlock(scases, lockorder)
 	// ADVOCATE-CHANGE-START
 	advocateRClose = !caseSuccess
 	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
 	// ADVOCATE-CHANGE-END
+	selunlock(scases, lockorder)
 	goto retc
 
 bufrecv:
@@ -507,13 +507,13 @@ bufrecv:
 		c.recvx = 0
 	}
 	c.qcount--
+	// ADVOCATE-CHANGE-START
+	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
+	// ADVOCATE-CHANGE-END
 	selunlock(scases, lockorder)
 	goto retc
 
 bufsend:
-	// ADVOCATE-CHANGE-START
-	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
-	// ADVOCATE-CHANGE-END
 	// can send to buffer
 	if raceenabled {
 		racenotify(c, c.sendx, nil)
@@ -531,32 +531,32 @@ bufsend:
 		c.sendx = 0
 	}
 	c.qcount++
-	selunlock(scases, lockorder)
 	// ADVOCATE-CHANGE-START
 	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
 	// ADVOCATE-CHANGE-END
+	selunlock(scases, lockorder)
 	goto retc
 
 recv:
 	// can receive from sleeping sender (sg)
 	recv(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
-	// ADVOCATE-CHANGE-START
-	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
-	// ADVOCATE-CHANGE-END
 	if debugSelect {
 		print("syncrecv: cas0=", cas0, " c=", c, "\n")
 	}
 	recvOK = true
+	// ADVOCATE-CHANGE-START
+	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
+	// ADVOCATE-CHANGE-END
 	goto retc
 
 rclose:
-	// read at end of closed channel
-	selunlock(scases, lockorder)
-	recvOK = false
 	// ADVOCATE-CHANGE-START
 	advocateRClose = true
 	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
 	// ADVOCATE-CHANGE-END
+	// read at end of closed channel
+	selunlock(scases, lockorder)
+	recvOK = false
 	if cas.elem != nil {
 		typedmemclr(c.elemtype, cas.elem)
 	}
@@ -576,10 +576,10 @@ send:
 	if asanenabled {
 		asanread(cas.elem, c.elemtype.Size_)
 	}
-	send(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
 	// ADVOCATE-CHANGE-START
 	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
 	// ADVOCATE-CHANGE-END
+	send(c, sg, cas.elem, func() { selunlock(scases, lockorder) }, 2)
 	if debugSelect {
 		print("syncsend: cas0=", cas0, " c=", c, "\n")
 	}
@@ -593,11 +593,11 @@ retc:
 
 sclose:
 	// send on closed channel
-	selunlock(scases, lockorder)
 	// ADVOCATE-CHANGE-START
 	advocateRClose = true
 	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
 	// ADVOCATE-CHANGE-END
+	selunlock(scases, lockorder)
 	panic(plainError("send on closed channel"))
 }
 

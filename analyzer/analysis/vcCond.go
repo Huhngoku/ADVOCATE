@@ -27,7 +27,6 @@ func CondWait(id int, routine int, vc map[int]clock.VectorClock, leak bool) {
  *   vc (map[int]VectorClock): The current vector clocks
  */
 func CondSignal(id int, routine int, vc map[int]clock.VectorClock) {
-	println("Signal: ", id, routine)
 	vc[routine].Inc(routine)
 
 	lastCondRelease[id] = routine
