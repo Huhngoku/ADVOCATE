@@ -123,6 +123,10 @@ type subscriptionClock struct {
 	flags     subclockflags
 }
 
+type subscriptionFdReadwrite struct {
+	fd int32
+}
+
 type subscription struct {
 	userdata userdata
 	u        subscriptionUnion
@@ -136,6 +140,10 @@ func (u *subscriptionUnion) eventtype() *eventtype {
 
 func (u *subscriptionUnion) subscriptionClock() *subscriptionClock {
 	return (*subscriptionClock)(unsafe.Pointer(&u[1]))
+}
+
+func (u *subscriptionUnion) subscriptionFdReadwrite() *subscriptionFdReadwrite {
+	return (*subscriptionFdReadwrite)(unsafe.Pointer(&u[1]))
 }
 
 //go:wasmimport wasi_snapshot_preview1 poll_oneoff
@@ -172,10 +180,11 @@ func usleep(usec uint32) {
 	}
 }
 
-func getRandomData(r []byte) {
+func readRandom(r []byte) int {
 	if random_get(unsafe.Pointer(&r[0]), size(len(r))) != 0 {
-		throw("random_get failed")
+		return 0
 	}
+	return len(r)
 }
 
 func goenvs() {

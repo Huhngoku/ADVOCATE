@@ -37,6 +37,7 @@ func fatal(string)
 type Mutex struct {
 	state int32
 	sema  uint32
+
 	// ADVOCATE-CHANGE-START
 	id uint64 // id for the mutex
 	// ADVOCATE-CHANGE-END
@@ -162,6 +163,7 @@ func (m *Mutex) TryLock() bool {
 	// advocateIndex is used for AdvocatePostTry to find the pre event.
 	advocateIndex := runtime.AdvocateMutexLockTry(m.id, false, false)
 	// ADVOCATE-CHANGE-END
+
 	old := m.state
 	if old&(mutexLocked|mutexStarving) != 0 {
 		// ADVOCATE-CHANGE-START

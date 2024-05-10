@@ -11,6 +11,20 @@ import (
 	"unsafe"
 )
 
+func init() {
+	// Try to set stdio to non-blocking mode before the os package
+	// calls NewFile for each fd. NewFile queries the non-blocking flag
+	// but doesn't change it, even if the runtime supports non-blocking
+	// stdio. Since WebAssembly modules are single-threaded, blocking
+	// system calls temporarily halt execution of the module. If the
+	// runtime supports non-blocking stdio, the Go runtime is able to
+	// use the WASI net poller to poll for read/write readiness and is
+	// able to schedule goroutines while waiting.
+	SetNonblock(0, true)
+	SetNonblock(1, true)
+	SetNonblock(2, true)
+}
+
 type uintptr32 = uint32
 type size = uint32
 type fdflags = uint32
@@ -279,6 +293,12 @@ func fd_fdstat_get_flags(fd int) (uint32, error) {
 	return uint32(stat.fdflags), errnoErr(errno)
 }
 
+func fd_fdstat_get_type(fd int) (uint8, error) {
+	var stat fdstat
+	errno := fd_fdstat_get(int32(fd), unsafe.Pointer(&stat))
+	return stat.filetype, errnoErr(errno)
+}
+
 type preopentype = uint8
 
 const (
@@ -331,11 +351,11 @@ func init() {
 		if errno == EBADF {
 			break
 		}
+		if errno == ENOTDIR || prestat.typ != preopentypeDir {
+			continue
+		}
 		if errno != 0 {
 			panic("fd_prestat: " + errno.Error())
-		}
-		if prestat.typ != preopentypeDir {
-			continue
 		}
 		if int(prestat.dir.prNameLen) > len(dirNameBuf) {
 			dirNameBuf = make([]byte, prestat.dir.prNameLen)

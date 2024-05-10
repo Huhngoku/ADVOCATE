@@ -14,10 +14,12 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"cmd/go/internal/gover"
 	"cmd/go/internal/modfetch/codehost"
 
 	"golang.org/x/mod/modfile"
@@ -320,6 +322,9 @@ func (r *codeRepo) Stat(ctx context.Context, rev string) (*RevInfo, error) {
 func (r *codeRepo) Latest(ctx context.Context) (*RevInfo, error) {
 	info, err := r.code.Latest(ctx)
 	if err != nil {
+		if info != nil {
+			return &RevInfo{Origin: info.Origin}, err
+		}
 		return nil, err
 	}
 	return r.convert(ctx, info, "")
@@ -330,7 +335,44 @@ func (r *codeRepo) Latest(ctx context.Context) (*RevInfo, error) {
 //
 // If statVers is a valid module version, it is used for the Version field.
 // Otherwise, the Version is derived from the passed-in info and recent tags.
-func (r *codeRepo) convert(ctx context.Context, info *codehost.RevInfo, statVers string) (*RevInfo, error) {
+func (r *codeRepo) convert(ctx context.Context, info *codehost.RevInfo, statVers string) (revInfo *RevInfo, err error) {
+	defer func() {
+		if info.Origin == nil {
+			return
+		}
+		if revInfo == nil {
+			revInfo = new(RevInfo)
+		} else if revInfo.Origin != nil {
+			panic("internal error: RevInfo Origin unexpectedly already populated")
+		}
+
+		origin := *info.Origin
+		revInfo.Origin = &origin
+		origin.Subdir = r.codeDir
+
+		v := revInfo.Version
+		if module.IsPseudoVersion(v) && (v != statVers || !strings.HasPrefix(v, "v0.0.0-")) {
+			// Add tags that are relevant to pseudo-version calculation to origin.
+			prefix := r.codeDir
+			if prefix != "" {
+				prefix += "/"
+			}
+			if r.pathMajor != "" { // "/v2" or "/.v2"
+				prefix += r.pathMajor[1:] + "." // += "v2."
+			}
+			tags, tagsErr := r.code.Tags(ctx, prefix)
+			if tagsErr != nil {
+				revInfo.Origin = nil
+				if err == nil {
+					err = tagsErr
+				}
+			} else {
+				origin.TagPrefix = tags.Origin.TagPrefix
+				origin.TagSum = tags.Origin.TagSum
+			}
+		}
+	}()
+
 	// If this is a plain tag (no dir/ prefix)
 	// and the module path is unversioned,
 	// and if the underlying file tree has no go.mod,
@@ -461,31 +503,7 @@ func (r *codeRepo) convert(ctx context.Context, info *codehost.RevInfo, statVers
 			return nil, errIncompatible
 		}
 
-		origin := info.Origin
-		if origin != nil {
-			o := *origin
-			origin = &o
-			origin.Subdir = r.codeDir
-			if module.IsPseudoVersion(v) && (v != statVers || !strings.HasPrefix(v, "v0.0.0-")) {
-				// Add tags that are relevant to pseudo-version calculation to origin.
-				prefix := r.codeDir
-				if prefix != "" {
-					prefix += "/"
-				}
-				if r.pathMajor != "" { // "/v2" or "/.v2"
-					prefix += r.pathMajor[1:] + "." // += "v2."
-				}
-				tags, err := r.code.Tags(ctx, prefix)
-				if err != nil {
-					return nil, err
-				}
-				origin.TagPrefix = tags.Origin.TagPrefix
-				origin.TagSum = tags.Origin.TagSum
-			}
-		}
-
 		return &RevInfo{
-			Origin:  origin,
 			Name:    info.Name,
 			Short:   info.Short,
 			Time:    info.Time,
@@ -496,10 +514,20 @@ func (r *codeRepo) convert(ctx context.Context, info *codehost.RevInfo, statVers
 	// Determine version.
 
 	if module.IsPseudoVersion(statVers) {
+		// Validate the go.mod location and major version before
+		// we check for an ancestor tagged with the pseude-version base.
+		//
+		// We can rule out an invalid subdirectory or major version with only
+		// shallow commit information, but checking the pseudo-version base may
+		// require downloading a (potentially more expensive) full history.
+		revInfo, err = checkCanonical(statVers)
+		if err != nil {
+			return revInfo, err
+		}
 		if err := r.validatePseudoVersion(ctx, info, statVers); err != nil {
 			return nil, err
 		}
-		return checkCanonical(statVers)
+		return revInfo, nil
 	}
 
 	// statVers is not a pseudo-version, so we need to either resolve it to a
@@ -1011,7 +1039,7 @@ func (r *codeRepo) retractedVersions(ctx context.Context) (func(string) bool, er
 	if err != nil {
 		return nil, err
 	}
-	retractions := make([]modfile.VersionInterval, len(f.Retract))
+	retractions := make([]modfile.VersionInterval, 0, len(f.Retract))
 	for _, r := range f.Retract {
 		retractions = append(retractions, r.VersionInterval)
 	}
@@ -1046,6 +1074,16 @@ func (r *codeRepo) Zip(ctx context.Context, dst io.Writer, version string) error
 	if err != nil {
 		return err
 	}
+
+	if gomod, err := r.code.ReadFile(ctx, rev, filepath.Join(subdir, "go.mod"), codehost.MaxGoMod); err == nil {
+		goVers := gover.GoModLookup(gomod, "go")
+		if gover.Compare(goVers, gover.Local()) > 0 {
+			return &gover.TooNewError{What: r.ModulePath() + "@" + version, GoVersion: goVers}
+		}
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
+
 	dl, err := r.code.ReadZip(ctx, rev, subdir, codehost.MaxZipFile)
 	if err != nil {
 		return err

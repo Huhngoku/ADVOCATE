@@ -270,9 +270,8 @@ func genstubs(ctxt *ld.Link, ldr *loader.Loader) {
 	for _, s := range ctxt.Textp {
 		relocs := ldr.Relocs(s)
 		for i := 0; i < relocs.Count(); i++ {
-			r := relocs.At(i)
-			switch r.Type() {
-			case objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24):
+			switch r := relocs.At(i); r.Type() {
+			case objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24), objabi.R_CALLPOWER:
 				switch ldr.SymType(r.Sym()) {
 				case sym.SDYNIMPORT:
 					// This call goes through the PLT, generate and call through a PLT stub.
@@ -304,6 +303,10 @@ func genstubs(ctxt *ld.Link, ldr *loader.Loader) {
 					}
 				}
 
+			case objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24_P9NOTOC):
+				// This can be treated identically to R_PPC64_REL24_NOTOC, as stubs are determined by
+				// GOPPC64 and -buildmode.
+				fallthrough
 			case objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24_NOTOC):
 				switch ldr.SymType(r.Sym()) {
 				case sym.SDYNIMPORT:
@@ -471,24 +474,9 @@ func rewriteABIFuncReloc(ctxt *ld.Link, ldr *loader.Loader, tname string, r load
 	r.SetAdd(int64((n - minReg) * offMul))
 	firstUse = !ldr.AttrReachable(ts)
 	if firstUse {
-		ldr.SetAttrReachable(ts, true)
 		// This function only becomes reachable now. It has been dropped from
 		// the text section (it was unreachable until now), it needs included.
-		//
-		// Similarly, TOC regeneration should not happen for these functions,
-		// remove it from this save/restore function.
-		if ldr.AttrShared(ts) {
-			sb := ldr.MakeSymbolUpdater(ts)
-			sb.SetData(sb.Data()[8:])
-			sb.SetSize(sb.Size() - 8)
-			relocs := sb.Relocs()
-			// Only one PCREL reloc to .TOC. should be present.
-			if relocs.Count() != 1 {
-				log.Fatalf("Unexpected number of relocs in %s\n", ldr.SymName(ts))
-			}
-			sb.ResetRelocs()
-
-		}
+		ldr.SetAttrReachable(ts, true)
 	}
 	return ts, firstUse
 }
@@ -602,13 +590,14 @@ func addelfdynrel(target *ld.Target, ldr *loader.Loader, syms *ld.ArchSyms, s lo
 		}
 
 		// Handle relocations found in ELF object files.
-	case objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24_NOTOC):
+	case objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24_NOTOC),
+		objabi.ElfRelocOffset + objabi.RelocType(elf.R_PPC64_REL24_P9NOTOC):
 		su := ldr.MakeSymbolUpdater(s)
 		su.SetRelocType(rIdx, objabi.R_CALLPOWER)
 
 		if targType == sym.SDYNIMPORT {
 			// Should have been handled in elfsetupplt
-			ldr.Errorf(s, "unexpected R_PPC64_REL24_NOTOC for dyn import")
+			ldr.Errorf(s, "unexpected R_PPC64_REL24_NOTOC/R_PPC64_REL24_P9NOTOC for dyn import")
 		}
 		return true
 
@@ -628,7 +617,7 @@ func addelfdynrel(target *ld.Target, ldr *loader.Loader, syms *ld.ArchSyms, s lo
 		su.SetRelocAdd(rIdx, r.Add()+localEoffset)
 
 		if targType == sym.SDYNIMPORT {
-			// Should have been handled in elfsetupplt
+			// Should have been handled in genstubs
 			ldr.Errorf(s, "unexpected R_PPC64_REL24 for dyn import")
 		}
 
@@ -913,7 +902,6 @@ func xcoffreloc1(arch *sys.Arch, out *ld.OutBuf, ldr *loader.Loader, s loader.Sy
 		emitReloc(ld.XCOFF_R_REF|0x3F<<8, 0)
 	}
 	return true
-
 }
 
 func elfreloc1(ctxt *ld.Link, out *ld.OutBuf, ldr *loader.Loader, s loader.Sym, r loader.ExtReloc, ri int, sectoff int64) bool {
@@ -1010,7 +998,7 @@ func elfreloc1(ctxt *ld.Link, out *ld.OutBuf, ldr *loader.Loader, s loader.Sym, 
 	return true
 }
 
-func elfsetupplt(ctxt *ld.Link, plt, got *loader.SymbolBuilder, dynamic loader.Sym) {
+func elfsetupplt(ctxt *ld.Link, ldr *loader.Loader, plt, got *loader.SymbolBuilder, dynamic loader.Sym) {
 	if plt.Size() == 0 {
 		// The dynamic linker stores the address of the
 		// dynamic resolver and the DSO identifier in the two
@@ -1570,7 +1558,6 @@ func archrelocvariant(target *ld.Target, ldr *loader.Loader, r loader.Reloc, rv 
 			var o1 uint32
 			if target.IsBigEndian() {
 				o1 = binary.BigEndian.Uint32(p[r.Off()-2:])
-
 			} else {
 				o1 = binary.LittleEndian.Uint32(p[r.Off():])
 			}

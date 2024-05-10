@@ -304,7 +304,7 @@ search:
 				if goarch.PtrSize == 8 {
 					*(*unsafe.Pointer)(k) = nil
 				} else {
-					// There are three ways to squeeze at one ore more 32 bit pointers into 64 bits.
+					// There are three ways to squeeze at one or more 32 bit pointers into 64 bits.
 					// Just call memclrHasPointers instead of trying to handle all cases here.
 					memclrHasPointers(k, 8)
 				}
@@ -350,7 +350,7 @@ search:
 			// Reset the hash seed to make it more difficult for attackers to
 			// repeatedly trigger hash collisions. See issue 25237.
 			if h.count == 0 {
-				h.hash0 = fastrand()
+				h.hash0 = uint32(rand())
 			}
 			break search
 		}

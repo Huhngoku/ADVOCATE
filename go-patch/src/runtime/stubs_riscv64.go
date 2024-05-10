@@ -4,9 +4,14 @@
 
 package runtime
 
+import "unsafe"
+
 // Called from assembly only; declared for go vet.
 func load_g()
 func save_g()
+
+//go:noescape
+func asmcgocall_no_g(fn, arg unsafe.Pointer)
 
 // Used by reflectcall and the reflect package.
 //
@@ -15,5 +20,6 @@ func save_g()
 func spillArgs()
 func unspillArgs()
 
-// getcallerfp returns the address of the frame pointer in the callers frame or 0 if not implemented.
-func getcallerfp() uintptr { return 0 }
+// getfp returns the frame pointer register of its caller or 0 if not implemented.
+// TODO: Make this a compiler intrinsic
+func getfp() uintptr { return 0 }

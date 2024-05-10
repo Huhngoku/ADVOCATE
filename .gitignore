@@ -15,5 +15,5 @@
 # vendor/
 
 # trace files
-trace/
-rewritten_trace/
+examples/*/trace/
+examples/*/rewritten_trace/

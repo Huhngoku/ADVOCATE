@@ -1,5 +1,7 @@
 // errorcheckwithauto -0 -m -d=inlfuncswithclosures=1
 
+//go:build !goexperiment.newinliner
+
 // Copyright 2015 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -108,6 +110,18 @@ func p() int { // ERROR "can inline p"
 func q(x int) int { // ERROR "can inline q"
 	foo := func() int { return x * 2 } // ERROR "can inline q.func1" "func literal does not escape"
 	return foo()                       // ERROR "inlining call to q.func1"
+}
+
+func r(z int) int {
+	foo := func(x int) int { // ERROR "can inline r.func1" "func literal does not escape"
+		return x + z
+	}
+	bar := func(x int) int { // ERROR "func literal does not escape" "can inline r.func2"
+		return x + func(y int) int { // ERROR "can inline r.func2.1" "can inline r.r.func2.func3"
+			return 2*y + x*z
+		}(x) // ERROR "inlining call to r.func2.1"
+	}
+	return foo(42) + bar(42) // ERROR "inlining call to r.func1" "inlining call to r.func2" "inlining call to r.r.func2.func3"
 }
 
 func s0(x int) int { // ERROR "can inline s0"
@@ -379,5 +393,35 @@ loop:
 			break loop
 		}
 		select2(x, y) // ERROR "inlining call to select2"
+	}
+}
+
+// Issue #62211: inlining a function with unreachable "return"
+// statements could trip up phi insertion.
+func issue62211(x bool) { // ERROR "can inline issue62211"
+	if issue62211F(x) { // ERROR "inlining call to issue62211F"
+	}
+	if issue62211G(x) { // ERROR "inlining call to issue62211G"
+	}
+
+	// Initial fix CL caused a "non-monotonic scope positions" failure
+	// on code like this.
+	if z := 0; false {
+		panic(z)
+	}
+}
+
+func issue62211F(x bool) bool { // ERROR "can inline issue62211F"
+	if x || true {
+		return true
+	}
+	return true
+}
+
+func issue62211G(x bool) bool { // ERROR "can inline issue62211G"
+	if x || true {
+		return true
+	} else {
+		return true
 	}
 }

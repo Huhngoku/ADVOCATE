@@ -122,9 +122,7 @@ func syscall_now() (sec int64, nsec int32) {
 
 //go:nosplit
 func cputicks() int64 {
-	// Currently cputicks() is used in blocking profiler and to seed runtime·fastrand().
 	// runtime·nanotime() is a poor approximation of CPU ticks that is enough for the profiler.
-	// TODO: need more entropy to better seed fastrand.
 	return nanotime()
 }
 
@@ -137,8 +135,9 @@ func preemptM(mp *m) {
 	// No threads, so nothing to do.
 }
 
-// getcallerfp returns the address of the frame pointer in the callers frame or 0 if not implemented.
-func getcallerfp() uintptr { return 0 }
+// getfp returns the frame pointer register of its caller or 0 if not implemented.
+// TODO: Make this a compiler intrinsic
+func getfp() uintptr { return 0 }
 
 func setProcessCPUProfiler(hz int32) {}
 func setThreadCPUProfiler(hz int32)  {}

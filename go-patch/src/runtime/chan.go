@@ -21,7 +21,6 @@ import (
 	"internal/abi"
 	"runtime/internal/atomic"
 	"runtime/internal/math"
-
 	"unsafe"
 )
 
@@ -285,25 +284,25 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 		panic(plainError("send on closed channel"))
 	}
 
+	// ADVOCATE-CHANGE-START
 	if sg := c.recvq.dequeue(replayElem); sg != nil {
-		// Found a waiting receiver. We pass the value we want to send
-		// directly to the receiver, bypassing the channel buffer (if any).
-		// ADVOCATE-CHANGE-START
 		if !ignored && !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
 		// ADVOCATE-CHANGE-END
+		// Found a waiting receiver. We pass the value we want to send
+		// directly to the receiver, bypassing the channel buffer (if any).
 		send(c, sg, ep, func() { unlock(&c.lock) }, 3)
 		return true
 	}
 
 	if c.qcount < c.dataqsiz {
-		// Space is available in the channel buffer. Enqueue the element to send.
 		// ADVOCATE-CHANGE-START
 		if !ignored && !c.advocateIgnore {
 			AdvocateChanPost(advocateIndex)
 		}
 		// ADVOCATE-CHANGE-END
+		// Space is available in the channel buffer. Enqueue the element to send.
 		qp := chanbuf(c, c.sendx)
 		if raceenabled {
 			racenotify(c, c.sendx, nil)
@@ -315,7 +314,6 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 		}
 		c.qcount++
 		unlock(&c.lock)
-
 		return true
 	}
 
@@ -504,7 +502,9 @@ func closechan(c *hchan) {
 
 	// release all readers
 	for {
+		// ADVOCATE-CHANGE-START
 		sg := c.recvq.dequeue(ReplayElement{})
+		// ADVOCATE-CHANGE-END
 		if sg == nil {
 			break
 		}
@@ -526,7 +526,9 @@ func closechan(c *hchan) {
 
 	// release all writers (they will panic)
 	for {
+		// ADVOCATE-CHANGE-START
 		sg := c.sendq.dequeue(ReplayElement{})
+		// ADVOCATE-CHANGE-END
 		if sg == nil {
 			break
 		}
@@ -700,7 +702,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 		// The channel has been closed, but the channel's buffer have data.
 	} else {
 		// Just found waiting sender with not closed.
+		// ADVOCATE-CHANGE-START
 		if sg := c.sendq.dequeue(replayElem); sg != nil {
+			// ADVOCATE-CHANGE-END
 			// Found a waiting sender. If buffer is size 0, receive value
 			// directly from sender. Otherwise, receive from head of queue
 			// and add sender's value to the tail of the queue (both map to
@@ -769,6 +773,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 	// gopark blocks the routine if no communication partner is available
 	// and the has no free buffe.
 	// ADVOCATE-NOTE-END
+
 	gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceBlockChanRecv, 2)
 
 	// someone woke us up
@@ -781,11 +786,13 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 		blockevent(mysg.releasetime-t0, 2)
 	}
 	success := mysg.success
+
 	// ADVOCATE-CHANGE-START
 	if !success && !ignored && !c.advocateIgnore {
 		AdvocateChanPostCausedByClose(advocateIndex)
 	}
 	// ADVOCATE-CHANGE-END
+
 	gp.param = nil
 	mysg.c = nil
 	releaseSudog(mysg)
@@ -975,12 +982,16 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 
 //go:linkname reflect_chansend reflect.chansend0
 func reflect_chansend(c *hchan, elem unsafe.Pointer, nb bool) (selected bool) {
+	// ADVOCATE-CHANGE-START
 	return chansend(c, elem, !nb, getcallerpc(), false)
+	// ADVOCATE-CHANGE-END
 }
 
 //go:linkname reflect_chanrecv reflect.chanrecv
 func reflect_chanrecv(c *hchan, nb bool, elem unsafe.Pointer) (selected bool, received bool) {
+	// ADVOCATE-CHANGE-START
 	return chanrecv(c, elem, !nb, false)
+	// ADVOCATE-CHANGE-END
 }
 
 //go:linkname reflect_chanlen reflect.chanlen
@@ -1034,6 +1045,7 @@ func (q *waitq) dequeue(rElem ReplayElement) *sudog {
 		if sgp == nil {
 			return nil
 		}
+
 		// ADVOCATE-CHANGE-START
 		// if the channel partner is not correct, the goroutine is not woken up
 		// TODO: durch die ganze Queue durchgehen, ob partner vorhanden, um
@@ -1047,6 +1059,7 @@ func (q *waitq) dequeue(rElem ReplayElement) *sudog {
 			}
 		}
 		// ADVOCATE-CHANE-END
+
 		y := sgp.next
 		if y == nil {
 			q.first = nil

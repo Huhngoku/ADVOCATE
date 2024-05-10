@@ -116,5 +116,7 @@ func RUnlock(routine int, id int, vc map[int]clock.VectorClock, tPost int) {
 		vc[routine] = vc[routine].Inc(routine)
 	}
 
-	lockSetRemoveLock(routine, id)
+	if analysisCases["mixedDeadlock"] {
+		lockSetRemoveLock(routine, id)
+	}
 }

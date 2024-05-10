@@ -14,35 +14,25 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"fmt"
-	"go/build"
 	"internal/testenv"
 	"internal/txtar"
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 	"testing"
-
-	// ADVOCATE-REMOVE_TEST-START
-	// "time"
-	// ADVOCATE-REMOVE_TEST-END
+	"time"
 
 	"cmd/go/internal/cfg"
+	"cmd/go/internal/gover"
 	"cmd/go/internal/script"
-
-	// ADVOCATE-REMOVE_TEST-START
-	// "cmd/go/internal/script/scripttest"
-	// ADVOCATE-REMOVE_TEST-END
+	"cmd/go/internal/script/scripttest"
 	"cmd/go/internal/vcweb/vcstest"
 )
 
 var testSum = flag.String("testsum", "", `may be tidy, listm, or listall. If set, TestScript generates a go.sum file at the beginning of each test and updates test files if they pass.`)
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 // TestScript runs the tests in testdata/script/*.txt.
 func TestScript(t *testing.T) {
 	testenv.MustHaveGoBuild(t)
@@ -159,12 +149,14 @@ func TestScript(t *testing.T) {
 				}
 			}
 
-			scripttest.Run(t, engine, s, filepath.Base(file), bytes.NewReader(a.Comment))
+			// Note: Do not use filepath.Base(file) here:
+			// editors that can jump to file:line references in the output
+			// will work better seeing the full path relative to cmd/go
+			// (where the "go test" command is usually run).
+			scripttest.Run(t, engine, s, file, bytes.NewReader(a.Comment))
 		})
 	}
 }
-*/
-// ADVOCATE-REMOVE_TEST-END
 
 // testingTBKey is the Context key for a testing.TB.
 type testingTBKey struct{}
@@ -215,10 +207,6 @@ func scriptEnv(srv *vcstest.Server, srvCertFile string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	version, err := goVersion()
-	if err != nil {
-		return nil, err
-	}
 	env := []string{
 		pathEnvName() + "=" + testBin + string(filepath.ListSeparator) + os.Getenv(pathEnvName()),
 		homeEnvName() + "=/no-home",
@@ -249,8 +237,11 @@ func scriptEnv(srv *vcstest.Server, srvCertFile string) ([]string, error) {
 		"GONOSUMDB=",
 		"GOVCS=*:all",
 		"devnull=" + os.DevNull,
-		"goversion=" + version,
+		"goversion=" + gover.Local(),
 		"CMDGO_TEST_RUN_MAIN=true",
+		"HGRCPATH=",
+		"GOTOOLCHAIN=auto",
+		"newline=\n",
 	}
 
 	if testenv.Builder() != "" || os.Getenv("GIT_TRACE_CURL") == "1" {
@@ -282,16 +273,6 @@ func scriptEnv(srv *vcstest.Server, srvCertFile string) ([]string, error) {
 	}
 
 	return env, nil
-}
-
-// goVersion returns the current Go version.
-func goVersion() (string, error) {
-	tags := build.Default.ReleaseTags
-	version := tags[len(tags)-1]
-	if !regexp.MustCompile(`^go([1-9][0-9]*)\.(0|[1-9][0-9]*)$`).MatchString(version) {
-		return "", fmt.Errorf("invalid go version %q", version)
-	}
-	return version[2:], nil
 }
 
 var extraEnvKeys = []string{

@@ -27,9 +27,10 @@ TEXT ·Loadint64(SB), NOSPLIT, $0-16
 //	} else
 //		return 0;
 TEXT ·Cas(SB),NOSPLIT,$0-17
+// ADVOCATE-CHANGE-START
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ 	ptr+0(FP), AX
+	MOVQ 	AX, 0(SP)
 	CALL	·AdvocateAtomic32CompSwap(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -50,8 +51,8 @@ TEXT ·Cas(SB),NOSPLIT,$0-17
 //	}
 TEXT ·Cas64(SB), NOSPLIT, $0-25
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ 	ptr+0(FP), AX
+	MOVQ 	AX, 0(SP)
 	CALL	·AdvocateAtomic64CompSwap(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -96,8 +97,8 @@ TEXT ·CasRel(SB), NOSPLIT, $0-17
 //	return *val;
 TEXT ·Xadd(SB), NOSPLIT, $0-20
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic32Add(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -115,8 +116,8 @@ TEXT ·Xadd(SB), NOSPLIT, $0-20
 //	return *val;
 TEXT ·Xadd64(SB), NOSPLIT, $0-24
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+ 	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic64Add(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -144,8 +145,8 @@ TEXT ·Xadduintptr(SB), NOSPLIT, $0-24
 //	return old;
 TEXT ·Xchg(SB), NOSPLIT, $0-20
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic32Swap(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -161,8 +162,8 @@ TEXT ·Xchg(SB), NOSPLIT, $0-20
 //	return old;
 TEXT ·Xchg64(SB), NOSPLIT, $0-24
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic64Swap(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -188,8 +189,8 @@ TEXT ·StorepNoWB(SB), NOSPLIT, $0-16
 
 TEXT ·Store(SB), NOSPLIT, $0-12
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic32Store(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -199,8 +200,8 @@ TEXT ·Store(SB), NOSPLIT, $0-12
 
 TEXT ·Store8(SB), NOSPLIT, $0-9
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic32Store(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -210,8 +211,8 @@ TEXT ·Store8(SB), NOSPLIT, $0-9
 
 TEXT ·Store64(SB), NOSPLIT, $0-16
 	// ADVOCATE-CHANGE-START
- 	MOVQ 	ptr+0(FP), AX
-  	MOVQ 	AX, 0(SP)
+	MOVQ	ptr+0(FP), AX
+ 	MOVQ	AX, 0(SP)
 	CALL	·AdvocateAtomic64Store(SB)
 	// ADVOCATE-CHANGE-END
 	MOVQ	ptr+0(FP), BX
@@ -268,3 +269,67 @@ TEXT ·And(SB), NOSPLIT, $0-12
 	LOCK
 	ANDL	BX, (AX)
 	RET
+
+// func Or32(addr *uint32, v uint32) old uint32
+TEXT ·Or32(SB), NOSPLIT, $0-20
+	MOVQ	ptr+0(FP), BX
+	MOVL	val+8(FP), CX
+casloop:
+	MOVL 	CX, DX
+	MOVL	(BX), AX
+	ORL	AX, DX
+	LOCK
+	CMPXCHGL	DX, (BX)
+	JNZ casloop
+	MOVL 	AX, ret+16(FP)
+	RET
+
+// func And32(addr *uint32, v uint32) old uint32
+TEXT ·And32(SB), NOSPLIT, $0-20
+	MOVQ	ptr+0(FP), BX
+	MOVL	val+8(FP), CX
+casloop:
+	MOVL 	CX, DX
+	MOVL	(BX), AX
+	ANDL	AX, DX
+	LOCK
+	CMPXCHGL	DX, (BX)
+	JNZ casloop
+	MOVL 	AX, ret+16(FP)
+	RET
+
+// func Or64(addr *uint64, v uint64) old uint64
+TEXT ·Or64(SB), NOSPLIT, $0-24
+	MOVQ	ptr+0(FP), BX
+	MOVQ	val+8(FP), CX
+casloop:
+	MOVQ 	CX, DX
+	MOVQ	(BX), AX
+	ORQ	AX, DX
+	LOCK
+	CMPXCHGQ	DX, (BX)
+	JNZ casloop
+	MOVQ 	AX, ret+16(FP)
+	RET
+
+// func And64(addr *uint64, v uint64) old uint64
+TEXT ·And64(SB), NOSPLIT, $0-24
+	MOVQ	ptr+0(FP), BX
+	MOVQ	val+8(FP), CX
+casloop:
+	MOVQ 	CX, DX
+	MOVQ	(BX), AX
+	ANDQ	AX, DX
+	LOCK
+	CMPXCHGQ	DX, (BX)
+	JNZ casloop
+	MOVQ 	AX, ret+16(FP)
+	RET
+
+// func Anduintptr(addr *uintptr, v uintptr) old uintptr
+TEXT ·Anduintptr(SB), NOSPLIT, $0-24
+	JMP	·And64(SB)
+
+// func Oruintptr(addr *uintptr, v uintptr) old uintptr
+TEXT ·Oruintptr(SB), NOSPLIT, $0-24
+	JMP	·Or64(SB)

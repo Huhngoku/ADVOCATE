@@ -22,12 +22,11 @@ import (
 //
 // A RWMutex must not be copied after first use.
 //
-// If a goroutine holds a RWMutex for reading and another goroutine might
-// call Lock, no goroutine should expect to be able to acquire a read lock
-// until the initial read lock is released. In particular, this prohibits
-// recursive read locking. This is to ensure that the lock eventually becomes
-// available; a blocked Lock call excludes new readers from acquiring the
-// lock.
+// If any goroutine calls Lock while the lock is already held by
+// one or more readers, concurrent calls to RLock will block until
+// the writer has acquired (and released) the lock, to ensure that
+// the lock eventually becomes available to the writer.
+// Note that this prohibits recursive read-locking.
 //
 // In the terminology of the Go memory model,
 // the n'th call to Unlock “synchronizes before” the m'th call to Lock
@@ -42,6 +41,7 @@ type RWMutex struct {
 	readerSem   uint32       // semaphore for readers to wait for completing writers
 	readerCount atomic.Int32 // number of pending readers
 	readerWait  atomic.Int32 // number of departing readers
+
 	// ADVOCATE-CHANGE-START
 	id uint64 // id for the mutex
 	// ADVOCATE-CHANGE-END
@@ -53,7 +53,7 @@ const rwmutexMaxReaders = 1 << 30
 // - Unlock  -> Lock:  readerSem
 // - Unlock  -> RLock: readerSem
 // - RUnlock -> Lock:  writerSem
-//GetAdvocateObjectID
+//
 // The methods below temporarily disable handling of race synchronization
 // events in order to provide the more precise model above to the race
 // detector.
@@ -230,35 +230,35 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // If the lock is already locked for reading or writing,
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
-	// ADVOCATE-CHANGE-START
-	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexLock, 2)
-	if enabled && valid {
-		if replayElem.Blocked {
-			if rw.id == 0 {
-				rw.id = runtime.GetAdvocateObjectID()
-			}
-			_ = runtime.AdvocateMutexLockPre(rw.id, true, false)
-			runtime.BlockForever()
-		}
-	}
-	// RWMutexe don't need to be initialized in default go code. Because
-	// go does not have constructors, the only way to initialize a RWMutex
-	// is directly in the lock function. If the id of the channel is the default
-	// value, it is set to a new, unique object id
-	if rw.id == 0 {
-		rw.id = runtime.GetAdvocateObjectID()
-	}
-
-	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
-	// AdvocatePost is called, if the mutex was locked successfully.
-	// In this case, the Lock event in the trace is updated to include
-	// this information. advocateIndex is used for AdvocatePost to find the
-	// pre event.
-	advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, false)
-	defer runtime.AdvocateMutexPost(advocateIndex)
-	// ADVOCATE-CHANGE-END
-
 	if race.Enabled {
+		// ADVOCATE-CHANGE-START
+		enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexLock, 2)
+		if enabled && valid {
+			if replayElem.Blocked {
+				if rw.id == 0 {
+					rw.id = runtime.GetAdvocateObjectID()
+				}
+				_ = runtime.AdvocateMutexLockPre(rw.id, true, false)
+				runtime.BlockForever()
+			}
+		}
+		// RWMutexe don't need to be initialized in default go code. Because
+		// go does not have constructors, the only way to initialize a RWMutex
+		// is directly in the lock function. If the id of the channel is the default
+		// value, it is set to a new, unique object id
+		if rw.id == 0 {
+			rw.id = runtime.GetAdvocateObjectID()
+		}
+
+		// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
+		// AdvocatePost is called, if the mutex was locked successfully.
+		// In this case, the Lock event in the trace is updated to include
+		// this information. advocateIndex is used for AdvocatePost to find the
+		// pre event.
+		advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, false)
+		defer runtime.AdvocateMutexPost(advocateIndex)
+		// ADVOCATE-CHANGE-END
+
 		_ = rw.w.state
 		race.Disable()
 	}
@@ -312,6 +312,7 @@ func (rw *RWMutex) TryLock() bool {
 	// advocateIndex is used for AdvocatePostTry to find the pre event.
 	advocateIndex := runtime.AdvocateMutexLockTry(rw.id, true, false)
 	// ADVOCATE-CHANGE-END
+
 	if race.Enabled {
 		_ = rw.w.state
 		race.Disable()
@@ -344,6 +345,7 @@ func (rw *RWMutex) TryLock() bool {
 		race.Acquire(unsafe.Pointer(&rw.readerSem))
 		race.Acquire(unsafe.Pointer(&rw.writerSem))
 	}
+
 	// ADVOCATE-CHANGE-START
 	// If the mutex was locked successfully, AdvocatePostTry is called
 	// to update the trace.
@@ -391,7 +393,19 @@ func (rw *RWMutex) Unlock() {
 	if race.Enabled {
 		race.Enable()
 	}
+}
 
+// syscall_hasWaitingReaders reports whether any goroutine is waiting
+// to acquire a read lock on rw. This exists because syscall.ForkLock
+// is an RWMutex, and we can't change that without breaking compatibility.
+// We don't need or want RWMutex semantics for ForkLock, and we use
+// this private API to avoid having to change the type of ForkLock.
+// For more details see the syscall package.
+//
+//go:linkname syscall_hasWaitingReaders syscall.hasWaitingReaders
+func syscall_hasWaitingReaders(rw *RWMutex) bool {
+	r := rw.readerCount.Load()
+	return r < 0 && r+rwmutexMaxReaders > 0
 }
 
 // RLocker returns a Locker interface that implements

@@ -495,7 +495,7 @@ func correctSelect(next Operation, op Operation) bool {
 }
 
 func BlockForever() {
-	gopark(nil, nil, waitReasonZero, traceEvNone, 1)
+	gopark(nil, nil, waitReasonZero, traceBlockForever, 1)
 }
 
 /*

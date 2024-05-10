@@ -79,6 +79,20 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 }
 
+type holdObj struct {
+	rout  int
+	id    int
+	oID   int
+	size  int
+	tID   string
+	vc    map[int]clock.VectorClock
+	fifo  bool
+	tPost int
+}
+
+var holdSend = make([]holdObj, 0)
+var holdRecv = make([]holdObj, 0)
+
 /*
  * Update and calculate the vector clocks given a send on a buffered channel.
  * Args:
@@ -108,7 +122,9 @@ func Send(rout int, id int, oID int, size int, tID string,
 	count := bufferedVCsCount[id]
 
 	if len(bufferedVCs[id]) <= count {
-		panic("BufferedVCsCount is bigger than the buffer size")
+		holdSend = append(holdSend, holdObj{rout, id, oID, size, tID, vc, fifo, tPost})
+		return
+		// panic("BufferedVCsCount is bigger than the buffer size for chan " + strconv.Itoa(id) + " with count " + strconv.Itoa(count) + " and size " + strconv.Itoa(size) + "\n\tand tID " + tID)
 	}
 
 	if count > size || bufferedVCs[id][count].occupied {
@@ -138,6 +154,14 @@ func Send(rout int, id int, oID int, size int, tID string,
 
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 0)
+	}
+
+	for i, hold := range holdRecv {
+		if hold.id == id {
+			Recv(hold.rout, hold.id, hold.oID, hold.size, hold.tID, hold.vc, hold.fifo, hold.tPost)
+			holdRecv = append(holdRecv[:i], holdRecv[i+1:]...)
+			break
+		}
 	}
 
 }
@@ -172,7 +196,9 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	}
 
 	if bufferedVCsCount[id] == 0 {
-		logging.Debug("Read operation on empty buffer position", logging.ERROR)
+		holdSend = append(holdSend, holdObj{rout, id, oID, size, tID, vc, fifo, tPost})
+		return
+		// logging.Debug("Read operation on empty buffer position", logging.ERROR)
 	}
 	bufferedVCsCount[id]--
 
@@ -219,6 +245,14 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	}
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
+	}
+
+	for i, hold := range holdSend {
+		if hold.id == id {
+			Send(hold.rout, hold.id, hold.oID, hold.size, hold.tID, hold.vc, hold.fifo, hold.tPost)
+			holdSend = append(holdSend[:i], holdSend[i+1:]...)
+			break
+		}
 	}
 }
 

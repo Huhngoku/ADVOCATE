@@ -205,7 +205,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 		if mode == invalid {
 			// avoid error if underlying type is invalid
-			if under(x.typ) != Typ[Invalid] {
+			if isValid(under(x.typ)) {
 				code := InvalidCap
 				if id == _Len {
 					code = InvalidLen
@@ -226,7 +226,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _Clear:
 		// clear(m)
-		check.verifyVersionf(check.pkg, call.Fun, go1_21, "clear")
+		check.verifyVersionf(call.Fun, go1_21, "clear")
 
 		if !underIs(x.typ, func(u Type) bool {
 			switch u.(type) {
@@ -489,7 +489,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		// (no argument evaluated yet)
 		arg0 := argList[0]
 		T := check.varType(arg0)
-		if T == Typ[Invalid] {
+		if !isValid(T) {
 			return
 		}
 
@@ -533,7 +533,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 	case _Max, _Min:
 		// max(x, ...)
 		// min(x, ...)
-		check.verifyVersionf(check.pkg, call.Fun, go1_21, bin.name)
+		check.verifyVersionf(call.Fun, go1_21, bin.name)
 
 		op := token.LSS
 		if id == _Max {
@@ -575,6 +575,16 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		// If nargs == 1, make sure x.mode is either a value or a constant.
 		if x.mode != constant_ {
 			x.mode = value
+			// A value must not be untyped.
+			check.assignment(x, &emptyInterface, "argument to "+bin.name)
+			if x.mode == invalid {
+				return
+			}
+		}
+
+		// Use the final type computed above for all arguments.
+		for _, a := range args {
+			check.updateExprType(a.expr, x.typ, true)
 		}
 
 		if check.recordTypes() && x.mode != constant_ {
@@ -589,7 +599,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 		// new(T)
 		// (no argument evaluated yet)
 		T := check.varType(argList[0])
-		if T == Typ[Invalid] {
+		if !isValid(T) {
 			return
 		}
 
@@ -654,7 +664,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _Add:
 		// unsafe.Add(ptr unsafe.Pointer, len IntegerType) unsafe.Pointer
-		check.verifyVersionf(check.pkg, call.Fun, go1_17, "unsafe.Add")
+		check.verifyVersionf(call.Fun, go1_17, "unsafe.Add")
 
 		check.assignment(x, Typ[UnsafePointer], "argument to unsafe.Add")
 		if x.mode == invalid {
@@ -786,9 +796,9 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _Slice:
 		// unsafe.Slice(ptr *T, len IntegerType) []T
-		check.verifyVersionf(check.pkg, call.Fun, go1_17, "unsafe.Slice")
+		check.verifyVersionf(call.Fun, go1_17, "unsafe.Slice")
 
-		ptr, _ := under(x.typ).(*Pointer) // TODO(gri) should this be coreType rather than under?
+		ptr, _ := coreType(x.typ).(*Pointer)
 		if ptr == nil {
 			check.errorf(x, InvalidUnsafeSlice, invalidArg+"%s is not a pointer", x)
 			return
@@ -807,9 +817,9 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _SliceData:
 		// unsafe.SliceData(slice []T) *T
-		check.verifyVersionf(check.pkg, call.Fun, go1_20, "unsafe.SliceData")
+		check.verifyVersionf(call.Fun, go1_20, "unsafe.SliceData")
 
-		slice, _ := under(x.typ).(*Slice) // TODO(gri) should this be coreType rather than under?
+		slice, _ := coreType(x.typ).(*Slice)
 		if slice == nil {
 			check.errorf(x, InvalidUnsafeSliceData, invalidArg+"%s is not a slice", x)
 			return
@@ -823,7 +833,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _String:
 		// unsafe.String(ptr *byte, len IntegerType) string
-		check.verifyVersionf(check.pkg, call.Fun, go1_20, "unsafe.String")
+		check.verifyVersionf(call.Fun, go1_20, "unsafe.String")
 
 		check.assignment(x, NewPointer(universeByte), "argument to unsafe.String")
 		if x.mode == invalid {
@@ -843,7 +853,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _StringData:
 		// unsafe.StringData(str string) *byte
-		check.verifyVersionf(check.pkg, call.Fun, go1_20, "unsafe.StringData")
+		check.verifyVersionf(call.Fun, go1_20, "unsafe.StringData")
 
 		check.assignment(x, Typ[String], "argument to unsafe.StringData")
 		if x.mode == invalid {
@@ -892,6 +902,9 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 			check.dump("%v: %s", x1.Pos(), x1)
 			x1 = &t // use incoming x only for first argument
 		}
+		if x.mode == invalid {
+			return
+		}
 		// trace is only available in test mode - no need to record signature
 
 	default:
@@ -909,7 +922,7 @@ func hasVarSize(t Type, seen map[*Named]bool) (varSized bool) {
 	// Cycles are only possible through *Named types.
 	// The seen map is used to detect cycles and track
 	// the results of previously seen types.
-	if named, _ := t.(*Named); named != nil {
+	if named := asNamed(t); named != nil {
 		if v, ok := seen[named]; ok {
 			return v
 		}
@@ -940,7 +953,7 @@ func hasVarSize(t Type, seen map[*Named]bool) (varSized bool) {
 }
 
 // applyTypeFunc applies f to x. If x is a type parameter,
-// the result is a type parameter constrained by an new
+// the result is a type parameter constrained by a new
 // interface bound. The type bounds for that interface
 // are computed by applying f to each of the type bounds
 // of x. If any of these applications of f return nil,
@@ -1021,13 +1034,4 @@ func arrayPtrDeref(typ Type) Type {
 	return typ
 }
 
-// unparen returns e with any enclosing parentheses stripped.
-func unparen(e ast.Expr) ast.Expr {
-	for {
-		p, ok := e.(*ast.ParenExpr)
-		if !ok {
-			return e
-		}
-		e = p.X
-	}
-}
+func unparen(e ast.Expr) ast.Expr { return ast.Unparen(e) }

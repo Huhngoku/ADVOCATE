@@ -8,6 +8,7 @@ package runtime_test
 
 import (
 	"fmt"
+	"internal/goexperiment"
 	"internal/goos"
 	"internal/platform"
 	"internal/testenv"
@@ -410,6 +411,9 @@ func TestRaceSignal(t *testing.T) {
 		t.Skipf("skipping: test requires pthread support")
 		// TODO: Can this test be rewritten to use the C11 thread API instead?
 	}
+	if runtime.GOOS == "darwin" || runtime.GOOS == "ios" {
+		testenv.SkipFlaky(t, 60316)
+	}
 
 	t.Parallel()
 
@@ -645,7 +649,11 @@ func TestSegv(t *testing.T) {
 			}
 
 			t.Parallel()
-			got := runTestProg(t, "testprogcgo", test)
+			prog := "testprog"
+			if strings.HasSuffix(test, "InCgo") {
+				prog = "testprogcgo"
+			}
+			got := runTestProg(t, prog, test)
 			t.Log(got)
 			want := "SIGSEGV"
 			if !strings.Contains(got, want) {
@@ -746,6 +754,24 @@ func TestNeedmDeadlock(t *testing.T) {
 	}
 }
 
+func TestCgoNoCallback(t *testing.T) {
+	t.Skip("TODO(#56378): enable in Go 1.23")
+	got := runTestProg(t, "testprogcgo", "CgoNoCallback")
+	want := "function marked with #cgo nocallback called back into Go"
+	if !strings.Contains(got, want) {
+		t.Fatalf("did not see %q in output:\n%s", want, got)
+	}
+}
+
+func TestCgoNoEscape(t *testing.T) {
+	t.Skip("TODO(#56378): enable in Go 1.23")
+	got := runTestProg(t, "testprogcgo", "CgoNoEscape")
+	want := "OK\n"
+	if got != want {
+		t.Fatalf("want %s, got %s\n", want, got)
+	}
+}
+
 func TestCgoTracebackGoroutineProfile(t *testing.T) {
 	output := runTestProg(t, "testprogcgo", "GoroutineProfile")
 	want := "OK\n"
@@ -759,6 +785,9 @@ func TestCgoTraceParser(t *testing.T) {
 	switch runtime.GOOS {
 	case "plan9", "windows":
 		t.Skipf("no pthreads on %s", runtime.GOOS)
+	}
+	if goexperiment.ExecTracer2 {
+		t.Skip("skipping test that is covered elsewhere for the new execution tracer")
 	}
 	output := runTestProg(t, "testprogcgo", "CgoTraceParser")
 	want := "OK\n"
@@ -775,6 +804,9 @@ func TestCgoTraceParserWithOneProc(t *testing.T) {
 	switch runtime.GOOS {
 	case "plan9", "windows":
 		t.Skipf("no pthreads on %s", runtime.GOOS)
+	}
+	if goexperiment.ExecTracer2 {
+		t.Skip("skipping test that is covered elsewhere for the new execution tracer")
 	}
 	output := runTestProg(t, "testprogcgo", "CgoTraceParser", "GOMAXPROCS=1")
 	want := "OK\n"
@@ -834,8 +866,6 @@ func TestDestructorCallbackRace(t *testing.T) {
 	}
 }
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 func TestEnsureBindM(t *testing.T) {
 	t.Parallel()
 	switch runtime.GOOS {
@@ -848,5 +878,20 @@ func TestEnsureBindM(t *testing.T) {
 		t.Errorf("expected %q, got %v", want, got)
 	}
 }
-*/
-// ADVOCATE-REMOVE_TEST-END
+
+func TestStackSwitchCallback(t *testing.T) {
+	t.Parallel()
+	switch runtime.GOOS {
+	case "windows", "plan9", "android", "ios", "openbsd": // no getcontext
+		t.Skipf("skipping test on %s", runtime.GOOS)
+	}
+	got := runTestProg(t, "testprogcgo", "StackSwitchCallback")
+	skip := "SKIP\n"
+	if got == skip {
+		t.Skip("skipping on musl/bionic libc")
+	}
+	want := "OK\n"
+	if got != want {
+		t.Errorf("expected %q, got %v", want, got)
+	}
+}

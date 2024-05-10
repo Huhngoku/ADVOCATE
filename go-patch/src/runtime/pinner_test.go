@@ -376,9 +376,9 @@ func BenchmarkPinnerPinUnpinBatch(b *testing.B) {
 	for i := 0; i < Batch; i++ {
 		data[i] = new(obj)
 	}
-	var pinner runtime.Pinner
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
+		var pinner runtime.Pinner
 		for i := 0; i < Batch; i++ {
 			pinner.Pin(data[i])
 		}
@@ -392,9 +392,9 @@ func BenchmarkPinnerPinUnpinBatchDouble(b *testing.B) {
 	for i := 0; i < Batch; i++ {
 		data[i] = new(obj)
 	}
-	var pinner runtime.Pinner
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
+		var pinner runtime.Pinner
 		for i := 0; i < Batch; i++ {
 			pinner.Pin(data[i])
 			pinner.Pin(data[i])
@@ -409,9 +409,9 @@ func BenchmarkPinnerPinUnpinBatchTiny(b *testing.B) {
 	for i := 0; i < Batch; i++ {
 		data[i] = new(bool)
 	}
-	var pinner runtime.Pinner
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
+		var pinner runtime.Pinner
 		for i := 0; i < Batch; i++ {
 			pinner.Pin(data[i])
 		}
@@ -420,28 +420,27 @@ func BenchmarkPinnerPinUnpinBatchTiny(b *testing.B) {
 }
 
 func BenchmarkPinnerPinUnpin(b *testing.B) {
-	var pinner runtime.Pinner
-	b.ResetTimer()
+	p := new(obj)
 	for n := 0; n < b.N; n++ {
-		pinner.Pin(new(obj))
+		var pinner runtime.Pinner
+		pinner.Pin(p)
 		pinner.Unpin()
 	}
 }
 
 func BenchmarkPinnerPinUnpinTiny(b *testing.B) {
-	var pinner runtime.Pinner
-	b.ResetTimer()
+	p := new(bool)
 	for n := 0; n < b.N; n++ {
-		pinner.Pin(new(bool))
+		var pinner runtime.Pinner
+		pinner.Pin(p)
 		pinner.Unpin()
 	}
 }
 
 func BenchmarkPinnerPinUnpinDouble(b *testing.B) {
-	var pinner runtime.Pinner
-	b.ResetTimer()
+	p := new(obj)
 	for n := 0; n < b.N; n++ {
-		p := new(obj)
+		var pinner runtime.Pinner
 		pinner.Pin(p)
 		pinner.Pin(p)
 		pinner.Unpin()
@@ -449,33 +448,32 @@ func BenchmarkPinnerPinUnpinDouble(b *testing.B) {
 }
 
 func BenchmarkPinnerPinUnpinParallel(b *testing.B) {
-	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		var pinner runtime.Pinner
+		p := new(obj)
 		for pb.Next() {
-			pinner.Pin(new(obj))
+			var pinner runtime.Pinner
+			pinner.Pin(p)
 			pinner.Unpin()
 		}
 	})
 }
 
 func BenchmarkPinnerPinUnpinParallelTiny(b *testing.B) {
-	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		var pinner runtime.Pinner
+		p := new(bool)
 		for pb.Next() {
-			pinner.Pin(new(bool))
+			var pinner runtime.Pinner
+			pinner.Pin(p)
 			pinner.Unpin()
 		}
 	})
 }
 
 func BenchmarkPinnerPinUnpinParallelDouble(b *testing.B) {
-	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		var pinner runtime.Pinner
+		p := new(obj)
 		for pb.Next() {
-			p := new(obj)
+			var pinner runtime.Pinner
 			pinner.Pin(p)
 			pinner.Pin(p)
 			pinner.Unpin()
@@ -523,4 +521,20 @@ func BenchmarkPinnerIsPinnedOnUnpinnedParallel(b *testing.B) {
 			runtime.IsPinned(unsafe.Pointer(ptr))
 		}
 	})
+}
+
+// const string data is not in span.
+func TestPinnerConstStringData(t *testing.T) {
+	var pinner runtime.Pinner
+	str := "test-const-string"
+	p := unsafe.StringData(str)
+	addr := unsafe.Pointer(p)
+	if !runtime.IsPinned(addr) {
+		t.Fatal("not marked as pinned")
+	}
+	pinner.Pin(p)
+	pinner.Unpin()
+	if !runtime.IsPinned(addr) {
+		t.Fatal("not marked as pinned")
+	}
 }

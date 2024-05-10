@@ -171,9 +171,7 @@ func mapKeys() (keys []string) {
 func clearMap() {
 	mu.Lock()
 	defer mu.Unlock()
-	for k := range valMap {
-		delete(valMap, k)
-	}
+	clear(valMap)
 }
 
 var (
@@ -181,8 +179,6 @@ var (
 	sink         string
 )
 
-// ADVOCATE-REMOVE_TEST-START
-/*
 func TestGetByStringAllocs(t *testing.T) {
 	allocs := int(testing.AllocsPerRun(100, func() {
 		GetByString(globalString)
@@ -191,8 +187,6 @@ func TestGetByStringAllocs(t *testing.T) {
 		t.Errorf("GetString allocated %d objects, want 0", allocs)
 	}
 }
-*/
-// ADVOCATE-REMOVE_TEST-END
 
 func BenchmarkGetByString(b *testing.B) {
 	b.ReportAllocs()

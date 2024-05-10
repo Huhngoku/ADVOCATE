@@ -14,9 +14,6 @@
 
 #define CLOCK_REALTIME		0
 #define CLOCK_MONOTONIC		4
-#define F_GETFL			3
-#define F_SETFL			4
-#define O_NONBLOCK		4
 
 #define SYS_exit		1
 #define SYS_read		3
@@ -32,6 +29,7 @@
 #define SYS_fcntl		92
 #define SYS___sysctl		202
 #define SYS_nanosleep		240
+#define SYS_issetugid		253
 #define SYS_clock_gettime	232
 #define SYS_sched_yield		331
 #define SYS_sigprocmask		340
@@ -468,4 +466,11 @@ TEXT runtime·getCntxct(SB),NOSPLIT,$0
 	MRS	CNTVCT_EL0, R0
 
 	MOVW	R0, ret+8(FP)
+	RET
+
+// func issetugid() int32
+TEXT runtime·issetugid(SB),NOSPLIT|NOFRAME,$0
+	MOVD $SYS_issetugid, R8
+	SVC
+	MOVW	R0, ret+0(FP)
 	RET

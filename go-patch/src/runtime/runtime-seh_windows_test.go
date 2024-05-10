@@ -78,9 +78,9 @@ func sehCallers() []uintptr {
 		if fn == 0 {
 			break
 		}
-		windows.RtlVirtualUnwind(0, base, ctx.GetPC(), fn, uintptr(unsafe.Pointer(&ctx)), nil, &frame, nil)
-		n++
 		pcs[i] = ctx.GetPC()
+		n++
+		windows.RtlVirtualUnwind(0, base, ctx.GetPC(), fn, uintptr(unsafe.Pointer(ctx)), nil, &frame, nil)
 	}
 	return pcs[:n]
 }
@@ -112,7 +112,7 @@ func testSehCallersEqual(t *testing.T, pcs []uintptr, want []string) {
 		}
 		name := fn.Name()
 		switch name {
-		case "runtime.deferCallSave", "runtime.runOpenDeferFrame", "runtime.panicmem":
+		case "runtime.panicmem":
 			// These functions are skipped as they appear inconsistently depending
 			// whether inlining is on or off.
 			continue
