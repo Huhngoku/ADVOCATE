@@ -226,7 +226,6 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 				}
 			}
 		} else if opTypes[i] == 1 { // recv
-			println("SEND")
 			for _, mrs := range mostRecentSend {
 				if _, ok := mrs[id]; ok {
 					if clock.GetHappensBefore(vc, mrs[id].Vc) == clock.Concurrent {
