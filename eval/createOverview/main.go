@@ -422,6 +422,10 @@ func parseTrace(tracePath string, statsPath string) error {
 			return nil
 		}
 
+		if filepath.Base(path) == "times.log" {
+			return nil
+		}
+
 		if filepath.Ext(path) != ".log" {
 			return nil
 		}
