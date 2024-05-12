@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -99,7 +97,10 @@ func main() {
 	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
 	analysisFinishedTime := time.Now()
-	writeTime(*pathTrace, "analysis", analysisFinishedTime.Sub(startTime).Seconds())
+	err = writeTime(*pathTrace, "Analysis", analysisFinishedTime.Sub(startTime).Seconds())
+	if err != nil {
+		println("Could not write time to file: ", err.Error())
+	}
 
 	if numberOfResults != 0 && !*noRewrite {
 		fmt.Println("\n\n\n")
@@ -138,7 +139,10 @@ func main() {
 				println("Could not rewrite trace file: ", err.Error())
 			}
 
-			writeTime(*pathTrace, "rewrite", time.Now().Sub(rewriteStartTime).Seconds())
+			err = writeTime(*pathTrace, "Rewrite", time.Now().Sub(rewriteStartTime).Seconds())
+			if err != nil {
+				println("Could not write time to file: ", err.Error())
+			}
 
 			break // exit for loop
 		}
@@ -150,29 +154,35 @@ func writeTime(pathTrace string, name string, time float64) error {
 	if path[len(path)-1] != os.PathSeparator {
 		path += string(os.PathSeparator)
 	}
-	path += "time.log"
+	path += "times.log"
 
 	// Datei lesen
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		if os.IsNotExist(err) {
+			// create file
+			err = os.WriteFile(path, []byte(""), 0644)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	elems := strings.Split(string(content), "\n")
-	if len(elems) > 2 {
-		return fmt.Errorf("time.log contains more than 2 lines")
+
+	elem1 := ""
+	elem2 := ""
+
+	if len(elems) >= 2 {
+		elem1 = elems[0] + ","
+		elem2 = elems[1] + ","
 	}
 
-	if elems[0] != "" {
-		elems[0] += ","
-		elems[1] += ","
-	}
-
-	elems[0] += name
-	elems[1] += strconv.FormatFloat(time, 'f', 6, 64)
+	elem1 += name
+	elem2 += strconv.FormatFloat(time, 'f', 6, 64)
 
 	// Datei schreiben
-	err = os.WriteFile(path, []byte(strings.Join(elems, "\n")), 0644)
+	err = os.WriteFile(path, []byte(elem1+"\n"+elem2), 0644)
 	return err
 }
 

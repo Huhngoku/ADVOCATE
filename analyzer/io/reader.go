@@ -40,6 +40,10 @@ func CreateTraceFromFiles(filePath string, ignoreAtomics bool) (int, error) {
 			continue
 		}
 
+		if file.Name() == "times.log" {
+			continue
+		}
+
 		routine, err := getRoutineFromFileName(file.Name())
 		if err != nil {
 			return 0, nil

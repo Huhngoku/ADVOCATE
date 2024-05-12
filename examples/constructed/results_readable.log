@@ -1,5 +1,15 @@
 ```
 ==================== Summary ====================
 
-No bugs found
+-------------------- Critical -------------------
+
+1 Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
+	send : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
+
+-------------------- Warning --------------------
+
+2 Possible receive on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
+	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1103@43
 ```

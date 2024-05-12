@@ -1089,16 +1089,20 @@ func n56() {
 // =============== use for testing ===============
 // MARK: FOR TESTING
 func nTest() {
-	c := make(chan int, 2)
+	c := make(chan int, 0)
+
 	go func() {
-		for i := 0; i < 5; i++ {
-			c <- i
-		}
+		c <- 1
 	}()
 
-	for i := 0; i < 5; i++ {
-		<-c
-	}
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		close(c)
+	}()
+
+	<-c
+	time.Sleep(200 * time.Millisecond)
+
 }
 
 func main() {

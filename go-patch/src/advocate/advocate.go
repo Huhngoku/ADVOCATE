@@ -18,6 +18,7 @@ import (
 var traceFileCounter = 0
 var tracePathRecorded = "advocateTrace"
 var advocateStartTimer time.Time // start time of the program
+var advocateReplayStartTime time.Time
 
 /*
  * Write the trace of the program to a file.
@@ -37,14 +38,24 @@ func Finish() {
 	traceTime := traceEndTime.Sub(runEndTime).Seconds()
 	totalTime := traceEndTime.Sub(advocateStartTimer).Seconds()
 
-	writeTimes(progTime, traceTime, totalTime)
+	writeTime("ExecutionRunime", progTime)
+	writeTime("ExecutionTrace", traceTime)
+	writeTime("ExecutionTotal", totalTime)
 }
 
 /*
  * WaitForReplayFinish waits for the replay to finish.
  */
 func WaitForReplayFinish() {
+	if r := recover(); r != nil {
+		println("Replay failed.")
+	}
+
 	runtime.WaitForReplayFinish()
+
+	replayRuntime := time.Now().Sub(advocateReplayStartTime).Seconds()
+
+	writeTime("ReplayRuntime", replayRuntime)
 }
 
 /*
@@ -143,26 +154,37 @@ func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	}
 }
 
-func writeTimes(progTime, traceTime, totalTime float64) {
-	file, err := os.OpenFile("advocateTrace/times.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func writeTime(name string, time float64) error {
+	path := tracePathRecorded + "/times.log"
+
+	// Datei lesen
+	content, err := os.ReadFile(path)
 	if err != nil {
-		panic(err)
+		if os.IsNotExist(err) {
+			// create file
+			err = os.WriteFile(path, []byte(""), 0644)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	defer file.Close()
 
-	timeStr := "Runtime, Trace, Total\n"
+	elems := strings.Split(string(content), "\n")
 
-	if _, err := file.WriteString(timeStr); err != nil {
-		panic(err)
+	elem1 := ""
+	elem2 := ""
+
+	if len(elems) >= 2 {
+		elem1 = elems[0] + ","
+		elem2 = elems[1] + ","
 	}
 
-	timeStr = strconv.FormatFloat(progTime, 'f', 6, 64) + "," +
-		strconv.FormatFloat(traceTime, 'f', 6, 64) + "," +
-		strconv.FormatFloat(totalTime, 'f', 6, 64) + "\n"
+	elem1 += name
+	elem2 += strconv.FormatFloat(time, 'f', 6, 64)
 
-	if _, err := file.WriteString(timeStr); err != nil {
-		panic(err)
-	}
+	// Datei schreiben
+	err = os.WriteFile(path, []byte(elem1+"\n"+elem2), 0644)
+	return err
 }
 
 /*
@@ -251,6 +273,8 @@ var tracePathRewritten = "rewritten_trace"
  * The trace is added to the runtime by calling the AddReplayTrace function.
  */
 func EnableReplay() {
+	advocateStartTimer = time.Now()
+
 	// if trace folder does not exist, panic
 	if _, err := os.Stat(tracePathRewritten); os.IsNotExist(err) {
 		panic("Trace folder does not exist.")
@@ -270,12 +294,20 @@ func EnableReplay() {
 			continue
 		}
 
+		if file.Name() == "times.log" {
+			continue
+		}
+
 		// if the file is a log file, read the trace
 		if strings.HasSuffix(file.Name(), ".log") {
 			routineID, trace := readTraceFile(tracePathRewritten + "/" + file.Name())
 			runtime.AddReplayTrace(uint64(routineID), trace)
 		}
 	}
+
+	writeTime("ReplayTrace", time.Now().Sub(advocateStartTimer).Seconds())
+
+	advocateReplayStartTime = time.Now()
 
 	runtime.EnableReplay(timeout)
 }
