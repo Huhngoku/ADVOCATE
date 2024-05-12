@@ -3,8 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"analyzer/io"
 	"analyzer/logging"
@@ -34,6 +39,8 @@ func main() {
 		"\tc: Cyclic deadlock\n",
 	// "\tm: Mixed deadlock\n"
 	)
+
+	startTime := time.Now()
 
 	flag.Parse()
 
@@ -91,6 +98,9 @@ func main() {
 
 	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
+	analysisFinishedTime := time.Now()
+	writeTime(*pathTrace, "analysis", analysisFinishedTime.Sub(startTime).Seconds())
+
 	if numberOfResults != 0 && !*noRewrite {
 		fmt.Println("\n\n\n")
 
@@ -121,14 +131,49 @@ func main() {
 				continue
 			}
 
+			rewriteStartTime := time.Now()
+
 			print("\n")
 			if err := rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines); err != nil {
 				println("Could not rewrite trace file: ", err.Error())
 			}
 
+			writeTime(*pathTrace, "rewrite", time.Now().Sub(rewriteStartTime).Seconds())
+
 			break // exit for loop
 		}
 	}
+}
+
+func writeTime(pathTrace string, name string, time float64) error {
+	path := pathTrace
+	if path[len(path)-1] != os.PathSeparator {
+		path += string(os.PathSeparator)
+	}
+	path += "time.log"
+
+	// Datei lesen
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	elems := strings.Split(string(content), "\n")
+	if len(elems) > 2 {
+		return fmt.Errorf("time.log contains more than 2 lines")
+	}
+
+	if elems[0] != "" {
+		elems[0] += ","
+		elems[1] += ","
+	}
+
+	elems[0] += name
+	elems[1] += strconv.FormatFloat(time, 'f', 6, 64)
+
+	// Datei schreiben
+	err = os.WriteFile(path, []byte(strings.Join(elems, "\n")), 0644)
+	return err
 }
 
 /*

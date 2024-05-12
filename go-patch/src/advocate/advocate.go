@@ -17,6 +17,7 @@ import (
 
 var traceFileCounter = 0
 var tracePathRecorded = "advocateTrace"
+var advocateStartTimer time.Time // start time of the program
 
 /*
  * Write the trace of the program to a file.
@@ -24,10 +25,19 @@ var tracePathRecorded = "advocateTrace"
  * The trace is written in the format of advocate.
  */
 func Finish() {
+	runEndTime := time.Now()
 	runtime.DisableTrace()
 
 	writeToTraceFiles()
 	// deleteEmptyFiles()
+
+	traceEndTime := time.Now()
+
+	progTime := runEndTime.Sub(advocateStartTimer).Seconds()
+	traceTime := traceEndTime.Sub(runEndTime).Seconds()
+	totalTime := traceEndTime.Sub(advocateStartTimer).Seconds()
+
+	writeTimes(progTime, traceTime, totalTime)
 }
 
 /*
@@ -133,6 +143,28 @@ func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	}
 }
 
+func writeTimes(progTime, traceTime, totalTime float64) {
+	file, err := os.OpenFile("advocateTrace/times.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	timeStr := "Runtime, Trace, Total\n"
+
+	if _, err := file.WriteString(timeStr); err != nil {
+		panic(err)
+	}
+
+	timeStr = strconv.FormatFloat(progTime, 'f', 6, 64) + "," +
+		strconv.FormatFloat(traceTime, 'f', 6, 64) + "," +
+		strconv.FormatFloat(totalTime, 'f', 6, 64) + "\n"
+
+	if _, err := file.WriteString(timeStr); err != nil {
+		panic(err)
+	}
+}
+
 /*
  * Delete empty files in the trace folder.
  * The function deletes all files in the trace folder that are empty.
@@ -169,6 +201,7 @@ func deleteEmptyFiles() {
  * 	- size: The size of the channel used for recording atomic events.
  */
 func InitTracing(size int) {
+	advocateStartTimer = time.Now()
 	// remove the trace folder if it exists
 	err := os.RemoveAll(tracePathRecorded)
 	if err != nil {
