@@ -186,7 +186,7 @@ func CheckForLeak() {
 				found += "\tpartner: " + partner.TID
 				logging.Result(found, logging.CRITICAL)
 			} else {
-				found := "Leak on channel without possible partner:\n"
+				found := "Leak on unbuffered channel or select without possible partner:\n"
 				found += "\tchannel: " + vcTID.tID + "\n"
 				found += "\tpartner: -"
 				logging.Result(found, logging.CRITICAL)

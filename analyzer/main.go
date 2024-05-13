@@ -33,10 +33,10 @@ func main() {
 		"\tn: Close of closed channel\n"+
 		"\tb: Concurrent receive on channel\n"+
 		"\tl: Leaking routine\n"+
-		"\tu: Select case without partner\n"+
-		"\tc: Cyclic deadlock\n",
-	// "\tm: Mixed deadlock\n"
+		"\tu: Select case without partner\n",
 	)
+	// "\tc: Cyclic deadlock\n",
+	// "\tm: Mixed deadlock\n"
 
 	startTime := time.Now()
 
@@ -255,7 +255,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		analysisCases["concurrentReceive"] = true
 		analysisCases["leak"] = true
 		analysisCases["selectWithoutPartner"] = true
-		analysisCases["cyclicDeadlock"] = true
+		// analysisCases["cyclicDeadlock"] = true
 		// analysisCases["mixedDeadlock"] = true
 
 		return analysisCases, nil
@@ -277,8 +277,8 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 			analysisCases["leak"] = true
 		case 'u':
 			analysisCases["selectWithoutPartner"] = true
-		case 'c':
-			analysisCases["cyclicDeadlock"] = true
+		// case 'c':
+		// 	analysisCases["cyclicDeadlock"] = true
 		// case 'm':
 		// analysisCases["mixedDeadlock"] = true
 		default:

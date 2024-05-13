@@ -1090,19 +1090,19 @@ func n56() {
 // MARK: FOR TESTING
 func nTest() {
 	c := make(chan int, 0)
+	d := make(chan int, 0)
 
 	go func() {
-		c <- 1
-	}()
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		close(c)
+		select {
+		case c <- 1:
+			print("send")
+		case <-d:
+			print("recv")
+		}
 	}()
 
 	<-c
-	time.Sleep(200 * time.Millisecond)
-
+	time.Sleep(100 * time.Millisecond)
 }
 
 func main() {

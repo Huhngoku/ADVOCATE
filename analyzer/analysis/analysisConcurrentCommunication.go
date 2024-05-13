@@ -25,7 +25,7 @@ func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]clock.Ve
 		if happensBefore == clock.Concurrent {
 			found := "Found concurrent Recv on same channel:\n"
 			found += "\trecv: " + pos + "\n"
-			found += "\trecv : " + lastRecvRoutine[r][id].TID
+			found += "\trecv: " + lastRecvRoutine[r][id].TID
 			logging.Result(found, logging.CRITICAL)
 		}
 	}

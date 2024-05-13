@@ -252,7 +252,7 @@ func CheckForDoneBeforeAdd() {
 			message += "\tadd: "
 			for _, add := range addsVcTIDSorted {
 				if add.TID == "\n" {
-					message += add.TID + " (unknown); "
+					continue
 				}
 				message += add.TID + "; "
 			}

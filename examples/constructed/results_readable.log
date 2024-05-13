@@ -3,13 +3,18 @@
 
 -------------------- Critical -------------------
 
-1 Possible send on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
-	send : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
+1 Leak on unbuffered channel or select without possible partner:
+	channel: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1034@30
+	partner: -
 
 -------------------- Warning --------------------
 
-2 Possible receive on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
-	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1103@43
+2 Possible select case without partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1096@43
+	case: 18,R
+
+3 Possible select case without partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1034@30
+	case: 11,R
+
 ```

@@ -26,7 +26,7 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 			if mrs[id].TID != "" && happensBefore == clock.Concurrent {
 				found := "Possible send on closed channel:\n"
 				found += "\tclose: " + pos + "\n"
-				found += "\tsend : " + mrs[id].TID
+				found += "\tsend: " + mrs[id].TID
 				logging.Result(found, logging.CRITICAL)
 			}
 		}

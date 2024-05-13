@@ -3,6 +3,7 @@ package analysis
 import (
 	"analyzer/clock"
 	"analyzer/logging"
+	"strconv"
 )
 
 /*
@@ -48,8 +49,15 @@ func CheckForSelectCaseWithoutPartner() {
 			continue
 		}
 
+		stuckCase := "case: " + strconv.Itoa(c.id) + ","
+		if c.send {
+			stuckCase += "S"
+		} else {
+			stuckCase += "R"
+		}
+
 		logging.Result("Possible select case without partner:\n\tselect: "+
-			c.vcTID.TID+"\n\t\n", logging.WARNING)
+			c.vcTID.TID+"\n\t"+stuckCase+"\n", logging.WARNING)
 	}
 }
 

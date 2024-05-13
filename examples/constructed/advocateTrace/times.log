@@ -1,2 +1,2 @@
-ExecutionRuntime,ExecutionTrace,ExecutionTotal,Analysis,Rewrite,ReplayTrace,Analysis,Rewrite,ReplayTrace
-1.202517,0.001591,1.204109,0.012274,0.002978,0.006379,0.018575,0.003076,0.005253
+ExecutionRunime,ExecutionTrace,ExecutionTotal,Analysis,Analysis,Rewrite,Analysis,Analysis
+1.108127,0.001333,1.109460,0.011527,0.012717,0.000375,0.014479,0.015364

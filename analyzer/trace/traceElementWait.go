@@ -100,7 +100,7 @@ func AddTraceElementWait(routine int, tpre string,
 		delta:   delta_int,
 		val:     val_int,
 		pos:     pos,
-		tID:     pos + "@" + tpost,
+		tID:     pos + "@" + tpre,
 	}
 
 	return AddElementToTrace(&elem)
