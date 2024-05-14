@@ -8,6 +8,9 @@ We want to analyze concurrent Go programs to automatically find potential concur
 
 We also implement a trace replay mechanism, to replay a trace as recorded.
 
+## StepByStep
+To get a short step by step overview on how to use the program, please refer to the `doc/StepByStep.md` file.
+
 ## Recording
 To analyze the program, we first need
 to record it. To do this, we modify the go runtime
