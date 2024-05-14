@@ -20,7 +20,7 @@ func main() {
 	level := flag.Int("d", 1, "Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1)")
 	fifo := flag.Bool("f", false, "Assume a FIFO ordering for buffered channels (default false)")
 	ignoreCriticalSection := flag.Bool("c", false, "Ignore happens before relations of critical sections (default false)")
-	noRewrite := flag.Bool("x", false, "Do not ask to create a reordered trace file after the analysis (default false)")
+	noRewrite := flag.Bool("x", false, "Do not rewrite the trace file (default false)")
 	noWarning := flag.Bool("w", false, "Do not print warnings (default false)")
 	noPrint := flag.Bool("p", false, "Do not print the results to the terminal (default false). Automatically set -x to true")
 	resultFolder := flag.String("r", "", "Path to where the result file should be saved.")
@@ -68,7 +68,7 @@ func main() {
 
 	outMachine := folder + "results_machine.log"
 	outReadable := folder + "results_readable.log"
-	newTrace := folder + "rewritten_trace/"
+	newTrace := folder + "rewritten_trace"
 
 	// run the analysis and, if requested, create a reordered trace file
 	// based on the analysis results
@@ -102,49 +102,28 @@ func main() {
 		println("Could not write time to file: ", err.Error())
 	}
 
-	if numberOfResults != 0 && !*noRewrite {
-		fmt.Println("\n\n\n")
-
-		for {
-			fmt.Print("Enter the index of the result to use for the reordered trace file (0 to exit): ")
-
-			resultIndex := -1
-
-			_, err := fmt.Scanf("%d", &resultIndex)
-			if err != nil {
-				if numberOfResults == 1 {
-					fmt.Println("Please enter 1 to create the reordered trace file or 0 to exit\n")
-				} else {
-					fmt.Print("Please enter a valid number between 1 and ", numberOfResults, " or 0 to exit\n")
-				}
-				continue
-			}
-			if resultIndex == 0 { // no rewrite
-				break
-			}
-
-			if resultIndex < 0 || resultIndex > numberOfResults {
-				if numberOfResults == 1 {
-					fmt.Println("Please enter 1 to create the reordered trace file or 0 to exit\n")
-				} else {
-					fmt.Print("Please enter a valid number between 1 and ", numberOfResults, " or 0 to exit\n")
-				}
-				continue
-			}
-
+	if !*noRewrite {
+		println("Start rewriting trace files...")
+		numberRewrittenTrace := 0
+		var rewriteTime time.Duration
+		for resultIndex := 0; resultIndex < numberOfResults; resultIndex++ {
 			rewriteStartTime := time.Now()
 
-			print("\n")
-			if err := rewriteTrace(outMachine, newTrace, resultIndex, numberOfRoutines); err != nil {
+			needed, err := rewriteTrace(outMachine, *pathTrace,
+				newTrace+"_"+strconv.Itoa(resultIndex+1)+"/", resultIndex, numberOfRoutines,
+				*ignoreAtomics)
+
+			if needed && err != nil {
 				println("Could not rewrite trace file: ", err.Error())
+			} else {
+				numberRewrittenTrace++
+				rewriteTime += time.Now().Sub(rewriteStartTime)
 			}
+		}
 
-			err = writeTime(*pathTrace, "Rewrite", time.Now().Sub(rewriteStartTime).Seconds())
-			if err != nil {
-				println("Could not write time to file: ", err.Error())
-			}
-
-			break // exit for loop
+		err = writeTime(*pathTrace, "AvgRewrite", rewriteTime.Seconds()/float64(numberRewrittenTrace))
+		if err != nil {
+			println("Could not write time to file: ", err.Error())
 		}
 	}
 }
@@ -190,38 +169,52 @@ func writeTime(pathTrace string, name string, time float64) error {
  * Rewrite the trace file based on given analysis results
  * Args:
  *   outMachine (string): The path to the analysis result file
+ *   oldTrace (string): The path to the recorded trace folder
  *   newTrace (string): The path where the new traces folder will be created
  *   resultIndex (int): The index of the result to use for the reordered trace file
  *   numberOfRoutines (int): The number of routines in the trace
+ *   ignoreAtomics (bool): If atomic operations should be ignored
  * Returns:
+ *   bool: true, if a rewrite was nessesary, false if not (e.g. actual bug, warning)
  *   error: An error if the trace file could not be created
  */
-func rewriteTrace(outMachine string, newTrace string, resultIndex int,
-	numberOfRoutines int) error {
+func rewriteTrace(outMachine string, oldTrace string, newTrace string, resultIndex int,
+	numberOfRoutines int, ignoreAtomics bool) (bool, error) {
+
+	// clear and reread the trace from the file, because it was modified
+	// TODO: try to solve without needing to read the trace again (e.g. deep copy)
+	if trace.GetWasRewritten() {
+		trace.ClearTrace()
+		_, err := io.CreateTraceFromFiles(oldTrace, ignoreAtomics)
+		if err != nil {
+			return false, err
+		}
+	}
 
 	actual, bug, err := io.ReadAnalysisResults(outMachine, resultIndex)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if actual {
-		// copy the file of the tracePath to the outputPath
-		io.CopyFile(*&outMachine, newTrace)
-		println("Trace created")
-		return nil
+		return false, nil
 	}
 
-	err = rewriter.RewriteTrace(bug)
+	rewriteNeeded, err := rewriter.RewriteTrace(bug)
+	if rewriteNeeded {
+		trace.SetWasRewritten()
+	}
+
 	if err != nil {
-		return err
+		return rewriteNeeded, err
 	}
 
 	err = io.WriteTrace(newTrace, numberOfRoutines)
 	if err != nil {
-		return err
+		return rewriteNeeded, err
 	}
 
-	return nil
+	return rewriteNeeded, nil
 }
 
 /*

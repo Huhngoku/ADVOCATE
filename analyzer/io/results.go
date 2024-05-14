@@ -12,7 +12,7 @@ import (
  * Extract the needed information to create a trace to replay the selected error
  * Args:
  *   filePath (string): The path to the file containing the analysis results
- *   index (int): The index of the result to create a trace for
+ *   index (int): The index of the result to create a trace for (0 based)
  * Returns:
  *   bool: true, if the bug was not a possible, but an actually occuring bug
  *   Bug: The bug that was selected
@@ -21,7 +21,7 @@ import (
 func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 	println("Read analysis results from " + filePath + " for index " + strconv.Itoa(index) + "...")
 
-	index = (index - 1) * 3
+	index = index * 3
 
 	mb := 1048576 // 1 MB
 	maxTokenSize := 1

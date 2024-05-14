@@ -157,34 +157,32 @@ We can detect the following situations:
 - Cyclic deadlock
 
 The analyzer can take the following command line arguments:
-
- - -a Ignore atomic operations (default false). Use to reduce memory overhead for large traces.
- - -c	Ignore happens before relations of critical sections (default false)
- - -d int
-    	Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
- - -f	Assume a FIFO ordering for buffered channels (default false)
- - -p	Do not print the results to the terminal (default false). Automatically set -x to true
- - -r string
-    	Path to where the result file should be saved. If not set, it is saved in the trace folder
- - -s string
-    	Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:
-  	- s: Send on closed channel
-  	- r: Receive on closed channel
-  	- w: Done before add on waitGroup
-  	- n: Close of closed channel
-  	- b: Concurrent receive on channel
-  	- l: Leaking routine
-  	- u: Select case without partner
-  	- c: Cyclic deadlock
-    	
- - -t string
-    	Path to the trace folder to analyze or rewrite
- - -w	Do not print warnings (default false)
- - -x	Do not ask to create a reordered trace file after the analysis (default false)
-
+```
+-a	Ignore atomic operations (default false). Use to reduce memory overhead for large traces.
+-c	Ignore happens before relations of critical sections (default false)
+-d int
+		Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
+-f	Assume a FIFO ordering for buffered channels (default false)
+-p	Do not print the results to the terminal (default false). Automatically set -x to true
+-r string
+		Path to where the result file should be saved.
+-s string
+		Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:
+			s: Send on closed channel
+			r: Receive on closed channel
+			w: Done before add on waitGroup
+			n: Close of closed channel
+			b: Concurrent receive on channel
+			l: Leaking routine
+			u: Select case without partner
+-t string
+		Path to the trace folder to analyze or rewrite
+-w	Do not print warnings (default false)
+-x	Do not rewrite the trace file (default false)
+```
 If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
 ```
-./analyzer -x -t /trace
+./analyzer -t /trace
 ```
 it will create the following result, show it in the terminal and print it into an `result_readable.log` file: 
 ```txt
@@ -203,6 +201,9 @@ The send can cause a panic of the program, if it occurs. It is therefor an error
 
 A receive on a closed channel does not cause a panic, but returns a default value. It can therefor be a desired behavior. For this reason it is only considered a warning (in terminal orange, can be silenced with -w).
 
+If `-x` is not set, the analyzer will also write a rewritten trace 
+for all bugs, where a replay is possible/implemented. The rewritten trace
+can be found in the `/rewritten_trace_1`, `/rewritten_trace_2`, ...  foldes.
 
 ## Trace Replay
 The trace replay reruns a given program as given in the recorded trace. Please be aware, 
@@ -221,9 +222,10 @@ To start the replay, add the following header at the beginning of the
 main function:
 
 ```go
-advocate.EnableReplay()
+advocate.EnableReplay(1)
 defer advocate.WaitForReplayFinish()
 ```
+where `1` must be replaced with the index of the bug that should be replayed. 
 
 Also include the following import:
 ```go
@@ -231,7 +233,7 @@ Also include the following import:
 ```
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
 
-The trace files must be in the `/rewritten_trace` or `/trace` folder. If both folder exist, `/rewritten_trace` is used.
+The trace files must be in the `/rewritten_trace_1`.
 
 It is important that the program is not changed between recording and replay.
 This is especially true for the positions of operations on the code. For this 
@@ -245,7 +247,7 @@ if true {
 	defer advocate.Finish()
 } else {
 	// init replay
-	advocate.EnableReplay()
+	advocate.EnableReplay(1)
 	defer advocate.WaitForReplayFinish()
 }
 ```

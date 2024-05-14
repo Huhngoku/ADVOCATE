@@ -265,15 +265,25 @@ func InitTracing(size int) {
 // ============== Reading =================
 
 var timeout = false
-var tracePathRewritten = "rewritten_trace"
+var tracePathRewritten = "rewritten_trace_"
 
 /*
  * Read the trace from the trace folder.
  * The function reads all files in the trace folder and adds the trace to the runtime.
  * The trace is added to the runtime by calling the AddReplayTrace function.
+ * Args:
+ * 	- index: The index of the replay case
  */
-func EnableReplay() {
+func EnableReplay(index int) {
+	// use first as default
+	if index < 1 {
+		index = 1
+	}
+
+	index = index - 1 // from 1 based to 0 based
 	advocateStartTimer = time.Now()
+
+	tracePathRewritten = tracePathRewritten + strconv.Itoa(index)
 
 	// if trace folder does not exist, panic
 	if _, err := os.Stat(tracePathRewritten); os.IsNotExist(err) {
@@ -312,9 +322,9 @@ func EnableReplay() {
 	runtime.EnableReplay(timeout)
 }
 
-func EnableReplayWithTimeout() {
+func EnableReplayWithTimeout(index int) {
 	timeout = true
-	EnableReplay()
+	EnableReplay(index)
 }
 
 /*

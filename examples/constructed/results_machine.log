@@ -1,9 +1,9 @@
-Leak on unbuffered channel or select without possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1034@30
-	partner: -
-Possible select case without partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1096@43
-	case: 18,R
-Possible select case without partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/go-patch/src/runtime/signal_unix.go:1034@30
-	case: 11,R
+Possible send on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1110@55
+	send: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1105@46
+Possible negative waitgroup counter:
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1096@52; 
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1101@54; 
+Possible receive on closed channel:
+	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1110@55
+	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1113@45

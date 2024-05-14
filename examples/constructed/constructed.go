@@ -1090,19 +1090,31 @@ func n56() {
 // MARK: FOR TESTING
 func nTest() {
 	c := make(chan int, 0)
-	d := make(chan int, 0)
+	wg := sync.WaitGroup{}
 
 	go func() {
-		select {
-		case c <- 1:
-			print("send")
-		case <-d:
-			print("recv")
-		}
+		wg.Add(1)
+	}()
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		wg.Done()
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		close(c)
 	}()
 
 	<-c
-	time.Sleep(100 * time.Millisecond)
+	wg.Wait()
+
+	time.Sleep(500 * time.Millisecond)
+
 }
 
 func main() {
@@ -1193,7 +1205,7 @@ func main() {
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplayWithTimeout()
+		advocate.EnableReplayWithTimeout(1)
 		defer advocate.WaitForReplayFinish()
 	}
 

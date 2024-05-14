@@ -27,6 +27,8 @@ var (
 	result           string
 
 	analysisCases map[string]bool
+
+	wasRewritten bool
 )
 
 /*
@@ -41,6 +43,28 @@ func AddElementToTrace(element TraceElement) error {
 	routine := element.GetRoutine()
 	traces[routine] = append(traces[routine], element)
 	return nil
+}
+
+/*
+ * Clear the trace
+ */
+func ClearTrace() {
+	traces = make(map[int][]TraceElement)
+	wasRewritten = false
+}
+
+/*
+ * Set was rewriten to true
+ */
+func SetWasRewritten() {
+	wasRewritten = true
+}
+
+/*
+ * Get was rewriten
+ */
+func GetWasRewritten() bool {
+	return wasRewritten
 }
 
 /*

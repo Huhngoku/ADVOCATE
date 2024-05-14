@@ -15,8 +15,7 @@ import (
  *   source (string): The path to the source file
  *   dest (string): The path to the destination file
  */
-func CopyFile(source string, dest string) {
-	println("Copy file from " + source + " to " + dest + "...")
+func CopyFolder(source string, dest string) {
 	sourceFile, err := os.Open(source)
 	if err != nil {
 		panic(err)
