@@ -92,6 +92,7 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 		// set tpost and cl of chosen case
 
 		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
+		// BUG: index out of range if cases in select are nil
 		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndex], '.', []int{2, 3, 4, 5, 6, 7})
 		chosenCaseSplit[1] = uint64ToString(timer)
 		if rClosed {

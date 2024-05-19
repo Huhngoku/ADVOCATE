@@ -9,6 +9,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"analyzer/logging"
 	"analyzer/trace"
@@ -57,7 +58,10 @@ func CreateTraceFromFiles(filePath string, ignoreAtomics bool) (int, error) {
 
 	}
 
+	start := time.Now()
 	trace.Sort()
+	elapsed := time.Since(start)
+	println("Sort trace: ", elapsed.Seconds())
 
 	return numberIds, nil
 }

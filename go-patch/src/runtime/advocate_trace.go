@@ -190,6 +190,22 @@ func TraceToStringByID(id uint64) (string, bool) {
 }
 
 /*
+ * Return whether the trace of a routine' is empty
+ * Args:
+ * 	routine: id of the routine
+ * Return:
+ * 	true if the trace is empty, false otherwise
+ */
+func TraceIsEmptyByRoutine(routine int) bool {
+	lock(&AdvocateRoutinesLock)
+	defer unlock(&AdvocateRoutinesLock)
+	if routine, ok := AdvocateRoutines[uint64(routine)]; ok {
+		return len(routine.Trace) == 0
+	}
+	return true
+}
+
+/*
  * Get the trace of the routine with id 'id'.
  * To minimized the needed ram the trace is sent to the channel 'c' in chunks
  * of 1000 elements.

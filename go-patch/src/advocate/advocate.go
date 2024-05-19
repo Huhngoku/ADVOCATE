@@ -132,7 +132,13 @@ func writeToTraceFiles() {
 func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	// create the file if it does not exist and open it
 	defer wg.Done()
+
+	if runtime.TraceIsEmptyByRoutine(routine) {
+		return
+	}
+
 	fileName := "advocateTrace/trace_" + strconv.Itoa(routine) + ".log"
+
 	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
