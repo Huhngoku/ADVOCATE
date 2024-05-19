@@ -447,7 +447,10 @@ func parseTraceFile(tracePath string, stats map[string]int, known map[string][]s
 		return err
 	}
 
-	stats["numberRoutines"]++
+	routine, err := getRoutineFromFileName(filepath.Base(tracePath))
+	if err != nil {
+		stats["numberRoutines"] = max(stats["numberRoutines"], routine)
+	}
 
 	scanner := bufio.NewScanner(file)
 	const maxCapacity = 3 * 1024 * 1024 * 1024
@@ -513,6 +516,27 @@ func parseTraceFile(tracePath string, stats map[string]int, known map[string][]s
 		}
 	}
 	return err
+}
+
+func getRoutineFromFileName(fileName string) (int, error) {
+	// the file name is "trace_routineID.log"
+	// remove the .log at the end
+	fileName1 := strings.TrimSuffix(fileName, ".log")
+	if fileName1 == fileName {
+		return 0, errors.New("File name does not end with .log")
+	}
+
+	fileName2 := strings.TrimPrefix(fileName1, "trace_")
+	if fileName2 == fileName1 {
+		return 0, errors.New("File name does not start with trace_")
+	}
+
+	routine, err := strconv.Atoi(fileName2)
+	if err != nil {
+		return 0, err
+	}
+
+	return routine, nil
 }
 
 func contains(arr []string, str string) bool {
