@@ -85,7 +85,7 @@ func RewriteTrace(bug bugs.Bug) (bool, error) {
 	default:
 		err = errors.New("For the given bug type no trace rewriting is implemented")
 	}
-	if err != nil {
+	if rewriteNeeded && err != nil {
 		println("Error rewriting trace")
 	}
 	return rewriteNeeded, err
