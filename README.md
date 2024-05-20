@@ -225,10 +225,13 @@ To start the replay, add the following header at the beginning of the
 main function:
 
 ```go
-advocate.EnableReplay(1)
+advocate.EnableReplay(1, true)
 defer advocate.WaitForReplayFinish()
 ```
-where `1` must be replaced with the index of the bug that should be replayed. 
+where `1` must be replaced with the index of the bug that should be replayed.
+If a rewritten trace should not return exit codes, but e.g. panic if a 
+negative waitGroup counter is detected, of send on a closed channel occurs,
+the second argument can be set to `false`.
 
 Also include the following import:
 ```go

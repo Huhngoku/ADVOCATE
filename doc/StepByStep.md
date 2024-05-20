@@ -60,11 +60,14 @@ the rewritten trace for each bug found, where a rewrite is possible/implemented.
 
 - To replay a rewritten trace, replace the header in the program with:
   ```go
-  advocate.EnableReplay(1)
+  advocate.EnableReplay(1, true)
   defer advocate.WaitForReplayFinish()
   ```
 
 - Replace `1` with the index of the bug you want to replay.
+- If a rewritten trace should not return exit codes, but e.g. panic if a 
+negative waitGroup counter is detected, of send on a closed channel occurs,
+the second argument can be set to `false`.
 - Build the program using the new runtime and run the executable, e.g.
   ```bash
   ~/ADVOCATE/go-bash/bin/go build && ./main

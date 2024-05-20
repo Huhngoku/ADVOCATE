@@ -273,16 +273,18 @@ The trace replay is currently not in the main branch jey, but in its separate
 To start the replay, add the following header at the beginning of the
 main function:
 
-```go
-trace := advocate.ReadTrace("trace.log")
-runtime.EnableReplay(trace)
-defer runtime.WaitForReplayFinish()
-```
+  ```go
+  advocate.EnableReplay(1, true)
+  defer advocate.WaitForReplayFinish()
+  ```
+Replace `1` with the index of the bug you want to replay.\
+If a rewritten trace should not return exit codes, but e.g. panic if a 
+negative waitGroup counter is detected, of send on a closed channel occurs,
+the second argument can be set to `false`.
 
-`"trace.log"` must be replaced with the path to the trace file. Also include the following imports:
+Also include the following imports:
 ```go
 "advocate"
-"runtime"
 ```
 
 Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath).
