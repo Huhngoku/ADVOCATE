@@ -123,11 +123,6 @@ func (vc VectorClock) Sync(rec VectorClock) VectorClock {
  *   (vectorClock): The copy of the vector clock
  */
 func (vc VectorClock) Copy() VectorClock {
-	if vc.size == 0 {
-		_, file, line, _ := runtime.Caller(1)
-		logging.Debug("Copy of empty vector clock: "+file+":"+strconv.Itoa(line), logging.ERROR)
-		panic("Copy of empty vector clock: " + file + ":" + strconv.Itoa(line))
-	}
 	newVc := NewVectorClock(vc.size)
 	for i := 1; i <= vc.size; i++ {
 		newVc.clock[i] = vc.clock[i]
