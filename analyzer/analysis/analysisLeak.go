@@ -65,8 +65,9 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
 			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opType, -1})
 		}
 	} else {
+		// BUG: find possible partners, if there are any
 		// find possible partners
-		found := "Leak on buffered channel:\n"
+		found := "Leak on buffered channel without possible partner:\n"
 		found += "\tchannel: " + tID + "\n"
 		found += "\t"
 		logging.Result(found, logging.CRITICAL)

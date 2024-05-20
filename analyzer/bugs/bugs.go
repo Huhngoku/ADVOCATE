@@ -24,7 +24,8 @@ const (
 
 	LeakUnbufChanPartner   // chan and select
 	LeakUnbufChanNoPartner // chan and select
-	LeakBufChan
+	LeakBufChanPartner
+	LeakBufChanNoPartner
 	LeakMutex
 	LeakWaitGroup
 	LeakCond
@@ -88,7 +89,7 @@ func (b Bug) ToString() string {
 		typeStr = "Leak of unbuffered channel:"
 		arg1Str = "channel: "
 		arg2Str = "partner: "
-	case LeakBufChan:
+	case LeakBufChanPartner:
 		typeStr = "Leak of buffered channel:"
 		arg1Str = "channel: "
 		arg2Str = ""
@@ -176,8 +177,10 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = LeakUnbufChanPartner
 	case "Leak on unbuffered channel or select without possible partner:":
 		bug.Type = LeakUnbufChanNoPartner
-	case "Leak on buffered channel:":
-		bug.Type = LeakBufChan
+	case "Leak on buffered channel with possible partner:":
+		bug.Type = LeakBufChanPartner
+	case "Leak on buffered channel without possible partner:":
+		bug.Type = LeakBufChanNoPartner
 	case "Leak on mutex:":
 		bug.Type = LeakMutex
 	case "Leak on wait group:":

@@ -103,8 +103,10 @@ func main() {
 	}
 
 	if !*noRewrite {
-		println("Start rewriting trace files...")
 		numberRewrittenTrace := 0
+		failedRewrites := 0
+		notNeededRewrites := 0
+		println("Start rewriting trace files...")
 		var rewriteTime time.Duration
 		for resultIndex := 0; resultIndex < numberOfResults; resultIndex++ {
 			rewriteStartTime := time.Now()
@@ -114,8 +116,11 @@ func main() {
 				*ignoreAtomics)
 
 			if needed && err != nil {
-				println("Could not rewrite trace file: ", err.Error())
-			} else {
+				println("Failed to rewrite trace: ", err.Error())
+				failedRewrites++
+			} else if !needed {
+				notNeededRewrites++
+			} else { // needed && err == nil
 				numberRewrittenTrace++
 				rewriteTime += time.Now().Sub(rewriteStartTime)
 			}
@@ -125,6 +130,16 @@ func main() {
 		if err != nil {
 			println("Could not write time to file: ", err.Error())
 		}
+
+		println("Finished Rewrite")
+		println("\n\n\tNumber Results: ", numberOfResults)
+		println(logging.Green, "\tNo need to rewrite: ", notNeededRewrites, logging.Reset)
+		if failedRewrites > 0 {
+			println(logging.Red, "\tFailed rewrites: ", failedRewrites, logging.Reset)
+		} else {
+			println(logging.Green, "\tFailed rewrites: ", failedRewrites, logging.Reset)
+		}
+		println(logging.Green, "\tSuccessfully rewrites: ", numberRewrittenTrace, logging.Reset)
 	}
 }
 

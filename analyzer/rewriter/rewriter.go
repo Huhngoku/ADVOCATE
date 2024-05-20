@@ -50,9 +50,11 @@ func RewriteTrace(bug bugs.Bug) (bool, error) {
 		err = rewriteUnbufChanLeak(bug)
 	case bugs.LeakUnbufChanNoPartner:
 		err = errors.New("No possible partner for stuck channel found. Cannot rewrite trace.")
-	case bugs.LeakBufChan:
+	case bugs.LeakBufChanPartner:
 		rewriteNeeded = true
 		err = LeakBufChan(bug)
+	case bugs.LeakBufChanNoPartner:
+		err = errors.New("No possible partner for stuck channel found. Cannot rewrite trace.")
 	case bugs.LeakMutex:
 		rewriteNeeded = true
 		err = rewriteMutexLeak(bug)

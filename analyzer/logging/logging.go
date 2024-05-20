@@ -10,11 +10,11 @@ import (
 
 var levelDebug int = 0
 
-var reset = "\033[0m"
-var red = "\033[31m"
-var orange = "\033[33m"
-var green = "\033[32m"
-var blue = "\033[34m"
+var Reset = "\033[0m"
+var Red = "\033[31m"
+var Orange = "\033[33m"
+var Green = "\033[32m"
+var Blue = "\033[34m"
 
 type debugLevel int
 
@@ -49,9 +49,9 @@ func Debug(message string, level debugLevel) {
 	// print message to terminal
 	if int(level) <= levelDebug {
 		if level == ERROR {
-			println(blue + message + reset)
+			println(Blue + message + Reset)
 		} else if level == INFO {
-			println(green + message + reset)
+			println(Green + message + Reset)
 		} else {
 			println(message)
 		}
@@ -127,7 +127,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			resMachine += result + "\n"
 
 			if !noPrint {
-				fmt.Println(strconv.Itoa(counter) + " " + red + result + reset)
+				fmt.Println(strconv.Itoa(counter) + " " + Red + result + Reset)
 			}
 
 			counter++
@@ -145,7 +145,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			resMachine += result + "\n"
 
 			if !noPrint {
-				fmt.Println(strconv.Itoa(counter) + " " + orange + result + reset)
+				fmt.Println(strconv.Itoa(counter) + " " + Orange + result + Reset)
 			}
 
 			counter++
@@ -155,7 +155,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 		resReadable += "No bugs found" + "\n"
 
 		if !noPrint {
-			fmt.Println(green + "No bugs found" + reset)
+			fmt.Println(Green + "No bugs found" + Reset)
 		}
 	}
 
