@@ -226,6 +226,16 @@ func (mu *TraceElementMutex) GetVC() clock.VectorClock {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (mu *TraceElementMutex) SetT(time int) {
+	mu.tPre = time
+	mu.tPost = time
+}
+
+/*
  * Set the tpre of the element.
  * Args:
  *   tPre (int): The tpre of the element
@@ -253,7 +263,7 @@ func (mu *TraceElementMutex) SetTSort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (mu *TraceElementMutex) SetTSortWithoutNotExecuted(tSort int) {
+func (mu *TraceElementMutex) SetTWithoutNotExecuted(tSort int) {
 	mu.SetTPre(tSort)
 	if mu.tPost != 0 {
 		mu.tPost = tSort
@@ -354,4 +364,24 @@ func (mu *TraceElementMutex) updateVectorClock() {
 func (mu *TraceElementMutex) updateVectorClockAlt() {
 	currentVCHb[mu.routine] = currentVCHb[mu.routine].Inc(mu.routine)
 	mu.vc = currentVCHb[mu.routine].Copy()
+}
+
+/*
+ * Copy the element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (mu *TraceElementMutex) Copy() TraceElement {
+	return &TraceElementMutex{
+		routine: mu.routine,
+		tPre:    mu.tPre,
+		tPost:   mu.tPost,
+		id:      mu.id,
+		rw:      mu.rw,
+		opM:     mu.opM,
+		suc:     mu.suc,
+		pos:     mu.pos,
+		tID:     mu.tID,
+		vc:      mu.vc.Copy(),
+	}
 }

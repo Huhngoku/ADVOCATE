@@ -12,7 +12,8 @@ import (
 *   tpost (int): The timestamp of the event
  */
 type TraceElementReplay struct {
-	tPost int
+	tPost    int
+	exitCode int
 }
 
 /*
@@ -20,10 +21,12 @@ type TraceElementReplay struct {
  * MARK: New
  * Args:
  *   t (string): The timestamp of the event
+ *   exitCode (int): The exit code of the event
  */
-func AddTraceElementReplay(t int) error {
+func AddTraceElementReplay(t int, exitCode int) error {
 	elem := TraceElementReplay{
-		tPost: t,
+		tPost:    t,
+		exitCode: exitCode,
 	}
 
 	return AddElementToTrace(&elem)
@@ -105,6 +108,15 @@ func (at *TraceElementReplay) GetVC() clock.VectorClock {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (mu *TraceElementReplay) SetT(time int) {
+	mu.tPost = time
+}
+
+/*
  * Set the tpre of the element.
  * Args:
  *   tPre (int): The tpre of the element
@@ -131,7 +143,7 @@ func (at *TraceElementReplay) SetTSort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
+func (at *TraceElementReplay) SetTWithoutNotExecuted(tSort int) {
 	tSort = max(1, tSort)
 	at.SetTPre(tSort)
 	at.tPost = tSort
@@ -144,7 +156,7 @@ func (at *TraceElementReplay) SetTSortWithoutNotExecuted(tSort int) {
  *   string: The simple string representation of the element
  */
 func (at *TraceElementReplay) ToString() string {
-	res := "X," + strconv.Itoa(at.tPost)
+	res := "X," + strconv.Itoa(at.tPost) + "," + strconv.Itoa(at.exitCode)
 	return res
 }
 
@@ -154,4 +166,18 @@ func (at *TraceElementReplay) ToString() string {
  */
 func (at *TraceElementReplay) updateVectorClock() {
 	// nothing to do
+}
+
+// MARK: Copy
+
+/*
+ * Create a copy of the element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (at *TraceElementReplay) Copy() TraceElement {
+	return &TraceElementReplay{
+		tPost:    at.tPost,
+		exitCode: at.exitCode,
+	}
 }

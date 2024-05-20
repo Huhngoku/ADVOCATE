@@ -133,9 +133,9 @@ func writeToTraceFile(routine int, wg *sync.WaitGroup) {
 	// create the file if it does not exist and open it
 	defer wg.Done()
 
-	if runtime.TraceIsEmptyByRoutine(routine) {
-		return
-	}
+	// if runtime.TraceIsEmptyByRoutine(routine) {
+	// 	return
+	// }
 
 	fileName := "advocateTrace/trace_" + strconv.Itoa(routine) + ".log"
 
@@ -279,21 +279,23 @@ var tracePathRewritten = "rewritten_trace_"
  * The trace is added to the runtime by calling the AddReplayTrace function.
  * Args:
  * 	- index: The index of the replay case
+ * 	- exitCode: Whether the program should exit after the important replay part passed
  */
-func EnableReplay(index int) {
+func EnableReplay(index int, exitCode bool) {
 	// use first as default
 	if index < 1 {
 		index = 1
 	}
 
-	index = index - 1 // from 1 based to 0 based
+	runtime.SetExitCode(exitCode)
+
 	advocateStartTimer = time.Now()
 
 	tracePathRewritten = tracePathRewritten + strconv.Itoa(index)
 
 	// if trace folder does not exist, panic
 	if _, err := os.Stat(tracePathRewritten); os.IsNotExist(err) {
-		panic("Trace folder does not exist.")
+		panic("Trace folder " + tracePathRewritten + " does not exist.")
 	}
 
 	println("Reading trace from " + tracePathRewritten)
@@ -328,9 +330,9 @@ func EnableReplay(index int) {
 	runtime.EnableReplay(timeout)
 }
 
-func EnableReplayWithTimeout(index int) {
+func EnableReplayWithTimeout(index int, exitCode bool) {
 	timeout = true
-	EnableReplay(index)
+	EnableReplay(index, exitCode)
 }
 
 /*
@@ -400,6 +402,8 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 				switch fields[0] {
 				case "X": // disable replay
 					op = runtime.OperationReplayEnd
+					line, _ = strconv.Atoi(fields[2]) // misuse the line for the exit code
+					runtime.SetExpectedExitCode(line)
 				case "G":
 					op = runtime.OperationSpawn
 					// time, _ = strconv.Atoi(fields[1])

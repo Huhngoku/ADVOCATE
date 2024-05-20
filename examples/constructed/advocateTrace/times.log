@@ -1,2 +1,2 @@
-ExecutionRunime,ExecutionTrace,ExecutionTotal,Analysis,AvgRewrite,Analysis,AvgRewrite
-1.602439,0.001556,1.603995,0.012975,0.009359,0.042409,0.008215
+ExecutionRunime,ExecutionTrace,ExecutionTotal,Analysis,AvgRewrite,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace,ReplayTrace
+1.507824,0.001540,1.509364,0.019022,0.000993,0.005973,0.012090,0.007439,0.004061,0.003473,0.004726,0.003617,0.004040,0.007982,0.010375

@@ -266,6 +266,16 @@ func (ch *TraceElementChannel) getTpost() int {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (ch *TraceElementChannel) SetT(time int) {
+	ch.tPre = time
+	ch.tPost = time
+}
+
+/*
  * Set the partner of the channel operation
  * Args:
  *   partner (*TraceElementChannel): The partner of the channel operation
@@ -353,14 +363,14 @@ func (ch *TraceElementChannel) SetTSort2(tpost int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tSort int) {
+func (ch *TraceElementChannel) SetTWithoutNotExecuted(tSort int) {
 	ch.SetTPre(tSort)
 	if ch.tPost != 0 {
 		ch.tPost = tSort
 	}
 
 	if ch.sel != nil {
-		ch.sel.SetTSortWithoutNotExecuted2(tSort)
+		ch.sel.SetTWithoutNotExecuted2(tSort)
 	}
 }
 
@@ -370,7 +380,7 @@ func (ch *TraceElementChannel) SetTSortWithoutNotExecuted(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (ch *TraceElementChannel) SetTSortWithoutNotExecuted2(tSort int) {
+func (ch *TraceElementChannel) SetTWithoutNotExecuted2(tSort int) {
 	ch.SetTPre(tSort)
 	if ch.tPost != 0 {
 		ch.tPost = tSort
@@ -577,4 +587,30 @@ func (ch *TraceElementChannel) findPartner() int {
 		}
 	}
 	return -1
+}
+
+// MARK: Copy
+
+/*
+ * Create a copy of the channel element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (ch *TraceElementChannel) Copy() TraceElement {
+	newCh := TraceElementChannel{
+		routine: ch.routine,
+		tPre:    ch.tPre,
+		tPost:   ch.tPost,
+		id:      ch.id,
+		opC:     ch.opC,
+		cl:      ch.cl,
+		oID:     ch.oID,
+		qSize:   ch.qSize,
+		pos:     ch.pos,
+		sel:     ch.sel,
+		partner: ch.partner,
+		tID:     ch.tID,
+		vc:      ch.vc.Copy(),
+	}
+	return &newCh
 }

@@ -1205,7 +1205,7 @@ func main() {
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplayWithTimeout(1)
+		advocate.EnableReplayWithTimeout(2, true)
 		defer advocate.WaitForReplayFinish()
 	}
 

@@ -211,7 +211,7 @@ can be found in the `/rewritten_trace_1`, `/rewritten_trace_2`, ...  foldes.
 ## Trace Replay
 The trace replay reruns a given program as given in the recorded trace. Please be aware, 
 that only the recorded elements are considered for the trace replay. This means, that 
-the order of non-recorded operations between two or more routines can still very. 
+the order of non-recorded operations between two or more routines can still very.
 
 <!-- The implementation of the trace replay is not finished yet. The following is a short overview over the current state.
 - order enforcement for most elements.
@@ -256,6 +256,23 @@ if true {
 ```
 
 With changing `true` to `false` one can switch between recording and replay.
+
+### Exit Codes:
+The replay can end with the following exit codes:
+- 0: The replay will ended completely without finding a ReplayStopElement
+- 10: Replay Stuck: Long wait time for finishing replay
+- 11: Replay Stuck: Long wait time for running element
+- 12: Replay Stuck: No traced operation has been executed for approx. 20s
+- 13: The program tried to execute an operation, although all elements in the trace have already been executed.
+- 20: Leak: Leaking unbuffered channel or select was unstuck
+- 21: Leak: Leaking buffered channel was unstuck
+- 22: Leak: Leaking Mutex was unstuck
+- 23: Leak: Leaking Cond was unstuck
+- 24: Leak: Leaking WaitGroup was unstuck
+- 30: Send on close
+- 31: Receive on close
+- 32: Negative WaitGroup counter
+
 
 ### Warning:
 It is the users responsibility of the user to make sure, that the input to 

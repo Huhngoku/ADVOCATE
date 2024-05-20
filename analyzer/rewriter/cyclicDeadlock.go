@@ -129,7 +129,7 @@ func rewriteCyclicDeadlock(bug bugs.Bug) error {
 	}
 
 	// add start and end signal
-	trace.AddTraceElementReplay(lastTime + 1)
+	trace.AddTraceElementReplay(lastTime+1, exitCodeCyclic)
 
 	return nil
 }

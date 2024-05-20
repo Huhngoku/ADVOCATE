@@ -383,39 +383,20 @@ the next operation, by comparing the code position of the current operation with
 the code position of next operation to be executed. If those are not equal,
 we will wait for a short moment and check again. Thereby be count how long the
 operation is already waiting. If a operation is waiting for a longer time, we
-write a message to the terminal to inform the user, that the program might be
-stuck. 
+write a message to the term- 0: The replay will ended completely without finding a Replay element
+  - 10: Replay Stuck: Long wait time for finishing replay
+  - 11: Replay Stuck: Long wait time for running element
+  - 12: Replay Stuck: No traced operation has been executed for approx. 20s
+  - 13: The program tried to execute an operation, although all elements in the trace have already been executed.
+  - 20: Leak: Leaking unbuffered channel or select was unstuck
+  - 21: Leak: Leaking buffered channel was unstuck
+  - 22: Leak: Leaking Mutex was unstuck
+  - 23: Leak: Leaking Cond was unstuck
+  - 24: Leak: Leaking WaitGroup was unstuck
+  - 30: Send on close
+  - 31: Receive on close
+  - 32: Negative WaitGroup counter
 
-If the operation is the correct one, we advance to the next value as the new
-next operation and execute the current operation.
-
-To prevent the program from terminating before all operations have been executed
-(e.g. if the main function has already executed all operations, but another
-routine has not), we count the number of finished operations. When the
-main routine finishes, we prevent the program from terminating, until the number
-of executed operations is equal to the number of operations in the trace.
-
-
-
-## State enforcement
-This second part makes sure, that the state of the program is equal to the state
-in the recorded trace. This includes
-
-- blocking blocked operation
-- making sure, that successful operations are successful and unsuccessful once are not
-- making sure, that channel partners are correct
-- making sure, that select cases are correct.
-
-Many of those should already be enforced automatically because of the order enforcement, but we implement additional safeguards to make sure, that a shift in
-not recorded operations does not allow those operations to change there behavior.
-
-### Blocking blocked operations
-Operations that did not execute in the recorded file, e.g. because a mutex was
-still blocked at the end or a channel never found a partner, are not supposed to
-be executed during replay. A simplified version of this looks as follows:
-```go
-if enabled {  // replay is running
-    ...
     if replayElem.Blocked {
         BlockForever()
     }
@@ -508,3 +489,21 @@ select {
 }
 ```
 this will still select one of this cases by random. To make sure, that those select statements will also be replayed correctly, we use the internal index `casi` for the cases, used in the implementation of the select statement. This case is not identical to the ordering of the select cases but is still deterministic. For this reason it is possible to use this index as an identifier for a specific case. From this, when the select determines, if a select case is usable, we reject every case, for which the index is not correct.
+
+
+## Exit codes
+If a end element is found in the trace and the replay is enabled or the replay is stuck, the 
+program will exit with one of the following exit codes:
+- 0: The replay will ended completely without finding a Replay element
+- 10: Replay Stuck: Long wait time for finishing replay
+- 11: Replay Stuck: Long wait time for running element
+- 12: Replay Stuck: No traced operation has been executed for approx. 20s
+- 13: The program tried to execute an operation, although all elements in the trace have already been executed.
+- 20: Leak: Leaking unbuffered channel or select was unstuck
+- 21: Leak: Leaking buffered channel was unstuck
+- 22: Leak: Leaking Mutex was unstuck
+- 23: Leak: Leaking Cond was unstuck
+- 24: Leak: Leaking WaitGroup was unstuck
+- 30: Send on close
+- 31: Receive on close
+- 32: Negative WaitGroup counter

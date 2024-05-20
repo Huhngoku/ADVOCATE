@@ -232,6 +232,16 @@ func GetConcurrentWaitgroups(element *TraceElement) map[string][]*TraceElement {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (co *TraceElementCond) SetT(time int) {
+	co.tPre = time
+	co.tPost = time
+}
+
+/*
  * Set the tpre of the element.
  * Args:
  *   tPre (int): The tpre of the element
@@ -262,7 +272,7 @@ func (co *TraceElementCond) SetTSort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (co *TraceElementCond) SetTSortWithoutNotExecuted(tSort int) {
+func (co *TraceElementCond) SetTWithoutNotExecuted(tSort int) {
 	co.SetTPre(tSort)
 	if co.opC == WaitCondOp {
 		if co.tPost != 0 {
@@ -313,4 +323,24 @@ func (co *TraceElementCond) updateVectorClock() {
 	}
 
 	co.vc = currentVCHb[co.routine].Copy()
+}
+
+// MARK: Copy
+
+/*
+ * Copy the element
+ * Returns:
+ *   (TraceElement): The copy of the element
+ */
+func (co *TraceElementCond) Copy() TraceElement {
+	return &TraceElementCond{
+		routine: co.routine,
+		tPre:    co.tPre,
+		tPost:   co.tPost,
+		id:      co.id,
+		opC:     co.opC,
+		pos:     co.pos,
+		tID:     co.tID,
+		vc:      co.vc.Copy(),
+	}
 }

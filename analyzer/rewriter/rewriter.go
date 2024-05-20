@@ -11,6 +11,24 @@ import (
 	"sort"
 )
 
+var exitCode bool
+
+const (
+	exitCodeStuckFinish    = 10
+	exitCodeStuckWaitElem  = 11
+	exitCodeStuckNoElem    = 12
+	exitCodeElemEmptyTrace = 13
+	exitCodeLeakUnbuf      = 20
+	exitCodeLeakBuf        = 21
+	exitCodeLeakMutex      = 22
+	exitCodeLeakCond       = 23
+	exitCodeLeakWG         = 24
+	exitSendClose          = 30
+	exitRecvClose          = 31
+	exitNegativeWG         = 32
+	exitCodeCyclic         = 41
+)
+
 /*
  * Create a new trace from the given bug
  * Args:
@@ -25,10 +43,10 @@ func RewriteTrace(bug bugs.Bug) (bool, error) {
 	switch bug.Type {
 	case bugs.SendOnClosed:
 		rewriteNeeded = true
-		err = rewriteClosedChannel(bug)
+		err = rewriteClosedChannel(bug, exitSendClose)
 	case bugs.PosRecvOnClosed:
 		rewriteNeeded = true
-		err = rewriteClosedChannel(bug)
+		err = rewriteClosedChannel(bug, exitRecvClose)
 	case bugs.RecvOnClosed:
 		err = errors.New("Actual receive on closed in trace. Therefore no rewrite is needed.")
 	case bugs.CloseOnClosed:

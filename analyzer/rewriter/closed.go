@@ -38,10 +38,11 @@ import (
 * 	T1 ++ T2' ++ [X, c, a, X']
 * Args:
 *   bug (Bug): The bug to create a trace for
+*   exitCode (int): The exit code to use for the stop marker
 * Returns:
 *   error: An error if the trace could not be created
  */
-func rewriteClosedChannel(bug bugs.Bug) error {
+func rewriteClosedChannel(bug bugs.Bug, exitCode int) error {
 	println("Start rewriting trace for receive on closed channel...")
 
 	if len(bug.TraceElement1) == 0 || bug.TraceElement1[0] == nil { // close
@@ -65,11 +66,11 @@ func rewriteClosedChannel(bug bugs.Bug) error {
 	// This is done by removing all elements in T2, that are concurrent to c (including a)
 	// and then adding a after c
 	trace.RemoveConcurrent(bug.TraceElement1[0])
-	(*bug.TraceElement2[0]).SetTSort(t1 + 1)
+	(*bug.TraceElement2[0]).SetT(t1 + 1)
 	trace.AddElementToTrace(*bug.TraceElement2[0])
 
 	// add a stop marker -> T1 ++ T2' ++ [c, a, X']
-	trace.AddTraceElementReplay(t1 + 2)
+	trace.AddTraceElementReplay(t1+2, exitCode)
 
 	return nil
 }

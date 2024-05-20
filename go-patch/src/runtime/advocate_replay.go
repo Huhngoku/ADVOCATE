@@ -1,5 +1,38 @@
 package runtime
 
+const (
+	ExitCodeDefault        = 0
+	ExitCodeStuckFinish    = 10
+	ExitCodeStuckWaitElem  = 11
+	ExitCodeStuckNoElem    = 12
+	ExitCodeElemEmptyTrace = 13
+	ExitCodeLeakUnbuf      = 20
+	ExitCodeLeakBuf        = 21
+	ExitCodeLeakMutex      = 22
+	ExitCodeLeakCond       = 23
+	ExitCodeLeakWG         = 24
+	ExitCodeSendClose      = 30
+	ExitCodeRecvClose      = 31
+	ExitCodeNegativeWG     = 32
+	ExitCodeCyclic         = 41
+)
+
+var ExitCodeNames = map[int]string{
+	0:  "The replay will ended completely without finding a Replay element",
+	10: "Replay Stuck: Long wait time for finishing replay",
+	11: "Replay Stuck: Long wait time for running element",
+	12: "Replay Stuck: No traced operation has been executed for approx. 20s",
+	13: "The program tried to execute an operation, although all elements in the trace have already been executed.",
+	20: "Leak: Leaking unbuffered channel or select was unstuck",
+	21: "Leak: Leaking buffered channel was unstuck",
+	22: "Leak: Leaking Mutex was unstuck",
+	23: "Leak: Leaking Cond was unstuck",
+	24: "Leak: Leaking WaitGroup was unstuck",
+	30: "Send on close",
+	31: "Receive on close",
+	32: "Negative WaitGroup counter",
+}
+
 /*
  * String representation of the replay operation.
  * Return:
@@ -108,8 +141,12 @@ var traceElementPositions = make(map[string][]int) // file -> []line
 // timeout
 var timeoutLock mutex
 var timeoutCounterGlobal = 0
-var timeoutMessageCycle = 500 // approx. 10s
+var timeoutMessageCycle = 1000 // approx. 20s
 var timeOutCancel = false
+
+// exit code
+var replayExitCode bool
+var expectedExitCode int
 
 /*
  * Add a replay trace to the replay data.
@@ -203,6 +240,8 @@ func WaitForReplayFinish() {
 
 		// check for timeout
 		if timeoutCounter%timeoutMessageCycle == 0 {
+			ExitReplayWithCode(ExitCodeStuckFinish)
+
 			waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
 			warningMessage := "\nReplayWarning: Long wait time for finishing replay."
 			warningMessage += "The main routine has already finished approx. "
@@ -317,6 +356,8 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 
 		// disable the replay, if the next operation is the disable replay operation
 		if next.Op == OperationReplayEnd {
+			ExitReplayWithCode(next.Line)
+
 			println("Stop Character Found. Disable Replay.")
 			DisableReplay()
 			foundReplayElement(nextRoutine)
@@ -327,6 +368,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		if nextRoutine == -1 {
 			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
 			DisableReplay()
+			ExitReplayWithCode(ExitCodeElemEmptyTrace)
 			return false, false, ReplayElement{}
 		}
 
@@ -382,7 +424,7 @@ func checkForTimeout(timeoutCounter int, file string, line int) {
 	messageCauses += "    - The program execution path depends on the order of not tracked operations\n"
 	messageCauses += "    - The program execution depends on outside input, that was not exactly reproduced\n"
 
-	if timeoutCounter == 250 { // ca. 5s
+	if timeoutCounter == 500 { // ca. 10s
 		// res := isPositionInTrace(file, line)
 		// if !res {
 		// 	errorMessage := "ReplayError: Program tried to execute an operation that is not in the trace:\n"
@@ -413,6 +455,8 @@ func checkForTimeout(timeoutCounter int, file string, line int) {
 
 			println(warningMessage)
 
+			ExitReplayWithCode(ExitCodeStuckWaitElem)
+
 			if timeOutCancel {
 				panic("ReplayError: Replay stuck")
 			}
@@ -425,8 +469,8 @@ func checkForTimeoutNoOperation() {
 		return
 	}
 
-	waitTime := 500 // approx. 10s
-	warningMessage := "No traced operation has been executed for approx. 10s.\n"
+	waitTime := 1000 // approx. 20s
+	warningMessage := "No traced operation has been executed for approx. 20s.\n"
 	warningMessage += "This can be caused by a stuck replay.\n"
 	warningMessage += "Possible causes are:\n"
 	warningMessage += "    - The program was altered between recording and replay\n"
@@ -454,6 +498,7 @@ func checkForTimeoutNoOperation() {
 			message += warningMessage
 
 			println(message)
+			ExitReplayWithCode(ExitCodeStuckNoElem)
 			if timeOutCancel {
 				panic("ReplayError: Replay stuck")
 			}
@@ -530,10 +575,53 @@ func getNextReplayElement() (int, ReplayElement) {
 	return routine, replayData[uint64(routine)][0]
 }
 
+/*
+ * Check if the next element in the trace is a replay end element with the given code.
+ * Args:
+ * 	code: the code of the replay end element
+ * 	runExit: true if the program should exit with the given code, false otherwise
+ *  overwrite: if true, also exit if the next element is not a replay end element but the code is the expected exit code
+ * Return:
+ * 	bool: true if the next element is a replay end element with the given code or id overwrite is set and the code is the expected code, false otherwise
+ */
+func IsNextElementReplayEnd(code int, runExit bool, overwrite bool) bool {
+	_, next := getNextReplayElement()
+
+	if overwrite && code == expectedExitCode {
+		ExitReplayWithCode(code)
+		return true
+	}
+
+	if next.Op != OperationReplayEnd || next.Line != code {
+		return false
+	}
+
+	if runExit {
+		ExitReplayWithCode(code)
+	}
+
+	return true
+}
+
 func foundReplayElement(routine int) {
 	lock(&replayLock)
 	defer unlock(&replayLock)
 
 	// remove the first element from the trace for the routine
 	replayData[uint64(routine)] = replayData[uint64(routine)][1:]
+}
+
+func SetExitCode(code bool) {
+	replayExitCode = code
+}
+
+func SetExpectedExitCode(code int) {
+	expectedExitCode = code
+}
+
+func ExitReplayWithCode(code int) {
+	if replayExitCode {
+		println("Exit Replay with code ", code, ExitCodeNames[code])
+		exit(int32(code))
+	}
 }

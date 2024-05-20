@@ -284,6 +284,22 @@ func (se *TraceElementSelect) GetPartner() *TraceElementChannel {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (se *TraceElementSelect) SetT(time int) {
+	se.tPre = time
+	se.tPost = time
+
+	se.chosenCase.tPost = time
+
+	for _, c := range se.cases {
+		c.tPre = time
+	}
+}
+
+/*
  * Set the tpre of the element.
  * Args:
  *   tPre (int): The tpre of the element
@@ -360,12 +376,12 @@ func (se *TraceElementSelect) SetTSort2(tSort int) {
  * Args:
  * tSort (int): The timer of the element
  */
-func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
+func (se *TraceElementSelect) SetTWithoutNotExecuted(tSort int) {
 	se.SetTPre(tSort)
 	if se.tPost != 0 {
 		se.tPost = tSort
 	}
-	se.chosenCase.SetTSortWithoutNotExecuted2(tSort)
+	se.chosenCase.SetTWithoutNotExecuted2(tSort)
 }
 
 /*
@@ -374,7 +390,7 @@ func (se *TraceElementSelect) SetTSortWithoutNotExecuted(tSort int) {
  * Args:
  * tSort (int): The timer of the element
  */
-func (se *TraceElementSelect) SetTSortWithoutNotExecuted2(tSort int) {
+func (se *TraceElementSelect) SetTWithoutNotExecuted2(tSort int) {
 	se.SetTPre2(tSort)
 	if se.tPost != 0 {
 		se.tPost = tSort
@@ -464,5 +480,36 @@ func (se *TraceElementSelect) updateVectorClock() {
 					TID: se.tID},
 				int(c.opC))
 		}
+	}
+}
+
+// MARK: Copy
+
+/*
+ * Copy the element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (se *TraceElementSelect) Copy() TraceElement {
+	cases := make([]TraceElementChannel, 0)
+	for _, c := range se.cases {
+		cases = append(cases, *c.Copy().(*TraceElementChannel))
+	}
+
+	chosenCase := *se.chosenCase.Copy().(*TraceElementChannel)
+
+	return &TraceElementSelect{
+		routine:         se.routine,
+		tPre:            se.tPre,
+		tPost:           se.tPost,
+		id:              se.id,
+		cases:           cases,
+		chosenCase:      chosenCase,
+		chosenIndex:     se.chosenIndex,
+		containsDefault: se.containsDefault,
+		chosenDefault:   se.chosenDefault,
+		pos:             se.pos,
+		tID:             se.tID,
+		vc:              se.vc.Copy(),
 	}
 }

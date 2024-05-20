@@ -281,6 +281,10 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 
 	if c.closed != 0 {
 		unlock(&c.lock)
+		if enabled {
+			IsNextElementReplayEnd(ExitCodeSendClose, true, false)
+		}
+
 		panic(plainError("send on closed channel"))
 	}
 
@@ -394,6 +398,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 		// ADVOCATE-CHANGE-END
 		if c.closed == 0 {
 			throw("chansend: spurious wakeup")
+		}
+		if enabled {
+			IsNextElementReplayEnd(ExitCodeSendClose, true, false)
 		}
 		panic(plainError("send on closed channel"))
 	}

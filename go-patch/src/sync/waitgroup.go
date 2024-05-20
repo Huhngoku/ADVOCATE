@@ -53,7 +53,7 @@ func (wg *WaitGroup) Add(delta int) {
 	if delta > 0 {
 		skip = 2
 	}
-	_, _, _ = runtime.WaitForReplay(runtime.OperationWaitgroupAddDone, skip)
+	enabled, _, _ := runtime.WaitForReplay(runtime.OperationWaitgroupAddDone, skip)
 	// ADVOCATE-CHANGE-END
 
 	if race.Enabled {
@@ -92,6 +92,9 @@ func (wg *WaitGroup) Add(delta int) {
 		race.Read(unsafe.Pointer(&wg.sema))
 	}
 	if v < 0 {
+		if enabled {
+			runtime.IsNextElementReplayEnd(runtime.ExitCodeNegativeWG, true, true)
+		}
 		panic("sync: negative WaitGroup counter")
 	}
 	if w != 0 && delta > 0 && v == int32(delta) {

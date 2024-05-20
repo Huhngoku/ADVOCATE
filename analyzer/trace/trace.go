@@ -27,8 +27,6 @@ var (
 	result           string
 
 	analysisCases map[string]bool
-
-	wasRewritten bool
 )
 
 /*
@@ -43,28 +41,6 @@ func AddElementToTrace(element TraceElement) error {
 	routine := element.GetRoutine()
 	traces[routine] = append(traces[routine], element)
 	return nil
-}
-
-/*
- * Clear the trace
- */
-func ClearTrace() {
-	traces = make(map[int][]TraceElement)
-	wasRewritten = false
-}
-
-/*
- * Set was rewriten to true
- */
-func SetWasRewritten() {
-	wasRewritten = true
-}
-
-/*
- * Get was rewriten
- */
-func GetWasRewritten() bool {
-	return wasRewritten
 }
 
 /*
@@ -225,12 +201,12 @@ func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 	tSort1 := (*element1).GetTSort()
 	for index, elem := range traces[routine1] {
 		if elem.GetTSort() == (*element1).GetTSort() {
-			traces[routine1][index].SetTSort((*element2).GetTSort())
+			traces[routine1][index].SetT((*element2).GetTSort())
 		}
 	}
 	for index, elem := range traces[routine2] {
 		if elem.GetTSort() == (*element2).GetTSort() {
-			traces[routine2][index].SetTSort(tSort1)
+			traces[routine2][index].SetT(tSort1)
 			break
 		}
 	}
@@ -252,7 +228,7 @@ func SwitchTimer(element1 *TraceElement, element2 *TraceElement) {
 // 	for routine, localTrace := range traces {
 // 		for _, elem := range localTrace {
 // 			if elem.GetTSort() >= startTime && !contains(excludedRoutines, routine) {
-// 				elem.SetTSortWithoutNotExecuted(elem.GetTSort() + steps)
+// 				elem.SetTWithoutNotExecuted(elem.GetTSort() + steps)
 // 			}
 // 		}
 // 	}
@@ -486,7 +462,7 @@ func ShiftTrace(startTPre int, shift int) bool {
 	for routine, trace := range traces {
 		for index, elem := range trace {
 			if elem.GetTPre() >= startTPre {
-				traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
+				traces[routine][index].SetTWithoutNotExecuted(elem.GetTSort() + shift)
 			}
 		}
 	}
@@ -504,6 +480,9 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 	elemsToShift := make([]TraceElement, 0)
 	minTime := -1
 
+	print("\n\n\n")
+	println("elem: ", (*element).ToString())
+
 	for _, trace := range traces {
 		for _, elem := range trace {
 			if elem.GetTID() == (*element).GetTID() {
@@ -511,6 +490,7 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 			}
 
 			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
+				println("shift: ", elem.ToString(), elem.GetVC().ToString(), (*element).GetVC().ToString())
 				elemsToShift = append(elemsToShift, elem)
 				if minTime == -1 || elem.GetTPre() < minTime {
 					minTime = elem.GetTPre()
@@ -519,11 +499,13 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 		}
 	}
 
-	distance := (*element).GetTPre() - minTime + 1
+	print("\n\n\n")
+
+	distance := (*element).GetTSort() - minTime + 1
 
 	for _, elem := range elemsToShift {
-		tSort := elem.GetTPre()
-		elem.SetTSort(tSort + distance)
+		tSort := elem.GetTSort()
+		elem.SetT(tSort + distance)
 	}
 }
 
@@ -563,13 +545,13 @@ func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, sta
 		}
 	}
 
-	(*element).SetTSort(maxNotMoved + 1)
+	(*element).SetT(maxNotMoved + 1)
 
 	distance := (*element).getTpost() - minTime + 1
 
 	for _, elem := range elemsToShift {
 		tSort := elem.GetTSort()
-		elem.SetTSort(tSort + distance)
+		elem.SetT(tSort + distance)
 	}
 
 }
@@ -646,7 +628,7 @@ func ShiftRoutine(routine int, startTSort int, shift int) bool {
 
 	for index, elem := range traces[routine] {
 		if elem.GetTPre() >= startTSort {
-			traces[routine][index].SetTSortWithoutNotExecuted(elem.GetTSort() + shift)
+			traces[routine][index].SetTWithoutNotExecuted(elem.GetTSort() + shift)
 		}
 	}
 
@@ -677,4 +659,47 @@ func GetPartialTrace(startTime int, endTime int) map[int][]*TraceElement {
 	}
 
 	return result
+}
+
+// MARK: Copy
+
+/*
+ * Copy the current trace
+ * Returns:
+ *   map[int][]traceElement: The copy of the trace
+ */
+func CopyCurrentTrace() map[int][]TraceElement {
+	return CopyTrace(traces)
+}
+
+/*
+ * CopyTrace the given trace
+ * Args:
+ *   original (map[int][]traceElement): The trace to copy
+ * Returns:
+ *   map[int][]traceElement: The copy of the trace
+ */
+func CopyTrace(original map[int][]TraceElement) map[int][]TraceElement {
+	copyTrace := make(map[int][]TraceElement)
+	for routine, trace := range original {
+		copyTrace[routine] = copyTraceRoutine(trace)
+	}
+	return copyTrace
+}
+
+func copyTraceRoutine(trace []TraceElement) []TraceElement {
+	traceCopy := make([]TraceElement, 0)
+	for _, elem := range trace {
+		traceCopy = append(traceCopy, elem.Copy())
+	}
+	return traceCopy
+}
+
+/*
+ * Set the trace
+ * Args:
+ *   trace (map[int][]traceElement): The trace
+ */
+func SetTrace(trace map[int][]TraceElement) {
+	traces = CopyTrace(trace)
 }

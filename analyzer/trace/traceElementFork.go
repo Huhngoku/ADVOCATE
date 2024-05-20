@@ -135,6 +135,15 @@ func (fo *TraceElementFork) GetVC() clock.VectorClock {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (fo *TraceElementFork) SetT(time int) {
+	fo.tPost = time
+}
+
+/*
  * Set the tpre of the element.
  * Args:
  *   tPre (int): The tpre of the element
@@ -159,7 +168,7 @@ func (fo *TraceElementFork) SetTSort(tpost int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (fo *TraceElementFork) SetTSortWithoutNotExecuted(tSort int) {
+func (fo *TraceElementFork) SetTWithoutNotExecuted(tSort int) {
 	fo.SetTPre(tSort)
 	if fo.tPost != 0 {
 		fo.tPost = tSort
@@ -185,4 +194,20 @@ func (fo *TraceElementFork) updateVectorClock() {
 	analysis.Fork(fo.routine, fo.id, currentVCHb, currentVCWmhb)
 
 	fo.vc = currentVCHb[fo.routine].Copy()
+}
+
+/*
+ * Copy the element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (fo *TraceElementFork) Copy() TraceElement {
+	return &TraceElementFork{
+		routine: fo.routine,
+		tPost:   fo.tPost,
+		id:      fo.id,
+		pos:     fo.pos,
+		tID:     fo.tID,
+		vc:      fo.vc.Copy(),
+	}
 }

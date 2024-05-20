@@ -200,6 +200,16 @@ func (wa *TraceElementWait) GetVC() clock.VectorClock {
 // MARK: Setter
 
 /*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (wa *TraceElementWait) SetT(time int) {
+	wa.tPre = time
+	wa.tPost = time
+}
+
+/*
  * Set the tpre of the element.
  * Args:
  *   tPre (int): The tpre of the element
@@ -227,7 +237,7 @@ func (wa *TraceElementWait) SetTSort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (wa *TraceElementWait) SetTSortWithoutNotExecuted(tSort int) {
+func (wa *TraceElementWait) SetTWithoutNotExecuted(tSort int) {
 	wa.SetTPre(tSort)
 	if wa.tPost != 0 {
 		wa.tPost = tSort
@@ -272,4 +282,24 @@ func (wa *TraceElementWait) updateVectorClock() {
 	}
 
 	wa.vc = currentVCHb[wa.routine].Copy()
+}
+
+/*
+ * Copy the element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (wa *TraceElementWait) Copy() TraceElement {
+	return &TraceElementWait{
+		routine: wa.routine,
+		tPre:    wa.tPre,
+		tPost:   wa.tPost,
+		id:      wa.id,
+		opW:     wa.opW,
+		delta:   wa.delta,
+		val:     wa.val,
+		pos:     wa.pos,
+		tID:     wa.tID,
+		vc:      wa.vc.Copy(),
+	}
 }

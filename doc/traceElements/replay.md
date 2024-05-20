@@ -13,7 +13,21 @@ it would most likely get stuck, because the run was altered by the rewrite.
 ## Trace element
 To signal the end of the rewritten trace, the following element is added.
 ```
-X,[tpost]
+X,[tpost],[exitCode]
 ```
 where `X` identifies the element as an replay control element.\
 - [tpost] $\in \mathbb N$: This is the time. It is replaced by the int value of the global counter at the moment when it is supposed to be run
+- [exitCode]: If enabled, the replay will end with this exit code. The exit code can have to following values:
+  - 0: The replay will ended completely without finding a Replay element
+  - 10: Replay Stuck: Long wait time for finishing replay
+  - 11: Replay Stuck: Long wait time for running element
+  - 12: Replay Stuck: No traced operation has been executed for approx. 20s
+  - 13: The program tried to execute an operation, although all elements in the trace have already been executed.
+  - 20: Leak: Leaking unbuffered channel or select was unstuck
+  - 21: Leak: Leaking buffered channel was unstuck
+  - 22: Leak: Leaking Mutex was unstuck
+  - 23: Leak: Leaking Cond was unstuck
+  - 24: Leak: Leaking WaitGroup was unstuck
+  - 30: Send on close
+  - 31: Receive on close
+  - 32: Negative WaitGroup counter

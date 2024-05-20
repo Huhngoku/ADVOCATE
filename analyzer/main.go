@@ -108,6 +108,7 @@ func main() {
 		notNeededRewrites := 0
 		println("Start rewriting trace files...")
 		var rewriteTime time.Duration
+		originalTrace := trace.CopyCurrentTrace()
 		for resultIndex := 0; resultIndex < numberOfResults; resultIndex++ {
 			rewriteStartTime := time.Now()
 
@@ -124,6 +125,8 @@ func main() {
 				numberRewrittenTrace++
 				rewriteTime += time.Now().Sub(rewriteStartTime)
 			}
+
+			trace.SetTrace(originalTrace)
 		}
 
 		err = writeTime(*pathTrace, "AvgRewrite", rewriteTime.Seconds()/float64(numberRewrittenTrace))
@@ -133,7 +136,7 @@ func main() {
 
 		println("Finished Rewrite")
 		println("\n\n\tNumber Results: ", numberOfResults)
-		println(logging.Green, "\tNo need to rewrite: ", notNeededRewrites, logging.Reset)
+		println(logging.Green, "\tNo need/not possible to rewrite: ", notNeededRewrites, logging.Reset)
 		if failedRewrites > 0 {
 			println(logging.Red, "\tFailed rewrites: ", failedRewrites, logging.Reset)
 		} else {
@@ -196,16 +199,6 @@ func writeTime(pathTrace string, name string, time float64) error {
 func rewriteTrace(outMachine string, oldTrace string, newTrace string, resultIndex int,
 	numberOfRoutines int, ignoreAtomics bool) (bool, error) {
 
-	// clear and reread the trace from the file, because it was modified
-	// TODO: try to solve without needing to read the trace again (e.g. deep copy)
-	if trace.GetWasRewritten() {
-		trace.ClearTrace()
-		_, err := io.CreateTraceFromFiles(oldTrace, ignoreAtomics)
-		if err != nil {
-			return false, err
-		}
-	}
-
 	actual, bug, err := io.ReadAnalysisResults(outMachine, resultIndex)
 	if err != nil {
 		return false, err
@@ -216,9 +209,6 @@ func rewriteTrace(outMachine string, oldTrace string, newTrace string, resultInd
 	}
 
 	rewriteNeeded, err := rewriter.RewriteTrace(bug)
-	if rewriteNeeded {
-		trace.SetWasRewritten()
-	}
 
 	if err != nil {
 		return rewriteNeeded, err

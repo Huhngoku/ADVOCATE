@@ -10,11 +10,13 @@ type TraceElement interface {
 	getTpost() int
 	GetTSort() int
 	SetTSort(tSort int)
-	SetTSortWithoutNotExecuted(tSort int)
+	SetT(time int)
+	SetTWithoutNotExecuted(tSort int)
 	GetRoutine() int
 	GetPos() string
 	GetTID() string
 	ToString() string
 	updateVectorClock()
 	GetVC() clock.VectorClock
+	Copy() TraceElement
 }

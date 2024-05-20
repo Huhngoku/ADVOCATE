@@ -33,6 +33,7 @@ type TraceElementAtomic struct {
 	tPost   int
 	id      int
 	opA     opAtomic
+	vc      clock.VectorClock
 }
 
 /*
@@ -153,10 +154,19 @@ func (at *TraceElementAtomic) GetTID() string {
  *   VectorClock: The vector clock of the element
  */
 func (at *TraceElementAtomic) GetVC() clock.VectorClock {
-	return clock.VectorClock{}
+	return at.vc
 }
 
 // MARK: Setter
+
+/*
+ * Set the tPre and tPost of the element
+ * Args:
+ *   time (int): The tPre and tPost of the element
+ */
+func (at *TraceElementAtomic) SetT(time int) {
+	at.tPost = time
+}
 
 /*
  * Set the tpre of the element.
@@ -183,7 +193,7 @@ func (at *TraceElementAtomic) SetTSort(tSort int) {
  * Args:
  *   tSort (int): The timer of the element
  */
-func (at *TraceElementAtomic) SetTSortWithoutNotExecuted(tSort int) {
+func (at *TraceElementAtomic) SetTWithoutNotExecuted(tSort int) {
 	at.SetTPre(tSort)
 	if at.tPost != 0 {
 		at.tPost = tSort
@@ -236,5 +246,22 @@ func (at *TraceElementAtomic) updateVectorClock() {
 		err := "Unknown operation: " + at.ToString()
 		logging.Debug(err, logging.ERROR)
 	}
+	at.vc = currentVCHb[at.routine].Copy()
+}
 
+// MARK: Copy
+
+/*
+ * Copy the atomic element
+ * Returns:
+ *   TraceElement: The copy of the element
+ */
+func (at *TraceElementAtomic) Copy() TraceElement {
+	return &TraceElementAtomic{
+		routine: at.routine,
+		tPost:   at.tPost,
+		id:      at.id,
+		opA:     at.opA,
+		vc:      at.vc.Copy(),
+	}
 }
