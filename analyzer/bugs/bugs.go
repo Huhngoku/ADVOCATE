@@ -69,14 +69,14 @@ func (b Bug) ToString() string {
 		typeStr = "Possible negative waitgroup counter:"
 		arg1Str = "add: "
 		arg2Str = "done: "
-	case ConcurrentRecv:
-		typeStr = "Found concurrent Recv on same channel:"
-		arg1Str = "recv: "
-		arg2Str = "recv: "
 	case SelectWithoutPartner:
 		typeStr = "Possible select case without partner:"
 		arg1Str = "select: "
 		arg2Str = ""
+	case ConcurrentRecv:
+		typeStr = "Found concurrent Recv on same channel:"
+		arg1Str = "recv: "
+		arg2Str = "recv: "
 	case MixedDeadlock:
 		typeStr = "Possible mixed deadlock:"
 		arg1Str = "lock: "
@@ -90,7 +90,11 @@ func (b Bug) ToString() string {
 		arg1Str = "channel: "
 		arg2Str = "partner: "
 	case LeakBufChanPartner:
-		typeStr = "Leak of buffered channel:"
+		typeStr = "Leak of buffered channel with partner:"
+		arg1Str = "channel: "
+		arg2Str = ""
+	case LeakBufChanNoPartner:
+		typeStr = "Leak of buffered channel without partner:"
 		arg1Str = "channel: "
 		arg2Str = ""
 	case LeakMutex:
