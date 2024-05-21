@@ -137,7 +137,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 		found = true
 		resReadable += "\n-------------------- Warning --------------------\n\n"
 		if !noPrint {
-			fmt.Print("-------------------- Warning --------------------\n\n")
+			fmt.Print("\n-------------------- Warning --------------------\n\n")
 		}
 
 		for _, result := range resultsWarning {

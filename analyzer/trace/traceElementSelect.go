@@ -478,7 +478,7 @@ func (se *TraceElementSelect) updateVectorClock() {
 				analysis.VectorClockTID{
 					Vc:  se.vc.Copy(),
 					TID: se.tID},
-				int(c.opC))
+				int(c.opC), c.IsBuffered())
 		}
 	}
 }

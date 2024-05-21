@@ -297,7 +297,7 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
  * Returns:
  *   error: An error if the trace could not be created
  */
-func LeakBufChan(bug bugs.Bug) error {
+func rewriteBufChanLeak(bug bugs.Bug) error {
 	stuck := (*bug.TraceElement1[0])
 	possiblePartner := (*bug.TraceElement2[0])
 	var possiblePartnerPartner *trace.TraceElementChannel

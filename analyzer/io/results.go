@@ -66,22 +66,23 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 		}
 	}
 
-	println("Analysis results read.")
+	println("Analysis results read")
 
 	actual, bug, err := bugs.ProcessBug(errorType, argument1, argument2)
 	if err != nil {
+		println("Error processing bug")
+		println(err.Error())
 		return false, bug, err
 	}
 
 	bug.Println()
+
 	if actual {
 		println("The bug is an actual bug.")
 		println("No rewrite needed.")
 		return true, bug, nil
-	} else {
-		println("The bug is a possible bug.")
-		println("Rewrite needed.")
-		return false, bug, nil
 	}
+
+	return false, bug, nil
 
 }

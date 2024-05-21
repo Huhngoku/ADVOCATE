@@ -22,10 +22,13 @@ const (
 	MixedDeadlock
 	CyclicDeadlock
 
-	LeakUnbufChanPartner   // chan and select
-	LeakUnbufChanNoPartner // chan and select
+	LeakUnbufChanPartner
+	LeakUnbufChanNoPartner
 	LeakBufChanPartner
 	LeakBufChanNoPartner
+	LeakSelectPartnerUnbuf
+	LeakSelectPartnerBuf
+	LeakSelectNoPartner
 	LeakMutex
 	LeakWaitGroup
 	LeakCond
@@ -72,7 +75,7 @@ func (b Bug) ToString() string {
 	case SelectWithoutPartner:
 		typeStr = "Possible select case without partner:"
 		arg1Str = "select: "
-		arg2Str = ""
+		arg2Str = "partner: "
 	case ConcurrentRecv:
 		typeStr = "Found concurrent Recv on same channel:"
 		arg1Str = "recv: "
@@ -92,11 +95,23 @@ func (b Bug) ToString() string {
 	case LeakBufChanPartner:
 		typeStr = "Leak of buffered channel with partner:"
 		arg1Str = "channel: "
-		arg2Str = ""
+		arg2Str = "partner: "
 	case LeakBufChanNoPartner:
 		typeStr = "Leak of buffered channel without partner:"
 		arg1Str = "channel: "
-		arg2Str = ""
+		arg2Str = "partner: "
+	case LeakSelectPartnerUnbuf:
+		typeStr = "Leak of select with unbuffered partner:"
+		arg1Str = "select: "
+		arg2Str = "partner: "
+	case LeakSelectPartnerBuf:
+		typeStr = "Leak of select with buffered partner:"
+		arg1Str = "select: "
+		arg2Str = "partner: "
+	case LeakSelectNoPartner:
+		typeStr = "Leak of select without partner:"
+		arg1Str = "select: "
+		arg2Str = "partner: "
 	case LeakMutex:
 		typeStr = "Leak of mutex:"
 		arg1Str = "mutex: "
@@ -122,6 +137,10 @@ func (b Bug) ToString() string {
 	}
 
 	res += "\n\t" + arg2Str
+
+	if len(b.TID2) == 0 {
+		res += "-"
+	}
 
 	for i, pos := range b.TID2 {
 		if i != 0 {
@@ -160,6 +179,8 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 
 	// println("Process bug: " + typeStr + " " + arg1 + " " + arg2)
 
+	containsArg2 := true
+
 	switch typeStr {
 	case "Possible send on closed channel:":
 		bug.Type = SendOnClosed
@@ -173,24 +194,36 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = DoneBeforeAdd
 	case "Possible select case without partner:":
 		bug.Type = SelectWithoutPartner
+		containsArg2 = false
 	case "Found concurrent Recv on same channel:":
 		bug.Type = ConcurrentRecv
 	case "Possible mixed deadlock:":
 		bug.Type = MixedDeadlock
-	case "Leak on unbuffered channel or select with possible partner:":
+	case "Leak on unbuffered channel with possible partner:":
 		bug.Type = LeakUnbufChanPartner
 	case "Leak on unbuffered channel or select without possible partner:":
 		bug.Type = LeakUnbufChanNoPartner
+		containsArg2 = false
 	case "Leak on buffered channel with possible partner:":
 		bug.Type = LeakBufChanPartner
 	case "Leak on buffered channel without possible partner:":
 		bug.Type = LeakBufChanNoPartner
+		containsArg2 = false
+	case "Leak on select with possible buffered partner:":
+		bug.Type = LeakSelectPartnerBuf
+	case "Leak on select with possible unbuffered partner:":
+		bug.Type = LeakSelectPartnerUnbuf
+	case "Leak on select without possible partner:":
+		bug.Type = LeakSelectNoPartner
+		containsArg2 = false
 	case "Leak on mutex:":
 		bug.Type = LeakMutex
 	case "Leak on wait group:":
 		bug.Type = LeakWaitGroup
+		containsArg2 = false
 	case "Leak on conditional variable:":
 		bug.Type = LeakCond
+		containsArg2 = false
 	case "Possible cyclic deadlock:":
 		bug.Type = CyclicDeadlock
 	default:
@@ -219,7 +252,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug.TraceElement2 = make([]*trace.TraceElement, 0)
 	bug.TID2 = make([]string, 0)
 
-	if arg2 == "" || arg2 == "\t" {
+	if arg2 == "" || arg2 == "\t" || !containsArg2 {
 		return false, bug, nil
 	}
 

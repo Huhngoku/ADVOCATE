@@ -73,8 +73,8 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 	}
 
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[routSend].Copy(), tIDSend}, 0)
-		CheckForLeakChannelRun(id, VectorClockTID{vc[routRecv].Copy(), tIDSend}, 1)
+		CheckForLeakChannelRun(id, VectorClockTID{vc[routSend].Copy(), tIDSend}, 0, false)
+		CheckForLeakChannelRun(id, VectorClockTID{vc[routRecv].Copy(), tIDSend}, 1, false)
 	}
 
 }
@@ -153,7 +153,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 	}
 
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 0)
+		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 0, true)
 	}
 
 	for i, hold := range holdRecv {
@@ -244,7 +244,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 		checkForMixedDeadlock(routSend, rout, tIDSend, tID)
 	}
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
+		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1, true)
 	}
 
 	for i, hold := range holdSend {
@@ -274,8 +274,9 @@ func StuckChan(routine int, vc map[int]clock.VectorClock) {
  * 	tID (string): the position of the close in the program
  * 	vc (map[int]VectorClock): the current vector clocks
  *  tPost (int): the timestamp at the end of the event
+ *  buffered (bool): true if the channel is buffered
  */
-func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int) {
+func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int, buffered bool) {
 	if tPost == 0 {
 		return
 	}
@@ -298,7 +299,7 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	}
 
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 2)
+		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 2, true)
 	}
 }
 
@@ -331,7 +332,7 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		checkForMixedDeadlock(closeRout[id], rout, closeData[id].TID, tID)
 	}
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1)
+		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1, buffered)
 	}
 }
 
