@@ -268,7 +268,7 @@ The replay can end with the following exit codes:
 - 12: Replay Stuck: No traced operation has been executed for approx. 20s
 - 13: The program tried to execute an operation, although all elements in the trace have already been executed.
 - 20: Leak: Leaking unbuffered channel or select was unstuck
-- 21: Leak: Leaking buffered channel was unstuck
+- 21: Leak: Leaking buffered channel or select was unstuck
 - 22: Leak: Leaking Mutex was unstuck
 - 23: Leak: Leaking Cond was unstuck
 - 24: Leak: Leaking WaitGroup was unstuck
