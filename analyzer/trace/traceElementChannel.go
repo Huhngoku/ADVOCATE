@@ -512,7 +512,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 				}
 			}
 		case Close:
-			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost)
+			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost, ch.IsBuffered())
 		default:
 			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)
@@ -538,7 +538,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 		case Close:
 			logging.Debug("Update vector clock of channel operation: "+
 				ch.ToString(), logging.DEBUG)
-			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost)
+			analysis.Close(ch.routine, ch.id, ch.tID, currentVCHb, ch.tPost, ch.IsBuffered())
 		default:
 			err := "Unknown operation: " + ch.ToString()
 			logging.Debug(err, logging.ERROR)

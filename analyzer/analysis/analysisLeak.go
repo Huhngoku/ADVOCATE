@@ -23,55 +23,65 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
 	buffered bool) {
 	logging.Debug("Checking channel for for leak channel", logging.INFO)
 
-	if !buffered {
-		foundPartner := false
+	// if !buffered {
+	foundPartner := false
 
-		if opType == 0 { // send
-			for _, mrr := range mostRecentReceive {
-				if _, ok := mrr[id]; ok {
-					if clock.GetHappensBefore(mrr[id].Vc, vc) == clock.Concurrent {
-						found := "Leak on unbuffered channel or select with possible partner:\n"
-						found += "\tchannel: " + tID + "\n"
-						found += "\tpartner: " + mrr[id].TID
-						logging.Result(found, logging.CRITICAL)
-						foundPartner = true
+	if opType == 0 { // send
+		for _, mrr := range mostRecentReceive {
+			if _, ok := mrr[id]; ok {
+				if clock.GetHappensBefore(mrr[id].Vc, vc) == clock.Concurrent {
+					found := ""
+					if buffered {
+						found = "Leak on buffered channel with possible partner:\n"
+					} else {
+						found = "Leak on unbuffered channel with possible partner:\n"
 					}
+					found += "\tchannel: " + tID + "\n"
+					found += "\tpartner: " + mrr[id].TID
+					logging.Result(found, logging.CRITICAL)
+					foundPartner = true
 				}
 			}
-		} else if opType == 1 { // recv
-			for _, mrs := range mostRecentSend {
-				if _, ok := mrs[id]; ok {
-					if clock.GetHappensBefore(mrs[id].Vc, vc) == clock.Concurrent {
-						found := "Leak on unbuffered channel or select with possible partner:\n"
-						found += "\tchannel: " + tID + "\n"
-						found += "\tpartner: " + mrs[id].TID
-						logging.Result(found, logging.CRITICAL)
-						foundPartner = true
+		}
+	} else if opType == 1 { // recv
+		for _, mrs := range mostRecentSend {
+			if _, ok := mrs[id]; ok {
+				if clock.GetHappensBefore(mrs[id].Vc, vc) == clock.Concurrent {
+					found := ""
+					if buffered {
+						found = "Leak on buffered channel with possible partner:\n"
+					} else {
+						found = "Leak on unbuffered channel with possible partner:\n"
 					}
+					found += "\tchannel: " + tID + "\n"
+					found += "\tpartner: " + mrs[id].TID
+					logging.Result(found, logging.CRITICAL)
+					foundPartner = true
 				}
 			}
-
-			// // This cannot happen:
-			// if _, ok := closeData[id]; ok {
-			// 	found := "Leak on unbuffered channel or select with possible partner:\n"
-			// 	found += "\tchannel: " + tID + "\n"
-			// 	found += "\tpartner: " + closeData[id].tID
-			// 	logging.Result(found, logging.CRITICAL)
-			// 	foundPartner = true
-			// }
 		}
 
-		if !foundPartner {
-			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opType, -1})
-		}
-	} else {
-		// BUG: find possible partners, if there are any
-		// find possible partners
-		found := "Leak on buffered channel without possible partner:\n"
-		found += "\tchannel: " + tID + "\n"
-		found += "\t"
-		logging.Result(found, logging.CRITICAL)
+		// // This cannot happen:
+		// if _, ok := closeData[id]; ok {
+		// 	found := "Leak on unbuffered channel or select with possible partner:\n"
+		// 	found += "\tchannel: " + tID + "\n"
+		// 	found += "\tpartner: " + closeData[id].tID
+		// 	logging.Result(found, logging.CRITICAL)
+		// 	foundPartner = true
+		// }
 	}
+
+	if !foundPartner {
+		leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opType, -1, buffered, false})
+	}
+	// } else {
+	// 	// BUG: find possible partners, if there are any
+	// 	// find possible partners
+	// 	found := "Leak on buffered channel without possible partner:\n"
+	// 	found += "\tchannel: " + tID + "\n"
+	// 	found += "\tpartner: -"
+	// 	logging.Result(found, logging.CRITICAL)
+	// }
 }
 
 /*
@@ -84,8 +94,9 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
  *   vc (VectorClock): The vector clock of the operation
  *   tID (string): The trace id
  *   opType (int): An identifier for the type of the operation (send = 0, recv = 1, close = 2)
+ *   buffered (bool): If the channel is buffered
  */
-func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
+func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int, buffered bool) bool {
 	logging.Debug("Checking channel for for leak channel", logging.INFO)
 	res := false
 	if opType == 0 || opType == 2 { // send or close
@@ -94,7 +105,12 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 				continue
 			}
 			if clock.GetHappensBefore(vcTID2.vc, vcTID.Vc) == clock.Concurrent {
-				found := "Leak on unbuffered channel or select with possible partner:\n"
+				found := ""
+				if buffered {
+					found = "Leak on buffered channel with possible partner:\n"
+				} else {
+					found = "Leak on unbuffered channel with possible partner:\n"
+				}
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.TID
 				logging.Result(found, logging.CRITICAL)
@@ -118,7 +134,12 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 				continue
 			}
 			if clock.GetHappensBefore(vcTID2.vc, vcTID.Vc) == clock.Concurrent {
-				found := "Leak on unbuffered channel or select with possible partner:\n"
+				found := ""
+				if buffered {
+					found = "Leak on buffered channel with possible partner:\n"
+				} else {
+					found = "Leak on unbuffered channel with possible partner:\n"
+				}
 				found += "\tchannel: " + vcTID2.tID + "\n"
 				found += "\tpartner: " + vcTID.TID
 				logging.Result(found, logging.CRITICAL)
@@ -147,6 +168,7 @@ func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int) bool {
 func CheckForLeak() {
 	// channel
 	for _, vcTIDs := range leakingChannels {
+		buffered := false
 		for _, vcTID := range vcTIDs {
 			if vcTID.tID == "" {
 				continue
@@ -166,31 +188,56 @@ func CheckForLeak() {
 				hb := clock.GetHappensBefore(c.vcTID.Vc, vcTID.vc)
 				if hb == clock.Concurrent {
 					found = true
+					if c.buffered {
+						buffered = true
+					}
 					partner = c.vcTID
 					break
 				}
 
 				if c.buffered {
-					{
-						if (c.send && hb == clock.Before) || (!c.send && hb == clock.After) {
-							found = true
-							partner = c.vcTID
-							break
-						}
+					if (c.send && hb == clock.Before) || (!c.send && hb == clock.After) {
+						found = true
+						buffered = true
+						partner = c.vcTID
+						break
 					}
 				}
 			}
 
+			foundStr := ""
 			if found {
-				found := "Leak on unbuffered channel or select with possible partner:\n"
-				found += "\tchannel: " + vcTID.tID + "\n"
-				found += "\tpartner: " + partner.TID
-				logging.Result(found, logging.CRITICAL)
+				if vcTID.sel {
+					if buffered {
+						foundStr = "Leak on select with possible buffered partner:\n"
+					} else {
+						foundStr = "Leak on select with possible unbuffered partner:\n"
+					}
+					foundStr += "\tselect: " + vcTID.tID + "\n"
+				} else {
+					if buffered { // BUG: get unbuffered but should be bufferd
+						foundStr = "Leak on buffered channel with possible partner:\n"
+					} else {
+						foundStr = "Leak on unbuffered channel with possible partner:\n"
+					}
+					foundStr += "\tchannel: " + vcTID.tID + "\n"
+				}
+				foundStr += "\tpartner: " + partner.TID
+				logging.Result(foundStr, logging.CRITICAL)
 			} else {
-				found := "Leak on unbuffered channel or select without possible partner:\n"
-				found += "\tchannel: " + vcTID.tID + "\n"
-				found += "\tpartner: -"
-				logging.Result(found, logging.CRITICAL)
+				if vcTID.sel {
+					foundStr = "Leak on select without possible partner:\n"
+					foundStr += "\tselect: " + vcTID.tID + "\n"
+				} else {
+					if buffered {
+						foundStr = "Leak on buffered channel without possible partner:\n"
+					} else {
+						foundStr = "Leak on unbuffered channel without possible partner:\n"
+					}
+					foundStr += "\tchannel: " + vcTID.tID + "\n"
+				}
+				foundStr += "\tpartner: -"
+				logging.Result(foundStr, logging.CRITICAL)
 			}
 		}
 	}
@@ -204,6 +251,7 @@ func CheckForLeak() {
  * MARK: SelectStuck
  * Args:
  *   ids (int): The channel ids
+ *   buffered ([]bool): If the channels are buffered
  *   vc (VectorClock): The vector clock of the operation
  *   tID (string): The trace id
  *   opTypes ([]int): An identifier for the type of the operations (send = 0, recv = 1)
@@ -211,15 +259,20 @@ func CheckForLeak() {
  *   tPre (int): The tpre of the select operations. Used to connect the operations of the
  *     same select statement in leakingChannels.
  */
-func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opTypes []int, tPre int) {
+func CheckForLeakSelectStuck(ids []int, buffered []bool, vc clock.VectorClock, tID string, opTypes []int, tPre int) {
 	foundPartner := false
 	for i, id := range ids {
 		if opTypes[i] == 0 { // send
 			for _, mrr := range mostRecentReceive {
 				if _, ok := mrr[id]; ok {
 					if clock.GetHappensBefore(vc, mrr[id].Vc) == clock.Concurrent {
-						found := "Leak on unbuffered channel or select with possible partner:\n"
-						found += "\tchannel: " + tID + "\n"
+						found := ""
+						if buffered[i] {
+							found = "Leak on select with possible buffered partner:\n"
+						} else {
+							found = "Leak on select with possible unbuffered partner:\n"
+						}
+						found += "\tselect: " + tID + "\n"
 						found += "\tpartner: " + mrr[id].TID + "\n"
 						logging.Result(found, logging.CRITICAL)
 						foundPartner = true
@@ -230,8 +283,13 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 			for _, mrs := range mostRecentSend {
 				if _, ok := mrs[id]; ok {
 					if clock.GetHappensBefore(vc, mrs[id].Vc) == clock.Concurrent {
-						found := "Leak on unbuffered channel or select with possible partner:\n"
-						found += "\tchannel: " + tID + "\n"
+						found := ""
+						if buffered[i] {
+							found = "Leak on select with possible buffered partner:\n"
+						} else {
+							found = "Leak on select with possible unbuffered partner:\n"
+						}
+						found += "\tselect: " + tID + "\n"
 						found += "\tpartner: " + mrs[id].TID
 						logging.Result(found, logging.CRITICAL)
 						foundPartner = true
@@ -239,8 +297,13 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 				}
 			}
 			if _, ok := closeData[id]; ok {
-				found := "Leak on unbuffered channel or select with possible partner:\n"
-				found += "\tchannel: " + tID + "\n"
+				found := ""
+				if buffered[i] {
+					found = "Leak on select with possible buffered partner:\n"
+				} else {
+					found = "Leak on select with possible unbuffered partner:\n"
+				}
+				found += "\tselect: " + tID + "\n"
 				found += "\tpartner: " + closeData[id].TID
 				logging.Result(found, logging.CRITICAL)
 				foundPartner = true
@@ -252,26 +315,7 @@ func CheckForLeakSelectStuck(ids []int, vc clock.VectorClock, tID string, opType
 		println("No partner found")
 		for i, id := range ids {
 			// add all select operations to leaking Channels,
-			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opTypes[i], tPre})
-		}
-	}
-}
-
-/*
- * Run for select operation with a post event. Check if the operation would be
- * possible communication partner for a stuck operation in leakingChannels.
- * If so, add an error or warning to the result and remove the stuck operation.
- * MARK: SelectRun
- * Args:
- *   id (int): The channel id
- *   vc (VectorClock): The vector clock of the operation
- *   tID (string): The trace id
- *   opType (int): An identifier for the type of the operation (send = 0, recv = 1, close = 2)
- */
-func CheckForLeakSelectRun(ids []int, typeIds []int, vc clock.VectorClock, tID string) {
-	for i, id := range ids {
-		if CheckForLeakChannelRun(id, VectorClockTID{vc, tID}, typeIds[i]) {
-			break
+			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opTypes[i], tPre, buffered[i], true})
 		}
 	}
 }

@@ -8,11 +8,13 @@ type VectorClockTID struct {
 }
 
 type VectorClockTID2 struct {
-	id      int
-	vc      clock.VectorClock
-	tID     string
-	typeVal int
-	val     int
+	id       int
+	vc       clock.VectorClock
+	tID      string
+	typeVal  int
+	val      int
+	buffered bool
+	sel      bool
 }
 
 type allSelectCase struct {

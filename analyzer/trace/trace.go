@@ -320,7 +320,6 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 					opTypes = append(opTypes, 1)
 				}
 			}
-			analysis.CheckForLeakSelectRun(ids, opTypes, currentVCHb[e.routine].Copy(), e.tID)
 			e.updateVectorClock()
 		case *TraceElementWait:
 			logging.Debug("Update vector clock for go operation "+e.ToString()+
@@ -351,18 +350,21 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			case *TraceElementSelect:
 				cases := e.GetCases()
 				ids := make([]int, 0)
+				buffered := make([]bool, 0)
 				opTypes := make([]int, 0)
 				for _, c := range cases {
 					switch c.opC {
 					case Send:
 						ids = append(ids, c.GetID())
 						opTypes = append(opTypes, 0)
+						buffered = append(buffered, c.IsBuffered())
 					case Recv:
 						ids = append(ids, c.GetID())
 						opTypes = append(opTypes, 1)
+						buffered = append(buffered, c.IsBuffered())
 					}
 				}
-				analysis.CheckForLeakSelectStuck(ids, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
+				analysis.CheckForLeakSelectStuck(ids, buffered, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
 			case *TraceElementCond:
 				analysis.CheckForLeakCond(elem.GetTID())
 			}

@@ -120,6 +120,7 @@ func main() {
 				println("Failed to rewrite trace: ", err.Error())
 				failedRewrites++
 			} else if !needed {
+				println("Trace can not be rewritten.")
 				notNeededRewrites++
 			} else { // needed && err == nil
 				numberRewrittenTrace++
@@ -127,6 +128,8 @@ func main() {
 			}
 
 			trace.SetTrace(originalTrace)
+
+			print("\n\n")
 		}
 
 		err = writeTime(*pathTrace, "AvgRewrite", rewriteTime.Seconds()/float64(numberRewrittenTrace))
