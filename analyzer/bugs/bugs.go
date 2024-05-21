@@ -201,7 +201,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = MixedDeadlock
 	case "Leak on unbuffered channel with possible partner:":
 		bug.Type = LeakUnbufChanPartner
-	case "Leak on unbuffered channel or select without possible partner:":
+	case "Leak on unbuffered channel without possible partner:":
 		bug.Type = LeakUnbufChanNoPartner
 		containsArg2 = false
 	case "Leak on buffered channel with possible partner:":
