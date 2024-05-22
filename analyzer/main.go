@@ -53,11 +53,23 @@ func main() {
 		*noRewrite = true
 	}
 
-	folder := filepath.Dir(*pathTrace) + string(os.PathSeparator)
+	folderTrace, err := filepath.Abs(*pathTrace)
+	if err != nil {
+		panic(err)
+	}
+
+	print("folderTrace: ", folderTrace, "\n")
+
+	// remove last folder from path
+	folderTrace = folderTrace[:strings.LastIndex(folderTrace, string(os.PathSeparator))+1]
+
+	println("Trace folder: ", folderTrace)
+	print("\n\n\n")
+
 	if *resultFolder != "" {
-		folder = *resultFolder
-		if folder[len(folder)-1] != os.PathSeparator {
-			folder += string(os.PathSeparator)
+		folderTrace = *resultFolder
+		if folderTrace[len(folderTrace)-1] != os.PathSeparator {
+			folderTrace += string(os.PathSeparator)
 		}
 	}
 
@@ -66,9 +78,10 @@ func main() {
 		panic(err)
 	}
 
-	outMachine := folder + "results_machine.log"
-	outReadable := folder + "results_readable.log"
-	newTrace := folder + "rewritten_trace"
+	outMachine := folderTrace + "results_machine.log"
+	outReadable := folderTrace + "results_readable.log"
+	newTrace := folderTrace + "rewritten_trace"
+	println(folderTrace)
 
 	// run the analysis and, if requested, create a reordered trace file
 	// based on the analysis results
@@ -97,7 +110,7 @@ func main() {
 	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
 	analysisFinishedTime := time.Now()
-	err = writeTime(*pathTrace, "Analysis", analysisFinishedTime.Sub(startTime).Seconds())
+	err = writeTime(folderTrace, "Analysis", analysisFinishedTime.Sub(startTime).Seconds())
 	if err != nil {
 		println("Could not write time to file: ", err.Error())
 	}
@@ -132,7 +145,7 @@ func main() {
 			print("\n\n")
 		}
 
-		err = writeTime(*pathTrace, "AvgRewrite", rewriteTime.Seconds()/float64(numberRewrittenTrace))
+		err = writeTime(folderTrace, "AvgRewrite", rewriteTime.Seconds()/float64(numberRewrittenTrace))
 		if err != nil {
 			println("Could not write time to file: ", err.Error())
 		}

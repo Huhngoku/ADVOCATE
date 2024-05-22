@@ -482,9 +482,6 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 	elemsToShift := make([]TraceElement, 0)
 	minTime := -1
 
-	print("\n\n\n")
-	println("elem: ", (*element).ToString())
-
 	for _, trace := range traces {
 		for _, elem := range trace {
 			if elem.GetTID() == (*element).GetTID() {
@@ -492,7 +489,6 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 			}
 
 			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
-				println("shift: ", elem.ToString(), elem.GetVC().ToString(), (*element).GetVC().ToString())
 				elemsToShift = append(elemsToShift, elem)
 				if minTime == -1 || elem.GetTPre() < minTime {
 					minTime = elem.GetTPre()
