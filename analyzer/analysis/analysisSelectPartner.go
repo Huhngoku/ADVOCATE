@@ -53,7 +53,7 @@ func CheckForSelectCaseWithoutPartner() {
 		if c.id == -1 {
 			stuckCase += "*"
 		} else {
-			strconv.Itoa(c.id)
+			stuckCase += strconv.Itoa(c.id)
 		}
 		if c.send {
 			stuckCase += ",S"
