@@ -28,24 +28,25 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 
 	i := 0
 	for _, ca := range *cases {
-		if ca.c == nil { // ignore nil cases
-			continue
-		}
-
 		if len(caseElements) > 0 {
 			caseElements += "~"
 		}
 
 		chanOp := "R"
-		if lockOrder[i] < uint16(nsends) {
+		if i < len(lockOrder) && lockOrder[i] < uint16(nsends) {
 			chanOp = "S"
 		}
 
-		i++
+		if ca.c == nil { // ignore nil cases
+			caseElements += "C." + uint64ToString(timer) + ".0.*." + chanOp + ".f.0.0"
+		} else {
 
-		caseElements += "C." + uint64ToString(timer) + ".0." +
-			uint64ToString(ca.c.id) + "." + chanOp + ".f.0." +
-			uint32ToString(uint32(ca.c.dataqsiz))
+			i++
+
+			caseElements += "C." + uint64ToString(timer) + ".0." +
+				uint64ToString(ca.c.id) + "." + chanOp + ".f.0." +
+				uint32ToString(uint32(ca.c.dataqsiz))
+		}
 	}
 
 	if !block {
@@ -94,7 +95,6 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 		// set tpost and cl of chosen case
 
 		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
-		// BUG: index out of range if cases in select are nil
 		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndex], '.', []int{2, 3, 4, 5, 6, 7})
 		chosenCaseSplit[1] = uint64ToString(timer)
 		if rClosed {
@@ -116,6 +116,8 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	split[3] = mergeStringSep(cases, "~")
 	split[4] = uint32ToString(uint32(chosenIndex))
 	elem = mergeString(split)
+
+	println(elem)
 
 	currentGoRoutine().updateElement(index, elem)
 }
