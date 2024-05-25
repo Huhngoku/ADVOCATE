@@ -12,10 +12,11 @@ var advocateCounterAtomic uint64
  * 	id: id of the channel
  * 	opId: id of the operation
  * 	qSize: size of the channel, 0 for unbuffered
+ * 	isNil: true if the channel is nil
  * Return:
  * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
-func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
+func AdvocateChanSendPre(id uint64, opID uint64, qSize uint, isNil bool) int {
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
@@ -26,9 +27,15 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint) int {
 		return -1
 	}
 	timer := GetNextTimeStep()
-	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",S,f," +
-		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
-		file + ":" + intToString(line)
+
+	elem := "C," + uint64ToString(timer) + ",0,"
+	if isNil {
+		elem += "*,S,f,0,0," + file + ":" + intToString(line)
+	} else {
+		elem += uint64ToString(id) + ",S,f," +
+			uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
+			file + ":" + intToString(line)
+	}
 
 	return insertIntoTrace(elem, false)
 }
@@ -54,10 +61,11 @@ func isSuffix(s, suffix string) bool {
  * 	id: id of the channel
  * 	opId: id of the operation
  * 	qSize: size of the channel
+ * 	isNil: true if the channel is nil
  * Return:
  * 	index of the operation in the trace
  */
-func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
+func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint, isNil bool) int {
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
 	if isSuffix(file, "advocate_trace.go") {
@@ -65,9 +73,14 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint) int {
 	}
 
 	timer := GetNextTimeStep()
-	elem := "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",R,f," +
-		uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
-		file + ":" + intToString(line)
+	elem := "C," + uint64ToString(timer) + ",0,"
+	if isNil {
+		elem += "*,R,f,0,0," + file + ":" + intToString(line)
+	} else {
+		elem += "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",R,f," +
+			uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
+			file + ":" + intToString(line)
+	}
 	return insertIntoTrace(elem, false)
 }
 

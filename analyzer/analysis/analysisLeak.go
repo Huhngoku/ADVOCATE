@@ -23,6 +23,14 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
 	buffered bool) {
 	logging.Debug("Checking channel for for leak channel", logging.INFO)
 
+	if id == -1 {
+		found := "Leak on nil channel:\n"
+		found += "\tChannel: " + tID + "\n"
+		found += "\tPartner: -"
+		logging.Result(found, logging.CRITICAL)
+		return
+	}
+
 	// if !buffered {
 	foundPartner := false
 
@@ -97,7 +105,7 @@ func CheckForLeakChannelStuck(id int, vc clock.VectorClock, tID string, opType i
  *   buffered (bool): If the channel is buffered
  */
 func CheckForLeakChannelRun(id int, vcTID VectorClockTID, opType int, buffered bool) bool {
-	logging.Debug("Checking channel for for leak channel", logging.INFO)
+	logging.Debug("Checking channel for for leak channels", logging.INFO)
 	res := false
 	if opType == 0 || opType == 2 { // send or close
 		for i, vcTID2 := range leakingChannels[id] {
@@ -261,6 +269,15 @@ func CheckForLeak() {
  */
 func CheckForLeakSelectStuck(ids []int, buffered []bool, vc clock.VectorClock, tID string, opTypes []int, tPre int) {
 	foundPartner := false
+
+	if len(ids) == 0 {
+		found := "Leak on select with only nil channels:\n"
+		found += "\tselect: " + tID + "\n"
+		found += "\tpartner: -"
+		logging.Result(found, logging.CRITICAL)
+		return
+	}
+
 	for i, id := range ids {
 		if opTypes[i] == 0 { // send
 			for _, mrr := range mostRecentReceive {

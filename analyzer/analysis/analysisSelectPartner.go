@@ -49,14 +49,19 @@ func CheckForSelectCaseWithoutPartner() {
 			continue
 		}
 
-		stuckCase := "case: " + strconv.Itoa(c.id) + ","
-		if c.send {
-			stuckCase += "S"
+		stuckCase := "case: "
+		if c.id == -1 {
+			stuckCase += "*"
 		} else {
-			stuckCase += "R"
+			strconv.Itoa(c.id)
+		}
+		if c.send {
+			stuckCase += ",S"
+		} else {
+			stuckCase += ",R"
 		}
 
-		logging.Result("Possible select case without partner:\n\tselect: "+
+		logging.Result("Possible select case without partner or nil case:\n\tselect: "+
 			c.vcTID.TID+"\n\t"+stuckCase+"\n", logging.WARNING)
 	}
 }

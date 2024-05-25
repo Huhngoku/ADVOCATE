@@ -54,6 +54,7 @@ type TraceElementSelect struct {
  */
 func AddTraceElementSelect(routine int, tPre string,
 	tPost string, id string, cases string, chosenIndex string, pos string) error {
+
 	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -91,6 +92,10 @@ func AddTraceElementSelect(routine int, tPre string,
 	containsDefault := false
 	chosenDefault := false
 	for _, c := range cs {
+		if c == "" {
+			continue
+		}
+
 		if c == "d" {
 			containsDefault = true
 			break
@@ -111,9 +116,14 @@ func AddTraceElementSelect(routine int, tPre string,
 		if err != nil {
 			return errors.New("c_tpost is not an integer")
 		}
-		cID, err := strconv.Atoi(caseList[3])
-		if err != nil {
-			return errors.New("c_id is not an integer")
+
+		cID := -1
+		if caseList[3] != "*" {
+			cID, err = strconv.Atoi(caseList[3])
+			if err != nil {
+				println("Error: " + caseList[3])
+				return errors.New("c_id is not an integer")
+			}
 		}
 		var cOpC = Send
 		if caseList[4] == "R" {

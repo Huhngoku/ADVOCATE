@@ -75,6 +75,7 @@ type TraceElementChannel struct {
 func AddTraceElementChannel(routine int, tPre string,
 	tPost string, id string, opC string, cl string, oID string, qSize string,
 	pos string) error {
+
 	tPreInt, err := strconv.Atoi(tPre)
 	if err != nil {
 		return errors.New("tpre is not an integer")
@@ -85,9 +86,12 @@ func AddTraceElementChannel(routine int, tPre string,
 		return errors.New("tpost is not an integer")
 	}
 
-	idInt, err := strconv.Atoi(id)
-	if err != nil {
-		return errors.New("id is not an integer")
+	idInt := -1
+	if id != "*" {
+		idInt, err = strconv.Atoi(id)
+		if err != nil {
+			return errors.New("id is not an integer")
+		}
 	}
 
 	var opCInt OpChannel

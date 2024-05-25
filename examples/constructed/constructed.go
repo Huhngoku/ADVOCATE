@@ -1090,30 +1090,15 @@ func n56() {
 // MARK: FOR TESTING
 func nTest() {
 	c := make(chan int, 0)
-	wg := sync.WaitGroup{}
 
-	go func() {
-		wg.Add(1)
-	}()
+	c = nil
 
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		wg.Done()
-	}()
+	select {
+	case c <- 2:
+	default:
+	}
 
-	go func() {
-		c <- 1
-	}()
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		close(c)
-	}()
-
-	<-c
-	wg.Wait()
-
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 }
 

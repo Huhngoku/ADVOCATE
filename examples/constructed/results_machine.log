@@ -1,9 +1,3 @@
-Possible send on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1110@53
-	send: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1105@48
-Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1096@47; 
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1101@55; 
-Possible receive on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1110@53
-	recv : /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1113@45
+Possible select case without partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1097@41
+	case: *,S

@@ -58,13 +58,8 @@ func main() {
 		panic(err)
 	}
 
-	print("folderTrace: ", folderTrace, "\n")
-
 	// remove last folder from path
 	folderTrace = folderTrace[:strings.LastIndex(folderTrace, string(os.PathSeparator))+1]
-
-	println("Trace folder: ", folderTrace)
-	print("\n\n\n")
 
 	if *resultFolder != "" {
 		folderTrace = *resultFolder
@@ -81,7 +76,6 @@ func main() {
 	outMachine := folderTrace + "results_machine.log"
 	outReadable := folderTrace + "results_readable.log"
 	newTrace := folderTrace + "rewritten_trace"
-	println(folderTrace)
 
 	// run the analysis and, if requested, create a reordered trace file
 	// based on the analysis results
@@ -119,7 +113,7 @@ func main() {
 		numberRewrittenTrace := 0
 		failedRewrites := 0
 		notNeededRewrites := 0
-		println("Start rewriting trace files...")
+		println("\n\nStart rewriting trace files...")
 		var rewriteTime time.Duration
 		originalTrace := trace.CopyCurrentTrace()
 		for resultIndex := 0; resultIndex < numberOfResults; resultIndex++ {
@@ -152,13 +146,13 @@ func main() {
 
 		println("Finished Rewrite")
 		println("\n\n\tNumber Results: ", numberOfResults)
+		println(logging.Green, "\tSuccessfully rewrites: ", numberRewrittenTrace, logging.Reset)
 		println(logging.Green, "\tNo need/not possible to rewrite: ", notNeededRewrites, logging.Reset)
 		if failedRewrites > 0 {
 			println(logging.Red, "\tFailed rewrites: ", failedRewrites, logging.Reset)
 		} else {
 			println(logging.Green, "\tFailed rewrites: ", failedRewrites, logging.Reset)
 		}
-		println(logging.Green, "\tSuccessfully rewrites: ", numberRewrittenTrace, logging.Reset)
 	}
 }
 

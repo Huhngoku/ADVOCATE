@@ -49,7 +49,10 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 	}
 
 	if !block {
-		caseElements += "~d"
+		if i > 0 {
+			caseElements += "~"
+		}
+		caseElements += "d"
 	}
 
 	elem := "S," + uint64ToString(timer) + ",0," + uint64ToString(id) + "," +
@@ -68,8 +71,7 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
  * 	rClosed: true if the channel was closed at another routine
  */
 func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
-
-	if index == -1 || c == nil {
+	if index == -1 {
 		return
 	}
 
@@ -130,10 +132,6 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 * 	index of the operation in the trace
  */
 func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
-	if c == nil {
-		return -1
-	}
-
 	id := GetAdvocateObjectID()
 	timer := GetNextTimeStep()
 
@@ -142,8 +140,14 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
 		opChan = "S"
 	}
 
-	caseElements := "C." + uint64ToString(timer) + ".0." + uint64ToString(c.id) +
-		"." + opChan + ".f.0." + uint32ToString(uint32(c.dataqsiz))
+	caseElements := ""
+
+	if c != nil {
+		caseElements = "C." + uint64ToString(timer) + ".0." + uint64ToString(c.id) +
+			"." + opChan + ".f.0." + uint32ToString(uint32(c.dataqsiz))
+	} else {
+		caseElements = "C." + uint64ToString(timer) + ".0.*." + opChan + ".f.0.0"
+	}
 
 	_, file, line, _ := Caller(2)
 
@@ -190,8 +194,9 @@ func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
 		}
 		cases[0] = mergeStringSep(chosenCaseSplit, ".")
 		split[4] = "0"
+
 	} else { // default case
-		cases[1] = "D"
+		cases[len(cases)-1] = "D" // can have only one element if c == nil
 		split[4] = "-1"
 	}
 	split[3] = mergeStringSep(cases, "~")

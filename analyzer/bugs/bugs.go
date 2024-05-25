@@ -29,6 +29,8 @@ const (
 	LeakSelectPartnerUnbuf
 	LeakSelectPartnerBuf
 	LeakSelectNoPartner
+	LeakSelectNil
+	LeakChanNil
 	LeakMutex
 	LeakWaitGroup
 	LeakCond
@@ -73,7 +75,7 @@ func (b Bug) ToString() string {
 		arg1Str = "add: "
 		arg2Str = "done: "
 	case SelectWithoutPartner:
-		typeStr = "Possible select case without partner:"
+		typeStr = "Possible select case without partner or nil case:"
 		arg1Str = "select: "
 		arg2Str = "partner: "
 	case ConcurrentRecv:
@@ -88,10 +90,14 @@ func (b Bug) ToString() string {
 		typeStr = "Possible cyclic deadlock:"
 		arg1Str = "lock: "
 		arg2Str = "cycle: "
-	case LeakUnbufChanPartner, LeakUnbufChanNoPartner:
-		typeStr = "Leak of unbuffered channel:"
+	case LeakUnbufChanPartner:
+		typeStr = "Leak of unbuffered channel with partner:"
 		arg1Str = "channel: "
 		arg2Str = "partner: "
+	case LeakUnbufChanNoPartner:
+		typeStr = "Leak of unbuffered channel without:"
+		arg1Str = "channel: "
+		arg2Str = ""
 	case LeakBufChanPartner:
 		typeStr = "Leak of buffered channel with partner:"
 		arg1Str = "channel: "
@@ -99,7 +105,7 @@ func (b Bug) ToString() string {
 	case LeakBufChanNoPartner:
 		typeStr = "Leak of buffered channel without partner:"
 		arg1Str = "channel: "
-		arg2Str = "partner: "
+		arg2Str = ""
 	case LeakSelectPartnerUnbuf:
 		typeStr = "Leak of select with unbuffered partner:"
 		arg1Str = "select: "
@@ -111,7 +117,15 @@ func (b Bug) ToString() string {
 	case LeakSelectNoPartner:
 		typeStr = "Leak of select without partner:"
 		arg1Str = "select: "
-		arg2Str = "partner: "
+		arg2Str = ""
+	case LeakSelectNil:
+		typeStr = "Leak of select with only nil channels:"
+		arg1Str = "select: "
+		arg2Str = ""
+	case LeakChanNil:
+		typeStr = "Leak of nil channel:"
+		arg1Str = "channel: "
+		arg2Str = ""
 	case LeakMutex:
 		typeStr = "Leak of mutex:"
 		arg1Str = "mutex: "
@@ -192,7 +206,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = CloseOnClosed
 	case "Possible negative waitgroup counter:":
 		bug.Type = DoneBeforeAdd
-	case "Possible select case without partner:":
+	case "Possible select case without partner or nil case:":
 		bug.Type = SelectWithoutPartner
 		containsArg2 = false
 	case "Found concurrent Recv on same channel:":
@@ -215,6 +229,12 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = LeakSelectPartnerUnbuf
 	case "Leak on select without possible partner:":
 		bug.Type = LeakSelectNoPartner
+		containsArg2 = false
+	case "Leak on select with only nil channels:":
+		bug.Type = LeakSelectNil
+		containsArg2 = false
+	case "Leak on nil channel:":
+		bug.Type = LeakChanNil
 		containsArg2 = false
 	case "Leak on mutex:":
 		bug.Type = LeakMutex

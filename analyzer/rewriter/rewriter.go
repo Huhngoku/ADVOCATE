@@ -81,6 +81,10 @@ func RewriteTrace(bug bugs.Bug) (bool, error) {
 		err = rewriteBufChanLeak(bug)
 	case bugs.LeakSelectNoPartner:
 		err = errors.New("No possible partner for stuck select found. Cannot rewrite trace.")
+	case bugs.LeakSelectNil:
+		err = errors.New("All channels in select are nil. Cannot rewrite trace.")
+	case bugs.LeakChanNil:
+		err = errors.New("Leak on nil channel. Cannot rewrite trace.")
 	case bugs.LeakMutex:
 		rewriteNeeded = true
 		err = rewriteMutexLeak(bug)

@@ -197,6 +197,9 @@ func chansend1(c *hchan, elem unsafe.Pointer) {
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored bool) bool {
 	// ADVOCATE-CHANGE-END
 	if c == nil {
+		if !ignored {
+			AdvocateChanSendPre(0, 0, 0, true)
+		}
 		if !block {
 			return false
 		}
@@ -224,7 +227,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 				lock(&c.numberSendMutex)
 				c.numberSend++
 				unlock(&c.numberSendMutex)
-				_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
+				_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz, false)
 				BlockForever()
 			}
 		}
@@ -275,7 +278,7 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 		lock(&c.numberSendMutex)
 		c.numberSend++
 		unlock(&c.numberSendMutex)
-		advocateIndex = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
+		advocateIndex = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz, false)
 	}
 	// ADVOCATE-CHANGE-END
 
@@ -602,6 +605,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 	}
 
 	if c == nil {
+		if !ignored {
+			AdvocateChanRecvPre(0, 0, 0, true)
+		}
 		if !block {
 			return
 		}
@@ -621,7 +627,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 				lock(&c.numberRecvMutex)
 				c.numberRecv++
 				unlock(&c.numberRecvMutex)
-				_ = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+				_ = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz, false)
 				BlockForever()
 			}
 		}
@@ -643,7 +649,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 			// Because a channel cannot be reopened, the later observation of the channel
 			// being not closed implies that it was also not closed at the moment of the
 			// first observation. We behave as if we observed the channel at that moment
-			// and report that the receive cannot proceed.
+			// and report that th,e receive cannot proceed.
 			return
 		}
 		// The channel is irreversibly closed. Re-check whether the channel has any pending data
@@ -685,7 +691,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool, ignored bool) (selected, 
 		lock(&c.numberRecvMutex)
 		c.numberRecv++
 		unlock(&c.numberRecvMutex)
-		advocateIndex = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz)
+		advocateIndex = AdvocateChanRecvPre(c.id, c.numberRecv, c.dataqsiz, false)
 		defer AdvocateChanPost(advocateIndex)
 	}
 	// ADVOCATE-CHANGE-END
@@ -906,33 +912,32 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	// would try to lock a mutex which is a member of a nil element.
 	// This would lead to a SIGSEGV
 	if c != nil && !c.advocateIgnore {
-		if c == nil {
-			return false
-		}
 		var replayElem ReplayElement
 		var enabled bool
 		var valid bool
-		if !c.advocateIgnore {
+		if c != nil && !c.advocateIgnore {
 			enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
 			if enabled && valid {
 				if replayElem.Blocked {
 					lock(&c.numberSendMutex)
 					c.numberSend++
 					unlock(&c.numberSendMutex)
-					_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
+					_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz, false)
 					BlockForever()
 				}
 			}
 		}
-		advocateIndex := AdvocateSelectPreOneNonDef(c, true)
-		res := chansend(c, elem, false, getcallerpc(), true)
+	}
+
+	advocateIndex := AdvocateSelectPreOneNonDef(c, true)
+	res := chansend(c, elem, false, getcallerpc(), true)
+	if c != nil {
 		lock(&c.numberSendMutex)
 		defer unlock(&c.numberSendMutex)
-		AdvocateSelectPostOneNonDef(advocateIndex, res, c)
-		return res
 	}
-	return chansend(c, elem, false, getcallerpc(), false)
+	AdvocateSelectPostOneNonDef(advocateIndex, res, c)
 
+	return res
 	// ADVOCATE-CHANGE-END
 }
 
@@ -956,9 +961,6 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	// ADVOCATE-CHANGE-START
 	// see selectnbsend
 	if c != nil && !c.advocateIgnore {
-		if c == nil {
-			return false, false
-		}
 		var replayElem ReplayElement
 		var enabled bool
 		var valid bool
@@ -969,20 +971,20 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 					lock(&c.numberSendMutex)
 					c.numberSend++
 					unlock(&c.numberSendMutex)
-					_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz)
+					_ = AdvocateSelectPreOneNonDef(c, false)
 					BlockForever()
 				}
 			}
 		}
-		advocateIndex := AdvocateSelectPreOneNonDef(c, false)
-		res, recv := chanrecv(c, elem, false, true)
+	}
+	advocateIndex := AdvocateSelectPreOneNonDef(c, false)
+	res, recv := chanrecv(c, elem, false, true)
+	if c != nil {
 		lock(&c.numberRecvMutex)
 		defer unlock(&c.numberRecvMutex)
-		AdvocateSelectPostOneNonDef(advocateIndex, res, c)
-		return res, recv
 	}
-
-	return chanrecv(c, elem, false, false)
+	AdvocateSelectPostOneNonDef(advocateIndex, res, c)
+	return res, recv
 
 	// ADVOCATE-CHANGE-END
 }
