@@ -82,11 +82,13 @@ func (gi *AdvocateRoutine) addToTrace(elem string) int {
 func IgnoreAtomicOperations() {
 	atomicRecordingDisabled = true
 	sum := 0
+	lock(&AdvocateRoutinesLock)
 	for _, routine := range AdvocateRoutines {
 		println("Delete ", len(routine.Atomics), " atomic operations")
 		sum += len(routine.Atomics)
 		routine.Atomics = nil
 	}
+	unlock(&AdvocateRoutinesLock)
 	println("Deleted ", sum, " atomic operations")
 	GC() // run the garbage collector
 }
