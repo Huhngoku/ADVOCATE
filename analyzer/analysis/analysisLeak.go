@@ -329,7 +329,6 @@ func CheckForLeakSelectStuck(ids []int, buffered []bool, vc clock.VectorClock, t
 	}
 
 	if !foundPartner {
-		println("No partner found")
 		for i, id := range ids {
 			// add all select operations to leaking Channels,
 			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{id, vc, tID, opTypes[i], tPre, buffered[i], true})

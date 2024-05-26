@@ -42,7 +42,7 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 			if mrr[id].TID != "" && (happensBefore == clock.Concurrent || happensBefore == clock.Before) {
 				found := "Possible receive on closed channel:\n"
 				found += "\tclose: " + pos + "\n"
-				found += "\trecv : " + mrr[id].TID
+				found += "\trecv: " + mrr[id].TID
 				logging.Result(found, logging.WARNING)
 			}
 		}
@@ -51,9 +51,13 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 }
 
 func foundReceiveOnClosedChannel(posClose string, posRecv string) {
+	if posClose == "" || posRecv == "" || posClose == "\n" || posRecv == "\n" {
+		return
+	}
+
 	found := "Found receive on closed channel:\n"
 	found += "\tclose: " + posClose + "\n"
-	found += "\trecv : " + posRecv
+	found += "\trecv: " + posRecv
 	logging.Result(found, logging.WARNING)
 }
 
@@ -66,6 +70,10 @@ func foundReceiveOnClosedChannel(posClose string, posRecv string) {
  */
 func checkForClosedOnClosed(id int, pos string) {
 	if posOld, ok := closeData[id]; ok {
+		if posOld.TID == "" || posOld.TID == "\n" || pos == "" || pos == "\n" {
+			return
+		}
+
 		found := "Found close on closed channel:\n"
 		found += "\tclose: " + pos + "\n"
 		found += "\tclose: " + posOld.TID

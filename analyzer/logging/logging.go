@@ -66,6 +66,16 @@ Args:
 	level: level of the message
 */
 func Result(message string, level resultLevel) {
+	// check if the message is valis
+	resSplit := strings.Split(message, "\n")
+	if len(resSplit) < 2 {
+		return
+	}
+	resSplitSplit := strings.Split(resSplit[1], ":")
+	if len(resSplitSplit) < 2 || resSplitSplit[1] == "" || resSplitSplit[1] == " " || resSplitSplit[1] == "\n" {
+		return
+	}
+
 	foundBug = true
 	if level == WARNING {
 		if !utils.Contains(resultsWarning, message) {

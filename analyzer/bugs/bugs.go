@@ -12,7 +12,7 @@ type BugType int
 const (
 	SendOnClosed BugType = iota
 	PosRecvOnClosed
-	RecvOnClosed // actual send on closed
+	RecvOnClosed
 	CloseOnClosed
 	DoneBeforeAdd
 	SelectWithoutPartner
@@ -186,14 +186,14 @@ func (b Bug) Println() {
 func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug := Bug{}
 
-	actual := strings.Split(typeStr, " ")[0]
-	if actual != "Possible" && actual != "Leak" {
-		return true, bug, nil
-	}
-
-	// println("Process bug: " + typeStr + " " + arg1 + " " + arg2)
+	// actual := strings.Split(typeStr, " ")[0]
+	// if actual != "Possible" && actual != "Leak" {
+	// 	bug.T
+	// 	return true, bug, nil
+	// }
 
 	containsArg2 := true
+	actual := false
 
 	switch typeStr {
 	case "Possible send on closed channel:":
@@ -202,8 +202,10 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		bug.Type = PosRecvOnClosed
 	case "Found receive on closed channel:":
 		bug.Type = RecvOnClosed
+		actual = true
 	case "Found close on closed channel:":
 		bug.Type = CloseOnClosed
+		actual = true
 	case "Possible negative waitgroup counter:":
 		bug.Type = DoneBeforeAdd
 	case "Possible select case without partner or nil case:":
@@ -211,6 +213,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		containsArg2 = false
 	case "Found concurrent Recv on same channel:":
 		bug.Type = ConcurrentRecv
+		actual = true
 	case "Possible mixed deadlock:":
 		bug.Type = MixedDeadlock
 	case "Leak on unbuffered channel with possible partner:":
@@ -247,7 +250,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	case "Possible cyclic deadlock:":
 		bug.Type = CyclicDeadlock
 	default:
-		return false, bug, errors.New("Unknown bug type: " + typeStr)
+		return actual, bug, errors.New("Unknown bug type: " + typeStr)
 	}
 
 	bug.TraceElement2 = make([]*trace.TraceElement, 0)
@@ -263,7 +266,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
 			println("Could not find: " + tID + " in trace")
-			return false, bug, err
+			return actual, bug, err
 		}
 		bug.TraceElement1 = append(bug.TraceElement1, elem)
 		bug.TID1 = append(bug.TID1, tID)
@@ -273,7 +276,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 	bug.TID2 = make([]string, 0)
 
 	if arg2 == "" || arg2 == "\t" || !containsArg2 {
-		return false, bug, nil
+		return actual, bug, nil
 	}
 
 	elems = strings.Split(arg2, ": ")[1]
@@ -284,11 +287,11 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		}
 		elem, err := trace.GetTraceElementFromTID(tID)
 		if err != nil {
-			return false, bug, err
+			return actual, bug, err
 		}
 		bug.TraceElement2 = append(bug.TraceElement2, elem)
 		bug.TID2 = append(bug.TID2, tID)
 	}
 
-	return false, bug, nil
+	return actual, bug, nil
 }
