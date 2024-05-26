@@ -117,8 +117,6 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	split[4] = uint32ToString(uint32(chosenIndex))
 	elem = mergeString(split)
 
-	println(elem)
-
 	currentGoRoutine().updateElement(index, elem)
 }
 
