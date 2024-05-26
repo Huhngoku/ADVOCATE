@@ -214,7 +214,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 		}
 		if !found {
 			err := "Read operation on wrong buffer position - ID: " + strconv.Itoa(id) + ", OID: " + strconv.Itoa(oID) + ", SIZE: " + strconv.Itoa(size)
-			logging.Debug(err, logging.ERROR)
+			logging.Debug(err, logging.INFO)
 		}
 	}
 	v := bufferedVCs[id][0].vc

@@ -267,7 +267,9 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 	// T = T1 ++ [f] ++ T2 ++ [g] ++ T3 ++ [e]
 
 	// remove the potential partner partner from the trace
-	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+	if possiblePartnerPartner != nil {
+		trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+	}
 
 	// find communication
 	for _, c := range stuck.GetCases() {
@@ -343,8 +345,9 @@ func rewriteBufChanLeak(bug bugs.Bug) error {
 	}
 
 	// T = T1 ++ [g] ++ T2 ++ [e]
-
-	trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+	if possiblePartnerPartner != nil {
+		trace.RemoveElementFromTrace(possiblePartnerPartner.GetTID())
+	}
 
 	// T = T1 ++ T2 ++ [e]
 
