@@ -14,13 +14,13 @@ Possible receive on closed channel:
 	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
 	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1103@43
 Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@77; 
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@80; 
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@77;
+	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@80;
 ```
-Each found problem consist of three lines. The first line explains the 
-type of the found bug. The other two line contain the information about the 
-elements responsible for the problem. The elements always have the 
-form of 
+Each found problem consist of three lines. The first line explains the
+type of the found bug. The other two line contain the information about the
+elements responsible for the problem. The elements always have the
+form of
 ```
 [type]: [file]:[line]@[tPre]
 ```
@@ -28,7 +28,7 @@ form of
 
 ## Results
 The following is a list of possible elements in the result file.
-The results for cyclic and mixed deadlocks are currently disabled and therefore 
+The results for cyclic and mixed deadlocks are currently disabled and therefore
 not described.
 
 ## Receive on close
@@ -149,7 +149,7 @@ The second line is empty.
 ## Select case without partner
 A select case without partner has the following form:
 ```
-Possible select case without partner:
+Possible select case without partner or nil case:
 	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 	case: 18,R
 ```
@@ -163,7 +163,7 @@ Possible negative waitgroup counter:
 	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1234@45
 	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@42
 ```
-Add contains the tIDs of the add operation that might make the counter negative, as well as all add 
+Add contains the tIDs of the add operation that might make the counter negative, as well as all add
 operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).\
-Done contains all done 
+Done contains all done
 operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).
