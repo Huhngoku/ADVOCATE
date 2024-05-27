@@ -126,15 +126,15 @@ func main() {
 			if needed && err != nil {
 				println("Failed to rewrite trace: ", err.Error())
 				failedRewrites++
+				trace.SetTrace(originalTrace)
 			} else if !needed {
 				println("Trace can not be rewritten.")
 				notNeededRewrites++
 			} else { // needed && err == nil
 				numberRewrittenTrace++
 				rewriteTime += time.Now().Sub(rewriteStartTime)
+				trace.SetTrace(originalTrace)
 			}
-
-			trace.SetTrace(originalTrace)
 
 			print("\n\n")
 		}

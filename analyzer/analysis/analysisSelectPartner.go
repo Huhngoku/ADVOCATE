@@ -62,7 +62,7 @@ func CheckForSelectCaseWithoutPartner() {
 		}
 
 		logging.Result("Possible select case without partner or nil case:\n\tselect: "+
-			c.vcTID.TID+"\n\t"+stuckCase+"\n", logging.WARNING)
+			c.vcTID.TID+"\n\t"+stuckCase, logging.WARNING)
 	}
 }
 
