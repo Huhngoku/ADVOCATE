@@ -1,7 +1,7 @@
 # Analysis Result
 
 This file explains the machine readable (results_machine.log) and the human
-readable (rusult_readable.log) result file of the analysis.
+readable (result_readable.log) result file of the analysis.
 
 ## Machine readable result file
 
