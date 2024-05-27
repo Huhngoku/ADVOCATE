@@ -99,7 +99,8 @@ func main() {
 	}
 
 	trace.RunAnalysis(*fifo, *ignoreCriticalSection, analysisCases)
-	fmt.Println("Analysis finished\n")
+
+	fmt.Print("Analysis finished\n\n")
 
 	numberOfResults := logging.PrintSummary(*noWarning, *noPrint)
 
@@ -119,9 +120,8 @@ func main() {
 		for resultIndex := 0; resultIndex < numberOfResults; resultIndex++ {
 			rewriteStartTime := time.Now()
 
-			needed, err := rewriteTrace(outMachine, *pathTrace,
-				newTrace+"_"+strconv.Itoa(resultIndex+1)+"/", resultIndex, numberOfRoutines,
-				*ignoreAtomics)
+			needed, err := rewriteTrace(outMachine,
+				newTrace+"_"+strconv.Itoa(resultIndex+1)+"/", resultIndex, numberOfRoutines)
 
 			if needed && err != nil {
 				println("Failed to rewrite trace: ", err.Error())
@@ -154,6 +154,8 @@ func main() {
 			println(logging.Green, "\tFailed rewrites: ", failedRewrites, logging.Reset)
 		}
 	}
+
+	print("\n\n\n")
 }
 
 func writeTime(pathTrace string, name string, time float64) error {
@@ -177,16 +179,31 @@ func writeTime(pathTrace string, name string, time float64) error {
 
 	elems := strings.Split(string(content), "\n")
 
-	elem1 := ""
-	elem2 := ""
+	names := strings.Split(elems[0], ",")
+	values := strings.Split(elems[1], ",")
 
-	if len(elems) >= 2 {
-		elem1 = elems[0] + ","
-		elem2 = elems[1] + ","
+	// if name already exists, overwrite the value, if name exists multiple time, delete all and write new
+	found := false
+	for i, n := range names {
+		if n == name {
+			if !found {
+				values[i] = strconv.FormatFloat(time, 'f', 6, 64)
+				found = true
+			} else {
+				names = append(names[:i], names[i+1:]...)
+				values = append(values[:i], values[i+1:]...)
+			}
+		}
 	}
 
-	elem1 += name
-	elem2 += strconv.FormatFloat(time, 'f', 6, 64)
+	// if name not found, append
+	if !found {
+		names = append(names, name)
+		values = append(values, strconv.FormatFloat(time, 'f', 6, 64))
+	}
+
+	elem1 := strings.Join(names, ",")
+	elem2 := strings.Join(values, ",")
 
 	// Datei schreiben
 	err = os.WriteFile(path, []byte(elem1+"\n"+elem2), 0644)
@@ -197,17 +214,15 @@ func writeTime(pathTrace string, name string, time float64) error {
  * Rewrite the trace file based on given analysis results
  * Args:
  *   outMachine (string): The path to the analysis result file
- *   oldTrace (string): The path to the recorded trace folder
  *   newTrace (string): The path where the new traces folder will be created
  *   resultIndex (int): The index of the result to use for the reordered trace file
  *   numberOfRoutines (int): The number of routines in the trace
- *   ignoreAtomics (bool): If atomic operations should be ignored
  * Returns:
  *   bool: true, if a rewrite was nessesary, false if not (e.g. actual bug, warning)
  *   error: An error if the trace file could not be created
  */
-func rewriteTrace(outMachine string, oldTrace string, newTrace string, resultIndex int,
-	numberOfRoutines int, ignoreAtomics bool) (bool, error) {
+func rewriteTrace(outMachine string, newTrace string, resultIndex int,
+	numberOfRoutines int) (bool, error) {
 
 	actual, bug, err := io.ReadAnalysisResults(outMachine, resultIndex)
 	if err != nil {
