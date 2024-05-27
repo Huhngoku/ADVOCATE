@@ -50,14 +50,25 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 
 }
 
+func foundSendOnClosedChannel(posClose string, posSend string) {
+	if posClose == "" || posSend == "" || posClose == "\n" || posSend == "\n" {
+		return
+	}
+
+	found := "Found send on closed channel:\n"
+	found += "\tsend: " + posSend
+	found += "\tclose: " + posClose + "\n"
+	logging.Result(found, logging.WARNING)
+}
+
 func foundReceiveOnClosedChannel(posClose string, posRecv string) {
 	if posClose == "" || posRecv == "" || posClose == "\n" || posRecv == "\n" {
 		return
 	}
 
 	found := "Found receive on closed channel:\n"
-	found += "\tclose: " + posClose + "\n"
 	found += "\trecv: " + posRecv
+	found += "\tclose: " + posClose + "\n"
 	logging.Result(found, logging.WARNING)
 }
 

@@ -67,7 +67,7 @@ func (b Bug) ToString() string {
 		arg1Str = "close: "
 		arg2Str = "recv: "
 	case CloseOnClosed:
-		typeStr = "Possible close on closed channel:"
+		typeStr = "Found close on closed channel:"
 		arg1Str = "close: "
 		arg2Str = "close: "
 	case DoneBeforeAdd:

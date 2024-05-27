@@ -59,6 +59,11 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 	} else {
 		vc[routSend] = vc[routSend].Inc(routSend)
+		if analysisCases["sendOnClosed"] {
+			if cl, ok := closeData[id]; ok {
+				foundSendOnClosedChannel(cl.TID, tIDSend)
+			}
+		}
 	}
 
 	if analysisCases["mixedDeadlock"] {
@@ -110,6 +115,11 @@ func Send(rout int, id int, oID int, size int, tID string,
 
 	if tPost == 0 {
 		vc[rout] = vc[rout].Inc(rout)
+		if analysisCases["sendOnClosed"] {
+			if cl, ok := closeData[id]; ok {
+				foundSendOnClosedChannel(cl.TID, tID)
+			}
+		}
 		return
 	}
 
@@ -319,7 +329,9 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		return
 	}
 
-	foundReceiveOnClosedChannel(closeData[id].TID, tID)
+	if analysisCases["receiveOnClosed"] {
+		foundReceiveOnClosedChannel(closeData[id].TID, tID)
+	}
 
 	vc[rout] = vc[rout].Sync(closeData[id].Vc)
 	vc[rout] = vc[rout].Inc(rout)
