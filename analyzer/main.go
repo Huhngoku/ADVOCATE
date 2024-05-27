@@ -184,16 +184,22 @@ func writeTime(pathTrace string, name string, time float64) error {
 
 	// if name already exists, overwrite the value, if name exists multiple time, delete all and write new
 	found := false
+	remove := make([]int, 0)
 	for i, n := range names {
 		if n == name {
 			if !found {
 				values[i] = strconv.FormatFloat(time, 'f', 6, 64)
 				found = true
 			} else {
-				names = append(names[:i], names[i+1:]...)
-				values = append(values[:i], values[i+1:]...)
+				remove = append(remove, i)
 			}
 		}
+	}
+
+	// remove all duplicates
+	for i := len(remove) - 1; i >= 0; i-- {
+		names = append(names[:remove[i]], names[remove[i]+1:]...)
+		values = append(values[:remove[i]], values[remove[i]+1:]...)
 	}
 
 	// if name not found, append
