@@ -179,27 +179,32 @@ func writeTime(pathTrace string, name string, time float64) error {
 
 	elems := strings.Split(string(content), "\n")
 
-	names := strings.Split(elems[0], ",")
-	values := strings.Split(elems[1], ",")
-
-	// if name already exists, overwrite the value, if name exists multiple time, delete all and write new
 	found := false
-	remove := make([]int, 0)
-	for i, n := range names {
-		if n == name {
-			if !found {
-				values[i] = strconv.FormatFloat(time, 'f', 6, 64)
-				found = true
-			} else {
-				remove = append(remove, i)
+	names := make([]string, 0)
+	values := make([]string, 0)
+	if len(elems) >= 2 {
+
+		names = strings.Split(elems[0], ",")
+		values = strings.Split(elems[1], ",")
+
+		// if name already exists, overwrite the value, if name exists multiple time, delete all and write new
+		remove := make([]int, 0)
+		for i, n := range names {
+			if n == name {
+				if !found {
+					values[i] = strconv.FormatFloat(time, 'f', 6, 64)
+					found = true
+				} else {
+					remove = append(remove, i)
+				}
 			}
 		}
-	}
 
-	// remove all duplicates
-	for i := len(remove) - 1; i >= 0; i-- {
-		names = append(names[:remove[i]], names[remove[i]+1:]...)
-		values = append(values[:remove[i]], values[remove[i]+1:]...)
+		// remove all duplicates
+		for i := len(remove) - 1; i >= 0; i-- {
+			names = append(names[:remove[i]], names[remove[i]+1:]...)
+			values = append(values[:remove[i]], values[remove[i]+1:]...)
+		}
 	}
 
 	// if name not found, append
