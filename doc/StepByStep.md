@@ -5,9 +5,9 @@ The following is a step py step guid on how to use advocate.
 ## Preparation
 
 - Download the repository.
-- Move into the `ADVOCATE/go-bash/src` directory.
+- Move into the `ADVOCATE/go-patch/src` directory.
 - Run `make.bash` or `make.bat` to build the new runtime. This will create a
-`ADVOCATE/go-bash/bin/go` executable.
+`ADVOCATE/go-patch/bin/go` executable.
 
 ## Running the program / record the trace
 - Add the following header at the beginning of your program:
@@ -41,9 +41,9 @@ In Linux this can be done with e.g.:
 ## Analyzing and rewriting the trace
 - Move to the `ADVOCATE/analyzer` directory.
 - Build the analyzer with `go build`. Make sure to not use the modified runtime.
-Use the standard go runtime instead (also make sure, that GOROOT is 
+Use the standard go runtime instead (also make sure, that GOROOT is
 pointing to the standard go runtime).
-- Run the analyzer with the path to the trace folder created in the previous step as argument, e.g. 
+- Run the analyzer with the path to the trace folder created in the previous step as argument, e.g.
   ```bash
   ~/ADVOCATE/analyzer/analyzer -t ../prog/advocateTrace
   ```
@@ -65,7 +65,7 @@ the rewritten trace for each bug found, where a rewrite is possible/implemented.
   ```
 
 - Replace `1` with the index of the bug you want to replay.
-- If a rewritten trace should not return exit codes, but e.g. panic if a 
+- If a rewritten trace should not return exit codes, but e.g. panic if a
 negative waitGroup counter is detected, of send on a closed channel occurs,
 the second argument can be set to `false`.
 - Build the program using the new runtime and run the executable, e.g.
