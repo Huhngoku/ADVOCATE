@@ -30,11 +30,11 @@ In Linux this can be done with e.g.:
   Replace the path with the path to the `ADVOCATE/go-patch` directory.
 - Build the program using the new runtime and run the executable, e.g.
   ```bash
-  ~/ADVOCATE/go-bash/bin/go build && ./main
+  ~/ADVOCATE/go-patch/bin/go build && ./main
   ```
   or run the test with e.g.
   ```bash
-  ~/ADVOCATE/go-bash/bin/go test -run TestAllocate
+  ~/ADVOCATE/go-patch/bin/go test -run TestAllocate
   ```
   This will create a trace folder `advocateTrace` in the directory of the executable or the trace.
 
@@ -70,11 +70,11 @@ negative waitGroup counter is detected, of send on a closed channel occurs,
 the second argument can be set to `false`.
 - Build the program using the new runtime and run the executable, e.g.
   ```bash
-  ~/ADVOCATE/go-bash/bin/go build && ./main
+  ~/ADVOCATE/go-patch/bin/go build && ./main
   ```
   or run the test with e.g.
   ```bash
-  ~/ADVOCATE/go-bash/bin/go test -run TestAllocate
+  ~/ADVOCATE/go-patch/bin/go test -run TestAllocate
   ```
   the same way, the program was built and run before. Make sure, that the `GOROOT` environment variable is set to the path of the
 modified runtime.
