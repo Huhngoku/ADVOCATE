@@ -69,9 +69,9 @@ func rewriteUnbufChanLeakChanChan(bug bugs.Bug) error {
 
 	if possiblePartnerPartner != nil {
 		hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
-		if hb != clock.Concurrent {
-			return errors.New("The actual partner of the potential partner is not HB " +
-				"concurrent to the stuck element. Cannot rewrite trace.")
+		if hb == clock.Before {
+			return errors.New("The actual partner of the potential partner is HB " +
+				"before to the stuck element. Cannot rewrite trace.")
 		}
 	}
 
@@ -132,7 +132,7 @@ func rewriteUnbufChanLeakChanSel(bug bugs.Bug) error {
 
 	if possiblePartnerPartner != nil {
 		hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
-		if hb != clock.Concurrent {
+		if hb == clock.Before {
 			return errors.New("The actual partner of the potential partner is not HB " +
 				"concurrent to the stuck element. Cannot rewrite trace.")
 		}
@@ -195,9 +195,9 @@ func rewriteUnbufChanLeakSelChan(bug bugs.Bug) error {
 
 	if possiblePartnerPartner != nil {
 		hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
-		if hb != clock.Concurrent {
-			return errors.New("The actual partner of the potential partner is not HB " +
-				"concurrent to the stuck element. Cannot rewrite trace.")
+		if hb == clock.Before {
+			return errors.New("The actual partner of the potential partner is HB " +
+				"before to the stuck element. Cannot rewrite trace.")
 		}
 	}
 
@@ -258,9 +258,9 @@ func rewriteUnbufChanLeakSelSel(bug bugs.Bug) error {
 
 	if possiblePartnerPartner != nil {
 		hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
-		if hb != clock.Concurrent {
-			return errors.New("The actual partner of the potential partner is not HB " +
-				"concurrent to the stuck element. Cannot rewrite trace.")
+		if hb == clock.Before {
+			return errors.New("The actual partner of the potential partner is HB " +
+				"before to the stuck element. Cannot rewrite trace.")
 		}
 	}
 
@@ -338,9 +338,9 @@ func rewriteBufChanLeak(bug bugs.Bug) error {
 
 	if possiblePartnerPartner != nil {
 		hb := clock.GetHappensBefore(possiblePartnerPartner.GetVC(), stuck.GetVC())
-		if hb != clock.Concurrent {
-			return errors.New("The actual partner of the potential partner is not HB " +
-				"concurrent to the stuck element. Cannot rewrite trace.")
+		if hb == clock.Before {
+			return errors.New("The actual partner of the potential partner is HB " +
+				"before to the stuck element. Cannot rewrite trace.")
 		}
 	}
 
