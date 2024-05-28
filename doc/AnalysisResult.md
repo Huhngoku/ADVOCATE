@@ -265,48 +265,7 @@ A leak on a mutex has the following form:
 
 A leak on a waitgroup is a waitgroup that is leaking.
 
-The one arg of this case is:
-
-- the waitgroup that is leaking
-
-A leak on a waitgroup has the following form:
-```
-[[Missing]]
-```
-
-### Leak on cond
-
-A leak on a cond is a cond that is leaking.
-
-The one arg of this case is:
-
-- the cond that is leaking
-
-A leak on a cond has the following form:
-```
-[[Missing]]
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Human readable result file
-
-The result file contains all potential bugs found in the analyzed trace.\
-A possible result would be:
-```
-Possible send on closed channel:
+The one arg of this case is:objType
 	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
 	send: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
 Possible receive on closed channel:
@@ -431,7 +390,6 @@ A leak on an unbuffered channel without a possible partner has the following for
 ```
 Leak on unbuffered channel or select with possible partner:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	partner: -
 ```
 The channel contains the tID of the channel or select that is leaking.\
 The partner contains a "-" because there is no possible partner.
@@ -453,7 +411,6 @@ A leak on an buffered channel without a possible partner has the following form:
 ```
 Leak on buffered channel without possible partner:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	partner: -
 ```
 The channel contains the tID of the channel or select that is leaking.\
 The partner contains a "-" because there is no possible partner.
