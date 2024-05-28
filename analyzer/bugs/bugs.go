@@ -75,7 +75,7 @@ func (b Bug) ToString() string {
 		arg1Str = "add: "
 		arg2Str = "done: "
 	case SelectWithoutPartner:
-		typeStr = "Possible select case without partner or nil case:"
+		typeStr = "Found select case without partner or nil case:"
 		arg1Str = "select: "
 		arg2Str = "partner: "
 	case ConcurrentRecv:
@@ -208,7 +208,7 @@ func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
 		actual = true
 	case "Possible negative waitgroup counter:":
 		bug.Type = DoneBeforeAdd
-	case "Possible select case without partner or nil case:":
+	case "Found select case without partner or nil case:":
 		bug.Type = SelectWithoutPartner
 		containsArg2 = false
 	case "Found concurrent Recv on same channel:":

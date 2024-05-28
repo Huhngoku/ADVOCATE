@@ -1,11 +1,9 @@
 package logging
 
 import (
-	"analyzer/utils"
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 )
 
 var levelDebug int = 0
@@ -28,16 +26,65 @@ const (
 type resultLevel int
 
 const (
-	NONE = iota
+	NONE resultLevel = iota
 	CRITICAL
 	WARNING
 )
 
+type resultType string
+
+const (
+	Empty resultType = ""
+
+	// actual
+	ARecvOnClosed          resultType = "A1"
+	ASendOnClosed          resultType = "A2"
+	ACloseOnClosed         resultType = "A3"
+	AConcurrentRecv        resultType = "A4"
+	ASelCaseWithoutPartner resultType = "A5"
+
+	// possible
+	PSendOnClosed resultType = "P1"
+	PRecvOnClosed resultType = "P2"
+	PNegWG        resultType = "P3"
+
+	// leaks
+	LUnbufferedWith    = "L1"
+	LUnbufferedWithout = "L2"
+	LBufferedWith      = "L3"
+	LBufferedWithout   = "L4"
+	LMutex             = "L5"
+	LWaitGroup         = "L6"
+	LCond              = "L7"
+)
+
+var resultTypeMap = map[resultType]string{
+	ARecvOnClosed:          "Found receive on closed channel:",
+	ASendOnClosed:          "Found send on closed channel:",
+	ACloseOnClosed:         "Found close on closed channel:",
+	AConcurrentRecv:        "Found concurrent Recv on same channel:",
+	ASelCaseWithoutPartner: "Found select case without partner or nil case",
+
+	PSendOnClosed: "Possible send on closed channel:",
+	PRecvOnClosed: "Possible receive on closed channel:",
+	PNegWG:        "Possible negative waitgroup counter:",
+
+	LUnbufferedWith:    "Leak on unbuffered channel or select with possible partner:",
+	LUnbufferedWithout: "Leak on unbuffered channel or select with possible partner:",
+	LBufferedWith:      "Leak on buffered channel with possible partner:",
+	LBufferedWithout:   "Leak on unbuffered channel with possible partner:",
+	LMutex:             "Leak on mutex:",
+	LWaitGroup:         "Leak on wait group:",
+	LCond:              "Leak on conditional variable:",
+}
+
 var outputReadableFile string
 var outputMachineFile string
 var foundBug = false
-var resultsWarning []string
-var resultCritical []string
+var resultsWarningReadable []string
+var resultsCriticalReadable []string
+var resultsWarningMachine []string
+var resultCriticalMachine []string
 
 /*
 * Print a debug log message if the log level is sufficiant
@@ -58,33 +105,97 @@ func Debug(message string, level debugLevel) {
 	}
 }
 
-/*
-Print a result message
-Args:
+type resultElem interface {
+	isInvalid() bool
+	stringMachine() string
+	stringReadable() string
+}
 
-	message: message to print
-	level: level of the message
-*/
-func Result(message string, level resultLevel) {
-	// check if the message is valis
-	resSplit := strings.Split(message, "\n")
-	if len(resSplit) < 2 {
-		return
-	}
-	resSplitSplit := strings.Split(resSplit[1], ":")
-	if len(resSplitSplit) < 2 || resSplitSplit[1] == "" || resSplitSplit[1] == " " || resSplitSplit[1] == "\n" {
+type traceElementResult struct {
+	routineID int
+	objID     int
+	tPre      int
+	objType   string
+	file      string
+	line      int
+}
+
+func (t traceElementResult) stringMachine() string {
+	return fmt.Sprintf("T%d:%d:%d:%s:%s:%d", t.routineID, t.objID, t.tPre, t.objType, t.file, t.line)
+}
+
+func (t traceElementResult) stringReadable() string {
+	return fmt.Sprintf("%s:%d", t.file, t.line)
+}
+
+func (t traceElementResult) isInvalid() bool {
+	return t.objType == ""
+}
+
+type selectCaseResult struct {
+	objID   int
+	objType string
+}
+
+func (s selectCaseResult) stringMachine() string {
+	return fmt.Sprintf("S%d:%s", s.objID, s.objType)
+}
+
+func (s selectCaseResult) stringReadable() string {
+	return fmt.Sprintf("case: %d:%s", s.objID, s.objType)
+}
+
+func (s selectCaseResult) isInvalid() bool {
+	return s.objType == ""
+}
+
+/*
+ * Print a result message
+ * Args:
+ * 	level: level of the message
+ *	message: message to print
+ */
+func Result(level resultLevel, resType resultType, argType1 string, argType2 string, arg1 []resultElem, arg2 []resultElem) {
+	if arg1[0].isInvalid() || arg2[0].isInvalid() {
 		return
 	}
 
 	foundBug = true
+
+	resultReadable := resultTypeMap[resType] + "\n\t" + argType1 + ": "
+	resultMachine := string(resType) + ","
+
+	for i, arg := range arg1 {
+		if i != 0 {
+			resultReadable += ";"
+			resultMachine += ";"
+		}
+		resultReadable += arg.stringReadable()
+		resultMachine += arg.stringMachine()
+	}
+
+	if len(arg2) > 0 {
+		resultReadable += "\n\t" + argType2
+		for i, arg := range arg2 {
+			if i != 0 {
+				resultReadable += ";"
+				resultMachine += ";"
+			}
+			resultReadable += arg.stringReadable()
+			resultMachine += arg.stringMachine()
+		}
+
+	}
+
+	resultReadable += "\n"
+	resultMachine += "\n"
+
 	if level == WARNING {
-		if !utils.Contains(resultsWarning, message) {
-			resultsWarning = append(resultsWarning, message)
-		}
+		resultsWarningReadable = append(resultsWarningReadable, resultReadable)
+		resultsWarningMachine = append(resultsWarningMachine, resultMachine)
 	} else if level == CRITICAL {
-		if !utils.Contains(resultCritical, message) {
-			resultCritical = append(resultCritical, message)
-		}
+		resultsCriticalReadable = append(resultsCriticalReadable, resultReadable)
+		resultCriticalMachine = append(resultCriticalMachine, resultMachine)
 	}
 }
 
@@ -124,7 +235,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 
 	found := false
 
-	if len(resultCritical) > 0 {
+	if len(resultsCriticalReadable) > 0 {
 		found = true
 		resReadable += "-------------------- Critical -------------------\n\n"
 
@@ -132,7 +243,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			fmt.Print("-------------------- Critical -------------------\n\n")
 		}
 
-		for _, result := range resultCritical {
+		for _, result := range resultsCriticalReadable {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
 			resMachine += result + "\n"
 
@@ -143,16 +254,15 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			counter++
 		}
 	}
-	if len(resultsWarning) > 0 && !noWarning {
+	if len(resultsWarningReadable) > 0 && !noWarning {
 		found = true
 		resReadable += "\n-------------------- Warning --------------------\n\n"
 		if !noPrint {
 			fmt.Print("\n-------------------- Warning --------------------\n\n")
 		}
 
-		for _, result := range resultsWarning {
+		for _, result := range resultsWarningReadable {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
-			resMachine += result + "\n"
 
 			if !noPrint {
 				fmt.Println(strconv.Itoa(counter) + " " + Orange + result + Reset)
@@ -195,9 +305,6 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 		}
 	}
 
-	resMachine = strings.ReplaceAll(resMachine, "\n\t\t", ";")
-	resMachine = strings.ReplaceAll(resMachine, ": ;", ": ")
-	resMachine = strings.ReplaceAll(resMachine, "\n\n", "\n")
 	file, err = os.OpenFile(outputMachineFile, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
@@ -208,5 +315,5 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 		panic(err)
 	}
 
-	return len(resultCritical) + len(resultsWarning)
+	return len(resultsCriticalReadable) + len(resultsWarningReadable)
 }

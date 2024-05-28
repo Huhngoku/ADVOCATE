@@ -21,6 +21,12 @@ with
 ```
 The elements have the following meaning:
 S:[objId]:[objType] (select case)
+- A1: Receive on closed channel
+- A2: Send on closed channel
+- A3: Close on closed channel
+- A4: Concurrent recv
+- A5: Select case without partner
+- P1: Possible send on closed channel
 - P2: Possible receive on closed channel
 - P3: Possible negative waitgroup counter
 - L1: Leak on unbuffered channel or select with possible partner
@@ -49,7 +55,7 @@ Each arg contains the following elements separated by a colon (:)
     - MT: TryLock
     - MY: TryRLock
     - MU: Unlock
-    - MN: RUnlock
+    - MN: RUnlockfmt.Sprintf("T%d:%d:%d:%s:%s:%d", t.routineID, t.objID, t.tPre, t.objType, t.file, t.line)
   - Waitgroup:
     - WA: Add
     - WD: Done
@@ -353,6 +359,27 @@ Found close on closed channel:
 The first close contains the close that lead to the panic.
 The second close contains the first close of the channel.
 
+
+### Concurrent recv
+A concurrent recv has the following form:
+```
+Found concurrent Recv on same channel:
+	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
+```
+The first recv contains the recv that is concurrent but in this case after the second recv.
+The second recv contains the recv that is concurrent but in this case before the second recv.
+
+### Select case without partner
+A select case without partner has the following form:
+```
+Found select case without partner or nil case:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	case: 18,R
+```
+Select contains the tID of the select that is missing a possible partner.\
+Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv).
+
 ### Possible send on closed
 A possible send on closed has the following form:
 ```
@@ -373,28 +400,6 @@ Possible receive on closed channel:
 ```
 The close contains the close on the channel
 The recv contains the recv on the channel, that might be closed.
-
-
-### Concurrent recv
-A concurrent recv has the following form:
-```
-Found concurrent Recv on same channel:
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
-```
-The first recv contains the recv that is concurrent but in this case after the second recv.
-The second recv contains the recv that is concurrent but in this case before the second recv.
-
-### Select case without partner
-A select case without partner has the following form:
-```
-Possible select case without partner or nil case:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	case: 18,R
-```
-Select contains the tID of the select that is missing a possible partner.\
-Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv).
-
 
 
 ### Possible negative waitgroup counter
