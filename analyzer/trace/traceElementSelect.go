@@ -484,10 +484,11 @@ func (se *TraceElementSelect) updateVectorClock() {
 
 	if analysisCases["leak"] {
 		for _, c := range se.cases {
-			analysis.CheckForLeakChannelRun(c.id,
+			analysis.CheckForLeakChannelRun(se.routine, c.id,
 				analysis.VectorClockTID{
-					Vc:  se.vc.Copy(),
-					TID: se.tID},
+					Vc:      se.vc.Copy(),
+					TID:     se.tID,
+					Routine: se.routine},
 				int(c.opC), c.IsBuffered())
 		}
 	}

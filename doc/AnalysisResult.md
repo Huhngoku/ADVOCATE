@@ -33,9 +33,10 @@ S:[objId]:[objType] (select case)
 - L2: Leak on unbuffered channel or select without possible partner
 - L3: Leak on buffered channel with possible partner
 - L4: Leak on buffered channel without possible partner
-- L5: Leak on mutex
-- L6: Leak on waitgroup
-- L7: Leak on cond
+- L5: Leak on nil channel
+- L6: Leak on mutex
+- L7: Leak on waitgroup
+- L8: Leak on cond
 
 `[args]` shows the elements involved in the problem. There are either
 one or two, while the args them self can contain multiple trace elements or select cases.\
@@ -209,7 +210,7 @@ A leak on an unbuffered channel or select with a possible partner has the follow
 #### Without possible partner
 A leak on an unbuffered channel without a possible partner is a unbuffered channel that is leaking,
 but has no possible partner.
-The one arg of this case is:
+The one arg of this case is: mostRecentAcquireTotal[id]
 
 - the channel that is leaking
 
@@ -248,28 +249,25 @@ A leak on an buffered channel without a possible partner has the following form:
 [[Missing]]
 ```
 
-### Leak on mutex
+### Leak on nil channel
 
-A leak on a mutex is a mutex that is leaking.
+A leak on a nil channel is a nil channel trying to communicate.
 
 The one arg of this case is:
 
-- the mutex that is leaking
+- the nil channel that is leaking
 
 A leak on a mutex has the following form:
 ```
 [[Missing]]
 ```
 
-### Leak on waitgroup
 
-A leak on a waitgroup is a waitgroup that is leaking.
+### Leak on mutex
 
-The one arg of this case is:objType
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
-	send: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
-Possible receive on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
+A leak on a mutex is a mutex that is leaking.
+
+The onethe mutex that is leakinglose: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
 	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1103@43
 Possible negative waitgroup counter:
 	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@77;
@@ -415,6 +413,14 @@ Leak on buffered channel without possible partner:
 The channel contains the tID of the channel or select that is leaking.\
 The partner contains a "-" because there is no possible partner.
 
+### Leak on nil channel
+A leak on a mutex has the following form:
+```
+Leak on nil channel:
+	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+```
+Channel contains the tID of the nil channel that is leaking.
+
 ### Leak on mutex
 A leak on a mutex has the following form:
 ```
@@ -429,7 +435,7 @@ Last contains the tID of the last lock operation on the mutex.
 A leak on a waitgroup has the following form:
 ```
 Leak on wait group:
-	wait-group: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	wait: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 
 ```
 wait-group contains the tID of the waitgroup that is leaking.\
@@ -439,9 +445,9 @@ The second line is empty.
 A leak on a cond has the following form:
 ```
 Leak on conditional variable:
-	conditional: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	cond: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 
 ```
-conditional contains the tID of the conditional variable that is leaking.\
+cond contains the tID of the conditional variable that is leaking.\
 The second line is empty.
 

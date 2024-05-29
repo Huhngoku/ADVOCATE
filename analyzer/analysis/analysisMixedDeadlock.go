@@ -35,7 +35,7 @@ func lockSetAddLock(routine int, lock int, tID string, vc clock.VectorClock) {
 	}
 
 	lockSet[routine][lock] = tID
-	mostRecentAcquire[routine][lock] = VectorClockTID{vc, tID}
+	mostRecentAcquire[routine][lock] = VectorClockTID{vc, tID, routine}
 }
 
 /*

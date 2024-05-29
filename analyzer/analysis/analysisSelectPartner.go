@@ -76,7 +76,7 @@ func CheckForSelectCaseWithoutPartner() {
 *   vc (VectorClock): The vector clock
 *   tID (string): The position of the select in the program
  */
-func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
+func CheckForSelectCaseWithoutPartnerSelect(routine int, ids []int, bufferedInfo []bool,
 	sendInfo []bool, vc clock.VectorClock, tID string, chosenIndex int) {
 	for i, id := range ids {
 		buffered := bufferedInfo[i]
@@ -117,7 +117,7 @@ func CheckForSelectCaseWithoutPartnerSelect(ids []int, bufferedInfo []bool,
 		}
 
 		selectCases = append(selectCases,
-			allSelectCase{id, VectorClockTID{vc, tID}, send, buffered, found})
+			allSelectCase{id, VectorClockTID{vc, tID, routine}, send, buffered, found})
 
 	}
 }

@@ -10,7 +10,7 @@ func checkForConcurrentRecv(routine int, id int, pos string, vc map[int]clock.Ve
 		lastRecvRoutine[routine] = make(map[int]VectorClockTID)
 	}
 
-	lastRecvRoutine[routine][id] = VectorClockTID{vc[routine].Copy(), pos}
+	lastRecvRoutine[routine][id] = VectorClockTID{vc[routine].Copy(), pos, routine}
 
 	for r, elem := range lastRecvRoutine {
 		if r == routine {

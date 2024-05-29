@@ -39,7 +39,7 @@ func Lock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.V
 	vc[routine] = vc[routine].Inc(routine)
 
 	if analysisCases["leak"] {
-		addMostRecentAcquireTotal(id, tID, vc[routine])
+		addMostRecentAcquireTotal(routine, id, tID, vc[routine], 0)
 	}
 
 	if analysisCases["mixedDeadlock"] {
@@ -93,7 +93,7 @@ func RLock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.
 	vc[routine] = vc[routine].Inc(routine)
 
 	if analysisCases["leak"] {
-		addMostRecentAcquireTotal(id, tID, vc[routine])
+		addMostRecentAcquireTotal(routine, id, tID, vc[routine], 1)
 	}
 
 	if analysisCases["mixedDeadlock"] {

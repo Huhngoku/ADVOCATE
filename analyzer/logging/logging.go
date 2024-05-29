@@ -31,34 +31,35 @@ const (
 	WARNING
 )
 
-type resultType string
+type ResultType string
 
 const (
-	Empty resultType = ""
+	Empty ResultType = ""
 
 	// actual
-	ARecvOnClosed          resultType = "A1"
-	ASendOnClosed          resultType = "A2"
-	ACloseOnClosed         resultType = "A3"
-	AConcurrentRecv        resultType = "A4"
-	ASelCaseWithoutPartner resultType = "A5"
+	ARecvOnClosed          ResultType = "A1"
+	ASendOnClosed          ResultType = "A2"
+	ACloseOnClosed         ResultType = "A3"
+	AConcurrentRecv        ResultType = "A4"
+	ASelCaseWithoutPartner ResultType = "A5"
 
 	// possible
-	PSendOnClosed resultType = "P1"
-	PRecvOnClosed resultType = "P2"
-	PNegWG        resultType = "P3"
+	PSendOnClosed ResultType = "P1"
+	PRecvOnClosed ResultType = "P2"
+	PNegWG        ResultType = "P3"
 
 	// leaks
 	LUnbufferedWith    = "L1"
 	LUnbufferedWithout = "L2"
 	LBufferedWith      = "L3"
 	LBufferedWithout   = "L4"
-	LMutex             = "L5"
-	LWaitGroup         = "L6"
-	LCond              = "L7"
+	LNil               = "L5"
+	LMutex             = "L6"
+	LWaitGroup         = "L7"
+	LCond              = "L8"
 )
 
-var resultTypeMap = map[resultType]string{
+var resultTypeMap = map[ResultType]string{
 	ARecvOnClosed:          "Found receive on closed channel:",
 	ASendOnClosed:          "Found send on closed channel:",
 	ACloseOnClosed:         "Found close on closed channel:",
@@ -73,6 +74,7 @@ var resultTypeMap = map[resultType]string{
 	LUnbufferedWithout: "Leak on unbuffered channel or select with possible partner:",
 	LBufferedWith:      "Leak on buffered channel with possible partner:",
 	LBufferedWithout:   "Leak on unbuffered channel with possible partner:",
+	LNil:               "Leak on nil channel:",
 	LMutex:             "Leak on mutex:",
 	LWaitGroup:         "Leak on wait group:",
 	LCond:              "Leak on conditional variable:",
@@ -105,47 +107,47 @@ func Debug(message string, level debugLevel) {
 	}
 }
 
-type resultElem interface {
+type ResultElem interface {
 	isInvalid() bool
 	stringMachine() string
 	stringReadable() string
 }
 
-type traceElementResult struct {
-	routineID int
-	objID     int
-	tPre      int
-	objType   string
-	file      string
-	line      int
+type TraceElementResult struct {
+	RoutineID int
+	ObjID     int
+	TPre      int
+	ObjType   string
+	File      string
+	Line      int
 }
 
-func (t traceElementResult) stringMachine() string {
-	return fmt.Sprintf("T%d:%d:%d:%s:%s:%d", t.routineID, t.objID, t.tPre, t.objType, t.file, t.line)
+func (t TraceElementResult) stringMachine() string {
+	return fmt.Sprintf("T%d:%d:%d:%s:%s:%d", t.RoutineID, t.ObjID, t.TPre, t.ObjType, t.File, t.Line)
 }
 
-func (t traceElementResult) stringReadable() string {
-	return fmt.Sprintf("%s:%d", t.file, t.line)
+func (t TraceElementResult) stringReadable() string {
+	return fmt.Sprintf("%s:%d", t.File, t.Line)
 }
 
-func (t traceElementResult) isInvalid() bool {
-	return t.objType == ""
+func (t TraceElementResult) isInvalid() bool {
+	return t.ObjType == ""
 }
 
-type selectCaseResult struct {
+type SelectCaseResult struct {
 	objID   int
 	objType string
 }
 
-func (s selectCaseResult) stringMachine() string {
+func (s SelectCaseResult) stringMachine() string {
 	return fmt.Sprintf("S%d:%s", s.objID, s.objType)
 }
 
-func (s selectCaseResult) stringReadable() string {
+func (s SelectCaseResult) stringReadable() string {
 	return fmt.Sprintf("case: %d:%s", s.objID, s.objType)
 }
 
-func (s selectCaseResult) isInvalid() bool {
+func (s SelectCaseResult) isInvalid() bool {
 	return s.objType == ""
 }
 
@@ -155,8 +157,8 @@ func (s selectCaseResult) isInvalid() bool {
  * 	level: level of the message
  *	message: message to print
  */
-func Result(level resultLevel, resType resultType, argType1 string, argType2 string, arg1 []resultElem, arg2 []resultElem) {
-	if arg1[0].isInvalid() || arg2[0].isInvalid() {
+func Result(level resultLevel, resType ResultType, argType1 string, arg1 []ResultElem, argType2 string, arg2 []ResultElem) {
+	if arg1[0].isInvalid() {
 		return
 	}
 

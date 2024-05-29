@@ -3,11 +3,13 @@ package analysis
 import "analyzer/clock"
 
 type VectorClockTID struct {
-	Vc  clock.VectorClock
-	TID string
+	Vc      clock.VectorClock
+	TID     string
+	Routine int
 }
 
 type VectorClockTID2 struct {
+	routine  int
 	id       int
 	vc       clock.VectorClock
 	tID      string
@@ -15,6 +17,13 @@ type VectorClockTID2 struct {
 	val      int
 	buffered bool
 	sel      bool
+}
+
+type VectorClockTID3 struct {
+	routine int
+	TID     string
+	vc      clock.VectorClock
+	val     int
 }
 
 type allSelectCase struct {
@@ -62,7 +71,7 @@ var (
 	// last acquire on mutex for each routine
 	lockSet                = make(map[int]map[int]string)         // routine -> id -> string
 	mostRecentAcquire      = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID  // TODO: do we need to store the operation?
-	mostRecentAcquireTotal = make(map[int]VectorClockTID)         // id -> vcTID
+	mostRecentAcquireTotal = make(map[int]VectorClockTID3)        // id -> vcTID
 
 	// vector clocks for last release times
 	relW = make(map[int]clock.VectorClock) // id -> vc

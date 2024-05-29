@@ -48,11 +48,11 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 		// for detection of send on closed
 		hasSend[id] = true
-		mostRecentSend[routSend][id] = VectorClockTID{mostRecentSend[routSend][id].Vc.Sync(vc[routSend]).Copy(), tIDSend}
+		mostRecentSend[routSend][id] = VectorClockTID{mostRecentSend[routSend][id].Vc.Sync(vc[routSend]).Copy(), tIDSend, routSend}
 
 		// for detection of receive on closed
 		hasReceived[id] = true
-		mostRecentReceive[routRecv][id] = VectorClockTID{mostRecentReceive[routRecv][id].Vc.Sync(vc[routRecv]).Copy(), tIDRecv}
+		mostRecentReceive[routRecv][id] = VectorClockTID{mostRecentReceive[routRecv][id].Vc.Sync(vc[routRecv]).Copy(), tIDRecv, routRecv}
 
 		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[routSend][id].Vc.ToString(), logging.DEBUG)
 		logging.Debug("Set most recent recv of "+strconv.Itoa(id)+" to "+mostRecentReceive[routRecv][id].Vc.ToString(), logging.DEBUG)
@@ -78,8 +78,8 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 	}
 
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[routSend].Copy(), tIDSend}, 0, false)
-		CheckForLeakChannelRun(id, VectorClockTID{vc[routRecv].Copy(), tIDSend}, 1, false)
+		CheckForLeakChannelRun(routSend, id, VectorClockTID{vc[routSend].Copy(), tIDSend, routSend}, 0, false)
+		CheckForLeakChannelRun(routRecv, id, VectorClockTID{vc[routRecv].Copy(), tIDRecv, routRecv}, 1, false)
 	}
 
 }
@@ -154,7 +154,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 
 	// for detection of send on closed
 	hasSend[id] = true
-	mostRecentSend[rout][id] = VectorClockTID{mostRecentSend[rout][id].Vc.Sync(vc[rout]), tID}
+	mostRecentSend[rout][id] = VectorClockTID{mostRecentSend[rout][id].Vc.Sync(vc[rout]), tID, rout}
 
 	vc[rout] = vc[rout].Inc(rout)
 
@@ -163,7 +163,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 	}
 
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 0, true)
+		CheckForLeakChannelRun(rout, id, VectorClockTID{vc[rout].Copy(), tID, rout}, 0, true)
 	}
 
 	for i, hold := range holdRecv {
@@ -242,7 +242,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 
 	// for detection of receive on closed
 	hasReceived[id] = true
-	mostRecentReceive[rout][id] = VectorClockTID{mostRecentReceive[rout][id].Vc.Sync(vc[rout]), tID}
+	mostRecentReceive[rout][id] = VectorClockTID{mostRecentReceive[rout][id].Vc.Sync(vc[rout]), tID, rout}
 
 	vc[rout] = vc[rout].Inc(rout)
 
@@ -254,7 +254,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 		checkForMixedDeadlock(routSend, rout, tIDSend, tID)
 	}
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1, true)
+		CheckForLeakChannelRun(rout, id, VectorClockTID{vc[rout].Copy(), tID, rout}, 1, true)
 	}
 
 	for i, hold := range holdSend {
@@ -295,7 +295,7 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		checkForClosedOnClosed(id, tID) // must be called before closePos is updated
 	}
 
-	closeData[id] = VectorClockTID{vc[rout].Copy(), tID}
+	closeData[id] = VectorClockTID{vc[rout].Copy(), tID, rout}
 	closeRout[id] = rout
 
 	if analysisCases["sendOnClosed"] || analysisCases["receiveOnClosed"] {
@@ -309,7 +309,7 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	}
 
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 2, true)
+		CheckForLeakChannelRun(rout, id, VectorClockTID{vc[rout].Copy(), tID, rout}, 2, true)
 	}
 }
 
@@ -344,7 +344,7 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		checkForMixedDeadlock(closeRout[id], rout, closeData[id].TID, tID)
 	}
 	if analysisCases["leak"] {
-		CheckForLeakChannelRun(id, VectorClockTID{vc[rout].Copy(), tID}, 1, buffered)
+		CheckForLeakChannelRun(rout, id, VectorClockTID{vc[rout].Copy(), tID, rout}, 1, buffered)
 	}
 }
 

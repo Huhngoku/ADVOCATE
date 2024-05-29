@@ -337,16 +337,16 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			case *TraceElementChannel:
 				switch e.opC {
 				case Send:
-					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine],
-						elem.GetTID(), 0, e.qSize != 0)
+					analysis.CheckForLeakChannelStuck(elem.GetRoutine(), elem.GetID(),
+						currentVCHb[e.routine], elem.GetTID(), 0, e.qSize != 0)
 				case Recv:
-					analysis.CheckForLeakChannelStuck(elem.GetID(), currentVCHb[e.routine],
-						elem.GetTID(), 1, e.qSize != 0)
+					analysis.CheckForLeakChannelStuck(elem.GetRoutine(), elem.GetID(),
+						currentVCHb[e.routine], elem.GetTID(), 1, e.qSize != 0)
 				}
 			case *TraceElementMutex:
-				analysis.CheckForLeakMutex(elem.GetID(), elem.GetTID())
+				analysis.CheckForLeakMutex(elem.GetRoutine(), elem.GetID(), elem.GetTID(), int(e.opM))
 			case *TraceElementWait:
-				analysis.CheckForLeakWait(elem.GetTID())
+				analysis.CheckForLeakWait(elem.GetRoutine(), elem.GetID(), elem.GetTID())
 			case *TraceElementSelect:
 				cases := e.GetCases()
 				ids := make([]int, 0)
@@ -364,9 +364,9 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 						buffered = append(buffered, c.IsBuffered())
 					}
 				}
-				analysis.CheckForLeakSelectStuck(ids, buffered, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
+				analysis.CheckForLeakSelectStuck(elem.GetRoutine(), ids, buffered, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
 			case *TraceElementCond:
-				analysis.CheckForLeakCond(elem.GetTID())
+				analysis.CheckForLeakCond(elem.GetRoutine(), elem.GetID(), elem.GetTID())
 			}
 		}
 
