@@ -20,10 +20,10 @@ type VectorClockTID2 struct {
 }
 
 type VectorClockTID3 struct {
-	routine int
+	Routine int
 	TID     string
-	vc      clock.VectorClock
-	val     int
+	Vc      clock.VectorClock
+	Val     int
 }
 
 type allSelectCase struct {
@@ -39,7 +39,7 @@ var (
 	analysisCases = make(map[string]bool)
 
 	// vc of close on channel
-	closeData = make(map[int]VectorClockTID)
+	closeData = make(map[int]VectorClockTID3)
 	closeRout = make(map[int]int)
 
 	// last receive for each routine and each channel

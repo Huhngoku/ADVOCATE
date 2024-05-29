@@ -22,16 +22,17 @@ func lockSetAddLock(routine int, lock int, tID string, vc clock.VectorClock) {
 		mostRecentAcquire[routine] = make(map[int]VectorClockTID)
 	}
 
-	if posOld, ok := lockSet[routine][lock]; ok {
-		errorMsg := "Lock " + strconv.Itoa(lock) +
-			" already in lockSet for routine " + strconv.Itoa(routine)
-		logging.Debug(errorMsg, logging.ERROR)
+	if _, ok := lockSet[routine][lock]; ok {
+		// TODO: TODO: add a result. Deadlock detection is currently disabled
+		// errorMsg := "Lock " + strconv.Itoa(lock) +
+		// 	" already in lockSet for routine " + strconv.Itoa(routine)
+		// logging.Debug(errorMsg, logging.ERROR)
 
-		// this is a double locking
-		found := "Double locking:\n"
-		found += "\tlock1: " + posOld + "\n"
-		found += "\tlock2: " + tID
-		logging.Result(found, logging.CRITICAL)
+		// // this is a double locking
+		// found := "Double locking:\n"
+		// found += "\tlock1: " + posOld + "\n"
+		// found += "\tlock2: " + tID
+		// logging.Result(found, logging.CRITICAL)
 	}
 
 	lockSet[routine][lock] = tID
@@ -68,11 +69,12 @@ func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tID
 		_, ok2 := mostRecentAcquire[routineSend][m]
 		if ok1 && ok2 && mostRecentAcquire[routineSend][m].TID != mostRecentAcquire[routineRevc][m].TID {
 			// found possible mixed deadlock
-			found := "Possible mixed deadlock:\n"
-			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].TID + "\t\t" + mostRecentAcquire[routineRevc][m].TID + "\n"
-			found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
+			// TODO: add a result. Deadlock detection is currently disabled
+			// found := "Possible mixed deadlock:\n"
+			// found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].TID + "\t\t" + mostRecentAcquire[routineRevc][m].TID + "\n"
+			// found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
 
-			logging.Result(found, logging.CRITICAL)
+			// logging.Result(found, logging.CRITICAL)
 		}
 	}
 
@@ -81,11 +83,12 @@ func checkForMixedDeadlock(routineSend int, routineRevc int, tIDSend string, tID
 		_, ok2 := mostRecentAcquire[routineSend][m]
 		if ok1 && ok2 && mostRecentAcquire[routineSend][m].TID != mostRecentAcquire[routineRevc][m].TID {
 			// found possible mixed deadlock
-			found := "Possible mixed deadlock:\n"
-			found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].TID + "\t\t" + mostRecentAcquire[routineRevc][m].TID + "\n"
-			found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
+			// TODO: add a result. Deadlock detection is currently disabled
+			// found := "Possible mixed deadlock:\n"
+			// found += "\tlocks: \t\t" + mostRecentAcquire[routineSend][m].TID + "\t\t" + mostRecentAcquire[routineRevc][m].TID + "\n"
+			// found += "\tsend/close-recv: \t\t" + tIDSend + "\t\t" + tIDRecv
 
-			logging.Result(found, logging.CRITICAL)
+			// logging.Result(found, logging.CRITICAL)
 		}
 	}
 }

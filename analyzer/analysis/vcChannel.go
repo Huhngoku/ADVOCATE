@@ -60,9 +60,7 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 	} else {
 		vc[routSend] = vc[routSend].Inc(routSend)
 		if analysisCases["sendOnClosed"] {
-			if cl, ok := closeData[id]; ok {
-				foundSendOnClosedChannel(cl.TID, tIDSend)
-			}
+			foundSendOnClosedChannel(routSend, id, tIDSend)
 		}
 	}
 
@@ -116,9 +114,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 	if tPost == 0 {
 		vc[rout] = vc[rout].Inc(rout)
 		if analysisCases["sendOnClosed"] {
-			if cl, ok := closeData[id]; ok {
-				foundSendOnClosedChannel(cl.TID, tID)
-			}
+			foundSendOnClosedChannel(rout, id, tID)
 		}
 		return
 	}
@@ -292,11 +288,10 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	}
 
 	if analysisCases["closeOnClosed"] {
-		checkForClosedOnClosed(id, tID) // must be called before closePos is updated
+		checkForClosedOnClosed(rout, id, tID) // must be called before closePos is updated
 	}
 
-	closeData[id] = VectorClockTID{vc[rout].Copy(), tID, rout}
-	closeRout[id] = rout
+	closeData[id] = VectorClockTID3{Routine: rout, TID: tID, Vc: vc[rout].Copy(), Val: 0}
 
 	if analysisCases["sendOnClosed"] || analysisCases["receiveOnClosed"] {
 		checkForCommunicationOnClosedChannel(id, tID)
@@ -330,7 +325,7 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	}
 
 	if analysisCases["receiveOnClosed"] {
-		foundReceiveOnClosedChannel(closeData[id].TID, tID)
+		foundReceiveOnClosedChannel(rout, id, tID)
 	}
 
 	vc[rout] = vc[rout].Sync(closeData[id].Vc)
@@ -341,7 +336,7 @@ func RecvC(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 	}
 
 	if analysisCases["mixedDeadlock"] {
-		checkForMixedDeadlock(closeRout[id], rout, closeData[id].TID, tID)
+		checkForMixedDeadlock(closeData[id].Routine, rout, closeData[id].TID, tID)
 	}
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(rout, id, VectorClockTID{vc[rout].Copy(), tID, rout}, 1, buffered)

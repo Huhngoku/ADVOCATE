@@ -446,13 +446,13 @@ func CheckForLeakMutex(routineID int, id int, tID string, op int) {
 	}
 
 	objType2 := "M"
-	if mostRecentAcquireTotal[id].val == 0 { // lock
+	if mostRecentAcquireTotal[id].Val == 0 { // lock
 		objType2 += "L"
-	} else if mostRecentAcquireTotal[id].val == 1 { // rlock
+	} else if mostRecentAcquireTotal[id].Val == 1 { // rlock
 		objType2 += "R"
-	} else if mostRecentAcquireTotal[id].val == 2 { // TryLock
+	} else if mostRecentAcquireTotal[id].Val == 2 { // TryLock
 		objType2 += "T"
-	} else if mostRecentAcquireTotal[id].val == 3 { // TryRLock
+	} else if mostRecentAcquireTotal[id].Val == 3 { // TryRLock
 		objType2 += "Y"
 	} else { // only lock and rlock can lead to leak
 		return
@@ -462,7 +462,7 @@ func CheckForLeakMutex(routineID int, id int, tID string, op int) {
 		RoutineID: routineID, ObjID: id, TPre: tPre1, ObjType: objType1, File: file1, Line: line1}
 
 	arg2 := logging.TraceElementResult{
-		RoutineID: mostRecentAcquireTotal[id].routine, ObjID: id, TPre: tPre2, ObjType: objType2, File: file2, Line: line2}
+		RoutineID: mostRecentAcquireTotal[id].Routine, ObjID: id, TPre: tPre2, ObjType: objType2, File: file2, Line: line2}
 
 	logging.Result(logging.CRITICAL, logging.LMutex,
 		"mutex", []logging.ResultElem{arg1}, "last", []logging.ResultElem{arg2})
@@ -479,7 +479,7 @@ func CheckForLeakMutex(routineID int, id int, tID string, op int) {
  *   op (int): The operation on the mutex
  */
 func addMostRecentAcquireTotal(routine int, id int, tID string, vc clock.VectorClock, op int) {
-	mostRecentAcquireTotal[id] = VectorClockTID3{routine: routine, vc: vc, TID: tID, val: op}
+	mostRecentAcquireTotal[id] = VectorClockTID3{Routine: routine, Vc: vc, TID: tID, Val: op}
 }
 
 /*
