@@ -27,7 +27,8 @@ type VectorClockTID3 struct {
 }
 
 type allSelectCase struct {
-	id       int            // channel id
+	selectID int            // select id
+	chanID   int            // channel id
 	vcTID    VectorClockTID // vector clock and tID
 	send     bool           // true: send, false: receive
 	buffered bool           // true: buffered, false: unbuffered
@@ -40,7 +41,6 @@ var (
 
 	// vc of close on channel
 	closeData = make(map[int]VectorClockTID3)
-	closeRout = make(map[int]int)
 
 	// last receive for each routine and each channel
 	lastRecvRoutine = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
@@ -82,7 +82,7 @@ var (
 
 	// for check of select without partner
 	// store all select cases
-	selectCases = make([]allSelectCase, 0) // id -> vcTID
+	selectCases = make([]allSelectCase, 0)
 )
 
 // InitAnalysis initializes the analysis cases

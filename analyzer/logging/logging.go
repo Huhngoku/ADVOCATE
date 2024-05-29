@@ -135,20 +135,22 @@ func (t TraceElementResult) isInvalid() bool {
 }
 
 type SelectCaseResult struct {
-	objID   int
-	objType string
+	SelID   int
+	ObjID   int
+	ObjType string
+	Routine int
 }
 
 func (s SelectCaseResult) stringMachine() string {
-	return fmt.Sprintf("S%d:%s", s.objID, s.objType)
+	return fmt.Sprintf("S%d:%s", s.ObjID, s.ObjType)
 }
 
 func (s SelectCaseResult) stringReadable() string {
-	return fmt.Sprintf("case: %d:%s", s.objID, s.objType)
+	return fmt.Sprintf("case: %d:%s", s.ObjID, s.ObjType)
 }
 
 func (s SelectCaseResult) isInvalid() bool {
-	return s.objType == ""
+	return s.ObjType == ""
 }
 
 /*

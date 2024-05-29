@@ -262,7 +262,7 @@ func CheckForLeak() {
 			found := false
 			var partner VectorClockTID
 			for _, c := range selectCases {
-				if c.id != vcTID.id {
+				if c.chanID != vcTID.id {
 					continue
 				}
 

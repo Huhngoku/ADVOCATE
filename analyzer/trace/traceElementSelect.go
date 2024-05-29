@@ -468,7 +468,7 @@ func (se *TraceElementSelect) updateVectorClock() {
 			sendInfo = append(sendInfo, c.opC == Send)
 		}
 
-		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,
+		analysis.CheckForSelectCaseWithoutPartnerSelect(se.routine, se.id, ids, buffered, sendInfo,
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
 

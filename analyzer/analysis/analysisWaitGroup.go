@@ -248,21 +248,52 @@ func CheckForDoneBeforeAdd() {
 				}
 			}
 
-			message := "Possible negative waitgroup counter:\n"
-			message += "\tadd: "
+			args1 := []logging.ResultElem{} // adds
+			args2 := []logging.ResultElem{} // dones
+
 			for _, add := range addsVcTIDSorted {
 				if add.TID == "\n" {
 					continue
 				}
-				message += add.TID + "; "
+				file, line, tPre, err := infoFromTID(add.TID)
+				if err != nil {
+					logging.Debug(err.Error(), logging.ERROR)
+					return
+				}
+
+				args1 = append(args1, logging.TraceElementResult{
+					RoutineID: add.Routine,
+					ObjID:     id,
+					TPre:      tPre,
+					ObjType:   "WA",
+					File:      file,
+					Line:      line,
+				})
+
 			}
 
-			message += "\n\tdone: "
 			for _, done := range donesVcTIDSorted {
-				message += done.TID + "; "
+				if done.TID == "\n" {
+					continue
+				}
+				file, line, tPre, err := infoFromTID(done.TID)
+				if err != nil {
+					logging.Debug(err.Error(), logging.ERROR)
+					return
+				}
+
+				args2 = append(args2, logging.TraceElementResult{
+					RoutineID: done.Routine,
+					ObjID:     id,
+					TPre:      tPre,
+					ObjType:   "WD",
+					File:      file,
+					Line:      line,
+				})
 			}
 
-			logging.Result(message, logging.CRITICAL)
+			logging.Result(logging.CRITICAL, logging.PNegWG,
+				"add", args1, "done", args2)
 		}
 	}
 }

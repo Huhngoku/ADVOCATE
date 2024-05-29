@@ -3,7 +3,6 @@ package analysis
 import (
 	"analyzer/clock"
 	"analyzer/logging"
-	"strconv"
 )
 
 /*
@@ -20,7 +19,7 @@ func CheckForSelectCaseWithoutPartner() {
 				continue
 			}
 
-			if c1.id != c2.id || c1.vcTID.TID == c2.vcTID.TID || c1.send == c2.send {
+			if c1.chanID != c2.chanID || c1.vcTID.TID == c2.vcTID.TID || c1.send == c2.send {
 				continue
 			}
 
@@ -43,26 +42,69 @@ func CheckForSelectCaseWithoutPartner() {
 		}
 	}
 
-	// return all cases without a partner
+	if len(selectCases) == 0 {
+		return
+	}
+
+	// collect all cases with no partner
+	casesWithoutPartner := make(map[string][]logging.ResultElem) // tID -> cases
+	casesWithoutPartnerInfo := make(map[string][]int)            // tID -> [routine, selectID]
+
 	for _, c := range selectCases {
 		if c.partner {
 			continue
 		}
 
-		stuckCase := "case: "
-		if c.id == -1 {
-			stuckCase += "*"
-		} else {
-			stuckCase += strconv.Itoa(c.id)
-		}
+		opjType := "C"
 		if c.send {
-			stuckCase += ",S"
+			opjType += "S"
 		} else {
-			stuckCase += ",R"
+			opjType += "R"
 		}
 
-		logging.Result("Found select case without partner or nil case:\n\tselect: "+
-			c.vcTID.TID+"\n\t"+stuckCase, logging.WARNING)
+		arg2 := logging.SelectCaseResult{
+			SelID:   c.selectID,
+			ObjID:   c.chanID,
+			ObjType: opjType,
+			Routine: c.vcTID.Routine,
+		}
+
+		if _, ok := casesWithoutPartner[c.vcTID.TID]; !ok {
+			casesWithoutPartner[c.vcTID.TID] = make([]logging.ResultElem, 0)
+			casesWithoutPartnerInfo[c.vcTID.TID] = []int{c.vcTID.Routine, c.selectID}
+		}
+
+		casesWithoutPartner[c.vcTID.TID] = append(casesWithoutPartner[c.vcTID.TID], arg2)
+	}
+
+	for tID, cases := range casesWithoutPartner {
+		if len(cases) == 0 {
+			continue
+		}
+
+		info := casesWithoutPartnerInfo[tID]
+		if len(info) != 2 {
+			logging.Debug("info should have 2 elements", logging.ERROR)
+			continue
+		}
+
+		file, line, tPre, err := infoFromTID(tID)
+		if err != nil {
+			logging.Debug(err.Error(), logging.ERROR)
+			continue
+		}
+
+		arg1 := logging.TraceElementResult{
+			RoutineID: info[0],
+			ObjID:     info[1],
+			TPre:      tPre,
+			ObjType:   "SS",
+			File:      file,
+			Line:      line,
+		}
+
+		logging.Result(logging.WARNING, logging.ASelCaseWithoutPartner,
+			"select", []logging.ResultElem{arg1}, "case", cases)
 	}
 }
 
@@ -70,15 +112,17 @@ func CheckForSelectCaseWithoutPartner() {
 * CheckForSelectCaseWithoutPartnerSelect checks for select cases without a valid
 * partner. Call whenever a select is processed.
 * Args:
+*   routine (int): The routine id
+*   selectID (int): The id of the select
 *   ids ([]int): The ids of the channels
 *   bufferedInfo ([]bool): The buffer status of the channels
 *   sendInfo ([]bool): The send status of the channels
 *   vc (VectorClock): The vector clock
 *   tID (string): The position of the select in the program
  */
-func CheckForSelectCaseWithoutPartnerSelect(routine int, ids []int, bufferedInfo []bool,
+func CheckForSelectCaseWithoutPartnerSelect(routine int, selectID int, caseChanIds []int, bufferedInfo []bool,
 	sendInfo []bool, vc clock.VectorClock, tID string, chosenIndex int) {
-	for i, id := range ids {
+	for i, id := range caseChanIds {
 		buffered := bufferedInfo[i]
 		send := sendInfo[i]
 
@@ -117,7 +161,7 @@ func CheckForSelectCaseWithoutPartnerSelect(routine int, ids []int, bufferedInfo
 		}
 
 		selectCases = append(selectCases,
-			allSelectCase{id, VectorClockTID{vc, tID, routine}, send, buffered, found})
+			allSelectCase{selectID, id, VectorClockTID{vc, tID, routine}, send, buffered, found})
 
 	}
 }
@@ -137,7 +181,7 @@ func CheckForSelectCaseWithoutPartnerChannel(id int, vc clock.VectorClock, tID s
 	send bool, buffered bool) {
 
 	for i, c := range selectCases {
-		if c.partner || c.id != id || c.send == send || c.vcTID.TID == tID {
+		if c.partner || c.chanID != id || c.send == send || c.vcTID.TID == tID {
 			continue
 		}
 
@@ -172,7 +216,7 @@ func CheckForSelectCaseWithoutPartnerChannel(id int, vc clock.VectorClock, tID s
  */
 func CheckForSelectCaseWithoutPartnerClose(id int, vc clock.VectorClock) {
 	for i, c := range selectCases {
-		if c.partner || c.id != id || c.send {
+		if c.partner || c.chanID != id || c.send {
 			continue
 		}
 

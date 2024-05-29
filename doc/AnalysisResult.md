@@ -125,12 +125,14 @@ It has the following form:
 [[Missing]]
 ```
 
-### Select case without partner
+### Select case without partner or nil case
 A select case without partner shows a select case that is missing a partner or is a nil case.
 The two args of this case are:
 
 - the select operation
 - the select case without partner
+
+The select case consists of the channel number and the direction (S: send, R: recv). If the channel is nil, the channel number is -1.
 
 It has the following form:
 ```
@@ -335,7 +337,7 @@ Found select case without partner or nil case:
 	case: 18,R
 ```
 Select contains the tID of the select that is missing a possible partner.\
-Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv).
+Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv). If the channel is nil, the channel number is -1
 
 ### Possible send on closed
 A possible send on closed has the following form:
