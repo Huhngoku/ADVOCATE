@@ -59,6 +59,7 @@ for file in $test_files; do
         cp $package_path/results_machine.log advocateResult/$packageName-$fileName-$test_func
         cp $package_path/results_readable.log advocateResult/$packageName-$fileName-$test_func
         cp $package_path/times.log advocateResult/$packageName-$fileName-$test_func
+        cp -r $package_path/rewritten_trace* advocateResult/$packageName-$fileName-$test_func 2>/dev/null
     done
     current_file=$((current_file+1))
 done
