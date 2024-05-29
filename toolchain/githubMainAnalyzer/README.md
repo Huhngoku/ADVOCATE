@@ -1,7 +1,17 @@
-# What does this script do
-For a given repository this script looks for the main method and runs the advocate go analysis on it
-## Example with docker compose
+# Github Main Analyzer
+This program takes a link to a github repository and runs the first main method it finds with ADVOCATE.
+It then uses the analyzer to check for potential bugs in the generated trace.
+## Usage
+The program expects :
+- the absolute path to the ADVOCATE root 
+- link to a github repository containing a main method
+### Command
 ```shell
-./githubMainAnalyzer.bash -p [pathToAdvocate]/ADVOCATE/go-patch/bin/go -g [pathToAdvocate]/ADVOCATE/go-patch/ -i [pathToAdvocate]/ADVOCATE/toolchain/overHeadInserter/inserter -r [pathToAdvocate]/ADVOCATE/toolchain/overHeadRemover/remover -t [pathToAdvocate]/ADVOCATE/toolchain/genTrace/genTrace.bash -a [pathToAdvocate]/ADVOCATE/analyzer/analyzer -u https://github.com/docker/compose
-
+./githubMainAnalyzer.bash -a <path-advocate-root> -u <github-repository-url>
+```
+### Output
+The output will be the output of the program itself + the analyzer output afterwards
+### Example
+```shell
+./githubMainAnalyzer.bash -a /home/user/ADVOCATE -u https://github.com/junegunn/fzf
 ```

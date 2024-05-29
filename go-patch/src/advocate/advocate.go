@@ -74,16 +74,13 @@ func removeAtomicsIfFull() {
 			panic(err)
 		}
 
-		// TODO: For some readons, the memory is not equal to the memory in the system monitor.
-		freeRAM := toGB(stat.Freeram)
-		totalRAM := toGB(stat.Totalram)
-		perc := freeRAM / totalRAM
+		freeRAM := stat.Freeram  * uint64(stat.Unit)
 
-		if perc < 0.01 {
+		if freeRAM < 300000000 {
 			panic("Not enough memory.")
 		}
 
-		if !runtime.GetIgnoreAtomicOperations() && !runtime.GetAdvocateDisabled() && perc < 0.1 {
+		if !runtime.GetIgnoreAtomicOperations() && !runtime.GetAdvocateDisabled() && preRAM < 1200000000 {
 			println("Not enough memory. Ignore atomic operations.")
 			runtime.IgnoreAtomicOperations()
 		}

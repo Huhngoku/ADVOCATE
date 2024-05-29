@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"analyzer/io"
@@ -39,6 +40,8 @@ func main() {
 	// "\tm: Mixed deadlock\n"
 
 	startTime := time.Now()
+
+	go memorySupervisor()
 
 	flag.Parse()
 
@@ -156,6 +159,25 @@ func main() {
 	}
 
 	print("\n\n\n")
+}
+
+func memorySupervisor() {
+	var stat syscall.Sysinfo_t
+
+	for {
+		time.Sleep(2 * time.Second)
+
+		err := syscall.Sysinfo(&stat)
+		if err != nil {
+			panic(err)
+		}
+
+		freeRAM := stat.Freeram * uint64(stat.Unit)
+
+		if freeRAM < 300000000 {
+			os.Exit(1)
+		}
+	}
 }
 
 func writeTime(pathTrace string, name string, time float64) error {

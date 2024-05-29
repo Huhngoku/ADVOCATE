@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
 func main() {
 	fileName := flag.String("f", "", "path to the file")
 	testName := flag.String("t", "", "name of the test")
+	replayOverhead := flag.Bool("r", false, "replay overhead")
+	replayNum := flag.Int("n", 1, "replay number")
 	flag.Parse()
 	if *fileName == "" {
 		fmt.Println("Please provide a file name")
@@ -38,7 +41,7 @@ func main() {
 		return
 	}
 
-	addOverhead(*fileName, *testName)
+	addOverhead(*fileName, *testName, *replayOverhead, *replayNum)
 }
 
 func testExists(testName string, fileName string) (bool, error) {
@@ -66,7 +69,7 @@ func testExists(testName string, fileName string) (bool, error) {
 	return false, nil
 }
 
-func addOverhead(fileName string, testName string) {
+func addOverhead(fileName string, testName string, replayOverhead bool, replayNumber int) {
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -87,10 +90,18 @@ func addOverhead(fileName string, testName string) {
 		}
 		//check for test method
 		if strings.Contains(line, "func "+testName) {
-			lines = append(lines, `	// ======= Preamble Start =======
+			if replayOverhead {
+				rn := strconv.Itoa(replayNumber)
+				lines = append(lines, fmt.Sprintf(`	// ======= Preamble Start =======
+	advocate.EnableReplay(%s, true)
+	defer advocate.WaitForReplayFinish()
+	// ======= Preamble End =======`, rn))
+			} else {
+				lines = append(lines, `	// ======= Preamble Start =======
 	advocate.InitTracing(0)
 	defer advocate.Finish()
 	// ======= Preamble End =======`)
+			}
 		}
 	}
 
