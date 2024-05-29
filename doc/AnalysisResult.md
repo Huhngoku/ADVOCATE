@@ -264,6 +264,18 @@ A leak on a mutex has the following form:
 [[Missing]]
 ```
 
+### Leak on select with only nil channels
+A leak on a select with only nil channels has the following form:
+
+The one arg of this case is:
+
+- the select that is leaking
+
+A leak on a select with only nil channels has the following form:
+```
+[[Missing]]
+```
+
 
 ### Leak on mutex
 
@@ -416,12 +428,20 @@ The channel contains the tID of the channel or select that is leaking.\
 The partner contains a "-" because there is no possible partner.
 
 ### Leak on nil channel
-A leak on a mutex has the following form:
+A leak on a nil channel has the following form:
 ```
 Leak on nil channel:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 ```
 Channel contains the tID of the nil channel that is leaking.
+
+### Leak on select with only nil channels
+A leak on a select with only nil channels has the following form:
+```
+Leak on select with only nil channels:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+```
+Select contains the tID of the select that is leaking.
 
 ### Leak on mutex
 A leak on a mutex has the following form:
