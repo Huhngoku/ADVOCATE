@@ -37,6 +37,7 @@ pathToFullWorkflowExecutor="$pathToAdvocate/toolchain/unitTestFullWorkflow/unitT
 
 cd "$dir"
 echo  "In directory: $dir"
+mkdir -p advocation_results
 
 test_files=$(find "$dir" -name "*_test.go")
 total_files=$(echo "$test_files" | wc -l)
@@ -53,7 +54,9 @@ for file in $test_files; do
         #runfullworkflow for single test pass all 
         echo "Running full workflow for test: $test_func in package: $package_path in file: $file"
         adjustedPackagePath=$(echo "$package_path" | sed "s|$dir||g")
-        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func
+        #make folder for each test function output
+        mkdir -p advocation_results/$packageName-$fileName-$test_func
+        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> advocation_results/$packageName-$fileName-$test_func/advocation_results.txt
     done
     current_file=$((current_file+1))
 done
