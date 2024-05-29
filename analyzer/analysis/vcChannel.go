@@ -35,10 +35,10 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 		}
 
 		if mostRecentReceive[routRecv] == nil {
-			mostRecentReceive[routRecv] = make(map[int]VectorClockTID)
+			mostRecentReceive[routRecv] = make(map[int]VectorClockTID3)
 		}
 		if mostRecentSend[routSend] == nil {
-			mostRecentSend[routSend] = make(map[int]VectorClockTID)
+			mostRecentSend[routSend] = make(map[int]VectorClockTID3)
 		}
 
 		vc[routSend] = vc[routSend].Inc(routSend)
@@ -48,11 +48,11 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 		// for detection of send on closed
 		hasSend[id] = true
-		mostRecentSend[routSend][id] = VectorClockTID{mostRecentSend[routSend][id].Vc.Sync(vc[routSend]).Copy(), tIDSend, routSend}
+		mostRecentSend[routSend][id] = VectorClockTID3{routSend, tIDSend, mostRecentSend[routSend][id].Vc.Sync(vc[routSend]).Copy(), id}
 
 		// for detection of receive on closed
 		hasReceived[id] = true
-		mostRecentReceive[routRecv][id] = VectorClockTID{mostRecentReceive[routRecv][id].Vc.Sync(vc[routRecv]).Copy(), tIDRecv, routRecv}
+		mostRecentReceive[routRecv][id] = VectorClockTID3{routRecv, tIDRecv, mostRecentReceive[routRecv][id].Vc.Sync(vc[routRecv]).Copy(), id}
 
 		logging.Debug("Set most recent send of "+strconv.Itoa(id)+" to "+mostRecentSend[routSend][id].Vc.ToString(), logging.DEBUG)
 		logging.Debug("Set most recent recv of "+strconv.Itoa(id)+" to "+mostRecentReceive[routRecv][id].Vc.ToString(), logging.DEBUG)
@@ -120,7 +120,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 	}
 
 	if mostRecentSend[rout] == nil {
-		mostRecentSend[rout] = make(map[int]VectorClockTID)
+		mostRecentSend[rout] = make(map[int]VectorClockTID3)
 	}
 
 	newBufferedVCs(id, size, vc[rout].GetSize())
@@ -150,7 +150,7 @@ func Send(rout int, id int, oID int, size int, tID string,
 
 	// for detection of send on closed
 	hasSend[id] = true
-	mostRecentSend[rout][id] = VectorClockTID{mostRecentSend[rout][id].Vc.Sync(vc[rout]), tID, rout}
+	mostRecentSend[rout][id] = VectorClockTID3{rout, tID, mostRecentSend[rout][id].Vc.Sync(vc[rout]), id}
 
 	vc[rout] = vc[rout].Inc(rout)
 
@@ -192,7 +192,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	}
 
 	if mostRecentReceive[rout] == nil {
-		mostRecentReceive[rout] = make(map[int]VectorClockTID)
+		mostRecentReceive[rout] = make(map[int]VectorClockTID3)
 	}
 
 	newBufferedVCs(id, size, vc[rout].GetSize())
@@ -238,7 +238,7 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 
 	// for detection of receive on closed
 	hasReceived[id] = true
-	mostRecentReceive[rout][id] = VectorClockTID{mostRecentReceive[rout][id].Vc.Sync(vc[rout]), tID, rout}
+	mostRecentReceive[rout][id] = VectorClockTID3{rout, tID, mostRecentReceive[rout][id].Vc.Sync(vc[rout]), id}
 
 	vc[rout] = vc[rout].Inc(rout)
 
@@ -291,7 +291,7 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		checkForClosedOnClosed(rout, id, tID) // must be called before closePos is updated
 	}
 
-	closeData[id] = VectorClockTID3{Routine: rout, TID: tID, Vc: vc[rout].Copy(), Val: 0}
+	closeData[id] = VectorClockTID3{Routine: rout, TID: tID, Vc: vc[rout].Copy(), Val: id}
 
 	if analysisCases["sendOnClosed"] || analysisCases["receiveOnClosed"] {
 		checkForCommunicationOnClosedChannel(id, tID)

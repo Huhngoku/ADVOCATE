@@ -364,7 +364,7 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 						buffered = append(buffered, c.IsBuffered())
 					}
 				}
-				analysis.CheckForLeakSelectStuck(elem.GetRoutine(), ids, buffered, currentVCHb[e.routine], e.tID, opTypes, e.tPre)
+				analysis.CheckForLeakSelectStuck(elem.GetRoutine(), ids, buffered, currentVCHb[e.routine], e.tID, opTypes, e.tPre, e.id)
 			case *TraceElementCond:
 				analysis.CheckForLeakCond(elem.GetRoutine(), elem.GetID(), elem.GetTID())
 			}

@@ -53,10 +53,11 @@ const (
 	LUnbufferedWithout = "L2"
 	LBufferedWith      = "L3"
 	LBufferedWithout   = "L4"
-	LNil               = "L5"
-	LMutex             = "L6"
-	LWaitGroup         = "L7"
-	LCond              = "L8"
+	LNilChan           = "L5"
+	LNilSelect         = "L6"
+	LMutex             = "L7"
+	LWaitGroup         = "L8"
+	LCond              = "L9"
 )
 
 var resultTypeMap = map[ResultType]string{
@@ -74,7 +75,8 @@ var resultTypeMap = map[ResultType]string{
 	LUnbufferedWithout: "Leak on unbuffered channel or select with possible partner:",
 	LBufferedWith:      "Leak on buffered channel with possible partner:",
 	LBufferedWithout:   "Leak on unbuffered channel with possible partner:",
-	LNil:               "Leak on nil channel:",
+	LNilChan:           "Leak on nil channel:",
+	LNilSelect:         "Leak on select with only nil channels:",
 	LMutex:             "Leak on mutex:",
 	LWaitGroup:         "Leak on wait group:",
 	LCond:              "Leak on conditional variable:",

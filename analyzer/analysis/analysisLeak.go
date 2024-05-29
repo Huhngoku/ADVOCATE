@@ -40,7 +40,7 @@ func CheckForLeakChannelStuck(routineID int, objID int, vc clock.VectorClock, tI
 		arg1 := logging.TraceElementResult{
 			RoutineID: routineID, ObjID: objID, TPre: tPre, ObjType: objType, File: file, Line: line}
 
-		logging.Result(logging.CRITICAL, logging.LNil,
+		logging.Result(logging.CRITICAL, logging.LNilChan,
 			"Channel", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
 
 		return
@@ -260,7 +260,7 @@ func CheckForLeak() {
 			}
 
 			found := false
-			var partner VectorClockTID
+			var partner allSelectCase
 			for _, c := range selectCases {
 				if c.chanID != vcTID.id {
 					continue
@@ -276,7 +276,7 @@ func CheckForLeak() {
 					if c.buffered {
 						buffered = true
 					}
-					partner = c.vcTID
+					partner = c
 					break
 				}
 
@@ -284,45 +284,97 @@ func CheckForLeak() {
 					if (c.send && hb == clock.Before) || (!c.send && hb == clock.After) {
 						found = true
 						buffered = true
-						partner = c.vcTID
+						partner = c
 						break
 					}
 				}
 			}
 
-			foundStr := ""
 			if found {
-				if vcTID.sel {
-					if buffered {
-						foundStr = "Leak on select with possible buffered partner:\n"
-					} else {
-						foundStr = "Leak on select with possible unbuffered partner:\n"
-					}
-					foundStr += "\tselect: " + vcTID.tID + "\n"
-				} else {
-					if buffered { // BUG: get unbuffered but should be bufferd
-						foundStr = "Leak on buffered channel with possible partner:\n"
-					} else {
-						foundStr = "Leak on unbuffered channel with possible partner:\n"
-					}
-					foundStr += "\tchannel: " + vcTID.tID + "\n"
+				file1, line1, tPre1, err := infoFromTID(vcTID.tID)
+				if err != nil {
+					logging.Debug("Error in infoFromTID", logging.ERROR)
+					continue
 				}
-				foundStr += "\tpartner: " + partner.TID
-				logging.Result(foundStr, logging.CRITICAL)
+
+				file2, line2, tPre2, err := infoFromTID(partner.vcTID.TID)
+				if err != nil {
+					logging.Debug("Error in infoFromTID", logging.ERROR)
+					continue
+				}
+
+				if vcTID.sel {
+
+					arg1 := logging.TraceElementResult{ // select
+						RoutineID: vcTID.routine, ObjID: vcTID.id, TPre: tPre1, ObjType: "SS", File: file1, Line: line1}
+
+					arg2 := logging.TraceElementResult{ // select
+						RoutineID: partner.vcTID.Routine, ObjID: partner.selectID, TPre: tPre2, ObjType: "SS", File: file2, Line: line2}
+
+					logging.Result(logging.CRITICAL, logging.LUnbufferedWithout,
+						"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
+				} else {
+					obType := "C"
+					if vcTID.typeVal == 0 {
+						obType += "S"
+					} else {
+						obType += "R"
+					}
+
+					var bugType logging.ResultType = logging.LUnbufferedWith
+					if buffered {
+						bugType = logging.LBufferedWith
+					}
+
+					arg1 := logging.TraceElementResult{ // channel
+						RoutineID: vcTID.routine, ObjID: vcTID.id, TPre: tPre1, ObjType: obType, File: file1, Line: line1}
+
+					arg2 := logging.TraceElementResult{ // select
+						RoutineID: partner.vcTID.Routine, ObjID: partner.selectID, TPre: tPre2, ObjType: "SS", File: file2, Line: line2}
+
+					logging.Result(logging.CRITICAL, bugType,
+						"channel", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
+				}
+
 			} else {
 				if vcTID.sel {
-					foundStr = "Leak on select without possible partner:\n"
-					foundStr += "\tselect: " + vcTID.tID + "\n"
-				} else {
-					if buffered {
-						foundStr = "Leak on buffered channel without possible partner:\n"
-					} else {
-						foundStr = "Leak on unbuffered channel without possible partner:\n"
+					file, line, tPre, err := infoFromTID(vcTID.tID)
+					if err != nil {
+						logging.Debug("Error in infoFromTID", logging.ERROR)
+						continue
 					}
-					foundStr += "\tchannel: " + vcTID.tID + "\n"
+
+					arg1 := logging.TraceElementResult{
+						RoutineID: vcTID.routine, ObjID: vcTID.id, TPre: tPre, ObjType: "SS", File: file, Line: line}
+
+					logging.Result(logging.CRITICAL, logging.LUnbufferedWithout,
+						"select", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
+
+				} else {
+					objType := "C"
+					if vcTID.typeVal == 0 {
+						objType += "S"
+					} else {
+						objType += "R"
+					}
+
+					file, line, tPre, err := infoFromTID(vcTID.tID)
+					if err != nil {
+						logging.Debug("Error in infoFromTID", logging.ERROR)
+						continue
+					}
+
+					arg1 := logging.TraceElementResult{
+						RoutineID: vcTID.routine, ObjID: vcTID.id, TPre: tPre, ObjType: objType, File: file, Line: line}
+
+					var bugType logging.ResultType = logging.LUnbufferedWithout
+					if buffered {
+						bugType = logging.LBufferedWithout
+					}
+
+					logging.Result(logging.CRITICAL, bugType,
+						"channel", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
 				}
-				foundStr += "\tpartner: -"
-				logging.Result(foundStr, logging.CRITICAL)
 			}
 		}
 	}
@@ -344,63 +396,116 @@ func CheckForLeak() {
  *   idSel (int): The id of the select operation
  *   tPre (int): The tpre of the select operations. Used to connect the operations of the
  *     same select statement in leakingChannels.
+ *   objId (int): The id of the select
  */
-func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock.VectorClock, tID string, opTypes []int, tPre int) {
+func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock.VectorClock, tID string, opTypes []int, tPre int, objID int) {
 	foundPartner := false
 
 	if len(ids) == 0 {
-		found := "Leak on select with only nil channels:\n"
-		found += "\tselect: " + tID + "\n"
-		found += "\tpartner: -"
-		logging.Result(found, logging.CRITICAL)
+		file, line, _, err := infoFromTID(tID)
+		if err != nil {
+			logging.Debug("Error in infoFromTID", logging.ERROR)
+			return
+		}
+
+		arg1 := logging.TraceElementResult{
+			RoutineID: routineID, ObjID: objID, TPre: tPre, ObjType: "SS", File: file, Line: line}
+
+		logging.Result(logging.CRITICAL, logging.LNilSelect,
+			"select", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
+
 		return
 	}
 
 	for i, id := range ids {
 		if opTypes[i] == 0 { // send
-			for _, mrr := range mostRecentReceive {
-				if _, ok := mrr[id]; ok {
+			for routinePartner, mrr := range mostRecentReceive {
+				if recv, ok := mrr[id]; ok {
 					if clock.GetHappensBefore(vc, mrr[id].Vc) == clock.Concurrent {
-						found := ""
+						var bugType logging.ResultType = logging.LUnbufferedWith
 						if buffered[i] {
-							found = "Leak on select with possible buffered partner:\n"
-						} else {
-							found = "Leak on select with possible unbuffered partner:\n"
+							bugType = logging.LBufferedWith
 						}
-						found += "\tselect: " + tID + "\n"
-						found += "\tpartner: " + mrr[id].TID + "\n"
-						logging.Result(found, logging.CRITICAL)
+
+						file1, line1, _, err1 := infoFromTID(tID) // select
+						if err1 != nil {
+							logging.Debug("Error in infoFromTID", logging.ERROR)
+							return
+						}
+						file2, line2, tPre2, err2 := infoFromTID(recv.TID) // partner
+						if err2 != nil {
+							logging.Debug("Error in infoFromTID", logging.ERROR)
+							return
+						}
+
+						arg1 := logging.TraceElementResult{
+							RoutineID: routineID, ObjID: objID, TPre: tPre, ObjType: "SS", File: file1, Line: line1}
+						arg2 := logging.TraceElementResult{
+							RoutineID: routinePartner, ObjID: id, TPre: tPre2, ObjType: "CR", File: file2, Line: line2}
+
+						logging.Result(logging.CRITICAL, bugType,
+							"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
 						foundPartner = true
 					}
 				}
 			}
 		} else if opTypes[i] == 1 { // recv
-			for _, mrs := range mostRecentSend {
-				if _, ok := mrs[id]; ok {
+			for routinePartner, mrs := range mostRecentSend {
+				if send, ok := mrs[id]; ok {
 					if clock.GetHappensBefore(vc, mrs[id].Vc) == clock.Concurrent {
-						found := ""
+						var bugType logging.ResultType = logging.LUnbufferedWith
 						if buffered[i] {
-							found = "Leak on select with possible buffered partner:\n"
-						} else {
-							found = "Leak on select with possible unbuffered partner:\n"
+							bugType = logging.LBufferedWith
 						}
-						found += "\tselect: " + tID + "\n"
-						found += "\tpartner: " + mrs[id].TID
-						logging.Result(found, logging.CRITICAL)
+
+						file1, line1, _, err1 := infoFromTID(tID) // select
+						if err1 != nil {
+							logging.Debug("Error in infoFromTID", logging.ERROR)
+							return
+						}
+						file2, line2, tPre2, err2 := infoFromTID(send.TID) // partner
+						if err2 != nil {
+							logging.Debug("Error in infoFromTID", logging.ERROR)
+							return
+						}
+
+						arg1 := logging.TraceElementResult{
+							RoutineID: routineID, ObjID: objID, TPre: tPre, ObjType: "SS", File: file1, Line: line1}
+						arg2 := logging.TraceElementResult{
+							RoutineID: routinePartner, ObjID: id, TPre: tPre2, ObjType: "CS", File: file2, Line: line2}
+
+						logging.Result(logging.CRITICAL, bugType,
+							"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
+
 						foundPartner = true
 					}
 				}
 			}
-			if _, ok := closeData[id]; ok {
-				found := ""
+			if cl, ok := closeData[id]; ok {
+				var bugType logging.ResultType = logging.LUnbufferedWith
 				if buffered[i] {
-					found = "Leak on select with possible buffered partner:\n"
-				} else {
-					found = "Leak on select with possible unbuffered partner:\n"
+					bugType = logging.LBufferedWith
 				}
-				found += "\tselect: " + tID + "\n"
-				found += "\tpartner: " + closeData[id].TID
-				logging.Result(found, logging.CRITICAL)
+
+				file1, line1, _, err1 := infoFromTID(tID) // select
+				if err1 != nil {
+					logging.Debug("Error in infoFromTID", logging.ERROR)
+					return
+				}
+				file2, line2, tPre2, err2 := infoFromTID(cl.TID) // partner
+				if err2 != nil {
+					logging.Debug("Error in infoFromTID", logging.ERROR)
+					return
+				}
+
+				arg1 := logging.TraceElementResult{
+					RoutineID: routineID, ObjID: objID, TPre: tPre, ObjType: "SS", File: file1, Line: line1}
+				arg2 := logging.TraceElementResult{
+					RoutineID: cl.Routine, ObjID: id, TPre: tPre2, ObjType: "CS", File: file2, Line: line2}
+
+				logging.Result(logging.CRITICAL, bugType,
+					"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
+
 				foundPartner = true
 			}
 		}

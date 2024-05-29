@@ -34,9 +34,10 @@ S:[objId]:[objType] (select case)
 - L3: Leak on buffered channel with possible partner
 - L4: Leak on buffered channel without possible partner
 - L5: Leak on nil channel
-- L6: Leak on mutex
-- L7: Leak on waitgroup
-- L8: Leak on cond
+- L6: Leak on select with only nil channels
+- L7: Leak on mutex
+- L8: Leak on waitgroup
+- L9: Leak on cond
 
 `[args]` shows the elements involved in the problem. There are either
 one or two, while the args them self can contain multiple trace elements or select cases.\
@@ -394,7 +395,13 @@ Leak on unbuffered channel or select with possible partner:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
 ```
-The channel contains the tID of the channel or select that is leaking.\
+or
+```
+Leak on unbuffered channel or select with possible partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
+```
+The channel/select contains the tID of the channel or select that is leaking.\
 The partner contains the tID of a possible partner of the channel or select.
 
 #### Without possible partner
@@ -403,7 +410,12 @@ A leak on an unbuffered channel without a possible partner has the following for
 Leak on unbuffered channel or select with possible partner:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 ```
-The channel contains the tID of the channel or select that is leaking.\
+or
+```
+Leak on unbuffered channel or select with possible partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+```
+The channel/select contains the tID of the channel or select that is leaking.\
 The partner contains a "-" because there is no possible partner.
 
 ### Leak on buffered channel

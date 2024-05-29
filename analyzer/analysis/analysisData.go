@@ -40,18 +40,18 @@ var (
 	analysisCases = make(map[string]bool)
 
 	// vc of close on channel
-	closeData = make(map[int]VectorClockTID3)
+	closeData = make(map[int]VectorClockTID3) // id -> vcTID3 val = objID
 
 	// last receive for each routine and each channel
 	lastRecvRoutine = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
 
 	// most recent send, used for detection of send on closed
-	hasSend        = make(map[int]bool)                   // id -> bool
-	mostRecentSend = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
+	hasSend        = make(map[int]bool)                    // id -> bool
+	mostRecentSend = make(map[int]map[int]VectorClockTID3) // routine -> id -> vcTID
 
 	// most recent send, used for detection of received on closed
-	hasReceived       = make(map[int]bool)                   // id -> bool
-	mostRecentReceive = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
+	hasReceived       = make(map[int]bool)                    // id -> bool
+	mostRecentReceive = make(map[int]map[int]VectorClockTID3) // routine -> id -> vcTID3, val = objID
 
 	// vector clock for each buffer place in vector clock
 	// the map key is the channel id. The slice is used for the buffer positions
