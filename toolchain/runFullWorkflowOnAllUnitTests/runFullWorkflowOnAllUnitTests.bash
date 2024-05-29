@@ -37,7 +37,7 @@ pathToFullWorkflowExecutor="$pathToAdvocate/toolchain/unitTestFullWorkflow/unitT
 
 cd "$dir"
 echo  "In directory: $dir"
-mkdir -p advocation_results
+mkdir -p advocateResult
 
 test_files=$(find "$dir" -name "*_test.go")
 total_files=$(echo "$test_files" | wc -l)
@@ -51,12 +51,14 @@ for file in $test_files; do
     for test_func in $test_functions; do
         packageName=$(basename "$package_path")
         fileName=$(basename "$file")
-        #runfullworkflow for single test pass all 
         echo "Running full workflow for test: $test_func in package: $package_path in file: $file"
         adjustedPackagePath=$(echo "$package_path" | sed "s|$dir||g")
-        #make folder for each test function output
-        mkdir -p advocation_results/$packageName-$fileName-$test_func
-        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> advocation_results/$packageName-$fileName-$test_func/advocation_results.txt
+        mkdir -p advocateResult/$packageName-$fileName-$test_func
+        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> advocateResult/$packageName-$fileName-$test_func/output.txt
+        cp -r $package_path/advocateTrace advocateResult/$packageName-$fileName-$test_func
+        cp $package_path/results_machine.log advocateResult/$packageName-$fileName-$test_func
+        cp $package_path/results_readable.log advocateResult/$packageName-$fileName-$test_func
+        cp $package_path/times.log advocateResult/$packageName-$fileName-$test_func
     done
     current_file=$((current_file+1))
 done
