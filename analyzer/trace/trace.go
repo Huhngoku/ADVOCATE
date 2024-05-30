@@ -7,6 +7,7 @@ import (
 	"errors"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -110,9 +111,8 @@ func GetTraceFromId(id int) []TraceElement {
  * Args:
  *   tID (string): The tID of the element
  * Returns:
+ *   *TraceElement: The element
  *   error: An error if the element does not exist
- *   int: The routine of the element
- *   int: The index of the element in the trace of the routine
  */
 func GetTraceElementFromTID(tID string) (*TraceElement, error) {
 	if tID == "" {
@@ -127,6 +127,45 @@ func GetTraceElementFromTID(tID string) (*TraceElement, error) {
 		}
 	}
 	return nil, errors.New("Element " + tID + " does not exist")
+}
+
+/*
+ * Given the bug info from the machine readable result file, return the element
+ * in the trace.
+ * Args:
+ *   bugArg (string): The bug info from the machine readable result file
+ * Returns:
+ *   *TraceElement: The element
+ *   error: An error if the element does not exist
+ */
+func GetTraceElementFromBugArg(bugArg string) (*TraceElement, error) {
+	splitArg := strings.Split(bugArg, ":")
+
+	if splitArg[0] != "T" {
+		return nil, errors.New("Bug argument is not a trace element (does not start with T): " + bugArg)
+	}
+
+	if len(splitArg) != 7 {
+		return nil, errors.New("Bug argument is not a trace element (incorrect number of arguments): " + bugArg)
+	}
+
+	routine, err := strconv.Atoi(splitArg[1])
+	if err != nil {
+		return nil, errors.New("Could not parse routine from bug argument: " + bugArg)
+	}
+
+	tPre, err := strconv.Atoi(splitArg[3])
+	if err != nil {
+		return nil, errors.New("Could not parse tPre from bug argument: " + bugArg)
+	}
+
+	for index, elem := range traces[routine] {
+		if elem.GetTPre() == tPre {
+			return &traces[routine][index], nil
+		}
+	}
+
+	return nil, errors.New("Element " + bugArg + " does not exist")
 }
 
 /*

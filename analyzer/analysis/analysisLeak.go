@@ -311,7 +311,7 @@ func CheckForLeak() {
 					arg2 := logging.TraceElementResult{ // select
 						RoutineID: partner.vcTID.Routine, ObjID: partner.selectID, TPre: tPre2, ObjType: "SS", File: file2, Line: line2}
 
-					logging.Result(logging.CRITICAL, logging.LUnbufferedWithout,
+					logging.Result(logging.CRITICAL, logging.LSelectWith,
 						"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
 				} else {
 					obType := "C"
@@ -347,7 +347,7 @@ func CheckForLeak() {
 					arg1 := logging.TraceElementResult{
 						RoutineID: vcTID.routine, ObjID: vcTID.id, TPre: tPre, ObjType: "SS", File: file, Line: line}
 
-					logging.Result(logging.CRITICAL, logging.LUnbufferedWithout,
+					logging.Result(logging.CRITICAL, logging.LSelectWithout,
 						"select", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
 
 				} else {
@@ -411,7 +411,7 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 		arg1 := logging.TraceElementResult{
 			RoutineID: routineID, ObjID: objID, TPre: tPre, ObjType: "SS", File: file, Line: line}
 
-		logging.Result(logging.CRITICAL, logging.LNilSelect,
+		logging.Result(logging.CRITICAL, logging.LSelectWithout,
 			"select", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
 
 		return
@@ -422,11 +422,6 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 			for routinePartner, mrr := range mostRecentReceive {
 				if recv, ok := mrr[id]; ok {
 					if clock.GetHappensBefore(vc, mrr[id].Vc) == clock.Concurrent {
-						var bugType logging.ResultType = logging.LUnbufferedWith
-						if buffered[i] {
-							bugType = logging.LBufferedWith
-						}
-
 						file1, line1, _, err1 := infoFromTID(tID) // select
 						if err1 != nil {
 							logging.Debug("Error in infoFromTID", logging.ERROR)
@@ -443,7 +438,7 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 						arg2 := logging.TraceElementResult{
 							RoutineID: routinePartner, ObjID: id, TPre: tPre2, ObjType: "CR", File: file2, Line: line2}
 
-						logging.Result(logging.CRITICAL, bugType,
+						logging.Result(logging.CRITICAL, logging.LSelectWith,
 							"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
 						foundPartner = true
 					}
@@ -453,11 +448,6 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 			for routinePartner, mrs := range mostRecentSend {
 				if send, ok := mrs[id]; ok {
 					if clock.GetHappensBefore(vc, mrs[id].Vc) == clock.Concurrent {
-						var bugType logging.ResultType = logging.LUnbufferedWith
-						if buffered[i] {
-							bugType = logging.LBufferedWith
-						}
-
 						file1, line1, _, err1 := infoFromTID(tID) // select
 						if err1 != nil {
 							logging.Debug("Error in infoFromTID", logging.ERROR)
@@ -474,7 +464,7 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 						arg2 := logging.TraceElementResult{
 							RoutineID: routinePartner, ObjID: id, TPre: tPre2, ObjType: "CS", File: file2, Line: line2}
 
-						logging.Result(logging.CRITICAL, bugType,
+						logging.Result(logging.CRITICAL, logging.LSelectWith,
 							"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
 
 						foundPartner = true
@@ -482,11 +472,6 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 				}
 			}
 			if cl, ok := closeData[id]; ok {
-				var bugType logging.ResultType = logging.LUnbufferedWith
-				if buffered[i] {
-					bugType = logging.LBufferedWith
-				}
-
 				file1, line1, _, err1 := infoFromTID(tID) // select
 				if err1 != nil {
 					logging.Debug("Error in infoFromTID", logging.ERROR)
@@ -503,7 +488,7 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 				arg2 := logging.TraceElementResult{
 					RoutineID: cl.Routine, ObjID: id, TPre: tPre2, ObjType: "CS", File: file2, Line: line2}
 
-				logging.Result(logging.CRITICAL, bugType,
+				logging.Result(logging.CRITICAL, logging.LSelectWith,
 					"select", []logging.ResultElem{arg1}, "partner", []logging.ResultElem{arg2})
 
 				foundPartner = true

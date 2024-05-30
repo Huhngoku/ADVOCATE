@@ -21,8 +21,9 @@ with
 ```
 The elements have the following meaning:
 S:[objId]:[objType] (select case)
-- A1: Receive on closed channel
-- A2: Send on closed channel
+
+- A1: Send on closed channel
+- A2: Receive on closed channel
 - A3: Close on closed channel
 - A4: Concurrent recv
 - A5: Select case without partner
@@ -354,7 +355,7 @@ A concurrent recv has the following form:
 Found concurrent Recv on same channel:
 	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
-```
+```PosRecvOnClosed
 The first recv contains the recv that is concurrent but in this case after the second recv.
 The second recv contains the recv that is concurrent but in this case before the second recv.
 

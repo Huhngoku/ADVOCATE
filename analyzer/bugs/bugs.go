@@ -3,45 +3,43 @@ package bugs
 import (
 	"analyzer/trace"
 	"errors"
-	"strconv"
 	"strings"
 )
 
-type BugType int
+type ResultType string
 
 const (
-	SendOnClosed BugType = iota
-	PosRecvOnClosed
-	RecvOnClosed
-	CloseOnClosed
-	DoneBeforeAdd
-	SelectWithoutPartner
+	Empty ResultType = ""
 
-	ConcurrentRecv
+	// actual
+	ASendOnClosed          ResultType = "A1"
+	ARecvOnClosed          ResultType = "A2"
+	ACloseOnClosed         ResultType = "A3"
+	AConcurrentRecv        ResultType = "A4"
+	ASelCaseWithoutPartner ResultType = "A5"
 
-	MixedDeadlock
-	CyclicDeadlock
+	// possible
+	PSendOnClosed ResultType = "P1"
+	PRecvOnClosed ResultType = "P2"
+	PNegWG        ResultType = "P3"
 
-	LeakUnbufChanPartner
-	LeakUnbufChanNoPartner
-	LeakBufChanPartner
-	LeakBufChanNoPartner
-	LeakSelectPartnerUnbuf
-	LeakSelectPartnerBuf
-	LeakSelectNoPartner
-	LeakSelectNil
-	LeakChanNil
-	LeakMutex
-	LeakWaitGroup
-	LeakCond
+	// leaks
+	LUnbufferedWith    = "L1"
+	LUnbufferedWithout = "L2"
+	LBufferedWith      = "L3"
+	LBufferedWithout   = "L4"
+	LNilChan           = "L5"
+	LSelectWith        = "L6"
+	LSelectWithout     = "L7"
+	LMutex             = "L8"
+	LWaitGroup         = "L9"
+	LCond              = "L0"
 )
 
 type Bug struct {
-	Type          BugType
+	Type          ResultType
 	TraceElement1 []*trace.TraceElement
-	TID1          []string
 	TraceElement2 []*trace.TraceElement
-	TID2          []string
 }
 
 /*
@@ -54,114 +52,108 @@ func (b Bug) ToString() string {
 	arg1Str := ""
 	arg2Str := ""
 	switch b.Type {
-	case SendOnClosed:
-		typeStr = "Possible send on closed channel:"
-		arg1Str = "close: "
-		arg2Str = "send: "
-	case PosRecvOnClosed:
-		typeStr = "Possible receive on closed channel:"
-		arg1Str = "close: "
-		arg2Str = "recv: "
-	case RecvOnClosed:
+	case ASendOnClosed:
+		typeStr = "Found send on closed channel:"
+		arg1Str = "send: "
+		arg2Str = "close: "
+	case ARecvOnClosed:
 		typeStr = "Found receive on closed channel:"
-		arg1Str = "close: "
-		arg2Str = "recv: "
-	case CloseOnClosed:
+		arg1Str = "recv: "
+		arg2Str = "close: "
+	case ACloseOnClosed:
 		typeStr = "Found close on closed channel:"
 		arg1Str = "close: "
 		arg2Str = "close: "
-	case DoneBeforeAdd:
-		typeStr = "Possible negative waitgroup counter:"
-		arg1Str = "add: "
-		arg2Str = "done: "
-	case SelectWithoutPartner:
-		typeStr = "Found select case without partner or nil case:"
-		arg1Str = "select: "
-		arg2Str = "partner: "
-	case ConcurrentRecv:
+	case AConcurrentRecv:
 		typeStr = "Found concurrent Recv on same channel:"
 		arg1Str = "recv: "
 		arg2Str = "recv: "
-	case MixedDeadlock:
-		typeStr = "Possible mixed deadlock:"
-		arg1Str = "lock: "
-		arg2Str = "lock: "
-	case CyclicDeadlock:
-		typeStr = "Possible cyclic deadlock:"
-		arg1Str = "lock: "
-		arg2Str = "cycle: "
-	case LeakUnbufChanPartner:
-		typeStr = "Leak of unbuffered channel with partner:"
+	case ASelCaseWithoutPartner:
+		typeStr = "Found select case without partner or nil case:"
+		arg1Str = "select: "
+		arg2Str = "case: "
+
+	case PSendOnClosed:
+		typeStr = "Possible send on closed channel:"
+		arg1Str = "send: "
+		arg2Str = "close: "
+	case PRecvOnClosed:
+		typeStr = "Possible receive on closed channel:"
+		arg1Str = "recv: "
+		arg2Str = "close: "
+	case PNegWG:
+		typeStr = "Possible negative waitgroup counter:"
+		arg1Str = "add: "
+		arg2Str = "done: "
+
+	case LUnbufferedWith:
+		typeStr = "Leak on unbuffered channel with possible partner:"
 		arg1Str = "channel: "
 		arg2Str = "partner: "
-	case LeakUnbufChanNoPartner:
-		typeStr = "Leak of unbuffered channel without:"
+	case LUnbufferedWithout:
+		typeStr = "Leak on unbuffered channel without possible partner:"
 		arg1Str = "channel: "
 		arg2Str = ""
-	case LeakBufChanPartner:
-		typeStr = "Leak of buffered channel with partner:"
+	case LBufferedWith:
+		typeStr = "Leak on buffered channel with possible partner:"
 		arg1Str = "channel: "
 		arg2Str = "partner: "
-	case LeakBufChanNoPartner:
-		typeStr = "Leak of buffered channel without partner:"
+	case LBufferedWithout:
+		typeStr = "Leak on buffered channel without possible partner:"
 		arg1Str = "channel: "
 		arg2Str = ""
-	case LeakSelectPartnerUnbuf:
-		typeStr = "Leak of select with unbuffered partner:"
-		arg1Str = "select: "
-		arg2Str = "partner: "
-	case LeakSelectPartnerBuf:
-		typeStr = "Leak of select with buffered partner:"
-		arg1Str = "select: "
-		arg2Str = "partner: "
-	case LeakSelectNoPartner:
-		typeStr = "Leak of select without partner:"
-		arg1Str = "select: "
-		arg2Str = ""
-	case LeakSelectNil:
-		typeStr = "Leak of select with only nil channels:"
-		arg1Str = "select: "
-		arg2Str = ""
-	case LeakChanNil:
-		typeStr = "Leak of nil channel:"
+	case LNilChan:
+		typeStr = "Leak on nil channel:"
 		arg1Str = "channel: "
 		arg2Str = ""
-	case LeakMutex:
-		typeStr = "Leak of mutex:"
+	case LSelectWith:
+		typeStr = "Leak on select with possible partner:"
+		arg1Str = "select: "
+		arg2Str = "partner: "
+	case LSelectWithout:
+		typeStr = "Leak on select without partner:"
+		arg1Str = "select: "
+		arg2Str = ""
+	case LMutex:
+		typeStr = "Leak on mutex:"
 		arg1Str = "mutex: "
-		arg2Str = "last: "
-	case LeakWaitGroup:
-		typeStr = "Leak of waitgroup:"
+		arg2Str = ""
+	case LWaitGroup:
+		typeStr = "Leak on wait group:"
 		arg1Str = "waitgroup: "
 		arg2Str = ""
-	case LeakCond:
-		typeStr = "Leak of conditional variable:"
-		arg1Str = "conditional: "
+	case LCond:
+		typeStr = "Leak on conditional variable:"
+		arg1Str = "cond: "
 		arg2Str = ""
 
 	default:
-		panic("Unknown bug type: " + strconv.Itoa(int(b.Type)))
+		panic("Unknown bug type: " + string(b.Type))
 	}
+
 	res := typeStr + "\n\t" + arg1Str
-	for i, pos := range b.TID1 {
+	for i, elem := range b.TraceElement1 {
 		if i != 0 {
 			res += ";"
 		}
-		res += pos
+		res += (*elem).GetTID()
 	}
 
-	res += "\n\t" + arg2Str
+	if arg2Str != "" {
+		res += "\n\t" + arg2Str
 
-	if len(b.TID2) == 0 {
-		res += "-"
-	}
-
-	for i, pos := range b.TID2 {
-		if i != 0 {
-			res += ";"
+		if len(b.TraceElement2) == 0 {
+			res += "-"
 		}
-		res += pos
+
+		for i, elem := range b.TraceElement2 {
+			if i != 0 {
+				res += ";"
+			}
+			res += (*elem).GetTID()
+		}
 	}
+
 	return res
 }
 
@@ -175,122 +167,116 @@ func (b Bug) Println() {
 /*
  * Process the bug that was selected from the analysis results
  * Args:
- *   typeStr (string): The type of the bug
- *   arg1 (string): The first argument of the bug
- *   arg2 (string): The second argument of the bug
+ *   bugStr: The bug that was selected
  * Returns:
  *   bool: true, if the bug was not a possible, but a actually occuring bug
  *   Bug: The bug that was selected
  *   error: An error if the bug could not be processed
  */
-func ProcessBug(typeStr string, arg1 string, arg2 string) (bool, Bug, error) {
+func ProcessBug(bugStr string) (bool, Bug, error) {
 	bug := Bug{}
 
-	// actual := strings.Split(typeStr, " ")[0]
-	// if actual != "Possible" && actual != "Leak" {
-	// 	bug.T
-	// 	return true, bug, nil
-	// }
+	bugSplit := strings.Split(bugStr, ",")
+	if len(bugSplit) != 3 {
+		return false, bug, errors.New("Could not split bug: " + bugStr)
+	}
+
+	bugType := bugSplit[0]
+	bugArg1 := bugSplit[1]
+	bugArg2 := bugSplit[2]
 
 	containsArg2 := true
 	actual := false
 
-	switch typeStr {
-	case "Possible send on closed channel:":
-		bug.Type = SendOnClosed
-	case "Possible receive on closed channel:":
-		bug.Type = PosRecvOnClosed
-	case "Found receive on closed channel:":
-		bug.Type = RecvOnClosed
+	switch bugType {
+	case "A1":
+		bug.Type = ASendOnClosed
 		actual = true
-	case "Found close on closed channel:":
-		bug.Type = CloseOnClosed
+	case "A2":
+		bug.Type = ARecvOnClosed
 		actual = true
-	case "Possible negative waitgroup counter:":
-		bug.Type = DoneBeforeAdd
-	case "Found select case without partner or nil case:":
-		bug.Type = SelectWithoutPartner
-		containsArg2 = false
-	case "Found concurrent Recv on same channel:":
-		bug.Type = ConcurrentRecv
+	case "A3":
+		bug.Type = ACloseOnClosed
 		actual = true
-	case "Possible mixed deadlock:":
-		bug.Type = MixedDeadlock
-	case "Leak on unbuffered channel with possible partner:":
-		bug.Type = LeakUnbufChanPartner
-	case "Leak on unbuffered channel without possible partner:":
-		bug.Type = LeakUnbufChanNoPartner
+	case "A4":
+		bug.Type = AConcurrentRecv
+		actual = true
+	case "A5":
+		bug.Type = ASelCaseWithoutPartner
 		containsArg2 = false
-	case "Leak on buffered channel with possible partner:":
-		bug.Type = LeakBufChanPartner
-	case "Leak on buffered channel without possible partner:":
-		bug.Type = LeakBufChanNoPartner
+	case "P1":
+		bug.Type = PSendOnClosed
+	case "P2":
+		bug.Type = PRecvOnClosed
+	case "P3":
+		bug.Type = PNegWG
+	// case "P4":
+	// 	bug.Type = CyclicDeadlock
+	// case "P5":
+	// 	bug.Type = MixedDeadlock
+	case "L1":
+		bug.Type = LUnbufferedWith
+	case "L2":
+		bug.Type = LUnbufferedWithout
 		containsArg2 = false
-	case "Leak on select with possible buffered partner:":
-		bug.Type = LeakSelectPartnerBuf
-	case "Leak on select with possible unbuffered partner:":
-		bug.Type = LeakSelectPartnerUnbuf
-	case "Leak on select without possible partner:":
-		bug.Type = LeakSelectNoPartner
+	case "L3":
+		bug.Type = LBufferedWith
+	case "L4":
+		bug.Type = LBufferedWithout
 		containsArg2 = false
-	case "Leak on select with only nil channels:":
-		bug.Type = LeakSelectNil
+	case "L5":
+		bug.Type = LNilChan
 		containsArg2 = false
-	case "Leak on nil channel:":
-		bug.Type = LeakChanNil
+	case "L6":
+		bug.Type = LSelectWith
+	case "L7":
+		bug.Type = LSelectWithout
 		containsArg2 = false
-	case "Leak on mutex:":
-		bug.Type = LeakMutex
-	case "Leak on wait group:":
-		bug.Type = LeakWaitGroup
+	case "L8":
+		bug.Type = LMutex
 		containsArg2 = false
-	case "Leak on conditional variable:":
-		bug.Type = LeakCond
+	case "L9":
+		bug.Type = LWaitGroup
 		containsArg2 = false
-	case "Possible cyclic deadlock:":
-		bug.Type = CyclicDeadlock
+	case "L0":
+		bug.Type = LCond
+		containsArg2 = false
 	default:
-		return actual, bug, errors.New("Unknown bug type: " + typeStr)
+		return actual, bug, errors.New("Unknown bug type: " + bugStr)
 	}
 
-	bug.TraceElement2 = make([]*trace.TraceElement, 0)
-	bug.TID2 = make([]string, 0)
+	bug.TraceElement1 = make([]*trace.TraceElement, 0)
 
-	elems := strings.Split(arg1, ": ")[1]
-
-	for _, tID := range strings.Split(elems, ";") {
-		if strings.TrimSpace(tID) == "" {
+	for _, bugArg := range strings.Split(bugArg1, ";") {
+		if strings.TrimSpace(bugArg) == "" {
 			continue
 		}
 
-		elem, err := trace.GetTraceElementFromTID(tID)
+		elem, err := trace.GetTraceElementFromBugArg(bugArg)
 		if err != nil {
-			println("Could not find: " + tID + " in trace")
+			println("Could not find: " + bugArg + " in trace")
 			return actual, bug, err
 		}
 		bug.TraceElement1 = append(bug.TraceElement1, elem)
-		bug.TID1 = append(bug.TID1, tID)
 	}
 
 	bug.TraceElement2 = make([]*trace.TraceElement, 0)
-	bug.TID2 = make([]string, 0)
 
-	if arg2 == "" || arg2 == "\t" || !containsArg2 {
+	if !containsArg2 {
 		return actual, bug, nil
 	}
 
-	elems = strings.Split(arg2, ": ")[1]
-
-	for _, tID := range strings.Split(elems, ";") {
-		if strings.TrimSpace(tID) == "" || strings.TrimSpace(tID) == "-" {
+	for _, bugArg := range strings.Split(bugArg2, ";") {
+		if strings.TrimSpace(bugArg) == "" {
 			continue
 		}
-		elem, err := trace.GetTraceElementFromTID(tID)
+
+		elem, err := trace.GetTraceElementFromBugArg(bugArg)
 		if err != nil {
 			return actual, bug, err
 		}
+
 		bug.TraceElement2 = append(bug.TraceElement2, elem)
-		bug.TID2 = append(bug.TID2, tID)
 	}
 
 	return actual, bug, nil

@@ -37,8 +37,8 @@ const (
 	Empty ResultType = ""
 
 	// actual
-	ARecvOnClosed          ResultType = "A1"
-	ASendOnClosed          ResultType = "A2"
+	ASendOnClosed          ResultType = "A1"
+	ARecvOnClosed          ResultType = "A2"
 	ACloseOnClosed         ResultType = "A3"
 	AConcurrentRecv        ResultType = "A4"
 	ASelCaseWithoutPartner ResultType = "A5"
@@ -54,10 +54,11 @@ const (
 	LBufferedWith      = "L3"
 	LBufferedWithout   = "L4"
 	LNilChan           = "L5"
-	LNilSelect         = "L6"
-	LMutex             = "L7"
-	LWaitGroup         = "L8"
-	LCond              = "L9"
+	LSelectWith        = "L6"
+	LSelectWithout     = "L7"
+	LMutex             = "L8"
+	LWaitGroup         = "L9"
+	LCond              = "L0"
 )
 
 var resultTypeMap = map[ResultType]string{
@@ -76,7 +77,8 @@ var resultTypeMap = map[ResultType]string{
 	LBufferedWith:      "Leak on buffered channel with possible partner:",
 	LBufferedWithout:   "Leak on unbuffered channel with possible partner:",
 	LNilChan:           "Leak on nil channel:",
-	LNilSelect:         "Leak on select with only nil channels:",
+	LSelectWith:        "Leak on select with possible partner:",
+	LSelectWithout:     "Leak on select without partner or nil case",
 	LMutex:             "Leak on mutex:",
 	LWaitGroup:         "Leak on wait group:",
 	LCond:              "Leak on conditional variable:",

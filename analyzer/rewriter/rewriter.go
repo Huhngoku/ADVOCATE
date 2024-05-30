@@ -41,57 +41,68 @@ func RewriteTrace(bug bugs.Bug) (bool, error) {
 	var err error
 	rewriteNeeded := false
 	switch bug.Type {
-	case bugs.SendOnClosed:
+	case bugs.ASendOnClosed:
+		err = errors.New("Actual send on closed in trace. Therefore no rewrite is needed.")
+	case bugs.ARecvOnClosed:
+		err = errors.New("Actual receive on closed in trace. Therefore no rewrite is needed.")
+	case bugs.ACloseOnClosed:
+		err = errors.New("Only actual close on close can be detected. Therefor no rewrite is needed.")
+	case bugs.AConcurrentRecv:
+		err = errors.New("Rewriting trace for concurrent receive is not possible")
+	case bugs.ASelCaseWithoutPartner:
+		err = errors.New("Rewriting trace for select without partner is not possible")
+
+	case bugs.PSendOnClosed:
 		rewriteNeeded = true
 		err = rewriteClosedChannel(bug, exitSendClose)
-	case bugs.PosRecvOnClosed:
+	case bugs.PRecvOnClosed:
 		rewriteNeeded = true
 		err = rewriteClosedChannel(bug, exitRecvClose)
-	case bugs.RecvOnClosed:
-		err = errors.New("Actual receive on closed in trace. Therefore no rewrite is needed.")
-	case bugs.CloseOnClosed:
-		err = errors.New("Only actual close on close can be detected. Therefor no rewrite is needed.")
-	case bugs.DoneBeforeAdd:
+	case bugs.PNegWG:
 		rewriteNeeded = true
 		err = rewriteWaitGroup(bug)
-	case bugs.SelectWithoutPartner:
-		err = errors.New("Rewriting trace for select without partner is not possible")
-	case bugs.ConcurrentRecv:
-		err = errors.New("Rewriting trace for concurrent receive is not possible")
-	case bugs.MixedDeadlock:
-		err = errors.New("Rewriting trace for mixed deadlock is not implemented yet")
-	case bugs.CyclicDeadlock:
-		rewriteNeeded = true
-		err = rewriteCyclicDeadlock(bug)
-	case bugs.LeakUnbufChanPartner:
+	// case bugs.MixedDeadlock:
+	// 	err = errors.New("Rewriting trace for mixed deadlock is not implemented yet")
+	// case bugs.CyclicDeadlock:
+	// 	rewriteNeeded = true
+	// err = rewriteCyclicDeadlock(bug)
+
+	case bugs.LUnbufferedWith:
 		rewriteNeeded = true
 		err = rewriteUnbufChanLeak(bug)
-	case bugs.LeakUnbufChanNoPartner:
+	case bugs.LUnbufferedWithout:
 		err = errors.New("No possible partner for stuck channel found. Cannot rewrite trace.")
-	case bugs.LeakBufChanPartner:
+	case bugs.LBufferedWith:
 		rewriteNeeded = true
 		err = rewriteBufChanLeak(bug)
-	case bugs.LeakBufChanNoPartner:
+	case bugs.LBufferedWithout:
 		err = errors.New("No possible partner for stuck channel found. Cannot rewrite trace.")
-	case bugs.LeakSelectPartnerUnbuf:
-		rewriteNeeded = true
-		err = rewriteUnbufChanLeak(bug)
-	case bugs.LeakSelectPartnerBuf:
-		rewriteNeeded = true
-		err = rewriteBufChanLeak(bug)
-	case bugs.LeakSelectNoPartner:
-		err = errors.New("No possible partner for stuck select found. Cannot rewrite trace.")
-	case bugs.LeakSelectNil:
-		err = errors.New("All channels in select are nil. Cannot rewrite trace.")
-	case bugs.LeakChanNil:
+	case bugs.LNilChan:
 		err = errors.New("Leak on nil channel. Cannot rewrite trace.")
-	case bugs.LeakMutex:
+	case bugs.LSelectWith:
+		rewriteNeeded = true
+		switch b := (*bug.TraceElement2[0]).(type) {
+		case *trace.TraceElementSelect:
+			err = rewriteUnbufChanLeak(bug)
+		case *trace.TraceElementChannel:
+			if b.IsBuffered() {
+				err = rewriteBufChanLeak(bug)
+			} else {
+				err = rewriteUnbufChanLeak(bug)
+			}
+		default:
+			rewriteNeeded = false
+			err = errors.New("For the given bug type no trace rewriting is possible")
+		}
+	case bugs.LSelectWithout:
+		err = errors.New("No possible partner for stuck select found. Cannot rewrite trace.")
+	case bugs.LMutex:
 		rewriteNeeded = true
 		err = rewriteMutexLeak(bug)
-	case bugs.LeakWaitGroup:
+	case bugs.LWaitGroup:
 		rewriteNeeded = true
 		err = rewriteWaitGroupLeak(bug)
-	case bugs.LeakCond:
+	case bugs.LCond:
 		rewriteNeeded = true
 		err = rewriteCondLeak(bug)
 	default:

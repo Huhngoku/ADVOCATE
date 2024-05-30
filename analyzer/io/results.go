@@ -26,9 +26,7 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 	mb := 1048576 // 1 MB
 	maxTokenSize := 1
 
-	errorType := ""
-	argument1 := ""
-	argument2 := ""
+	bugStr := ""
 
 	for {
 		file, err := os.Open(filePath)
@@ -43,11 +41,7 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 		i := 0
 		for scanner.Scan() {
 			if index == i {
-				errorType = scanner.Text()
-			} else if index+1 == i {
-				argument1 = scanner.Text()
-			} else if index+2 == i {
-				argument2 = scanner.Text()
+				bugStr = scanner.Text()
 				break
 			}
 			i++
@@ -68,7 +62,7 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 
 	println("Analysis results read")
 
-	actual, bug, err := bugs.ProcessBug(errorType, argument1, argument2)
+	actual, bug, err := bugs.ProcessBug(bugStr)
 	if err != nil {
 		println("Error processing bug")
 		println(err.Error())
