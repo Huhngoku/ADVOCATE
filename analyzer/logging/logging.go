@@ -127,7 +127,7 @@ type TraceElementResult struct {
 }
 
 func (t TraceElementResult) stringMachine() string {
-	return fmt.Sprintf("T%d:%d:%d:%s:%s:%d", t.RoutineID, t.ObjID, t.TPre, t.ObjType, t.File, t.Line)
+	return fmt.Sprintf("T:%d:%d:%d:%s:%s:%d", t.RoutineID, t.ObjID, t.TPre, t.ObjType, t.File, t.Line)
 }
 
 func (t TraceElementResult) stringReadable() string {
@@ -184,6 +184,7 @@ func Result(level resultLevel, resType ResultType, argType1 string, arg1 []Resul
 
 	if len(arg2) > 0 {
 		resultReadable += "\n\t" + argType2
+		resultMachine += ","
 		for i, arg := range arg2 {
 			if i != 0 {
 				resultReadable += ";"
@@ -253,13 +254,16 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 
 		for _, result := range resultsCriticalReadable {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
-			resMachine += result + "\n"
 
 			if !noPrint {
 				fmt.Println(strconv.Itoa(counter) + " " + Red + result + Reset)
 			}
 
 			counter++
+		}
+
+		for _, result := range resultCriticalMachine {
+			resMachine += result
 		}
 	}
 	if len(resultsWarningReadable) > 0 && !noWarning {
@@ -277,6 +281,10 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			}
 
 			counter++
+		}
+
+		for _, result := range resultsWarningMachine {
+			resMachine += result
 		}
 	}
 	if !found {

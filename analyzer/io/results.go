@@ -40,8 +40,8 @@ func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 
 		i := 0
 		for scanner.Scan() {
+			bugStr = scanner.Text()
 			if index == i {
-				bugStr = scanner.Text()
 				break
 			}
 			i++

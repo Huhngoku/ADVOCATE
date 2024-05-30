@@ -1088,26 +1088,39 @@ func n56() {
 
 // =============== use for testing ===============
 // MARK: FOR TESTING
+// leak because of wait group
 func nTest() {
+	w := sync.WaitGroup{}
 	c := make(chan int, 0)
-	d := make(chan int, 0)
-
-	c = nil
 
 	go func() {
-		<-d
+		w.Add(1)
+		c <- 1
 	}()
 
-	time.Sleep(100 * time.Millisecond)
+	go func() {
+		w.Add(1)
+		c <- 1
+	}()
 
-	select {
-	case c <- 1:
-	case d <- 1:
-	default:
-	}
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		w.Done()
+	}()
 
-	time.Sleep(100 * time.Millisecond)
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		w.Done()
+	}()
 
+	go func() {
+		<-c
+		<-c
+		time.Sleep(100 * time.Millisecond)
+		w.Wait()
+	}()
+
+	time.Sleep(1000 * time.Millisecond)
 }
 
 func main() {
@@ -1198,7 +1211,7 @@ func main() {
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplayWithTimeout(2, true)
+		advocate.EnableReplayWithTimeout(1, true)
 		defer advocate.WaitForReplayFinish()
 	}
 

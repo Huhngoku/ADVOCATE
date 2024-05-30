@@ -56,6 +56,8 @@ func WaitForReplayFinish() {
 	replayRuntime := time.Now().Sub(advocateReplayStartTime).Seconds()
 
 	writeTime("ReplayRuntime", replayRuntime)
+
+	runtime.ExitReplayWithCode(runtime.ExitCodeDefault)
 }
 
 /*

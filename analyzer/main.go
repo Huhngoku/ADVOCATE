@@ -126,13 +126,13 @@ func main() {
 			needed, err := rewriteTrace(outMachine,
 				newTrace+"_"+strconv.Itoa(resultIndex+1)+"/", resultIndex, numberOfRoutines)
 
-			if needed && err != nil {
+			if !needed {
+				println("Trace can not be rewritten.")
+				notNeededRewrites++
+			} else if err != nil {
 				println("Failed to rewrite trace: ", err.Error())
 				failedRewrites++
 				trace.SetTrace(originalTrace)
-			} else if !needed {
-				println("Trace can not be rewritten.")
-				notNeededRewrites++
 			} else { // needed && err == nil
 				numberRewrittenTrace++
 				rewriteTime += time.Now().Sub(rewriteStartTime)

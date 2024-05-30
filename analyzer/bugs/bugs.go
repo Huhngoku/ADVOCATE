@@ -177,13 +177,11 @@ func ProcessBug(bugStr string) (bool, Bug, error) {
 	bug := Bug{}
 
 	bugSplit := strings.Split(bugStr, ",")
-	if len(bugSplit) != 3 {
+	if len(bugSplit) != 3 && len(bugSplit) != 2 {
 		return false, bug, errors.New("Could not split bug: " + bugStr)
 	}
 
 	bugType := bugSplit[0]
-	bugArg1 := bugSplit[1]
-	bugArg2 := bugSplit[2]
 
 	containsArg2 := true
 	actual := false
@@ -243,6 +241,12 @@ func ProcessBug(bugStr string) (bool, Bug, error) {
 		containsArg2 = false
 	default:
 		return actual, bug, errors.New("Unknown bug type: " + bugStr)
+	}
+
+	bugArg1 := bugSplit[1]
+	bugArg2 := ""
+	if containsArg2 {
+		bugArg2 = bugSplit[2]
 	}
 
 	bug.TraceElement1 = make([]*trace.TraceElement, 0)

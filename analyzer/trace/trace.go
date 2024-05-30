@@ -536,9 +536,7 @@ func ShiftConcurrentOrAfterToAfter(element *TraceElement) {
 		}
 	}
 
-	print("\n\n\n")
-
-	distance := (*element).GetTSort() - minTime + 1
+	distance := (*element).GetTPre() - minTime + 1
 
 	for _, elem := range elemsToShift {
 		tSort := elem.GetTSort()

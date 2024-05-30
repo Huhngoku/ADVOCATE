@@ -1,11 +1,10 @@
 ```
 ==================== Summary ====================
 
+-------------------- Critical -------------------
 
--------------------- Warning --------------------
-
-1 Possible select case without partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1097@41
-	case: *,S
+1 Possible negative waitgroup counter:
+	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1097;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1102
+	done/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1113;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1108
 
 ```
