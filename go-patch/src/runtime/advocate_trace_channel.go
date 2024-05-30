@@ -77,7 +77,7 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint, isNil bool) int {
 	if isNil {
 		elem += "*,R,f,0,0," + file + ":" + intToString(line)
 	} else {
-		elem += "C," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",R,f," +
+		elem += uint64ToString(id) + ",R,f," +
 			uint64ToString(opID) + "," + uint32ToString(uint32(qSize)) + "," +
 			file + ":" + intToString(line)
 	}

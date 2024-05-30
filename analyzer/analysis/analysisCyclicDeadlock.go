@@ -2,7 +2,6 @@ package analysis
 
 import (
 	"analyzer/clock"
-	"analyzer/logging"
 	"strconv"
 )
 
@@ -174,13 +173,14 @@ func CheckForCyclicDeadlock() {
 		// check if the cycle can create a deadlock
 		res := isCycleDeadlock(cycle)
 		if res {
-			found := "Possible cyclic deadlock:\n"
-			found += "\thead: " + cycle[0].tID + "\n"
-			found += "\ttail: "
-			for i := 0; i < len(cycle); i++ {
-				found += cycle[i].tID + ";"
-			}
-			logging.Result(found, logging.CRITICAL)
+			// TODO: add a result. Cyclic deadlock detection is currently disabled
+			// found := "Possible cyclic deadlock:\n"
+			// found += "\thead: " + cycle[0].tID + "\n"
+			// found += "\ttail: "
+			// for i := 0; i < len(cycle); i++ {
+			// 	found += cycle[i].tID + ";"
+			// }
+			// logging.Result(found, logging.CRITICAL)
 		}
 	}
 }

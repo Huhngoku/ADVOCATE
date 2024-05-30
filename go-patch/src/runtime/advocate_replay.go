@@ -18,7 +18,7 @@ const (
 )
 
 var ExitCodeNames = map[int]string{
-	0:  "The replay will ended completely without finding a Replay element",
+	0:  "The replay terminated without finding a Replay element",
 	10: "Replay Stuck: Long wait time for finishing replay",
 	11: "Replay Stuck: Long wait time for running element",
 	12: "Replay Stuck: No traced operation has been executed for approx. 20s",

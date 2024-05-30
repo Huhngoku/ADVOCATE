@@ -468,7 +468,7 @@ func (se *TraceElementSelect) updateVectorClock() {
 			sendInfo = append(sendInfo, c.opC == Send)
 		}
 
-		analysis.CheckForSelectCaseWithoutPartnerSelect(ids, buffered, sendInfo,
+		analysis.CheckForSelectCaseWithoutPartnerSelect(se.routine, se.id, ids, buffered, sendInfo,
 			currentVCHb[se.routine], se.tID, se.chosenIndex)
 	}
 
@@ -484,10 +484,11 @@ func (se *TraceElementSelect) updateVectorClock() {
 
 	if analysisCases["leak"] {
 		for _, c := range se.cases {
-			analysis.CheckForLeakChannelRun(c.id,
+			analysis.CheckForLeakChannelRun(se.routine, c.id,
 				analysis.VectorClockTID{
-					Vc:  se.vc.Copy(),
-					TID: se.tID},
+					Vc:      se.vc.Copy(),
+					TID:     se.tID,
+					Routine: se.routine},
 				int(c.opC), c.IsBuffered())
 		}
 	}

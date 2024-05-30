@@ -52,8 +52,8 @@ func rewriteClosedChannel(bug bugs.Bug, exitCode int) error {
 		return errors.New("TraceElement2 is nil")
 	}
 
-	t1 := (*bug.TraceElement1[0]).GetTSort() // close
-	t2 := (*bug.TraceElement2[0]).GetTSort() // send/recv
+	t1 := (*bug.TraceElement2[0]).GetTSort() // close
+	t2 := (*bug.TraceElement1[0]).GetTSort() // send/recv
 
 	if t1 < t2 { // actual close before send/recv
 		return errors.New("Close is before send/recv")

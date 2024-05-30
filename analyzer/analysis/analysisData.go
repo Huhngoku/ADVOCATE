@@ -3,11 +3,13 @@ package analysis
 import "analyzer/clock"
 
 type VectorClockTID struct {
-	Vc  clock.VectorClock
-	TID string
+	Vc      clock.VectorClock
+	TID     string
+	Routine int
 }
 
 type VectorClockTID2 struct {
+	routine  int
 	id       int
 	vc       clock.VectorClock
 	tID      string
@@ -17,8 +19,16 @@ type VectorClockTID2 struct {
 	sel      bool
 }
 
+type VectorClockTID3 struct {
+	Routine int
+	TID     string
+	Vc      clock.VectorClock
+	Val     int
+}
+
 type allSelectCase struct {
-	id       int            // channel id
+	selectID int            // select id
+	chanID   int            // channel id
 	vcTID    VectorClockTID // vector clock and tID
 	send     bool           // true: send, false: receive
 	buffered bool           // true: buffered, false: unbuffered
@@ -30,19 +40,18 @@ var (
 	analysisCases = make(map[string]bool)
 
 	// vc of close on channel
-	closeData = make(map[int]VectorClockTID)
-	closeRout = make(map[int]int)
+	closeData = make(map[int]VectorClockTID3) // id -> vcTID3 val = objID
 
 	// last receive for each routine and each channel
 	lastRecvRoutine = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
 
 	// most recent send, used for detection of send on closed
-	hasSend        = make(map[int]bool)                   // id -> bool
-	mostRecentSend = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
+	hasSend        = make(map[int]bool)                    // id -> bool
+	mostRecentSend = make(map[int]map[int]VectorClockTID3) // routine -> id -> vcTID
 
 	// most recent send, used for detection of received on closed
-	hasReceived       = make(map[int]bool)                   // id -> bool
-	mostRecentReceive = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID
+	hasReceived       = make(map[int]bool)                    // id -> bool
+	mostRecentReceive = make(map[int]map[int]VectorClockTID3) // routine -> id -> vcTID3, val = objID
 
 	// vector clock for each buffer place in vector clock
 	// the map key is the channel id. The slice is used for the buffer positions
@@ -62,7 +71,7 @@ var (
 	// last acquire on mutex for each routine
 	lockSet                = make(map[int]map[int]string)         // routine -> id -> string
 	mostRecentAcquire      = make(map[int]map[int]VectorClockTID) // routine -> id -> vcTID  // TODO: do we need to store the operation?
-	mostRecentAcquireTotal = make(map[int]VectorClockTID)         // id -> vcTID
+	mostRecentAcquireTotal = make(map[int]VectorClockTID3)        // id -> vcTID
 
 	// vector clocks for last release times
 	relW = make(map[int]clock.VectorClock) // id -> vc
@@ -73,7 +82,7 @@ var (
 
 	// for check of select without partner
 	// store all select cases
-	selectCases = make([]allSelectCase, 0) // id -> vcTID
+	selectCases = make([]allSelectCase, 0)
 )
 
 // InitAnalysis initializes the analysis cases

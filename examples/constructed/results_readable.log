@@ -1,11 +1,9 @@
 ```
 ==================== Summary ====================
 
+-------------------- Critical -------------------
 
--------------------- Warning --------------------
-
-1 Possible select case without partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1097@41
-	case: *,S
+1 Leak on nil channel:
+	Channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1097
 
 ```
