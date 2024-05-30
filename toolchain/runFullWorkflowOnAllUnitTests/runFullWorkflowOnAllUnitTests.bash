@@ -42,6 +42,8 @@ mkdir -p advocateResult
 test_files=$(find "$dir" -name "*_test.go")
 total_files=$(echo "$test_files" | wc -l)
 current_file=1
+skipped_tests=0
+attempted_tests=0
 #echo "Test files: $test_files"
 for file in $test_files; do
     echo "Progress: $current_file/$total_files"
@@ -49,6 +51,7 @@ for file in $test_files; do
     package_path=$(dirname "$file")
     test_functions=$(grep -oE "[a-zA-Z0-9_]+ *Test[a-zA-Z0-9_]*" $file | sed 's/ *\(t *\*testing\.T\)//' | sed 's/func //')
     for test_func in $test_functions; do
+        attempted_tests=$((attempted_tests+1))
         packageName=$(basename "$package_path")
         fileName=$(basename "$file")
         echo "Running full workflow for test: $test_func in package: $package_path in file: $file"
@@ -59,6 +62,7 @@ for file in $test_files; do
         # check if the test failed
         if [ $? -ne 0 ]; then
             echo "Test failed, check output.txt for more information. Skipping..."
+            skipped_tests=$((skipped_tests+1))
             continue
         fi
         cp -r $package_path/advocateTrace advocateResult/$packageName-$fileName-$test_func
@@ -69,3 +73,6 @@ for file in $test_files; do
     done
     current_file=$((current_file+1))
 done
+echo "Finished fullworkflow for all tests"
+echo "Attempted tests: $attempted_tests"
+echo "Skipped tests: $skipped_tests"
