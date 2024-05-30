@@ -1090,34 +1090,11 @@ func n56() {
 // MARK: FOR TESTING
 // leak because of wait group
 func nTest() {
-	w := sync.WaitGroup{}
 	c := make(chan int, 0)
 
 	go func() {
-		w.Add(1)
+		c = nil
 		c <- 1
-	}()
-
-	go func() {
-		w.Add(1)
-		c <- 1
-	}()
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		w.Done()
-	}()
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		w.Done()
-	}()
-
-	go func() {
-		<-c
-		<-c
-		time.Sleep(100 * time.Millisecond)
-		w.Wait()
 	}()
 
 	time.Sleep(1000 * time.Millisecond)

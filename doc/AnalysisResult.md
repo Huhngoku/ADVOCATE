@@ -82,18 +82,6 @@ Each arg contains the following elements separated by a colon (:)
 
 The following are examples for the possible types:
 
-### Receive on close
-A receive on closed is an actual receive on a closed channel.
-The two args of this case are:
-
-- the receive operation
-- the close operation
-
-It has the following form:
-```
-[[Missing]]
-```
-
 ### Send on close
 A send on closed is an actual send on a closed channel (always leads to panic).
 The two args of this case are:
@@ -103,7 +91,19 @@ The two args of this case are:
 
 It has the following form:
 ```
-[[Missing]]
+A1,T:1:4:50:CS:/home/constructed.go:10;,T:2:4:40:CC:/home/constructed.go:20
+```
+
+### Receive on close
+A receive on closed is an actual receive on a closed channel.
+The two args of this case are:
+
+- the receive operation
+- the close operation
+
+It has the following form:
+```
+A2,T:1:4:50:CR:/home/constructed.go:10;,T:2:4:40:CC:/home/constructed.go:20
 ```
 
 ### Close on close
@@ -115,7 +115,7 @@ The two args of this case are:
 
 It has the following form:
 ```
-[[Missing]]
+A3,T:1:4:50:CC:/home/constructed.go:10;,T:2:4:40:CC:/home/constructed.go:20
 ```
 
 ### Concurrent recv
@@ -127,7 +127,7 @@ The two aregs of this case are:
 
 It has the following form:
 ```
-[[Missing]]
+A4,T:1:4:40:CR:/home/constructed.go:10;,T:2:4:50:CR:/home/constructed.go:20
 ```
 
 ### Select case without partner or nil case
@@ -141,7 +141,7 @@ The select case consists of the channel number and the direction (S: send, R: re
 
 It has the following form:
 ```
-[[Missing]]
+A5,T:1:4:40:SS:/home/constructed.go:10,S:6:CR
 ```
 
 ### Possible send on closed
@@ -154,27 +154,8 @@ The two args of this case are:
 
 A possible send on closed has the following form:
 ```
-P1,T:2:22:8:CS:/home/ex/main.go:222,T:1:22:12:CC:/home/ex/main.go:123
+P1,T:2:4:40:CS:/home/ex/main.go:222,T:1:4:50:CC:/home/ex/main.go:123
 ```
-It is constructed in the following way:
-
-`P1`: The type of the bug is a possible send on closed channel.
-
-`T:2:22:8:CS:/home/ex/main.go:222`:
-- T: The element is a trace element
-- 2: The send is in routine 2
-- 22: The send is on channel 22
-- 8: The send is at time (tpre) 8
-- CS: The object is a channel send
-- /home/ex/main.go:222: The send is in the file /home/ex/main.go:222 at line 222
-
-`T:1:22:12:CC:/home/erik/Uni/HiWi/ADVOCATE/examples/ex/ex.go:123`:
-- T: The element is a trace element
-- 1: The close is in routine 1
-- 22: The close is on channel 22
-- 12: The close is at time (tpre) 12
-- CC: The object is a channel close
-- /home/erik/ex/main.go:123: The close is in the file /home/ex/main.go at line 123
 
 ### Possible recv on closed
 A possible recv on closed is a possible but not actual recv on a closed channel.
@@ -185,7 +166,7 @@ The two args of this case are:
 
 A possible recv on closed has the following form:
 ```
-[[Missing]]
+P2,T:2:4:40:CR:/home/ex/main.go:222,T:1:4:50:CC:/home/ex/main.go:123
 ```
 
 
@@ -197,7 +178,7 @@ The two args of this case are:
 
 A possible negative waitgroup counter has the following form:
 ```
-[[Missing]]
+P3,T:20:18:48:WA:/home/constructed.go:10;T:21:18:54:WA:/home/constructed.go:20,T:23:18:59:WD:/home/constructed.go:30;T:22:18:61:WD:/home/constructed.go:40
 ```
 
 ### Leak on unbuffered channel
@@ -207,11 +188,11 @@ but has a possible partner.
 The two arg of this case is:
 
 - the channel that is leaking
-- the possible partner of the channel or select
+- the possible partner of the channel
 
-A leak on an unbuffered channel or select with a possible partner has the following form:
+A leak on an unbuffered channel with a possible partner has the following form:
 ```
-[[Missing]]
+L1,T:2:4:40:CS:/home/ex/main.go:222,T:1:4:30:CR:/home/ex/main.go:123
 ```
 
 #### Without possible partner
@@ -223,7 +204,7 @@ The one arg of this case is: mostRecentAcquireTotal[id]
 
 A leak on an unbuffered channel without a possible partner has the following form:
 ```
-[[Missing]]
+L2,T:2:4:40:CS:/home/ex/main.go:222
 ```
 
 ### Leak on buffered channel
@@ -239,7 +220,7 @@ The two arg of this case is:
 
 A leak on an buffered channel with a possible partner has the following form:
 ```
-[[Missing]]
+L3,T:2:4:40:CS:/home/ex/main.go:20,T:1:4:30:CR:/home/ex/main.go:30
 ```
 
 #### Without possible partner
@@ -253,7 +234,7 @@ The one arg of this case is:
 
 A leak on an buffered channel without a possible partner has the following form:
 ```
-[[Missing]]
+L4,T:2:4:40:CS:/home/ex/main.go:20
 ```
 
 ### Leak on nil channel
@@ -266,10 +247,10 @@ The one arg of this case is:
 
 A leak on a mutex has the following form:
 ```
-[[Missing]]
+L5,T:20:-1:42:CS:/home/constructed.go:1097
 ```
 
-### Leak on selecyt
+### Leak on select
 #### With possible partner
 A leak on an select with a possible partner is a select is leaking,
 but has a possible partner.
@@ -280,30 +261,81 @@ The two arg of this case is:
 
 A leak on an select or select with a possible partner has the following form:
 ```
-[[Missing]]
+L6,T:2:4:40:SS:/home/ex/main.go:20,T:1:4:30:CR:/home/ex/main.go:30
 ```
 
 #### Without possible partner
 A leak on an select without a possible partner is a select that is leaking,
 but has no  partner.
-The one arg of this case is: mostRecentAcquireTotal[id]
+The one arg of this case is:
 
 - the select that is leaking
 
 A leak on an select without a possible partner has the following form:
 ```
-[[Missing]]
+L7,T:2:4:40:CR:/home/ex/main.go:20
 ```
 
 ### Leak on mutex
 
 A leak on a mutex is a mutex that is leaking.
+The two arg of this case is:
 
-The onethe mutex that is leakinglose: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@47
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1103@43
+- the mutex operation that is leaking
+- the last lock operation on the mutex
+
+A leak on a mutex has the following form:
+```
+L8,T:2:4:40:ML:/home/ex/main.go:20,T:1:4:30:ML:/home/ex/main.go:30
+```
+
+### Leak on waitgroup
+
+A leak on a waitgroup is a waitgroup that is leaking.
+The one arg of this case is:
+
+- the waitgroup operation (wait) that is leaking
+
+A leak on a waitgroup has the following form:
+```
+L9,T:2:4:40:WW:/home/ex/main.go:20
+```
+
+### Leak on cond
+
+A leak on a cond is a cond that is leaking.
+The one arg of this case is:
+
+- the cond operation (wait) that is leaking
+
+A leak on a cond has the following form:
+```
+L0,T:2:4:40:NW:/home/ex/main.go:20
+```
+
+
+
+
+
+
+
+
+
+
+## Human readable result file
+
+The result file contains all potential bugs found in the analyzed trace.
+A possible result would be:
+```
+Possible send on closed channel:
+	close: /home/constructed.go:10@47
+	send: /home/constructed.go:40@44
+Possible receive on closed channel:
+	close: /home/constructed.go:10@47
+	recv: /home/constructed.go:20@43
 Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@77;
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@80;
+	add: /home/constructed.go:50@77;
+	done: /home/constructed.go:60@80;
 ```
 Each found problem consist of three lines. The first line explains the
 type of the found bug. The other two line contain the information about the
@@ -314,26 +346,23 @@ form of
 ```
 `[file]:[line]@[tPre]` is called tID
 
-The following is a list of possible elements in the result file.
-The results for cyclic and mixed deadlocks are currently disabled and therefore
-not described.
+### Send on close
+An actual send on closed has the following form:
+```
+Found receive on closed channel:
+	send: /home/constructed.go:40@44
+	close: /home/constructed.go:10@40
+```
+Close contains the tID of the close operation.
+Recv contains the tID of the recv operation.
+
 
 ### Receive on close
 An actual recv on closed has the following form:
 ```
 Found receive on closed channel:
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@40
-```
-Close contains the tID of the close operation.
-Recv contains the tID of the recv operation.
-
-### Send on close
-An actual send on closed has the following form:
-```
-Found send on closed channel:
-	send: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@44
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@40
+	recv: /home/constructed.go:40@44
+	close: /home/constructed.go:10@40
 ```
 Close contains the tID of the close operation.
 Recv contains the tID of the recv operation.
@@ -341,40 +370,40 @@ Recv contains the tID of the recv operation.
 ### Close on close
 An actual close on closed has the following form:
 ```
-Found close on closed channel:
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
+Found receive on closed channel:
+	close: /home/constructed.go:10@44
+	close: /home/constructed.go:40@40
 ```
 The first close contains the close that lead to the panic.
 The second close contains the first close of the channel.
-
 
 ### Concurrent recv
 A concurrent recv has the following form:
 ```
 Found concurrent Recv on same channel:
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
-```PosRecvOnClosed
+	recv: /home/constructed.go:10@44
+	recv: /home/constructed.go:40@40
+```
 The first recv contains the recv that is concurrent but in this case after the second recv.
 The second recv contains the recv that is concurrent but in this case before the second recv.
 
 ### Select case without partner
 A select case without partner has the following form:
 ```
-Found select case without partner or nil case:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+Possible select case without partner or nil case:
+	select: /home/constructed.go:10@44
 	case: 18,R
 ```
 Select contains the tID of the select that is missing a possible partner.\
-Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv). If the channel is nil, the channel number is -1
+Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv).
+
 
 ### Possible send on closed
 A possible send on closed has the following form:
 ```
-Possible send on closed channel:
-	send: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+Found receive on closed channel:
+	close: /home/constructed.go:10@44
+	send: /home/constructed.go:40@40
 ```
 The close contains the close on the channel
 The send contains the send on the channel, that might be closed.
@@ -384,45 +413,51 @@ The send contains the send on the channel, that might be closed.
 A possible send on closed has the following form:
 ```
 Possible receive on closed channel:
-	recv: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
-	close: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	close: /home/constructed.go:10@44
+	recv: /home/constructed.go:40@40
 ```
 The close contains the close on the channel
 The recv contains the recv on the channel, that might be closed.
+
 
 
 ### Possible negative waitgroup counter
 A possible negative waitgroup counter has the following form:
 ```
 Possible negative waitgroup counter:
-	add: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1234@45
-	done: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40;/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@42
+	add: /home/constructed.go:10@44;/home/constructed.go:1234@45
+	done: /home/constructed.go:40@40;/home/constructed.go:40@42
 ```
 Add contains the tIDs of the add operation that might make the counter negative, as well as all add
 operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).\
 Done contains all done
 operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).
 
+
+
+
+
 ### Leak on unbuffered channel
 #### With possible partner
 
 A leak on an unbuffered channel with a possible partner has the following form:
 ```
-Leak on unbuffered channel possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
+Leak on unbuffered channel with possible partner:
+	channel: /home/constructed.go:10@44
+	partner: /home/constructed.go:40@40
 ```
 The channel contains the tID of the channel that is leaking.\
-The partner contains the tID of a possible partner of the channel or select.
+The partner contains the tID of a possible partner of the channel.
 
 #### Without possible partner
 A leak on an unbuffered channel without a possible partner has the following form:
 ```
 Leak on unbuffered channel with possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-```
+	channel: /home/constructed.go:10@44
 
+```
 The channel contains the tID of the channel that is leaking.\
+The second line is empty.
 
 ### Leak on buffered channel
 #### With possible partner
@@ -430,26 +465,27 @@ The channel contains the tID of the channel that is leaking.\
 A leak on an buffered channel with a possible partner has the following form:
 ```
 Leak on buffered channel with possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
+	channel: /home/constructed.go:10@44
+	partner: /home/constructed.go:40@40
 ```
-The channel contains the tID of the channel or select that is leaking.\
-The partner contains the tID of a possible partner of the channel or select.
+The channel contains the tID of the channel that is leaking.\
+The partner contains the tID of a possible partner of the channel.
 
 #### Without possible partner
 A leak on an buffered channel without a possible partner has the following form:
 ```
-Leak on buffered channel without possible partner:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+Leak on buffered channel with possible partner:
+	channel: /home/constructed.go:10@44
+
 ```
-The channel contains the tID of the channel or select that is leaking.\
-The partner contains a "-" because there is no possible partner.
+The channel contains the tID of the channel that is leaking.\
+The second line is empty.
 
 ### Leak on nil channel
 A leak on a nil channel has the following form:
 ```
 Leak on nil channel:
-	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	channel: /home/constructed.go:10@44
 ```
 Channel contains the tID of the nil channel that is leaking.
 
@@ -457,29 +493,30 @@ Channel contains the tID of the nil channel that is leaking.
 #### With possible partner
 
 A leak on an select with a possible partner has the following form:
-Leak on select with possible partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
 ```
-The select contains the tID of select that is leaking.\
-The partner contains the tID of a possible partner of the select.
+Leak on buffered channel with possible partner:
+	select: /home/constructed.go:10@44
+	partner: /home/constructed.go:40@40
+```
+The select contains the tID of the select that is leaking.\
+The partner contains the tID of a possible partner of the channel.
 
 #### Without possible partner
-A leak on an select without a possible partner has the following form:
+A leak on an buffered select without a possible partner has the following form:
 ```
-Leak onselect with possible partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+Leak on buffered select with possible partner:
+	select: /home/constructed.go:10@44
+
 ```
-The channel/select contains the tID of the channel or select that is leaking.
-
-
+The select contains the tID of the select that is leaking.\
+The second line is empty.
 
 ### Leak on mutex
 A leak on a mutex has the following form:
 ```
 Leak on mutex:
-	mutex: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	last: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
+	mutex: /home/constructed.go:10@44
+	last: /home/constructed.go:40@40
 ```
 Mutex contains the tID of the mutex that is leaking.\
 Last contains the tID of the last lock operation on the mutex.
@@ -488,7 +525,7 @@ Last contains the tID of the last lock operation on the mutex.
 A leak on a waitgroup has the following form:
 ```
 Leak on wait group:
-	wait: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	wait-group: /home/constructed.go:10@44
 
 ```
 wait-group contains the tID of the waitgroup that is leaking.\
@@ -498,9 +535,10 @@ The second line is empty.
 A leak on a cond has the following form:
 ```
 Leak on conditional variable:
-	cond: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	conditional: /home/constructed.go:10@44
 
 ```
-cond contains the tID of the conditional variable that is leaking.\
+conditional contains the tID of the conditional variable that is leaking.\
 The second line is empty.
+
 

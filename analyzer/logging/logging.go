@@ -146,7 +146,7 @@ type SelectCaseResult struct {
 }
 
 func (s SelectCaseResult) stringMachine() string {
-	return fmt.Sprintf("S%d:%s", s.ObjID, s.ObjType)
+	return fmt.Sprintf("S:%d:%s", s.ObjID, s.ObjType)
 }
 
 func (s SelectCaseResult) stringReadable() string {
@@ -182,8 +182,9 @@ func Result(level resultLevel, resType ResultType, argType1 string, arg1 []Resul
 		resultMachine += arg.stringMachine()
 	}
 
+	resultReadable += "\n"
 	if len(arg2) > 0 {
-		resultReadable += "\n\t" + argType2
+		resultReadable += "\t" + argType2
 		resultMachine += ","
 		for i, arg := range arg2 {
 			if i != 0 {
