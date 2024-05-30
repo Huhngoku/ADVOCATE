@@ -55,6 +55,12 @@ for file in $test_files; do
         adjustedPackagePath=$(echo "$package_path" | sed "s|$dir||g")
         mkdir -p advocateResult/$packageName-$fileName-$test_func
         $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> advocateResult/$packageName-$fileName-$test_func/output.txt
+        #$pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func
+        # check if the test failed
+        if [ $? -ne 0 ]; then
+            echo "Test failed, check output.txt for more information. Skipping..."
+            continue
+        fi
         cp -r $package_path/advocateTrace advocateResult/$packageName-$fileName-$test_func
         cp $package_path/results_machine.log advocateResult/$packageName-$fileName-$test_func
         cp $package_path/results_readable.log advocateResult/$packageName-$fileName-$test_func

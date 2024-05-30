@@ -48,18 +48,23 @@ pathToAnalyzer="$pathToAdvocate/analyzer/analyzer"
 
 if [ -z "$pathToAdvocate" ]; then
   echo "Path to advocate is empty"
+  exit 1
 fi
 if [ -z "$dir" ]; then
   echo "Directory is empty"
+  exit 1
 fi
 if [ -z "$testName" ]; then
   echo "Test name is empty"
+  exit 1
 fi
 if [ -z "$package" ]; then
   echo "Package is empty"
+  exit 1
 fi
 if [ -z "$file" ]; then
   echo "Test file is empty"
+  exit 1
 fi
 
 
@@ -74,13 +79,26 @@ echo "Remove Overhead just in case"
 $pathToOverheadRemover -f $file -t $testName
 #Add Overhead
 echo "Add Overhead"
+echo "$pathToOverheadInserter -f $file -t $testName"
 $pathToOverheadInserter -f $file -t $testName
+# check if failed
+if [ $? -ne 0 ]; then
+  echo "Error in adding overhead"
+  exit 1
+fi
 ##Run test
 echo "Run test"
 echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
 $pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
+if  [ $? -ne 0 ]; then
+  echo "Remove Overhead"
+  $pathToOverheadRemover -f $file -t $testName
+  echo "Error in running test, therefor overhead removed and full workflow stopped."
+  exit 1
+fi
 ##Remove Overhead
 echo "Remove Overhead"
+echo "$pathToOverheadRemover -f $file -t $testName"
 $pathToOverheadRemover -f $file -t $testName
 #Run Analyzer
 $pathToAnalyzer -t "$dir/$package/advocateTrace"
