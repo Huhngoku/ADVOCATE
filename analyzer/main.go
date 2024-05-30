@@ -174,7 +174,7 @@ func memorySupervisor() {
 
 		freeRAM := stat.Freeram * uint64(stat.Unit)
 
-		if freeRAM < 300000000 {
+		if freeRAM < 3000000000 {
 			os.Exit(1)
 		}
 	}

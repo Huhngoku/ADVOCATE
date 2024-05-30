@@ -74,13 +74,13 @@ func removeAtomicsIfFull() {
 			panic(err)
 		}
 
-		freeRAM := stat.Freeram  * uint64(stat.Unit)
+		freeRAM := stat.Freeram * uint64(stat.Unit)
 
 		if freeRAM < 300000000 {
 			panic("Not enough memory.")
 		}
 
-		if !runtime.GetIgnoreAtomicOperations() && !runtime.GetAdvocateDisabled() && preRAM < 1200000000 {
+		if !runtime.GetIgnoreAtomicOperations() && !runtime.GetAdvocateDisabled() && freeRAM < 1200000000 {
 			println("Not enough memory. Ignore atomic operations.")
 			runtime.IgnoreAtomicOperations()
 		}
