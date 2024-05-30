@@ -29,15 +29,18 @@ S:[objId]:[objType] (select case)
 - P1: Possible send on closed channel
 - P2: Possible receive on closed channel
 - P3: Possible negative waitgroup counter
-- L1: Leak on unbuffered channel or select with possible partner
-- L2: Leak on unbuffered channel or select without possible partner
+- (P4: Possible cyclic deadlock, disabled)
+- (P5: Possible mixed deadlock, disabled)
+- L1: Leak on unbuffered channel with possible partner
+- L2: Leak on unbuffered channel without possible partner
 - L3: Leak on buffered channel with possible partner
 - L4: Leak on buffered channel without possible partner
 - L5: Leak on nil channel
-- L6: Leak on select with only nil channels
-- L7: Leak on mutex
-- L8: Leak on waitgroup
-- L9: Leak on cond
+- L6: Leak on select with possible partner
+- L7: Leak on select without possible partner (includes nil channels)
+- L8: Leak on mutex
+- L9: Leak on waitgroup
+- L0: Leak on cond
 
 `[args]` shows the elements involved in the problem. There are either
 one or two, while the args them self can contain multiple trace elements or select cases.\
@@ -196,13 +199,13 @@ A possible negative waitgroup counter has the following form:
 [[Missing]]
 ```
 
-### Leak on unbuffered channel or select
+### Leak on unbuffered channel
 #### With possible partner
-A leak on an unbuffered channel with a possible partner is a unbuffered channel or select that is leaking,
+A leak on an unbuffered channel with a possible partner is a unbuffered channel is leaking,
 but has a possible partner.
 The two arg of this case is:
 
-- the channel or select that is leaking
+- the channel that is leaking
 - the possible partner of the channel or select
 
 A leak on an unbuffered channel or select with a possible partner has the following form:
@@ -217,7 +220,7 @@ The one arg of this case is: mostRecentAcquireTotal[id]
 
 - the channel that is leaking
 
-A leak on an unbuffered channel or select without a possible partner has the following form:
+A leak on an unbuffered channel without a possible partner has the following form:
 ```
 [[Missing]]
 ```
@@ -265,18 +268,31 @@ A leak on a mutex has the following form:
 [[Missing]]
 ```
 
-### Leak on select with only nil channels
-A leak on a select with only nil channels has the following form:
-
-The one arg of this case is:
+### Leak on selecyt
+#### With possible partner
+A leak on an select with a possible partner is a select is leaking,
+but has a possible partner.
+The two arg of this case is:
 
 - the select that is leaking
+- the possible partner of the channel or select
 
-A leak on a select with only nil channels has the following form:
+A leak on an select or select with a possible partner has the following form:
 ```
 [[Missing]]
 ```
 
+#### Without possible partner
+A leak on an select without a possible partner is a select that is leaking,
+but has no  partner.
+The one arg of this case is: mostRecentAcquireTotal[id]
+
+- the select that is leaking
+
+A leak on an select without a possible partner has the following form:
+```
+[[Missing]]
+```
 
 ### Leak on mutex
 
@@ -386,37 +402,26 @@ operations on the same waitgroup, which, if reordered, lead to the negative wait
 Done contains all done
 operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).
 
-### Leak on unbuffered channel or select
+### Leak on unbuffered channel
 #### With possible partner
 
 A leak on an unbuffered channel with a possible partner has the following form:
 ```
-Leak on unbuffered channel or select with possible partner:
+Leak on unbuffered channel possible partner:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
 ```
-or
-```
-Leak on unbuffered channel or select with possible partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
-```
-The channel/select contains the tID of the channel or select that is leaking.\
+The channel contains the tID of the channel that is leaking.\
 The partner contains the tID of a possible partner of the channel or select.
 
 #### Without possible partner
 A leak on an unbuffered channel without a possible partner has the following form:
 ```
-Leak on unbuffered channel or select with possible partner:
+Leak on unbuffered channel with possible partner:
 	channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 ```
-or
-```
-Leak on unbuffered channel or select with possible partner:
-	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
-```
-The channel/select contains the tID of the channel or select that is leaking.\
-The partner contains a "-" because there is no possible partner.
+
+The channel contains the tID of the channel that is leaking.\
 
 ### Leak on buffered channel
 #### With possible partner
@@ -447,13 +452,26 @@ Leak on nil channel:
 ```
 Channel contains the tID of the nil channel that is leaking.
 
-### Leak on select with only nil channels
-A leak on a select with only nil channels has the following form:
+### Leak on select
+#### With possible partner
+
+A leak on an select with a possible partner has the following form:
+Leak on select with possible partner:
+	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
+	partner: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1095@40
 ```
-Leak on select with only nil channels:
+The select contains the tID of select that is leaking.\
+The partner contains the tID of a possible partner of the select.
+
+#### Without possible partner
+A leak on an select without a possible partner has the following form:
+```
+Leak onselect with possible partner:
 	select: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1100@44
 ```
-Select contains the tID of the select that is leaking.
+The channel/select contains the tID of the channel or select that is leaking.
+
+
 
 ### Leak on mutex
 A leak on a mutex has the following form:
