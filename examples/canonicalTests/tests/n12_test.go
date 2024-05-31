@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// TN: no send to closed channel because of once
 func Test12(t *testing.T) {
 	n12()
 }

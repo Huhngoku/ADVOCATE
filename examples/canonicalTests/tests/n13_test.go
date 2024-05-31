@@ -7,6 +7,7 @@ import (
 	"sync"
 )
 
+// FN: possible send to closed channel not recorded because of once
 func Test13(t *testing.T) {
 	n13()
 }
