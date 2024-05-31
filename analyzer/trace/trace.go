@@ -564,17 +564,17 @@ func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, sta
 			}
 
 			if !(clock.GetHappensBefore(elem.GetVC(), (*element).GetVC()) == clock.Before) {
-				if elem.GetTSort() <= start {
+				if elem.GetTPre() <= start {
 					continue
 				}
 
 				elemsToShift = append(elemsToShift, elem)
-				if minTime == -1 || elem.GetTSort() < minTime {
-					minTime = elem.GetTSort()
+				if minTime == -1 || elem.GetTPre() < minTime {
+					minTime = elem.GetTPre()
 				}
 			} else {
-				if maxNotMoved == 0 || elem.GetTSort() > maxNotMoved {
-					maxNotMoved = elem.GetTSort()
+				if maxNotMoved == 0 || elem.GetTPre() > maxNotMoved {
+					maxNotMoved = elem.GetTPre()
 				}
 			}
 		}
@@ -585,7 +585,7 @@ func ShiftConcurrentOrAfterToAfterStartingFromElement(element *TraceElement, sta
 	distance := (*element).getTpost() - minTime + 1
 
 	for _, elem := range elemsToShift {
-		tSort := elem.GetTSort()
+		tSort := elem.GetTPre()
 		elem.SetT(tSort + distance)
 	}
 
