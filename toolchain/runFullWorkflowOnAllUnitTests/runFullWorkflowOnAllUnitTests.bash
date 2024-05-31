@@ -62,7 +62,7 @@ for file in $test_files; do
         $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> $directoryName/output.txt
         # check if the test failed
         if [ $? -ne 0 ]; then
-            echo "Test failed, check output.txt for more information. Skipping..."
+            echo "File $current_file with Test $attempted_tests failed, check output.txt for more information. Skipping..."
             skipped_tests=$((skipped_tests+1))
             continue
         fi
