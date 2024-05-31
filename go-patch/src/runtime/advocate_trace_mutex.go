@@ -123,8 +123,6 @@ func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
  * 	c: number of the send
  */
 func AdvocateMutexPost(index int) {
-	println("AdvocateMutexPost", index)
-
 	// internal elements are not in the trace
 	if index == -1 {
 		return
