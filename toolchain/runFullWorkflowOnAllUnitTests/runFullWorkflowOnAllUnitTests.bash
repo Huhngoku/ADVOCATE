@@ -66,11 +66,11 @@ for file in $test_files; do
             skipped_tests=$((skipped_tests+1))
             continue
         fi
-        cp -r $package_path/advocateTrace $directoryName
-        cp $package_path/results_machine.log $directoryName
-        cp $package_path/results_readable.log $directoryName
-        cp $package_path/times.log $directoryName
-        cp -r $package_path/rewritten_trace* $directoryName 2>/dev/null
+        mv $package_path/advocateTrace $directoryName
+        mv $package_path/results_machine.log $directoryName
+        mv $package_path/results_readable.log $directoryName
+        mv $package_path/times.log $directoryName
+        mv $package_path/rewritten_trace* $directoryName 2>/dev/null
     done
     current_file=$((current_file+1))
 done
