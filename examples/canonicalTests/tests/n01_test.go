@@ -2,10 +2,9 @@ package main
 
 import (
 	"testing"
-	"time"
 )
 
-func TestSomething(t *testing.T) {
+func Test01(t *testing.T) {
 	n01()
 }
 
