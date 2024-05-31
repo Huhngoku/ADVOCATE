@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -7,19 +6,24 @@ import (
 )
 
 func Test02(t *testing.T) {
-	n03()
+	n02()
 }
 
-// Once
-// TN
-func n03() {
-	var once sync.Once
-	ch := make(chan int, 1)
-	setup := func() {
-		ch <- 1
-	}
 
-	once.Do(setup)
+// Wait group
+// TN
+func n02() {
+	ch := make(chan int, 1)
+	var g sync.WaitGroup
+
+	g.Add(1)
+
+	func() {
+		ch <- 1
+		g.Done()
+	}()
+
+	g.Wait()
 	close(ch)
 
 }
