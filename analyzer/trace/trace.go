@@ -409,6 +409,8 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 			}
 		}
 
+		// println(elem.ToString(), elem.GetVC().ToString())
+
 	}
 
 	if analysisCases["selectWithoutPartner"] {

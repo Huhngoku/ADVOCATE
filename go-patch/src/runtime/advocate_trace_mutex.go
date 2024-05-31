@@ -123,6 +123,8 @@ func AdvocateUnlockPre(id uint64, rw bool, r bool) int {
  * 	c: number of the send
  */
 func AdvocateMutexPost(index int) {
+	println("AdvocateMutexPost", index)
+
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -137,6 +139,7 @@ func AdvocateMutexPost(index int) {
 	timer := GetNextTimeStep()
 
 	elem := currentGoRoutine().getElement(index)
+	println("Elem: ", elem)
 	split := splitStringAtCommas(elem, []int{2, 3})
 	split[1] = uint64ToString(timer)
 	elem = mergeString(split)

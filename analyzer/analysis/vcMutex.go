@@ -110,11 +110,14 @@ func RLock(routine int, id int, vc map[int]clock.VectorClock, wVc map[int]clock.
  *   tPost (int): The timestamp at the end of the event
  */
 func RUnlock(routine int, id int, vc map[int]clock.VectorClock, tPost int) {
-	if tPost != 0 {
-		newRel(id, vc[routine].GetSize())
-		relR[id] = relR[id].Sync(vc[routine])
+	if tPost == 0 {
 		vc[routine] = vc[routine].Inc(routine)
+		return
 	}
+
+	newRel(id, vc[routine].GetSize())
+	relR[id] = relR[id].Sync(vc[routine])
+	vc[routine] = vc[routine].Inc(routine)
 
 	if analysisCases["mixedDeadlock"] {
 		lockSetRemoveLock(routine, id)

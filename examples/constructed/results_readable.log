@@ -1,9 +1,5 @@
 ```
 ==================== Summary ====================
 
--------------------- Critical -------------------
-
-1 Leak on nil channel:
-	Channel: /home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:1097
-
+No bugs found
 ```

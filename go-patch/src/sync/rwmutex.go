@@ -230,35 +230,35 @@ func (rw *RWMutex) rUnlockSlow(r int32) {
 // If the lock is already locked for reading or writing,
 // Lock blocks until the lock is available.
 func (rw *RWMutex) Lock() {
-	if race.Enabled {
-		// ADVOCATE-CHANGE-START
-		enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexLock, 2)
-		if enabled && valid {
-			if replayElem.Blocked {
-				if rw.id == 0 {
-					rw.id = runtime.GetAdvocateObjectID()
-				}
-				_ = runtime.AdvocateMutexLockPre(rw.id, true, false)
-				runtime.BlockForever()
+	// ADVOCATE-CHANGE-START
+	enabled, valid, replayElem := runtime.WaitForReplay(runtime.OperationRWMutexLock, 2)
+	if enabled && valid {
+		if replayElem.Blocked {
+			if rw.id == 0 {
+				rw.id = runtime.GetAdvocateObjectID()
 			}
+			_ = runtime.AdvocateMutexLockPre(rw.id, true, false)
+			runtime.BlockForever()
 		}
-		// RWMutexe don't need to be initialized in default go code. Because
-		// go does not have constructors, the only way to initialize a RWMutex
-		// is directly in the lock function. If the id of the channel is the default
-		// value, it is set to a new, unique object id
-		if rw.id == 0 {
-			rw.id = runtime.GetAdvocateObjectID()
-		}
+	}
+	// RWMutexe don't need to be initialized in default go code. Because
+	// go does not have constructors, the only way to initialize a RWMutex
+	// is directly in the lock function. If the id of the channel is the default
+	// value, it is set to a new, unique object id
+	if rw.id == 0 {
+		rw.id = runtime.GetAdvocateObjectID()
+	}
 
-		// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
-		// AdvocatePost is called, if the mutex was locked successfully.
-		// In this case, the Lock event in the trace is updated to include
-		// this information. advocateIndex is used for AdvocatePost to find the
-		// pre event.
-		advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, false)
-		defer runtime.AdvocateMutexPost(advocateIndex)
-		// ADVOCATE-CHANGE-END
+	// AdvocateMutexLockPre records, that a routine tries to lock a mutex.
+	// AdvocatePost is called, if the mutex was locked successfully.
+	// In this case, the Lock event in the trace is updated to include
+	// this information. advocateIndex is used for AdvocatePost to find the
+	// pre event.
+	advocateIndex := runtime.AdvocateMutexLockPre(rw.id, true, false)
+	defer runtime.AdvocateMutexPost(advocateIndex)
+	// ADVOCATE-CHANGE-END
 
+	if race.Enabled {
 		_ = rw.w.state
 		race.Disable()
 	}

@@ -31,7 +31,7 @@ func getElemFromFiles(filePath string, objectID int, start, end int) (map[int]st
 
 		routine, err := getRoutineFromFileName(file.Name())
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		file, err := createTraceFromFile(filePath+"/"+file.Name(), routine, maxTokenSize, objectID, start, end)
@@ -73,6 +73,9 @@ func createTraceFromFile(filePath string, routine int, maxTokenSize int, objectI
 
 	elements := make(map[int]string)
 	routineStr := strconv.Itoa(routine)
+	if len(routineStr) == 1 {
+		routineStr = "0" + routineStr
+	}
 
 	for {
 		file, err := os.Open(filePath)
@@ -127,12 +130,12 @@ func processElement(element string, objectID string, startTime int, endTime int)
 
 	fields := strings.Split(element, ",")
 	switch fields[0] {
-	case "A":
-		time, _ := strconv.Atoi(fields[1])
-		if !isIdValid(fields[2], objectID) || !isValidTime(time, startTime, endTime) {
-			return false, 0
-		}
-		return true, time
+	// case "A":
+	// 	time, _ := strconv.Atoi(fields[1])
+	// 	if !isIdValid(fields[2], objectID) || !isValidTime(time, startTime, endTime) {
+	// 		return false, 0
+	// 	}
+	// 	return true, time
 	case "C", "M", "W", "O", "N":
 		time, _ := strconv.Atoi(fields[2])
 		if !isIdValid(fields[3], objectID) || !isValidTime(time, startTime, endTime) {
@@ -165,6 +168,11 @@ func processElement(element string, objectID string, startTime int, endTime int)
 			}
 		}
 		return false, 0
+	case "X":
+		time, _ := strconv.Atoi(fields[1])
+		if objectID == "-1" || !isValidTime(time, startTime, endTime) {
+			return true, time
+		}
 	}
 
 	return false, 0
