@@ -137,7 +137,6 @@ func AdvocateMutexPost(index int) {
 	timer := GetNextTimeStep()
 
 	elem := currentGoRoutine().getElement(index)
-	println("Elem: ", elem)
 	split := splitStringAtCommas(elem, []int{2, 3})
 	split[1] = uint64ToString(timer)
 	elem = mergeString(split)
