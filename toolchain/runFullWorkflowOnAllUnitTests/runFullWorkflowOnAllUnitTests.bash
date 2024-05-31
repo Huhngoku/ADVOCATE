@@ -56,20 +56,21 @@ for file in $test_files; do
         fileName=$(basename "$file")
         echo "Running full workflow for test: $test_func in package: $package_path in file: $file"
         adjustedPackagePath=$(echo "$package_path" | sed "s|$dir||g")
-        mkdir -p advocateResult/$packageName-$fileName-$test_func
-        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> advocateResult/$packageName-$fileName-$test_func/output.txt
-        #$pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func
+        directoryName="advocateResult/file($current_file)-test($attempted_tests)-$fileName-$test_func"
+        echo "Creating directory: $directoryName"
+        mkdir -p $directoryName
+        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> $directoryName/output.txt
         # check if the test failed
         if [ $? -ne 0 ]; then
             echo "Test failed, check output.txt for more information. Skipping..."
             skipped_tests=$((skipped_tests+1))
             continue
         fi
-        cp -r $package_path/advocateTrace advocateResult/$packageName-$fileName-$test_func
-        cp $package_path/results_machine.log advocateResult/$packageName-$fileName-$test_func
-        cp $package_path/results_readable.log advocateResult/$packageName-$fileName-$test_func
-        cp $package_path/times.log advocateResult/$packageName-$fileName-$test_func
-        cp -r $package_path/rewritten_trace* advocateResult/$packageName-$fileName-$test_func 2>/dev/null
+        cp -r $package_path/advocateTrace $directoryName
+        cp $package_path/results_machine.log $directoryName
+        cp $package_path/results_readable.log $directoryName
+        cp $package_path/times.log $directoryName
+        cp -r $package_path/rewritten_trace* $directoryName 2>/dev/null
     done
     current_file=$((current_file+1))
 done
