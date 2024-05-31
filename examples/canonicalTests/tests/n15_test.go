@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func TestSomething(t *testing.T) {
+func Test15(t *testing.T) {
 	n15()
 }
 
