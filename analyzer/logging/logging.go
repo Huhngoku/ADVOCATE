@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 var levelDebug int = 0
@@ -165,6 +166,11 @@ func (s SelectCaseResult) isInvalid() bool {
  */
 func Result(level resultLevel, resType ResultType, argType1 string, arg1 []ResultElem, argType2 string, arg2 []ResultElem) {
 	if arg1[0].isInvalid() {
+		return
+	}
+
+	// ignore signal_unix.go
+	if strings.Contains(arg1[0].stringReadable(), "signal_unix.go") {
 		return
 	}
 
