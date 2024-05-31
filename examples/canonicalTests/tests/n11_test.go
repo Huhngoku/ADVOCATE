@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -6,12 +5,11 @@ import (
 	"time"
 )
 
-func Test10(t *testing.T) {
-	n10()
+func Test11(t *testing.T) {
+	n11()
 }
-
-// FN
-func n10() {
+// TP
+func n11() {
 	c := make(chan struct{}, 0)
 
 	go func() {
@@ -26,5 +24,13 @@ func n10() {
 		}
 	}()
 
-	time.Sleep(500 * time.Millisecond) // make sure, that the default values are taken
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		select {
+		case <-c:
+		default:
+		}
+	}()
+
+	time.Sleep(300 * time.Millisecond) // make sure, that the default values are taken
 }
