@@ -473,7 +473,6 @@ func (ch *TraceElementChannel) updateVectorClock() {
 		switch ch.opC {
 		case Send:
 			partner := ch.findPartner()
-			println("Send")
 			if partner != -1 {
 				logging.Debug("Update vector clock of channel operation: "+
 					traces[partner][currentIndex[partner]].ToString(),

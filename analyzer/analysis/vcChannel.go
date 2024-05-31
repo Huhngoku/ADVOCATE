@@ -46,8 +46,6 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 		vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 		vc[routSend] = vc[routRecv].Copy()
 
-		println("Has send: ", id)
-
 		// for detection of send on closed
 		hasSend[id] = true
 		mostRecentSend[routSend][id] = VectorClockTID3{routSend, tIDSend, mostRecentSend[routSend][id].Vc.Sync(vc[routSend]).Copy(), id}
@@ -293,13 +291,13 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 		checkForClosedOnClosed(rout, id, tID) // must be called before closePos is updated
 	}
 
+	vc[rout] = vc[rout].Inc(rout)
+
 	closeData[id] = VectorClockTID3{Routine: rout, TID: tID, Vc: vc[rout].Copy(), Val: id}
 
 	if analysisCases["sendOnClosed"] || analysisCases["receiveOnClosed"] {
 		checkForCommunicationOnClosedChannel(id, tID)
 	}
-
-	vc[rout] = vc[rout].Inc(rout)
 
 	if analysisCases["selectWithoutPartner"] {
 		CheckForSelectCaseWithoutPartnerClose(id, vc[rout])
