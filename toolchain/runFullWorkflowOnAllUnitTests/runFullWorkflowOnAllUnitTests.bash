@@ -57,7 +57,6 @@ for file in $test_files; do
         echo "Running full workflow for test: $test_func in package: $package_path in file: $file"
         adjustedPackagePath=$(echo "$package_path" | sed "s|$dir||g")
         directoryName="advocateResult/file($current_file)-test($attempted_tests)-$fileName-$test_func"
-        echo "Creating directory: $directoryName"
         mkdir -p $directoryName
         $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> $directoryName/output.txt
         # check if the test failed
