@@ -332,5 +332,5 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 		panic(err)
 	}
 
-	return len(resultsCriticalReadable) + len(resultsWarningReadable)
+	return len(resultCriticalMachine) + len(resultsWarningMachine)
 }

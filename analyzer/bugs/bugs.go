@@ -201,7 +201,7 @@ func ProcessBug(bugStr string) (bool, Bug, error) {
 		actual = true
 	case "A5":
 		bug.Type = ASelCaseWithoutPartner
-		containsArg2 = false
+		actual = true
 	case "P1":
 		bug.Type = PSendOnClosed
 	case "P2":
