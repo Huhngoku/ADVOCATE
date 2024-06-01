@@ -611,7 +611,7 @@ func RemoveConcurrent(element *TraceElement, tmin int) {
 	for routine, trace := range traces {
 		result := make([]TraceElement, 0)
 		for _, elem := range trace {
-			if elem.getTpost() < tmin {
+			if elem.GetTSort() < tmin {
 				result = append(result, elem)
 				continue
 			}

@@ -128,7 +128,7 @@ func (on *TraceElementOnce) GetTSort() int {
 		// add at the end of the trace
 		return math.MaxInt
 	}
-	return on.tPost
+	return on.tPre
 }
 
 /*

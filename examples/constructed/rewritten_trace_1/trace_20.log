@@ -1,1 +1,1 @@
-M,44,46,18,-,T,t,/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:352;A,45,1,C;C,54,54,17,S,f,1,0,/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:354
+O,43,53,18,t,/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:303;M,44,46,19,-,L,t,/home/erik/Uni/HiWi/ADVOCATE/go-patch/src/sync/once.go:116;A,45,1,C;C,57,57,17,S,f,1,1,/home/erik/Uni/HiWi/ADVOCATE/examples/constructed/constructed.go:304
