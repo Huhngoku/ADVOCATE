@@ -5,17 +5,15 @@ import (
 	"time"
 )
 
-func Test39(t *testing.T) {
-	n39()
+func Test40(t *testing.T) {
+	n40()
 }
 
-// ============= Leaking ==============
-
-func n39() {
+func n40() {
 	c := make(chan int, 0)
 
 	go func() {
-		c <- 1
+		<-c
 	}()
 
 	time.Sleep(100 * time.Millisecond)
