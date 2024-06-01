@@ -56,7 +56,21 @@ This can be done easily by running
 ./src/make.bat
 ```
 ### Step 2.2: Set Goroot Environment Variable
-Lastly you need to set the goroot-environment-variable
+Lastly you need to set the goroot-environment-variable like so
+```shell
+export GOROOT=$HOME/ADVOCATE/go-patch/
+```
+### Step 3: Run your go program!
+Now you can finally run your go program with the binary that you build in `Step 1`.
+It is located in `./go-patch/bin/go`
+Eg. like so
+```shell
+./go-patch/bin/go run main.go
+```
+or like this for your tests
+```shell
+./go-patch/bin/go test
+```
 
 ### example main method
 ## Output
