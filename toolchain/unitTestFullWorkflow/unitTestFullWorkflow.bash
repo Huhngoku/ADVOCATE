@@ -108,16 +108,21 @@ rtracenum=1
 for trace in $rewritten_traces; do
   ## Apply reorder overhead
   echo "Apply reorder overhead"
-  echo $pathToOverheadInserter -f $file -t $testName -r true -n $rtracenum
-  $pathToOverheadInserter -f $file -t $testName -r true -n $rtracenum
+  echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
+  $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
   ## Run test
   echo "Run reordered test"
+  echo "======"
+  echo "Debug to see if reorder overhead is added correctly"
+  grep "EnableReplay" $file
+  echo "======"
   echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
   $pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
   ## Remove reorder overhead
   echo "Remove reorder overhead"
   echo "$pathToOverheadRemover -f $file -t $testName"
   $pathToOverheadRemover -f $file -t $testName
-  rtracenum=$($rtracenum+1)
+  #increase rtracenum
+  rtracenum=$((rtracenum+1))
 done
 unset GOROOT
