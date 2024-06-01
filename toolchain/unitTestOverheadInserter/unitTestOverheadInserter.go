@@ -12,15 +12,12 @@ import (
 func main() {
 	fileName := flag.String("f", "", "path to the file")
 	testName := flag.String("t", "", "name of the test")
-	replayOverhead := flag.Bool("r", false, "replay overhead")
+	replayOverheadString := flag.String("r", "false", "replay overhead")
 	replayNum := flag.String("n", "1", "replay number")
-	// print replay num for debugging
-	fmt.Println("Replay number: ", *replayNum)
 	flag.Parse()
-	if *fileName == "" {
-		fmt.Println("Please provide a file name")
-		fmt.Println("Usage: go run unitTestOverheadInserter -f <file> -t <test name>")
-		return
+	replayOverhead := false
+	if *replayOverheadString == "true" {
+		replayOverhead = true
 	}
 	if *testName == "" {
 		fmt.Println("Please provide a test name")
@@ -42,7 +39,7 @@ func main() {
 		return
 	}
 
-	addOverhead(*fileName, *testName, *replayOverhead, *replayNum)
+	addOverhead(*fileName, *testName, replayOverhead, *replayNum)
 }
 
 func testExists(testName string, fileName string) (bool, error) {
