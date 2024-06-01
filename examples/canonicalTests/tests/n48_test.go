@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestSomething(t *testing.T) {
+func Test48(t *testing.T) {
 	n48()
 }
 
