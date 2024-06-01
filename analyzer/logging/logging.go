@@ -263,7 +263,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
 
 			if !noPrint {
-				fmt.Println(strconv.Itoa(counter) + " " + Red + result + Reset)
+				fmt.Println(strconv.Itoa(counter) + " " + result)
 			}
 
 			counter++
@@ -284,7 +284,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 			resReadable += strconv.Itoa(counter) + " " + result + "\n"
 
 			if !noPrint {
-				fmt.Println(strconv.Itoa(counter) + " " + Orange + result + Reset)
+				fmt.Println(strconv.Itoa(counter) + " " + result)
 			}
 
 			counter++
@@ -298,7 +298,7 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 		resReadable += "No bugs found" + "\n"
 
 		if !noPrint {
-			fmt.Println(Green + "No bugs found" + Reset)
+			fmt.Println("No bugs found")
 		}
 	}
 

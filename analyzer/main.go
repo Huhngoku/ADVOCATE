@@ -149,12 +149,12 @@ func main() {
 
 		println("Finished Rewrite")
 		println("\n\n\tNumber Results: ", numberOfResults)
-		println(logging.Green, "\tSuccessfully rewrites: ", numberRewrittenTrace, logging.Reset)
-		println(logging.Green, "\tNo need/not possible to rewrite: ", notNeededRewrites, logging.Reset)
+		println("\tSuccessfully rewrites: ", numberRewrittenTrace)
+		println("\tNo need/not possible to rewrite: ", notNeededRewrites)
 		if failedRewrites > 0 {
-			println(logging.Red, "\tFailed rewrites: ", failedRewrites, logging.Reset)
+			println("\tFailed rewrites: ", failedRewrites)
 		} else {
-			println(logging.Green, "\tFailed rewrites: ", failedRewrites, logging.Reset)
+			println("\tFailed rewrites: ", failedRewrites)
 		}
 	}
 
