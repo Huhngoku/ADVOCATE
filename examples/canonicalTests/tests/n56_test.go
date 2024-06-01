@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestSomething(t *testing.T) {
+func Test56(t *testing.T) {
 	n56()
 }
 
