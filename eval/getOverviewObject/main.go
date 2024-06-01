@@ -13,7 +13,7 @@ import (
 
 // small program to print the trace of one of the objects in a trace
 
-func getElemFromFiles(filePath string, objectID int, start, end int) (map[int]string, error) {
+func getElemFromFiles(filePath string, objectID int, start, end int, disableAtomics bool) (map[int]string, error) {
 	maxTokenSize := 4
 
 	// traverse all files in the folder
@@ -34,7 +34,7 @@ func getElemFromFiles(filePath string, objectID int, start, end int) (map[int]st
 			continue
 		}
 
-		file, err := createTraceFromFile(filePath+"/"+file.Name(), routine, maxTokenSize, objectID, start, end)
+		file, err := createTraceFromFile(filePath+"/"+file.Name(), routine, maxTokenSize, objectID, start, end, disableAtomics)
 		if err != nil {
 			return nil, err
 		}
@@ -68,7 +68,7 @@ func getRoutineFromFileName(fileName string) (int, error) {
 	return routine, nil
 }
 
-func createTraceFromFile(filePath string, routine int, maxTokenSize int, objectID int, start, end int) (map[int]string, error) {
+func createTraceFromFile(filePath string, routine int, maxTokenSize int, objectID int, start, end int, disableAtomics bool) (map[int]string, error) {
 	mb := 1048576 // 1 MB
 
 	elements := make(map[int]string)
@@ -88,7 +88,7 @@ func createTraceFromFile(filePath string, routine int, maxTokenSize int, objectI
 
 		for scanner.Scan() {
 			line := scanner.Text()
-			res := processLine(line, objectID, start, end)
+			res := processLine(line, objectID, start, end, disableAtomics)
 			for k, v := range res {
 				elements[k] = routineStr + " -> " + v
 			}
@@ -111,11 +111,11 @@ func createTraceFromFile(filePath string, routine int, maxTokenSize int, objectI
 	return elements, nil
 }
 
-func processLine(line string, objectID, start, end int) map[int]string {
+func processLine(line string, objectID, start, end int, disableAtomics bool) map[int]string {
 	elements := strings.Split(line, ";")
 	result := make(map[int]string)
 	for _, element := range elements {
-		res, tPost := processElement(element, strconv.Itoa(objectID), start, end)
+		res, tPost := processElement(element, strconv.Itoa(objectID), start, end, disableAtomics)
 		if res {
 			result[tPost] = element
 		}
@@ -123,19 +123,22 @@ func processLine(line string, objectID, start, end int) map[int]string {
 	return result
 }
 
-func processElement(element string, objectID string, startTime int, endTime int) (bool, int) {
+func processElement(element string, objectID string, startTime int, endTime int, disableAtomics bool) (bool, int) {
 	if element == "" {
 		return false, 0
 	}
 
 	fields := strings.Split(element, ",")
 	switch fields[0] {
-	// case "A":
-	// 	time, _ := strconv.Atoi(fields[1])
-	// 	if !isIdValid(fields[2], objectID) || !isValidTime(time, startTime, endTime) {
-	// 		return false, 0
-	// 	}
-	// 	return true, time
+	case "A":
+		if disableAtomics {
+			return false, 0
+		}
+		time, _ := strconv.Atoi(fields[1])
+		if !isIdValid(fields[2], objectID) || !isValidTime(time, startTime, endTime) {
+			return false, 0
+		}
+		return true, time
 	case "C", "M", "W", "O", "N":
 		time, _ := strconv.Atoi(fields[2])
 		if !isIdValid(fields[3], objectID) || !isValidTime(time, startTime, endTime) {
@@ -191,6 +194,7 @@ func main() {
 	objectID := flag.Int("o", -1, "Object ID to print the trace for")
 	start := flag.Int("s", 1, "Start time")
 	end := flag.Int("e", math.MaxInt, "End time")
+	disableAtomics := flag.Bool("a", false, "Disable atomic operations")
 	flag.Parse()
 
 	if pathTrace == nil || *pathTrace == "" {
@@ -198,7 +202,7 @@ func main() {
 		return
 	}
 
-	res, err := getElemFromFiles(*pathTrace, *objectID, *start, *end)
+	res, err := getElemFromFiles(*pathTrace, *objectID, *start, *end, *disableAtomics)
 	if err != nil {
 		println(err.Error())
 		return

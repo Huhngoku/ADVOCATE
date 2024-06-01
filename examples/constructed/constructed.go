@@ -363,6 +363,8 @@ func n16() {
 
 	time.Sleep(100 * time.Millisecond)
 	close(c)
+
+	time.Sleep(500 * time.Millisecond)
 }
 
 // FN

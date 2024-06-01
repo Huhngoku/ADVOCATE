@@ -52,25 +52,25 @@ func rewriteClosedChannel(bug bugs.Bug, exitCode int) error {
 		return errors.New("TraceElement2 is nil")
 	}
 
-	t1 := (*bug.TraceElement2[0]).GetTSort() // close
-	t2 := (*bug.TraceElement1[0]).GetTSort() // send/recv
+	t1 := (*bug.TraceElement1[0]).GetTSort() // send/recv
+	t2 := (*bug.TraceElement2[0]).GetTSort() // close
 
-	if t1 < t2 { // actual close before send/recv
+	if t1 > t2 { // actual close before send/recv
 		return errors.New("Close is before send/recv")
 	}
 
 	// remove T3 -> T1 ++ [a] ++ T2 ++ [c]
-	trace.ShortenTrace(t1, true)
+	trace.ShortenTrace(t2, true)
 
 	// transform T2 to T2' -> T1 ++ T2' ++ [c, a]
 	// This is done by removing all elements in T2, that are concurrent to c (including a)
 	// and then adding a after c
-	trace.RemoveConcurrent(bug.TraceElement1[0])
-	(*bug.TraceElement2[0]).SetT(t1 + 1)
-	trace.AddElementToTrace(*bug.TraceElement2[0])
+	trace.RemoveConcurrent(bug.TraceElement2[0], t1)
+	(*bug.TraceElement1[0]).SetT(t2 + 1)
+	trace.AddElementToTrace(*bug.TraceElement1[0])
 
 	// add a stop marker -> T1 ++ T2' ++ [c, a, X']
-	trace.AddTraceElementReplay(t1+2, exitCode)
+	trace.AddTraceElementReplay(t2+2, exitCode)
 
 	return nil
 }

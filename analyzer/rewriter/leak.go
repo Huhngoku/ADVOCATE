@@ -404,7 +404,7 @@ func rewriteMutexLeak(bug bugs.Bug) error {
 
 	// remove all elements, that are concurrent with l. This includes l'
 	// -> T_1' + T_2' + [l]
-	trace.RemoveConcurrent(bug.TraceElement1[0])
+	trace.RemoveConcurrent(bug.TraceElement1[0], 0)
 
 	// set tpost of l to non zero
 	lockOp.SetT(lockOp.GetTPre())

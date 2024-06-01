@@ -603,14 +603,19 @@ func ShiftConcurrentToBefore(element *TraceElement) {
 }
 
 /*
- * Remove all elements that are concurrent to the element
+ * Remove all elements that are concurrent to the element and have time greater or equal to tmin
  * Args:
  *   element (traceElement): The element
  */
-func RemoveConcurrent(element *TraceElement) {
+func RemoveConcurrent(element *TraceElement, tmin int) {
 	for routine, trace := range traces {
 		result := make([]TraceElement, 0)
 		for _, elem := range trace {
+			if elem.getTpost() < tmin {
+				result = append(result, elem)
+				continue
+			}
+
 			if elem.GetTID() == (*element).GetTID() {
 				result = append(result, elem)
 				continue
