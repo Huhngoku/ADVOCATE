@@ -87,7 +87,7 @@ Running the analyzer will generate 3 files for you
 - rewritten_Trace (a trace in which the bug it was rewritten for would occur)
 
 ### What bugs can be found
-
+AdvocateGo currently supports these bugs
 ## Replay
 ### How to replay the program and cause the predicted bug
 This process is similar to when we first ran the program. Only the Overhead changes slightly.
@@ -114,6 +114,8 @@ The bugs that are currently supported for the replay feature are
 - L8: Leak on mutex
 - L9: Leak on waitgroup
 - L0: Leak on cond
+
+If these bugs then occur when running the program again they will exit with the designated exit code in the list above
 ## Tooling
 ### Preamble and Import Management
 ### Analyzing of Repository Main Methods
