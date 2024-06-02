@@ -89,6 +89,21 @@ Running the analyzer will generate 3 files for you
 ### What bugs can be found
 
 ## Replay
+### How to replay the program and cause the predicted bug
+This process is similar to when we first ran the program. Only the Overhead changes slightly.
+
+Instead want to use this overhead
+
+```go
+    // ======= Preamble Start =======
+	advocate.EnableReplay(n)
+	defer advocate.WaitForReplayFinish()
+    // ======= Preamble End =======
+```
+
+where the variable `n` is the rewritten trace you want to use.
+Note that the method looks for the `rewritten_trace` folder in the same directory as the file is located
+### Which bugs are supported for replay
 The bugs that are currently supported for the replay feature are
 - P1: Possible send on closed channel
 - P2: Possible receive on closed channel
