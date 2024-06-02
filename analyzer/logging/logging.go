@@ -190,7 +190,7 @@ func Result(level resultLevel, resType ResultType, argType1 string, arg1 []Resul
 
 	resultReadable += "\n"
 	if len(arg2) > 0 {
-		resultReadable += "\t" + argType2
+		resultReadable += "\t" + argType2 + ": "
 		resultMachine += ","
 		for i, arg := range arg2 {
 			if i != 0 {

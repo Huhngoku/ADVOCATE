@@ -232,7 +232,6 @@ func ProcessBug(bugStr string) (bool, Bug, error) {
 		containsArg2 = false
 	case "L8":
 		bug.Type = LMutex
-		containsArg2 = false
 	case "L9":
 		bug.Type = LWaitGroup
 		containsArg2 = false

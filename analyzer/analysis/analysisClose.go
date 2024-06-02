@@ -88,7 +88,7 @@ func checkForCommunicationOnClosedChannel(id int, pos string) {
 					RoutineID: routine,
 					ObjID:     id,
 					TPre:      tPre1,
-					ObjType:   "CS",
+					ObjType:   "CR",
 					File:      file1,
 					Line:      line1,
 				}

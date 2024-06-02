@@ -598,7 +598,9 @@ sclose:
 	AdvocateSelectPost(advocateIndex, c, casi, advocateRClose)
 	// ADVOCATE-CHANGE-END
 	selunlock(scases, lockorder)
-	IsNextElementReplayEnd(ExitCodeSendClose, true, false)
+	if IsReplayEnabled() {
+		IsNextElementReplayEnd(ExitCodeSendClose, true, false)
+	}
 	panic(plainError("send on closed channel"))
 }
 

@@ -21,8 +21,6 @@ import (
 func ReadAnalysisResults(filePath string, index int) (bool, bugs.Bug, error) {
 	println("Read analysis results from " + filePath + " for index " + strconv.Itoa(index) + "...")
 
-	index = index * 3
-
 	mb := 1048576 // 1 MB
 	maxTokenSize := 1
 

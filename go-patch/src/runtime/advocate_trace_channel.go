@@ -121,16 +121,10 @@ func AdvocateChanPost(index int) {
 
 	split := splitStringAtCommas(elem, []int{2, 3, 4, 5, 7, 8})
 
-	for i := 0; i < len(split); i++ {
-		println(i, ": ", split[i])
-	}
-
 	id := split[2]
 	op := split[3]
 	qSize := split[5]
 	set := false
-
-	println("id: ", id, " op: ", op, " qSize: ", qSize)
 
 	if qSize == "0" { // unbuffered channel
 		if op == "S" {
@@ -144,7 +138,6 @@ func AdvocateChanPost(index int) {
 			}
 			set = true
 		} else if op == "R" {
-			println("RRRRRRRRRRRRRRRRRRR")
 			if tpost, ok := unbufferedChannelComSend[id]; ok {
 				split[1] = uint64ToString(tpost + 1)
 				delete(unbufferedChannelComSend, id)
@@ -162,7 +155,6 @@ func AdvocateChanPost(index int) {
 	}
 
 	elem = mergeString(split)
-	println("elem: ", elem)
 
 	currentGoRoutine().updateElement(index, elem)
 }

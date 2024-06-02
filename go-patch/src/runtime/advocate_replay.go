@@ -267,6 +267,10 @@ func WaitForReplayFinish() {
 	}
 }
 
+func IsReplayEnabled() bool {
+	return replayEnabled
+}
+
 /*
  * Wait until the correct operation is about to be executed.
  * Arguments:
