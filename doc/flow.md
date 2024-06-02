@@ -1,5 +1,5 @@
 ```mermaid
-flowchart LR
+flowchart TD
 MainUnit[Main Method \n or Unit Tests] --> Run[Run program]
 PatchedGRT[Patched go runtime] --> Run
 AdvocateOverhead --> Run
