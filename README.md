@@ -113,7 +113,7 @@ defer advocate.WaitForReplayFinish()
 where the variable `n` is the rewritten trace you want to use.
 Note that the method looks for the `rewritten_trace` folder in the same directory as the file is located
 ### Which bugs are supported for replay
-A more detailed description of how replays work and a list of what bugs are currently supported for replay can be found under `./doc/TraceReplay.md` and `./doc/TraceReconstruction.md`
+A more detailed description of how replays work and a list of what bugs are currently supported for replay can be found under [TraceReplay.md](./doc/TraceReplay.md) and [TraceReconstruciton.md](./doc/TraceReconstruction.md).
 
 
 
