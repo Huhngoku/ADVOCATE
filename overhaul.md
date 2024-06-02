@@ -25,10 +25,10 @@ Eg. like this
 ```go
 import "advocate"
 func main(){
-// ======= Preamble Start =======
+    // ======= Preamble Start =======
     advocate.InitTracing(0)
     defer advocate.Finish()
-// ======= Preamble End =======
+    // ======= Preamble End =======
 ...
 }
 ```
@@ -37,10 +37,10 @@ or like this for a unit test
 import "advocate"
 ...
 func TestImportantThings(t *testing.T){
-// ======= Preamble Start =======
+    // ======= Preamble Start =======
     advocate.InitTracing(0)
     defer advocate.Finish()
-// ======= Preamble End =======
+    // ======= Preamble End =======
 ...
 }
 ```
@@ -62,7 +62,7 @@ export GOROOT=$HOME/ADVOCATE/go-patch/
 ```
 ### Step 3: Run your go program!
 Now you can finally run your go program with the binary that you build in `Step 1`.
-It is located in `./go-patch/bin/go`
+It is located under `./go-patch/bin/go`
 Eg. like so
 ```shell
 ./go-patch/bin/go run main.go
@@ -71,13 +71,30 @@ or like this for your tests
 ```shell
 ./go-patch/bin/go test
 ```
+## Analyzing Trace
+After you run your program you will find that it generated the folder `advocateTrace`.
+It contains a record of what operation ran in what thread during the execution of your program.
 
-### example main method
-## Output
-- machine_readable.log
-- human readable.log
-- advocateTrace
-- rewritten_Trace
+This acts as input for the analyzer located under `./analyzer/analyzer`.
+It can be run like so
+```shell
+./analyzer/analyzer -t advocateTrace
+```
+### Output
+Running the analyzer will generate 3 files for you
+- machine_readable.log (good for parsing and further analysis)
+- human readable.log (more readable representation of bug predictions)
+- rewritten_Trace (a trace in which the bug it was rewritten for would occur)
+
+### What bugs can be found
+
+## Replay
+The bugs that are currently supported for the replay feature are
+- P1: Possible send on closed channel
+- P2: Possible receive on closed channel
+- P3: Possible negative waitgroup counter
+- L1: Leak on unbuffered channel with possible partner
+- L3: Leak on buffered channel with possible partner
 ## Tooling
 ### Preamble and Import Management
 ### Analyzing of Repository Main Methods
