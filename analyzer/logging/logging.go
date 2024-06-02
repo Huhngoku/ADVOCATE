@@ -73,10 +73,10 @@ var resultTypeMap = map[ResultType]string{
 	PRecvOnClosed: "Possible receive on closed channel:",
 	PNegWG:        "Possible negative waitgroup counter:",
 
-	LUnbufferedWith:    "Leak on unbuffered channel or select with possible partner:",
-	LUnbufferedWithout: "Leak on unbuffered channel or select with possible partner:",
+	LUnbufferedWith:    "Leak on unbuffered channel with possible partner:",
+	LUnbufferedWithout: "Leak on unbuffered channel without possible partner:",
 	LBufferedWith:      "Leak on buffered channel with possible partner:",
-	LBufferedWithout:   "Leak on unbuffered channel with possible partner:",
+	LBufferedWithout:   "Leak on unbuffered channel without possible partner:",
 	LNilChan:           "Leak on nil channel:",
 	LSelectWith:        "Leak on select with possible partner:",
 	LSelectWithout:     "Leak on select without partner or nil case",
@@ -151,7 +151,7 @@ func (s SelectCaseResult) stringMachine() string {
 }
 
 func (s SelectCaseResult) stringReadable() string {
-	return fmt.Sprintf("case: %d:%s", s.ObjID, s.ObjType)
+	return fmt.Sprintf("%d:%s", s.ObjID, s.ObjType)
 }
 
 func (s SelectCaseResult) isInvalid() bool {

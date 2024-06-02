@@ -488,6 +488,41 @@ func increaseIndex(routine int) {
 	}
 }
 
+/*
+ * For a given waitgroup id, get the number of add and done operations that were
+ * executed before a given time.
+ * Args:
+ *   wgID (int): The id of the waitgroup
+ *   waitTime (int): The time to check
+ * Returns:
+ *   int: The number of add operations
+ *   int: The number of done operations
+ */
+func GetNrAddDoneBeforeTime(wgID int, waitTime int) (int, int) {
+	nrAdd := 0
+	nrDone := 0
+
+	for _, trace := range traces {
+		for _, elem := range trace {
+			switch e := elem.(type) {
+			case *TraceElementWait:
+				if e.GetID() == wgID {
+					if e.GetTPre() < waitTime {
+						delta := e.GetDelta()
+						if delta > 0 {
+							nrAdd++
+						} else if delta < 0 {
+							nrDone++
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return nrAdd, nrDone
+}
+
 // MARK: Shift
 
 /*

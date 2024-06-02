@@ -274,12 +274,14 @@ func ProcessBug(bugStr string) (bool, Bug, error) {
 			continue
 		}
 
-		elem, err := trace.GetTraceElementFromBugArg(bugArg)
-		if err != nil {
-			return actual, bug, err
-		}
+		if bugArg[0] == 'T' {
+			elem, err := trace.GetTraceElementFromBugArg(bugArg)
+			if err != nil {
+				return actual, bug, err
+			}
 
-		bug.TraceElement2 = append(bug.TraceElement2, elem)
+			bug.TraceElement2 = append(bug.TraceElement2, elem)
+		}
 	}
 
 	return actual, bug, nil

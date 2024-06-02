@@ -434,6 +434,12 @@ func rewriteWaitGroupLeak(bug bugs.Bug) error {
 
 	trace.AddTraceElementReplay((*wait).GetTPre()+1, exitCodeLeakWG)
 
+	nrAdd, nrDone := trace.GetNrAddDoneBeforeTime((*wait).GetID(), (*wait).GetTSort())
+
+	if nrAdd != nrDone {
+		return errors.New("The waitgroup is not balanced. Cannot rewrite trace.")
+	}
+
 	return nil
 }
 
