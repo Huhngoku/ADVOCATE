@@ -95,6 +95,10 @@ The bugs that are currently supported for the replay feature are
 - P3: Possible negative waitgroup counter
 - L1: Leak on unbuffered channel with possible partner
 - L3: Leak on buffered channel with possible partner
+- L6: Leak on select with possible partner
+- L8: Leak on mutex
+- L9: Leak on waitgroup
+- L0: Leak on cond
 ## Tooling
 ### Preamble and Import Management
 ### Analyzing of Repository Main Methods
