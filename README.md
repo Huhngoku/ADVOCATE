@@ -9,7 +9,7 @@ Furthermore it is also able to produce traces which can be fed back into the pro
 A more in detail explanation of how it works can be found under `./doc/Analysis`.
 ### AdvocateGo Step by Step
 Simplistic flowchart of the AdvocateGo Process
-![Flowchart of AdvocateGoProcess](doc/img/flow.png "Title")
+![Flowchart of AdvocateGoProcess](doc/img/flow.png2 "Title")
 
 ## Running your first analysis
 These steps can also be done automatically with scripts. If you want to know more about using them you can skip straight to the `Toolchain` section. Doing these steps manually at least once is still encouraged good to get a feel for how advocateGo works.
