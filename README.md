@@ -95,7 +95,26 @@ Running the analyzer will generate 3 files for you
 A more detailed explanation of the file contents can be found under [AnalysisResult.md](./doc/AnalysisResult.md)
 
 ### What bugs can be found
-AdvocateGo currently supports these bugs
+AdvocateGo currently supports following bugs
+
+- A1: Send on closed channel
+- A2: Receive on closed channel
+- A3: Close on closed channel
+- A4: Concurrent recv
+- A5: Select case without partner
+- P1: Possible send on closed channel
+- P2: Possible receive on closed channel
+- P3: Possible negative waitgroup counter
+- L1: Leak on unbuffered channel with possible partner
+- L2: Leak on unbuffered channel without possible partner
+- L3: Leak on buffered channel with possible partner
+- L4: Leak on buffered channel without possible partner
+- L5: Leak on nil channel
+- L6: Leak on select with possible partner
+- L7: Leak on select without possible partner
+- L8: Leak on mutex 
+- L9: Leak on waitgroup 
+- L0: Leak on cond 
 
 ## Replay
 ### How to replay the program and cause the predicted bug
