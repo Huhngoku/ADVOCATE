@@ -5,8 +5,12 @@ It detects concurrency bugs and gives  diagnostic insight.
 This is achieved through...
 
 Furthermore it is also able to produce traces which can be fed back into the program in order to experience the predicted bug.
-### AdvocateGo Process
+
+A more in detail explanation of how it works can be found under `./doc/Analysis`.
+### AdvocateGo Step by Step
+Simplistic flowchart of the AdvocateGo Process
 ![Flowchart of AdvocateGoProcess](doc/img/flow.png "Title")
+
 ## Running your first analysis
 These steps can also be done automatically with scripts located in `toolchain` but doing these steps at least once are good to get a feel for how advocateGo works. You can find a more detailed tutorial for automation there.
 ### Step 1: Add Overhead
@@ -73,6 +77,7 @@ or like this for your tests
 ```
 ## Analyzing Trace
 After you run your program you will find that it generated the folder `advocateTrace`.
+If you are curious about the structure of said trace, you can find an in depth explanation here `./doc/Trace.md`
 It contains a record of what operation ran in what thread during the execution of your program.
 
 This acts as input for the analyzer located under `./analyzer/analyzer`.
@@ -86,8 +91,11 @@ Running the analyzer will generate 3 files for you
 - human readable.log (more readable representation of bug predictions)
 - rewritten_Trace (a trace in which the bug it was rewritten for would occur)
 
+A more detailed explanation of the file contents can be found under `./doc/AnalysisResult.md`
+
 ### What bugs can be found
 AdvocateGo currently supports these bugs
+
 ## Replay
 ### How to replay the program and cause the predicted bug
 This process is similar to when we first ran the program. Only the Overhead changes slightly.
@@ -104,20 +112,19 @@ Instead want to use this overhead
 where the variable `n` is the rewritten trace you want to use.
 Note that the method looks for the `rewritten_trace` folder in the same directory as the file is located
 ### Which bugs are supported for replay
-The bugs that are currently supported for the replay feature are
-- P1: Possible send on closed channel
-- P2: Possible receive on closed channel
-- P3: Possible negative waitgroup counter
-- L1: Leak on unbuffered channel with possible partner
-- L3: Leak on buffered channel with possible partner
-- L6: Leak on select with possible partner
-- L8: Leak on mutex
-- L9: Leak on waitgroup
-- L0: Leak on cond
+A more detailed description of how replays work and a list of what bugs are currently supported for replay can be found under `./doc/TraceReplay.md` and `./doc/TraceReconstruction.md`
 
-If these bugs then occur when running the program again they will exit with the designated exit code in the list above
+
+
 ## Tooling
+There are certain scripts that will come in handy when working with AdvocateGo 
 ### Preamble and Import Management
-### Analyzing of Repository Main Methods
-### Analyzing of Repostiory Unit Tests
-## How ADVOCATE works
+There are programs that automatically add and remove the overhead described in Step 1
+#### For Main Methods
+#### For Unit Tests
+### Analyzing of Github Repositories
+#### Main Method
+#### Unit Tests
+### Analyzing Existing local project
+#### Main Method
+#### Unit Tests
