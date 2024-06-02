@@ -2,7 +2,7 @@
 ## What is AdvocateGo
 AdvocateGo is an analysis tool for Go programs.
 It detects concurrency bugs and gives  diagnostic insight.
-This is achieved through `happens-before-relations` and `vector-clocks`
+This is achieved through `happens-before-relation` and `vector-clocks`
 
 Furthermore it is also able to produce traces which can be fed back into the program in order to experience the predicted bug.
 
