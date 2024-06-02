@@ -141,7 +141,16 @@ There are certain scripts that will come in handy when working with AdvocateGo
 ### Preamble and Import Management
 There are scripts that automatically add and remove the overhead described in [Step 1](#step-1-add-overhead)
 #### For Main Methods
+[]() takes a single file as an argument.
+It will insert the overhead right at the start of main and manage the imports.
+
+It throws an error if no main method is present.
+
+Likewise ()[] will remove the overhead 
 #### For Unit Tests
+[]() additionally requires the test name you want to apply the overhead to. Apart from that it works just like ()[]
+
+Likewise []() will remove the overhead if is present.
 ### Analyzing an existing local project
 #### Main Method
 [runFullWorkflowOnMain.bash](./toolchain/runFullWorkflowMainMethod/runFullWorkflowMain.bash) accepts a single go file containing a main method automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
