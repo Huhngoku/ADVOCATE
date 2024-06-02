@@ -8,11 +8,12 @@ Furthermore it is also able to produce traces which can be fed back into the pro
 
 A more in detail explanation of how it works can be found [here](./doc/Analysis.md).
 ### AdvocateGo Step by Step
-Simplistic flowchart of the AdvocateGo Process
+Simplified flowchart of the AdvocateGo Process
 ![Flowchart of AdvocateGoProcess](doc/img/flow2.png "Title")
 
+For more detail see this [in depth diagram](./doc/img/architecture_without_time.png)
 ## Running your first analysis
-These steps can also be done automatically with scripts. If you want to know more about using them you can skip straight to the `Toolchain` section. Doing these steps manually at least once is still encouraged good to get a feel for how advocateGo works.
+These steps can also be done automatically with scripts. If you want to know more about using them you can skip straight to the [Tooling](#tooling) section. Doing these steps manually at least once is still encouraged to get a feel for how advocateGo works.
 ### Step 1: Add Overhead
 You need to adjust the main method or unit test you want to analyze slightly in order to analyze them.
 The code snippet you need is
