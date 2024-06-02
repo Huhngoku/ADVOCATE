@@ -139,23 +139,19 @@ A more detailed description of how replays work and a list of what bugs are curr
 ## Tooling
 There are certain scripts that will come in handy when working with AdvocateGo 
 ### Preamble and Import Management
-There are programs that automatically add and remove the overhead described in Step 1
+There are scripts that automatically add and remove the overhead described in [Step 1](#step-1-add-overhead)
 #### For Main Methods
 #### For Unit Tests
-### Analyzing an Existing local project
+### Analyzing an existing local project
 #### Main Method
-
-#### Unit Tests
-This script takes an entire repository and automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
+[runFullWorkflowOnMain.bash](./toolchain/runFullWorkflowMainMethod/runFullWorkflowMain.bash) accepts a single go file containing a main method automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
 
 Its result and additional information (rewritten traces, logs, etc) will be written to. `advocateResult`
 
-The script + a more detailed description can be found under `./toolchain/runFullWorkflowOnAllUnitTests`
-### Analyzing of Github Repositories
-Will automatically take the unit tests as input and run the same workflow as with the local script.
+#### Unit Tests
+[runFullWorkflowOnAllUnitTests.bash](./toolchain/runFullWorkflowOnAllUnitTests/runFullWorkflowOnAllUnitTests.bash) takes an entire project and automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
 
-The script + a more detailed description can be found under `./toolchain/`
-
+Its result and additional information (rewritten traces, logs, etc) will be written to. `advocateResult`
 ## Warning
 It is the users responsibility of the user to make sure, that the input to 
 the program, including e.g. API calls are equal for the recording and the 
