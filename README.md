@@ -78,7 +78,7 @@ or like this for your tests
 ```
 ## Analyzing Traces
 After you run your program you will find that it generated the folder `advocateTrace`.
-If you are curious about the structure of said trace, you can find an in depth explanation here `./doc/Trace.md`
+If you are curious about the structure of said trace, you can find an in depth explanation [here](./doc/Trace.md)
 It contains a record of what operation ran in what thread during the execution of your program.
 
 This acts as input for the analyzer located under `./analyzer/analyzer`.
@@ -92,7 +92,7 @@ Running the analyzer will generate 3 files for you
 - human readable.log (more readable representation of bug predictions)
 - rewritten_Trace (a trace in which the bug it was rewritten for would occur)
 
-A more detailed explanation of the file contents can be found under `./doc/AnalysisResult.md`
+A more detailed explanation of the file contents can be found under [AnalysisResult.md](./doc/AnalysisResult.md)
 
 ### What bugs can be found
 AdvocateGo currently supports these bugs
