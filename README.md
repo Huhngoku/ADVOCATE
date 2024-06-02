@@ -12,7 +12,7 @@ Simplistic flowchart of the AdvocateGo Process
 ![Flowchart of AdvocateGoProcess](doc/img/flow.png "Title")
 
 ## Running your first analysis
-These steps can also be done automatically with scripts located in `toolchain` but doing these steps at least once are good to get a feel for how advocateGo works. You can find a more detailed tutorial for automation there.
+These steps can also be done automatically with scripts. If you want to know more about using them you can skip straight to the `Toolchain` section. Doing these steps manually at least once is still encouraged good to get a feel for how advocateGo works.
 ### Step 1: Add Overhead
 You need to adjust the main method or unit test you want to analyze slightly in order to analyze them.
 The code snippet you need is
