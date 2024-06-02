@@ -6,7 +6,7 @@ This is achieved through...
 
 Furthermore it is also able to produce traces which can be fed back into the program in order to experience the predicted bug.
 
-A more in detail explanation of how it works can be found under `./doc/Analysis`.
+A more in detail explanation of how it works can be found [here](./doc/Analysis.md).
 ### AdvocateGo Step by Step
 Simplistic flowchart of the AdvocateGo Process
 ![Flowchart of AdvocateGoProcess](doc/img/flow2.png "Title")
