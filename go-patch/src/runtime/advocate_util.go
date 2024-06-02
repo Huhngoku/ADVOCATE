@@ -91,6 +91,26 @@ func intToString(n int) string {
 	}
 }
 
+// MARK: STR -> INT
+/*
+ * Convert a string to an integer
+ * Works only with positive integers
+ */
+func stringToInt(s string) int {
+	var result int
+	sign := 1
+	for i := 0; i < len(s); i++ {
+		if s[i] == '-' && i == 0 {
+			sign = -1
+		} else if s[i] >= '0' && s[i] <= '9' {
+			result = result*10 + int(s[i]-'0')
+		} else {
+			panic("Invalid input")
+		}
+	}
+	return result * sign
+}
+
 // MARK: BOOL -> STR
 
 /*
@@ -250,27 +270,8 @@ func GetAdvocateObjectID() uint64 {
 func GetNextTimeStep() uint64 {
 	lock(&advocateGlobalCounterMutex)
 	defer unlock(&advocateGlobalCounterMutex)
-	advocateGlobalCounter++
+	advocateGlobalCounter += 2
 	return advocateGlobalCounter
-}
-
-/*
- * Convert a string to an integer
- * Works only with positive integers
- */
-func stringToInt(s string) int {
-	var result int
-	sign := 1
-	for i := 0; i < len(s); i++ {
-		if s[i] == '-' && i == 0 {
-			sign = -1
-		} else if s[i] >= '0' && s[i] <= '9' {
-			result = result*10 + int(s[i]-'0')
-		} else {
-			panic("Invalid input")
-		}
-	}
-	return result * sign
 }
 
 /*

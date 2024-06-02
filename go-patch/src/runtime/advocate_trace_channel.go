@@ -2,6 +2,9 @@ package runtime
 
 var advocateCounterAtomic uint64
 
+var unbufferedChannelComSend = make(map[string]uint64) // id -> tpost
+var unbufferedChannelComRecv = make(map[string]uint64) // id -> tpost
+
 // MARK: Pre
 
 /*
@@ -116,9 +119,50 @@ func AdvocateChanPost(index int) {
 
 	elem := currentGoRoutine().getElement(index)
 
-	split := splitStringAtCommas(elem, []int{2, 3})
-	split[1] = uint64ToString(GetNextTimeStep())
+	split := splitStringAtCommas(elem, []int{2, 3, 4, 5, 7, 8})
+
+	for i := 0; i < len(split); i++ {
+		println(i, ": ", split[i])
+	}
+
+	id := split[2]
+	op := split[3]
+	qSize := split[5]
+	set := false
+
+	println("id: ", id, " op: ", op, " qSize: ", qSize)
+
+	if qSize == "0" { // unbuffered channel
+		if op == "S" {
+			if tpost, ok := unbufferedChannelComRecv[id]; ok {
+				split[1] = uint64ToString(tpost - 1)
+				delete(unbufferedChannelComRecv, id)
+			} else {
+				time := GetNextTimeStep()
+				split[1] = uint64ToString(time)
+				unbufferedChannelComSend[id] = time
+			}
+			set = true
+		} else if op == "R" {
+			println("RRRRRRRRRRRRRRRRRRR")
+			if tpost, ok := unbufferedChannelComSend[id]; ok {
+				split[1] = uint64ToString(tpost + 1)
+				delete(unbufferedChannelComSend, id)
+			} else {
+				time := GetNextTimeStep()
+				split[1] = uint64ToString(time)
+				unbufferedChannelComRecv[id] = time
+			}
+			set = true
+		}
+	}
+
+	if !set {
+		split[1] = uint64ToString(GetNextTimeStep())
+	}
+
 	elem = mergeString(split)
+	println("elem: ", elem)
 
 	currentGoRoutine().updateElement(index, elem)
 }
