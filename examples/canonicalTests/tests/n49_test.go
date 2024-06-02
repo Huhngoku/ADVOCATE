@@ -22,8 +22,10 @@ func n49() {
 		d <- 1
 	}()
 
-	select {}
+	go func() {
+		select {}
+		<-e
+	}()
 
-	<-e
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 }

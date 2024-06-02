@@ -19,7 +19,5 @@ func n46() {
 		}
 	}()
 
-	c <- 1
-
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 }
