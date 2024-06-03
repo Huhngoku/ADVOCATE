@@ -141,12 +141,12 @@ There are certain scripts that will come in handy when working with AdvocateGo
 ### Preamble and Import Management
 There are scripts that automatically add and remove the overhead described in [Step 1](#step-1-add-overhead)
 #### For Main Methods
-[]() takes a single file as an argument.
+[Main overhead inserter](./toolchain/overHeadInserter/inserter.go) takes a single file as an argument.
 It will insert the overhead right at the start of main and manage the imports.
 
 It throws an error if no main method is present.
 
-Likewise ()[] will remove the overhead 
+Likewise [main overhead remover](./toolchain/overHeadRemover/remover.go) will remove the overhead 
 #### For Unit Tests
 []() additionally requires the test name you want to apply the overhead to. Apart from that it works just like ()[]
 
