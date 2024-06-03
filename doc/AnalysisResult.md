@@ -111,7 +111,7 @@ form of
 ```
 
 
-## Examples
+## Results
 
 The following examples show the different types of problems that can be found during the analysis.
 
