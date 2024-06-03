@@ -3,22 +3,22 @@
 The found problems found during the analysis are stored in two different formats.
 
 The first format is a machine readable format, which is stored in the file `results_machine.log`.
-It is used to further process the results, mainly for the rewriting and replay of the trace.
+It is used to further process the results, mainly for the rewriting and replaying of the trace.
 
 The second format is a human readable format, which is stored in the file `results_readable.log`
 and printed to the terminal. It is used to show the results to the user.
 
-This file explains the machine readable (results_machine.log) and the human
-readable (result_readable.log) result file of the analysis.
-
 ## Machine readable result file
 
-The result file contains all potential bugs found in the analyzed trace.\
+The result file contains all potential bugs found in the analyzed trace.
 
-The file contains one line for each found problem. The line consists of the
-following elements:
+The file contains one line for each found problem. The line has the following form
 ```
-line: [typeID],[args] | [typeId],[args],[args]
+[typeID],[args]
+```
+or
+```
+[typeId],[args],[args]
 ```
 with
 ```
@@ -51,7 +51,7 @@ The typeIDs have the following meaning:
 <!--P5: Possible mixed deadlock, disabled-->
 `[args]` shows the elements involved in the problem. There are either
 one or two, while the args them self can contain multiple trace elements or select cases.\
-The arg in args are separated by a semicolon.\
+The arg in args are separated by a semicolon (;).\
 Each arg contains the following elements separated by a colon (:)
 - `[routineId]` is the id of the routine that contains the operation
 - `[objId]` is the id of the object that is involved in the operation
@@ -67,7 +67,7 @@ Each arg contains the following elements separated by a colon (:)
     - MT: TryLock
     - MY: TryRLock
     - MU: Unlock
-    - MN: RUnlockfmt.Sprintf("T%d:%d:%d:%s:%s:%d", t.routineID, t.objID, t.tPre, t.objType, t.file, t.line)
+    - MN: RUnlock
   - Waitgroup:
     - WA: Add
     - WD: Done
@@ -101,7 +101,8 @@ Possible negative waitgroup counter:
 	add: example.go:50@77;
 	done: example.go:60@80;
 ```
-Each found problem consist of three lines. The first line explains the
+Each found problem consist of three lines (the third line can be empty).
+The first line explains the
 type of the found bug. The other two line contain the information about the
 elements responsible for the problem. The elements always have the
 form of
@@ -133,7 +134,7 @@ An example for a send on closed is:
 
 In the machine readable format, the send on closed has the following form:
 ```
-A1,T:1:2:12:CS:example.go:4;,T:1:2:10:CC:example.go:3
+A1,T:1:2:12:CS:example.go:4,T:1:2:10:CC:example.go:3
 ```
 In the human readable format, the send on closed has the following form:
 ```
@@ -190,7 +191,7 @@ An example for a close on closed is:
 
 In the machine readable format, the close on closed has the following form:
 ```
-A3,T:1:2:12:CC:example.go:4;,T:1:2:10:CC:example.go:3
+A3,T:1:2:12:CC:example.go:4,T:1:2:10:CC:example.go:3
 ```
 
 In the human readable format, the close on closed has the following form:
@@ -226,7 +227,7 @@ An example for a concurrent recv is:
 
 The machine readable format of the concurrent recv has the following form:
 ```
-A4,T:3:2:20:CR:example.go:9;,T:4:2:10:CR:example.go:5
+A4,T:3:2:20:CR:example.go:9,T:4:2:10:CR:example.go:5
 ```
 The human readable format of the concurrent recv has the following form:
 ```
@@ -708,6 +709,7 @@ The human readable format of the leak on a waitgroup has the following form:
 ```
 Leak on waitgroup:
 	waitgroup: example.go:6@10
+
 ```
 
 ### Leak on cond
@@ -735,4 +737,5 @@ The human readable format of the leak on a cond has the following form:
 ```
 Leak on cond:
 	cond: example.go:4@20
+
 ```
