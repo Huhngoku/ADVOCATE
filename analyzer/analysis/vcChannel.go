@@ -29,10 +29,10 @@ type bufferedVC struct {
  */
 func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 	tIDRecv string, vc map[int]clock.VectorClock, tPost int) {
+	if analysisCases["concurrentRecv"] {
+		checkForConcurrentRecv(routRecv, id, tIDRecv, vc, tPost)
+	}
 	if tPost != 0 {
-		if analysisCases["concurrentRecv"] {
-			checkForConcurrentRecv(routRecv, id, tIDRecv, vc)
-		}
 
 		if mostRecentReceive[routRecv] == nil {
 			mostRecentReceive[routRecv] = make(map[int]VectorClockTID3)
@@ -186,6 +186,11 @@ func Send(rout int, id int, oID int, size int, tID string,
  */
 func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorClock,
 	fifo bool, tPost int) {
+
+	if analysisCases["concurrentRecv"] {
+		checkForConcurrentRecv(rout, id, tID, vc, tPost)
+	}
+
 	if tPost == 0 {
 		vc[rout] = vc[rout].Inc(rout)
 		return
@@ -196,10 +201,6 @@ func Recv(rout int, id int, oID, size int, tID string, vc map[int]clock.VectorCl
 	}
 
 	newBufferedVCs(id, size, vc[rout].GetSize())
-
-	if analysisCases["concurrentRecv"] {
-		checkForConcurrentRecv(rout, id, tID, vc)
-	}
 
 	if bufferedVCsCount[id] == 0 {
 		holdSend = append(holdSend, holdObj{rout, id, oID, size, tID, vc, fifo, tPost})

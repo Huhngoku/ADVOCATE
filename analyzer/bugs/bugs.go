@@ -117,7 +117,7 @@ func (b Bug) ToString() string {
 	case LMutex:
 		typeStr = "Leak on mutex:"
 		arg1Str = "mutex: "
-		arg2Str = ""
+		arg2Str = "last: "
 	case LWaitGroup:
 		typeStr = "Leak on wait group:"
 		arg1Str = "waitgroup: "

@@ -5,12 +5,14 @@ import (
 	"analyzer/logging"
 )
 
-func checkForConcurrentRecv(routine int, id int, tID string, vc map[int]clock.VectorClock) {
-	if _, ok := lastRecvRoutine[routine]; !ok {
-		lastRecvRoutine[routine] = make(map[int]VectorClockTID)
-	}
+func checkForConcurrentRecv(routine int, id int, tID string, vc map[int]clock.VectorClock, tPost int) {
+	if tPost != 0 {
+		if _, ok := lastRecvRoutine[routine]; !ok {
+			lastRecvRoutine[routine] = make(map[int]VectorClockTID)
+		}
 
-	lastRecvRoutine[routine][id] = VectorClockTID{vc[routine].Copy(), tID, routine}
+		lastRecvRoutine[routine][id] = VectorClockTID{vc[routine].Copy(), tID, routine}
+	}
 
 	for r, elem := range lastRecvRoutine {
 		if r == routine {

@@ -1,12 +1,19 @@
 # Analysis Result
 
+The found problems found during the analysis are stored in two different formats.\
+
+The first format is a machine readable format, which is stored in the file `results_machine.log`.
+It is used to further process the results, mainly for the rewriting and replay of the trace.\
+
+The second format is a human readable format, which is stored in the file `results_readable.log`
+and printed to the terminal. It is used to show the results to the user.
+
 This file explains the machine readable (results_machine.log) and the human
 readable (result_readable.log) result file of the analysis.
 
 ## Machine readable result file
 
 The result file contains all potential bugs found in the analyzed trace.\
-A possible result would be:
 
 The file contains one line for each found problem. The line consists of the
 following elements:
@@ -19,8 +26,7 @@ with
 [arg] : T:[routineId]:[objId]:[tpre]:[objType]:[file]:[line] (trace element)
 [arg] : S:[objId]:[objType] (select case)
 ```
-The elements have the following meaning:
-S:[objId]:[objType] (select case)
+The typeIDs have the following meaning:
 
 - A1: Send on closed channel
 - A2: Receive on closed channel
@@ -30,8 +36,6 @@ S:[objId]:[objType] (select case)
 - P1: Possible send on closed channel
 - P2: Possible receive on closed channel
 - P3: Possible negative waitgroup counter
-- (P4: Possible cyclic deadlock, disabled)
-- (P5: Possible mixed deadlock, disabled)
 - L1: Leak on unbuffered channel with possible partner
 - L2: Leak on unbuffered channel without possible partner
 - L3: Leak on buffered channel with possible partner
@@ -43,6 +47,8 @@ S:[objId]:[objType] (select case)
 - L9: Leak on waitgroup
 - L0: Leak on cond
 
+<!--P4: Possible cyclic deadlock, disabled-->
+<!--P5: Possible mixed deadlock, disabled-->
 `[args]` shows the elements involved in the problem. There are either
 one or two, while the args them self can contain multiple trace elements or select cases.\
 The arg in args are separated by a semicolon.\
@@ -80,7 +86,33 @@ Each arg contains the following elements separated by a colon (:)
 - `[file]` is the file of the operation in the program code
 - `[line]` is the line of the operation in the program code
 
-The following are examples for the possible types:
+## Human readable result file
+
+The result file contains all potential bugs found in the analyzed trace.
+A possible result would be:
+```
+Possible send on closed channel:
+	close: example.go:10@47
+	send: example.go:40@44
+Possible receive on closed channel:
+	close: example.go:10@47
+	recv: example.go:20@43
+Possible negative waitgroup counter:
+	add: example.go:50@77;
+	done: example.go:60@80;
+```
+Each found problem consist of three lines. The first line explains the
+type of the found bug. The other two line contain the information about the
+elements responsible for the problem. The elements always have the
+form of
+```
+[type]: [file]:[line]@[tPre]
+```
+
+
+## Examples
+
+The following examples show the different types of problems that can be found during the analysis.
 
 ### Send on close
 A send on closed is an actual send on a closed channel (always leads to panic).
@@ -89,10 +121,27 @@ The two args of this case are:
 - the send operation
 - the close operation
 
-It has the following form:
+An example for a send on closed is:
+```golang
+1 func main() {          // routine = 1
+2 	c := make(chan int)  // objId = 2
+3 	close(c)             // tPre = 10
+4 	c <- 1               // tPre = 12
+5 }
 ```
-A1,T:1:4:50:CS:/home/constructed.go:10;,T:2:4:40:CC:/home/constructed.go:20
+
+
+In the machine readable format, the send on closed has the following form:
 ```
+A1,T:1:2:12:CS:example.go:4;,T:1:2:10:CC:example.go:3
+```
+In the human readable format, the send on closed has the following form:
+```
+Found receive on closed channel:
+	send: example.go:4@12
+	close: example.go:5@10
+```
+
 
 ### Receive on close
 A receive on closed is an actual receive on a closed channel.
@@ -101,9 +150,25 @@ The two args of this case are:
 - the receive operation
 - the close operation
 
-It has the following form:
+An example for a receive on closed is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3   close(c)             // tPre = 10
+4   <-c                  // tPre = 12
+5 }
 ```
-A2,T:1:4:50:CR:/home/constructed.go:10;,T:2:4:40:CC:/home/constructed.go:20
+
+In the machine readable format, the receive on closed has the following form:
+```
+A2,T:1:2:12:CR:example.go:4,T:1:2:10:CC:example.go:3
+```
+
+In the human readable format, the receive on closed has the following form:
+```
+Found receive on closed channel:
+	recv: example.go:4@12
+	close: example.go:5@10
 ```
 
 ### Close on close
@@ -111,23 +176,63 @@ A send on closed is an actual close on a closed channel (always leads to panic).
 The two args of this case are:
 
 - the close operation that leads to the panic
-- the send operation that is the first close on the channel
+- the close operation that is the first close on the channel
 
-It has the following form:
+An example for a close on closed is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3   close(c)             // tPre = 10
+4   close(c)             // tPre = 12
+5 }
 ```
-A3,T:1:4:50:CC:/home/constructed.go:10;,T:2:4:40:CC:/home/constructed.go:20
+
+
+In the machine readable format, the close on closed has the following form:
+```
+A3,T:1:2:12:CC:example.go:4;,T:1:2:10:CC:example.go:3
+```
+
+In the human readable format, the close on closed has the following form:
+```
+Found close on closed channel:
+	close: example.go:4@12
+	close: example.go:3@10
 ```
 
 ### Concurrent recv
 A concurrent recv shows two receive operations on the same channel that are concurrent.:
-The two aregs of this case are:
+The two args of this case are:
 
-- the first recv operation
-- the second recv operation
+- the recv operation
+- the recv operation
 
-It has the following form:
+An example for a concurrent recv is:
+```golang
+ 1 func main() {           // routine = 1
+ 2   c := make(chan int)   // objId = 2
+ 3
+ 4   go func() {           // routine = 2
+ 5     <-c                 // tPre = 10
+ 6   }()
+ 7
+ 8   go func() {           // routine = 3
+ 9     <-c                 // tPre = 20
+10   }()
+11
+12   c <- 1                // tPre = 30
+10 }
 ```
-A4,T:1:4:40:CR:/home/constructed.go:10;,T:2:4:50:CR:/home/constructed.go:20
+
+The machine readable format of the concurrent recv has the following form:
+```
+A4,T:3:2:20:CR:example.go:9;,T:4:2:10:CR:example.go:5
+```
+The human readable format of the concurrent recv has the following form:
+```
+Found concurrent Recv on same channel:
+	recv: example.go:9@20
+	recv: example.go:5@10
 ```
 
 ### Select case without partner or nil case
@@ -139,10 +244,43 @@ The two args of this case are:
 
 The select case consists of the channel number and the direction (S: send, R: recv). If the channel is nil, the channel number is -1.
 
-It has the following form:
+The following example shows a select case without partner (d) and a nil case (e):
+```golang
+ 1 func main() {          // routine = 1
+ 2   c := make(chan int)  // objId = 2
+ 3   d := make(chan int)  // objId = 3
+ 4   e := make(chan int)  // objId = 4
+ 5
+ 6   e = nil
+ 3
+ 4   go func() {          // routine = 2
+ 5     c <- 1             // objID = 2, tPre = 8
+ 6   }()
+ 7
+ 8   select {             // objID = 5, tPre = 10
+ 9   case <-c:
+10   case <-d:            // no partner
+11   case e <- 1:         // nil
+12  }
+13 }
 ```
-A5,T:1:4:40:SS:/home/constructed.go:10,S:6:CR
+
+The machine readable format of the select case without partner or nil case has the following form:
 ```
+A5,T:1:5:10:SS:example.go:8,S:3:CR      // select case without partner
+A5,T:1:5:10:SS:example.go:8,S:-1:CS     // nil case
+```
+
+The human readable format of the select case without partner or nil case has the following form:
+```
+Possible select case without partner or nil case:    // select case without partner
+	select: example.go:8@10
+	case: 3,R
+Possible select case without partner or nil case:    // nil case
+	select: example.go:8@10
+	case: -1,R
+```
+
 
 ### Possible send on closed
 A possible send on closed is a possible but not actual send on a closed channel.
@@ -151,10 +289,33 @@ The two args of this case are:
 - the send operation
 - the close operation
 
-
-A possible send on closed has the following form:
+An example for a possible send on closed is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3
+4   go func() {          // routine = 2
+5     c <- 1             // tPre = 10
+6   }()
+7
+8   go func() {         // routine = 3
+9     <- c              // tPre = 20
+10  }()
+11
+12  close(c)            // tPre = 30
+12 }
 ```
-P1,T:2:4:40:CS:/home/ex/main.go:222,T:1:4:50:CC:/home/ex/main.go:123
+
+
+In the machine readable format, the possible send on closed has the following form:
+```
+P1,T:2:2:10:CS:example.go:5,T:3:2:30:CC:example.go:30
+```
+
+```
+Possible send on closed channel::
+	send: example.go:5@10
+	close: example.go:12@30
 ```
 
 ### Possible recv on closed
@@ -164,9 +325,33 @@ The two args of this case are:
 - the recv operation
 - the close operation
 
-A possible recv on closed has the following form:
+An example for a possible recv on closed is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3
+4   go func() {          // routine = 2
+5     c <- 1             // tPre = 10
+6   }()
+7
+8   go func() {         // routine = 3
+9     <- c              // tPre = 20
+10  }()
+11
+12  close(c)            // tPre = 30
+12 }
 ```
-P2,T:2:4:40:CR:/home/ex/main.go:222,T:1:4:50:CC:/home/ex/main.go:123
+
+
+In the machine readable format, the possible send on closed has the following form:
+```
+P2,T:3:2:20:CR:example.go:9,T:3:2:30:CC:example.go:30
+```
+
+```
+Possible send on closed channel:
+	recv: example.go:9@20
+	close: example.go:12@30
 ```
 
 
@@ -176,9 +361,36 @@ The two args of this case are:
 - The list of add operations that might make the counter negative (separated by semicolon)
 - The list of done operations that might stop the counter from become negative (separated by semicolon)
 
-A possible negative waitgroup counter has the following form:
+An example for a possible negative waitgroup counter is:
+```golang
+ 1 func main() {            // routine = 1
+ 2   var wg sync.WaitGroup  // objId = 2
+ 3
+ 4   go func() {            // routine = 2
+ 5     wg.Add(1)            // tPre = 10
+ 6   }()
+ 7   go func() {            // routine = 3
+ 8     wg.Add(1)            // tPre = 20
+ 9   }()
+10
+ 8   go func() {            // routine = 4
+ 9     wg.Done()            // tPre = 30
+10  }()
+11
+12   wg.Done()            // tPre = 40
+13 }
 ```
-P3,T:20:18:48:WA:/home/constructed.go:10;T:21:18:54:WA:/home/constructed.go:20,T:23:18:59:WD:/home/constructed.go:30;T:22:18:61:WD:/home/constructed.go:40
+
+The machine readable format of the possible negative waitgroup counter has the following form:
+```
+P3,T:2:2:10:WA:example.go:5;T:3:2:20:WA:example.go:8,T:4:2:30:WD:example.go:9;T:1:2:40:WD:example.go:12
+```
+
+The human readable format of the possible negative waitgroup counter has the following form:
+```
+Possible negative waitgroup counter:
+	add: example.go:5@10;example.go:8@20
+	done: example.go:9@30;example.go:12@40
 ```
 
 ### Leak on unbuffered channel
@@ -190,38 +402,111 @@ The two arg of this case is:
 - the channel that is leaking
 - the possible partner of the channel
 
-A leak on an unbuffered channel with a possible partner has the following form:
+An example for a leak on an unbuffered channel with a possible partner is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3
+4   go func() {          // routine = 2
+5     c <- 1             // tPre = 10
+6   }()
+7
+8   go func() {          // routine = 3
+9     <- c               // tPre = 20
+10  }()
+11
+12  go func() {          // routine = 4
+13    c <- 1             // tPre = 30
+14  }()
+15 }
 ```
-L1,T:2:4:40:CS:/home/ex/main.go:222,T:1:4:30:CR:/home/ex/main.go:123
+We assume that line 5 send to line 9 and line 13 is leaking.
+
+The machine readable format of the leak on an unbuffered channel with a possible partner has the following form:
 ```
+L1,T:4:2:30:CS:example.go:13,T:3:2:20:CR:example.go:9
+```
+
+The human readable format of the leak on an unbuffered channel with a possible partner has the following form:
+```
+Leak on unbuffered channel with possible partner:
+	channel: example.go:13@30
+	partner: example.go:9@20
+```
+
 
 #### Without possible partner
 A leak on an unbuffered channel without a possible partner is a unbuffered channel that is leaking,
 but has no possible partner.
-The one arg of this case is: mostRecentAcquireTotal[id]
+
+The one arg of this case is:
 
 - the channel that is leaking
 
-A leak on an unbuffered channel without a possible partner has the following form:
+An example for a leak on an unbuffered channel without a possible partner is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3
+4   go func() {          // routine = 2
+5     <-c                // tPre = 10
+6   }()
+7 }
 ```
-L2,T:2:4:40:CS:/home/ex/main.go:222
+
+The machine readable format of the leak on an unbuffered channel without a possible partner has the following form:
+```
+L2,T:2:2:10:CR:example.go:5
+```
+
+The human readable format of the leak on an unbuffered channel without a possible partner has the following form:
+```
+Leak on unbuffered channel without possible partner:
+	channel: example.go:5@10
+
 ```
 
 ### Leak on buffered channel
 #### With possible partner
-
-A leak on an buffered channel with a possible partner is a buffered channel that is leaking,
+A leak on an buffered channel with a possible partner is a buffered channel is leaking,
 but has a possible partner.
-
-The two arg of this case is:
+The two arg of this case are:
 
 - the channel that is leaking
 - the possible partner of the channel
 
-A leak on an buffered channel with a possible partner has the following form:
+An example for a leak on an buffered channel with a possible partner is:
+```golang
+1 func main() {             // routine = 1
+2   c := make(chan int, 1)  // objId = 2
+3
+4   go func() {             // routine = 2
+5     c <- 1                // tPre = 10
+6   }()
+7
+8   go func() {             // routine = 3
+9     <- c                  // tPre = 20
+10  }()
+11
+12  go func() {             // routine = 4
+13    c <- 1                // tPre = 30
+14  }()
+15 }
 ```
-L3,T:2:4:40:CS:/home/ex/main.go:20,T:1:4:30:CR:/home/ex/main.go:30
+We assume that line 5 send to line 9 and line 13 is leaking.
+
+The machine readable format of the leak on an buffered channel with a possible partner has the following form:
 ```
+L3,T:4:2:30:CS:example.go:13,T:3:2:20:CR:example.go:9
+```
+
+The human readable format of the leak on an buffered channel with a possible partner has the following form:
+```
+Leak on buffered channel with possible partner:
+	channel: example.go:13@30
+	partner: example.go:9@20
+```
+
 
 #### Without possible partner
 
@@ -232,9 +517,27 @@ The one arg of this case is:
 
 - the channel that is leaking
 
-A leak on an buffered channel without a possible partner has the following form:
+An example for a leak on an unbuffered channel without a possible partner is:
+```golang
+1 func main() {              // routine = 1
+2   c := make(chan int, 1)   // objId = 2
+3
+4   go func() {              // routine = 2
+5     <-c                    // tPre = 10
+6   }()
+7 }
 ```
-L4,T:2:4:40:CS:/home/ex/main.go:20
+
+The machine readable format of the leak on an unbuffered channel without a possible partner has the following form:
+```
+L4,T:2:2:10:CR:example.go:5
+```
+
+The human readable format of the leak on an unbuffered channel without a possible partner has the following form:
+```
+Leak on buffered channel without possible partner:
+	channel: example.go:5@10
+
 ```
 
 ### Leak on nil channel
@@ -245,9 +548,28 @@ The one arg of this case is:
 
 - the nil channel that is leaking
 
-A leak on a mutex has the following form:
+An example for a leak on a nil channel is:
+```golang
+1 func main() {          // routine = 1
+2   c := make(chan int)  // objId = 2
+3   c = nil
+4
+5   go func() {          // routine = 2
+6     c <- 1            // tPre = 10
+7   }()
+8 }
 ```
-L5,T:20:-1:42:CS:/home/constructed.go:1097
+
+The machine readable format of the leak on a nil channel has the following form:
+```
+L5,T:2:-1:10:CS:example.go:6
+```
+
+The human readable format of the leak on a nil channel has the following form:
+```
+Leak on nil channel:
+	channel: example.go:6@10
+
 ```
 
 ### Leak on select
@@ -259,9 +581,38 @@ The two arg of this case is:
 - the select that is leaking
 - the possible partner of the channel or select
 
-A leak on an select or select with a possible partner has the following form:
+An example for a leak on an select with a possible partner is:
+```golang
+ 1 func main() {             // routine = 1
+ 2   c := make(chan int, 1)  // objId = 2
+ 3
+ 4   go func() {             // routine = 2
+ 5     c <- 1                // tPre = 10
+ 6   }()
+ 7
+ 8   go func() {             // routine = 3
+ 9     <- c                  // tPre = 20
+10   }()
+11
+12   go func() {             // routine = 4
+13     select {              // objId = 3, tPre = 30
+14     case c <- 1:
+15     }
+14   }()
+15 }
 ```
-L6,T:2:4:40:SS:/home/ex/main.go:20,T:1:4:30:CR:/home/ex/main.go:30
+We assume that line 5 send to line 9 and that the select is leaking.
+
+The machine readable format of the leak on an select with a possible partner has the following form:
+```
+L6,T:4:3:30:SS:example.go:13,T:3:2:20:CR:example.go:9
+```
+
+The human readable format of the leak on an select with a possible partner has the following form:
+```
+Leak on select with possible partner:
+	select: example.go:13@30
+	partner: example.go:9@20
 ```
 
 #### Without possible partner
@@ -271,9 +622,28 @@ The one arg of this case is:
 
 - the select that is leaking
 
-A leak on an select without a possible partner has the following form:
+```golang
+1 func main() {             // routine = 1
+2   c := make(chan int, 1)  // objId = 2
+3
+4   go func() {             // routine = 2
+5     select {              // objId = 3, tPre = 10
+6     case c <- 1:
+7     }
+8   }()
+9  }
 ```
-L7,T:2:4:40:CR:/home/ex/main.go:20
+
+The machine readable format of the leak on an select without a possible partner has the following form:
+```
+L7,T:2:3:10:SS:example.go:5
+```
+
+The human readable format of the leak on an select without a possible partner has the following form:
+```
+Leak on select without possible partner:
+	select: example.go:5@10
+
 ```
 
 ### Leak on mutex
@@ -284,9 +654,31 @@ The two arg of this case is:
 - the mutex operation that is leaking
 - the last lock operation on the mutex
 
-A leak on a mutex has the following form:
+An example for a leak on a mutex is:
+```golang
+1 func main() {          // routine = 1
+2   var m sync.Mutex     // objId = 2
+3
+4   go func() {          // routine = 2
+5     m.Lock()           // tPre = 20
+6   }()
+7
+8  m.Lock()              // tPre = 10
+9 }
 ```
-L8,T:2:4:40:ML:/home/ex/main.go:20,T:1:4:30:ML:/home/ex/main.go:30
+We assume, that the lock operation in line 10 happened before the lock operation in line 5.
+The Lock operation in line 5 is leaking.
+
+The machine readable format of the leak on a mutex has the following form:
+```
+L8,T:2:2:20:ML:example.go:5,T:1:2:10:ML:example.go:8
+```
+
+The human readable format of the leak on a mutex has the following form:
+```
+Leak on mutex:
+	mutex: example.go:5@20
+	last: example.go:8@10
 ```
 
 ### Leak on waitgroup
@@ -296,9 +688,26 @@ The one arg of this case is:
 
 - the waitgroup operation (wait) that is leaking
 
-A leak on a waitgroup has the following form:
+An example for a leak on a waitgroup is:
+```golang
+1 func main() {          // routine = 1
+2   var wg sync.WaitGroup // objId = 2
+3
+4   wg.Add(1)          // tPre = 20
+5
+6   wg.Wait()            // tPre = 10
+7 }
 ```
-L9,T:2:4:40:WW:/home/ex/main.go:20
+
+The machine readable format of the leak on a waitgroup has the following form:
+```
+L9,T:1:2:10:WW:example.go:6
+```
+
+The human readable format of the leak on a waitgroup has the following form:
+```
+Leak on waitgroup:
+	waitgroup: example.go:6@10
 ```
 
 ### Leak on cond
@@ -306,239 +715,24 @@ L9,T:2:4:40:WW:/home/ex/main.go:20
 A leak on a cond is a cond that is leaking.
 The one arg of this case is:
 
-- the cond operation (wait) that is leaking
+- the cond operation (wait) that is leaking\
 
-A leak on a cond has the following form:
+An example for a leak on a cond is:
+```golang
+1 func main() {          // routine = 1
+2   var c sync.Cond      // objId = 2
+3
+4   c.Wait()             // tPre = 20
+5 }
 ```
-L0,T:2:4:40:NW:/home/ex/main.go:20
+
+The machine readable format of the leak on a cond has the following form:
+```
+L0,T:1:2:20:NW:example.go:4
 ```
 
-
-
-
-
-
-
-
-
-
-## Human readable result file
-
-The result file contains all potential bugs found in the analyzed trace.
-A possible result would be:
+The human readable format of the leak on a cond has the following form:
 ```
-Possible send on closed channel:
-	close: /home/constructed.go:10@47
-	send: /home/constructed.go:40@44
-Possible receive on closed channel:
-	close: /home/constructed.go:10@47
-	recv: /home/constructed.go:20@43
-Possible negative waitgroup counter:
-	add: /home/constructed.go:50@77;
-	done: /home/constructed.go:60@80;
+Leak on cond:
+	cond: example.go:4@20
 ```
-Each found problem consist of three lines. The first line explains the
-type of the found bug. The other two line contain the information about the
-elements responsible for the problem. The elements always have the
-form of
-```
-[type]: [file]:[line]@[tPre]
-```
-`[file]:[line]@[tPre]` is called tID
-
-### Send on close
-An actual send on closed has the following form:
-```
-Found receive on closed channel:
-	send: /home/constructed.go:40@44
-	close: /home/constructed.go:10@40
-```
-Close contains the tID of the close operation.
-Recv contains the tID of the recv operation.
-
-
-### Receive on close
-An actual recv on closed has the following form:
-```
-Found receive on closed channel:
-	recv: /home/constructed.go:40@44
-	close: /home/constructed.go:10@40
-```
-Close contains the tID of the close operation.
-Recv contains the tID of the recv operation.
-
-### Close on close
-An actual close on closed has the following form:
-```
-Found receive on closed channel:
-	close: /home/constructed.go:10@44
-	close: /home/constructed.go:40@40
-```
-The first close contains the close that lead to the panic.
-The second close contains the first close of the channel.
-
-### Concurrent recv
-A concurrent recv has the following form:
-```
-Found concurrent Recv on same channel:
-	recv: /home/constructed.go:10@44
-	recv: /home/constructed.go:40@40
-```
-The first recv contains the recv that is concurrent but in this case after the second recv.
-The second recv contains the recv that is concurrent but in this case before the second recv.
-
-### Select case without partner
-A select case without partner has the following form:
-```
-Possible select case without partner or nil case:
-	select: /home/constructed.go:10@44
-	case: 18,R
-```
-Select contains the tID of the select that is missing a possible partner.\
-Case contains the case that is missing a partner. It consist of the channel number and the direction (S: send, R: recv).
-
-
-### Possible send on closed
-A possible send on closed has the following form:
-```
-Found receive on closed channel:
-	close: /home/constructed.go:10@44
-	send: /home/constructed.go:40@40
-```
-The close contains the close on the channel
-The send contains the send on the channel, that might be closed.
-
-
-### Possible recv on closed
-A possible send on closed has the following form:
-```
-Possible receive on closed channel:
-	close: /home/constructed.go:10@44
-	recv: /home/constructed.go:40@40
-```
-The close contains the close on the channel
-The recv contains the recv on the channel, that might be closed.
-
-
-
-### Possible negative waitgroup counter
-A possible negative waitgroup counter has the following form:
-```
-Possible negative waitgroup counter:
-	add: /home/constructed.go:10@44;/home/constructed.go:1234@45
-	done: /home/constructed.go:40@40;/home/constructed.go:40@42
-```
-Add contains the tIDs of the add operation that might make the counter negative, as well as all add
-operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).\
-Done contains all done
-operations on the same waitgroup, which, if reordered, lead to the negative wait group counter(separated by semicolon).
-
-
-
-
-
-### Leak on unbuffered channel
-#### With possible partner
-
-A leak on an unbuffered channel with a possible partner has the following form:
-```
-Leak on unbuffered channel with possible partner:
-	channel: /home/constructed.go:10@44
-	partner: /home/constructed.go:40@40
-```
-The channel contains the tID of the channel that is leaking.\
-The partner contains the tID of a possible partner of the channel.
-
-#### Without possible partner
-A leak on an unbuffered channel without a possible partner has the following form:
-```
-Leak on unbuffered channel with possible partner:
-	channel: /home/constructed.go:10@44
-
-```
-The channel contains the tID of the channel that is leaking.\
-The second line is empty.
-
-### Leak on buffered channel
-#### With possible partner
-
-A leak on an buffered channel with a possible partner has the following form:
-```
-Leak on buffered channel with possible partner:
-	channel: /home/constructed.go:10@44
-	partner: /home/constructed.go:40@40
-```
-The channel contains the tID of the channel that is leaking.\
-The partner contains the tID of a possible partner of the channel.
-
-#### Without possible partner
-A leak on an buffered channel without a possible partner has the following form:
-```
-Leak on buffered channel with possible partner:
-	channel: /home/constructed.go:10@44
-
-```
-The channel contains the tID of the channel that is leaking.\
-The second line is empty.
-
-### Leak on nil channel
-A leak on a nil channel has the following form:
-```
-Leak on nil channel:
-	channel: /home/constructed.go:10@44
-```
-Channel contains the tID of the nil channel that is leaking.
-
-### Leak on select
-#### With possible partner
-
-A leak on an select with a possible partner has the following form:
-```
-Leak on buffered channel with possible partner:
-	select: /home/constructed.go:10@44
-	partner: /home/constructed.go:40@40
-```
-The select contains the tID of the select that is leaking.\
-The partner contains the tID of a possible partner of the channel.
-
-#### Without possible partner
-A leak on an buffered select without a possible partner has the following form:
-```
-Leak on buffered select with possible partner:
-	select: /home/constructed.go:10@44
-
-```
-The select contains the tID of the select that is leaking.\
-The second line is empty.
-
-### Leak on mutex
-A leak on a mutex has the following form:
-```
-Leak on mutex:
-	mutex: /home/constructed.go:10@44
-	last: /home/constructed.go:40@40
-```
-Mutex contains the tID of the mutex that is leaking.\
-Last contains the tID of the last lock operation on the mutex.
-
-### Leak on waitgroup
-A leak on a waitgroup has the following form:
-```
-Leak on wait group:
-	wait-group: /home/constructed.go:10@44
-
-```
-wait-group contains the tID of the waitgroup that is leaking.\
-The second line is empty.
-
-### Leak on cond
-A leak on a cond has the following form:
-```
-Leak on conditional variable:
-	conditional: /home/constructed.go:10@44
-
-```
-conditional contains the tID of the conditional variable that is leaking.\
-The second line is empty.
-
-

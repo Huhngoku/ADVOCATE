@@ -132,7 +132,7 @@ func (t TraceElementResult) stringMachine() string {
 }
 
 func (t TraceElementResult) stringReadable() string {
-	return fmt.Sprintf("%s:%d", t.File, t.Line)
+	return fmt.Sprintf("%s:%d@%d", t.File, t.Line, t.TPre)
 }
 
 func (t TraceElementResult) isInvalid() bool {
