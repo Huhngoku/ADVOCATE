@@ -148,9 +148,9 @@ It throws an error if no main method is present.
 
 Likewise [main overhead remover](./toolchain/overHeadRemover/remover.go) will remove the overhead 
 #### For Unit Tests
-[]() additionally requires the test name you want to apply the overhead to. Apart from that it works just like ()[]
+[Unit test overhead inserter]() additionally requires the test name you want to apply the overhead to. Apart from that it works just like with [main method overhead inserter](#for-main-methods)
 
-Likewise []() will remove the overhead if is present.
+Likewise [overhead remover](./toolchain/overHeadRemover/remover.go) will remove the overhead if is present.
 ### Analyzing an existing local project
 #### Main Method
 [runFullWorkflowOnMain.bash](./toolchain/runFullWorkflowMainMethod/runFullWorkflowMain.bash) accepts a single go file containing a main method automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
