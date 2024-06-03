@@ -1,9 +1,9 @@
 # Analysis Result
 
-The found problems found during the analysis are stored in two different formats.\
+The found problems found during the analysis are stored in two different formats.
 
 The first format is a machine readable format, which is stored in the file `results_machine.log`.
-It is used to further process the results, mainly for the rewriting and replay of the trace.\
+It is used to further process the results, mainly for the rewriting and replay of the trace.
 
 The second format is a human readable format, which is stored in the file `results_readable.log`
 and printed to the terminal. It is used to show the results to the user.
