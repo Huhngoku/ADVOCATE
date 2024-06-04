@@ -1,10 +1,9 @@
-
 package main
 
 import (
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
 func Test18(t *testing.T) {
@@ -23,7 +22,7 @@ func n18() {
 		ch <- 1
 	}()
 
-	g.Wait()
 	time.Sleep(100 * time.Millisecond)
+	g.Wait()
 	close(ch)
 }

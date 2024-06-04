@@ -11,18 +11,18 @@
 | 7 | No possible send/recv on closed                 | No found  | No | TN | Y |
 | 8 | Actual recv on closed                     | Found | No | TP | Y |
 | 9 | Send/recv on closed in select             | Found | 30, 30, 31, 31 | TP | Y |
-| 10 | Send on closed in select with default | No Found | No | ? | ? |
-| 11 | Send on closed in select with case    | No Found | No | TP | N |
+| 10 | No Send on closed in select because of default | No Found | No | TN | Y |
+| 11 | No Send on closed in select because of default    | No Found | No | TN | Y |
 | 12 | No send on close because of once | No Found | No | TN | Y |
 | 13 | Send on close no detected because of once | No Found | No | FN | Y |
 | 14 | Send on close detected in spite of once | Found | 30 | TP | Y |
 | 15 | Send on close not detected because of tryLock | No Found | No | FN | Y |
 | 16 | Send on close detected in spite of tryLock | Found | 30 | TP | Y |
 | 17 | Send on close not detected because of tryLock | No Found | No | FN | Y |
-| 18 | Send on close with wait group | No found | No | FN | N |
+| 18 | No Send on close because of wait group | No found | No | TN | Y |
 | 19 | Send on close not detected because of tryLock | No Found | No | FN | Y |
 | 20 | Send on close in function | Found | 30 | TP | Y |
-| 21 | Concurrent recv on channel | No found | No | FN | N |
+| 21 | Concurrent recv on channel | Found | No | TP | Y |
 | 22 | No concurrent recv on channel | No found | No | TN | Y |
 | 23 | No concurrent recv on buffered channel | No found | No | TN | Y |
 | 24 | No concurrent recv on channel | No found | No | FN | Y |
@@ -36,14 +36,14 @@
 | 43 | Leak on buffered channel without possible partner | Found | 20 | TP | Y |
 | 44 | Leak on wait group | Found | No | TP | Y |
 | 45 | Leak on mutex | Found | No | TP | Y |
-| 46 | Leak on select | Found | No | TP | N -> finds leak on channel |
+| 46 | Leak on select | Found | No | TP | Y |
 | 47 | Leak on unuffered channel with select as possible partner | Found | 20 | TP | Y |
 | 48 | Select case without partner | Found | No | TP | Y |
 | 49 | Leak on unbuffered channel without partner | Found | No | TP | Y |
 | 50 | Leak on buffered channel with partner | Found | FAIL (12) | TP | N -> rewrite does not work |
 | 51 | Leak on buffered channel with partner | Found | 20 | TP | Y |
 | 52 | Leak on unbuffered channel without partner | Found | No | TP | Y |
-| 53 | Leak on select with partner | Found | 20 | TP | N -> found channel with partner |
-| 54 | Leak on select outwith partner | Found | 20 | TP | N -> found channel without partner |
+| 53 | Leak on select with partner | Found | 20 | TP | Y |
+| 54 | Leak on select outwith partner | Found | 20 | TP | Y |
 | 55 | Leak on wait group | Found | No | TP | Y |
 | 56 | Leak on conditional variable | Found | No | TP | Y |

@@ -300,7 +300,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		"receiveOnClosed":      false,
 		"doneBeforeAdd":        false,
 		"closeOnClosed":        false,
-		"concurrentReceive":    false,
+		"concurrentRecv":       false,
 		"leak":                 false,
 		"selectWithoutPartner": false,
 		"cyclicDeadlock":       false,
@@ -313,7 +313,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		analysisCases["receiveOnClosed"] = true
 		analysisCases["doneBeforeAdd"] = true
 		analysisCases["closeOnClosed"] = true
-		analysisCases["concurrentReceive"] = true
+		analysisCases["concurrentRecv"] = true
 		analysisCases["leak"] = true
 		analysisCases["selectWithoutPartner"] = true
 		// analysisCases["cyclicDeadlock"] = true
@@ -333,7 +333,7 @@ func parseAnalysisCases(cases string) (map[string]bool, error) {
 		case 'n':
 			analysisCases["closeOnClosed"] = true
 		case 'b':
-			analysisCases["concurrentReceive"] = true
+			analysisCases["concurrentRecv"] = true
 		case 'l':
 			analysisCases["leak"] = true
 		case 'u':

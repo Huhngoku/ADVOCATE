@@ -12,20 +12,27 @@ func Test53(t *testing.T) {
 // leak because of select with possible partner
 func n53() {
 	c := make(chan int, 0)
+	d := make(chan int, 0)
+
+	go func() {
+		<-d
+	}()
 
 	go func() {
 		<-c
 	}()
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 
 		select {
 		case c <- 1:
+		case d <- 1:
 		}
 	}()
 
 	c <- 1
+	d <- 1
 
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(800 * time.Millisecond)
 }

@@ -17,6 +17,7 @@ type VectorClockTID2 struct {
 	val      int
 	buffered bool
 	sel      bool
+	selID    int
 }
 
 type VectorClockTID3 struct {

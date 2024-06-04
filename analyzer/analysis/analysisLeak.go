@@ -119,7 +119,7 @@ func CheckForLeakChannelStuck(routineID int, objID int, vc clock.VectorClock, tI
 	}
 
 	if !foundPartner {
-		leakingChannels[objID] = append(leakingChannels[objID], VectorClockTID2{routineID, objID, vc, tID, opType, -1, buffered, false})
+		leakingChannels[objID] = append(leakingChannels[objID], VectorClockTID2{routineID, objID, vc, tID, opType, -1, buffered, false, 0})
 	}
 }
 
@@ -337,6 +337,7 @@ func CheckForLeak() {
 				}
 
 			} else {
+				println(vcTID.tID)
 				if vcTID.sel {
 					file, line, tPre, err := infoFromTID(vcTID.tID)
 					if err != nil {
@@ -345,7 +346,7 @@ func CheckForLeak() {
 					}
 
 					arg1 := logging.TraceElementResult{
-						RoutineID: vcTID.routine, ObjID: vcTID.id, TPre: tPre, ObjType: "SS", File: file, Line: line}
+						RoutineID: vcTID.routine, ObjID: vcTID.selID, TPre: tPre, ObjType: "SS", File: file, Line: line}
 
 					logging.Result(logging.CRITICAL, logging.LSelectWithout,
 						"select", []logging.ResultElem{arg1}, "", []logging.ResultElem{})
@@ -499,7 +500,7 @@ func CheckForLeakSelectStuck(routineID int, ids []int, buffered []bool, vc clock
 	if !foundPartner {
 		for i, id := range ids {
 			// add all select operations to leaking Channels,
-			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{routineID, id, vc, tID, opTypes[i], tPre, buffered[i], true})
+			leakingChannels[id] = append(leakingChannels[id], VectorClockTID2{routineID, id, vc, tID, opTypes[i], tPre, buffered[i], true, objID})
 		}
 	}
 }

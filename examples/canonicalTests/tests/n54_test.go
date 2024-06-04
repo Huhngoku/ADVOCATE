@@ -12,10 +12,12 @@ func Test54(t *testing.T) {
 // leak because of select without possible partner
 func n54() {
 	c := make(chan int, 0)
+	d := make(chan int, 0)
 
 	go func() {
 		select {
 		case c <- 1:
+		case d <- 1:
 		}
 	}()
 

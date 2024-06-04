@@ -21,6 +21,8 @@ func n21() {
 		<-x
 	}()
 
+	time.Sleep(100 * time.Millisecond)
+
 	x <- 1
 	x <- 1
 

@@ -18,6 +18,6 @@ func n06() {
 		<-c
 	}()
 
-	time.Sleep(300 * time.Millisecond) // prevent actual send on closed channel
+	time.Sleep(500 * time.Millisecond) // prevent actual send on closed channel
 	close(c)
 }

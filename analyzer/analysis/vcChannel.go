@@ -32,6 +32,7 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 	if analysisCases["concurrentRecv"] {
 		checkForConcurrentRecv(routRecv, id, tIDRecv, vc, tPost)
 	}
+
 	if tPost != 0 {
 
 		if mostRecentReceive[routRecv] == nil {

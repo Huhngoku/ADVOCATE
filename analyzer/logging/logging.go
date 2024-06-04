@@ -207,11 +207,16 @@ func Result(level resultLevel, resType ResultType, argType1 string, arg1 []Resul
 	resultMachine += "\n"
 
 	if level == WARNING {
-		resultsWarningReadable = append(resultsWarningReadable, resultReadable)
-		resultsWarningMachine = append(resultsWarningMachine, resultMachine)
+		if !stringInSlice(resultMachine, resultsWarningMachine) {
+			resultsWarningReadable = append(resultsWarningReadable, resultReadable)
+			resultsWarningMachine = append(resultsWarningMachine, resultMachine)
+		}
 	} else if level == CRITICAL {
-		resultsCriticalReadable = append(resultsCriticalReadable, resultReadable)
-		resultCriticalMachine = append(resultCriticalMachine, resultMachine)
+		println(resultReadable)
+		if !stringInSlice(resultMachine, resultCriticalMachine) {
+			resultsCriticalReadable = append(resultsCriticalReadable, resultReadable)
+			resultCriticalMachine = append(resultCriticalMachine, resultMachine)
+		}
 	}
 }
 
@@ -339,4 +344,13 @@ func PrintSummary(noWarning bool, noPrint bool) int {
 	}
 
 	return len(resultCriticalMachine) + len(resultsWarningMachine)
+}
+
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }

@@ -6,15 +6,8 @@ import (
 )
 
 func checkForConcurrentRecv(routine int, id int, tID string, vc map[int]clock.VectorClock, tPost int) {
-	if tPost != 0 {
-		if _, ok := lastRecvRoutine[routine]; !ok {
-			lastRecvRoutine[routine] = make(map[int]VectorClockTID)
-		}
-
-		lastRecvRoutine[routine][id] = VectorClockTID{vc[routine].Copy(), tID, routine}
-	}
-
 	for r, elem := range lastRecvRoutine {
+		println(r, elem[id].Vc.ToString())
 		if r == routine {
 			continue
 		}
@@ -55,5 +48,13 @@ func checkForConcurrentRecv(routine int, id int, tID string, vc map[int]clock.Ve
 			logging.Result(logging.WARNING, logging.AConcurrentRecv,
 				"recv", []logging.ResultElem{arg1}, "recv", []logging.ResultElem{arg2})
 		}
+	}
+
+	if tPost != 0 {
+		if _, ok := lastRecvRoutine[routine]; !ok {
+			lastRecvRoutine[routine] = make(map[int]VectorClockTID)
+		}
+
+		lastRecvRoutine[routine][id] = VectorClockTID{vc[routine].Copy(), tID, routine}
 	}
 }
