@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -9,7 +8,7 @@ import (
 func Test21(t *testing.T) {
 	n21()
 }
-	
+
 // TP
 func n21() {
 	x := make(chan int)

@@ -1,15 +1,15 @@
-
 package main
 
 import (
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
 func Test16(t *testing.T) {
 	n16()
 }
+
 // TP
 func n16() {
 	c := make(chan int, 0)

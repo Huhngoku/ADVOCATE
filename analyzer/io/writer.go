@@ -104,3 +104,28 @@ func WriteTrace(path string, numberRoutines int) error {
 	println("Trace written")
 	return nil
 }
+
+/*
+ * In path, create a file with the result message and the exit code for the rewrite
+ * Args:
+ *   path (string): The path to the file folder to write to
+ *   resultMessage (string): The result message
+ *   exitCode (int): The exit code
+ *   resultIndex (int): The index of the result
+ * Returns:
+ *   error: The error that occurred
+ */
+func WriteRewriteInfoFile(path string, bugType string, exitCode int, resultIndex int) error {
+	fileName := path + "rewrite_info.log"
+	file, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString(strconv.Itoa(resultIndex+1) + "#" + bugType + "#" + strconv.Itoa(exitCode)); err != nil {
+		return err
+	}
+
+	return nil
+}

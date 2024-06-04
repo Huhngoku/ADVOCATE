@@ -18,6 +18,7 @@ func n47() {
 	}()
 
 	go func() {
+		time.Sleep(100 * time.Millisecond)
 		d <- 1
 	}()
 
@@ -28,5 +29,5 @@ func n47() {
 
 	close(c)
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 }

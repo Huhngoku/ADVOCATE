@@ -266,13 +266,18 @@ func rewriteTrace(outMachine string, newTrace string, resultIndex int,
 		return false, nil
 	}
 
-	rewriteNeeded, err := rewriter.RewriteTrace(bug)
+	rewriteNeeded, code, err := rewriter.RewriteTrace(bug)
 
 	if err != nil {
 		return rewriteNeeded, err
 	}
 
 	err = io.WriteTrace(newTrace, numberOfRoutines)
+	if err != nil {
+		return rewriteNeeded, err
+	}
+
+	err = io.WriteRewriteInfoFile(newTrace, string(bug.Type), code, resultIndex)
 	if err != nil {
 		return rewriteNeeded, err
 	}

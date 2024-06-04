@@ -1,10 +1,9 @@
-
 package main
 
 import (
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
 func Test15(t *testing.T) {
@@ -17,7 +16,6 @@ func n15() {
 	m := sync.Mutex{}
 
 	go func() {
-		time.Sleep(100 * time.Millisecond)
 		t := m.TryLock()
 		if t {
 			c <- 1
@@ -26,14 +24,15 @@ func n15() {
 	}()
 
 	go func() {
+		time.Sleep(100 * time.Millisecond)
 		t := m.TryLock()
 		if t {
-			<-c
 			m.Unlock()
 		}
+		<-c
 	}()
 
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	close(c)
 	time.Sleep(300 * time.Millisecond)
 }

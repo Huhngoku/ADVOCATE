@@ -10,7 +10,7 @@ func Test26(t *testing.T) {
 	n26()
 }
 
-// possible negative wait counter
+// no possible negative wait counter
 func n26() {
 	var wg sync.WaitGroup
 	c := make(chan int, 0)
