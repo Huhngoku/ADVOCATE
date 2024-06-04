@@ -7,7 +7,7 @@
 | 3 | No send on closed because of once          |  No found | No | TN | Y |
 | 4 | Send on close not detected because of critical sections | No found | No | FN | Y |
 | 5 | Possible Send and Recv on closed           | Found both | 30, 31 | TP | Y |
-| 6 | Possible Send on closed                    | No found  | No | TP | N |
+| 6 | Possible Send on closed                    | No found  | No | TP | N -> trace wird mit toolchain nicht aufgezeichnet|
 | 7 | No possible send/recv on closed                 | No found  | No | TN | Y |
 | 8 | Actual recv on closed                     | Found | No | TP | Y |
 | 9 | Send/recv on closed in select             | Found | 30, 30, 31, 31 | TP | Y |
