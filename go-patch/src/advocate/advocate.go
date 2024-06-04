@@ -316,7 +316,7 @@ func EnableReplay(index int, exitCode bool) {
 		}
 
 		// if the file is a log file, read the trace
-		if strings.HasSuffix(file.Name(), ".log") {
+		if strings.HasSuffix(file.Name(), ".log") && file.Name() != "rewrite_info.log" {
 			routineID, trace := readTraceFile(tracePathRewritten + "/" + file.Name())
 			runtime.AddReplayTrace(uint64(routineID), trace)
 		}
