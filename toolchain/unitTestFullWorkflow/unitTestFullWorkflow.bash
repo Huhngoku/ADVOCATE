@@ -111,13 +111,8 @@ for trace in $rewritten_traces; do
   echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
   $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
   ## Run test
-  echo "Run reordered test"
-  echo "======"
-  echo "Debug to see if reorder overhead is added correctly"
-  grep "EnableReplay" $file
-  echo "======"
   echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
-  $pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
+  $pathToPatchedGoRuntime test -count=1 -run=$testName "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
   ## Remove reorder overhead
   echo "Remove reorder overhead"
   echo "$pathToOverheadRemover -f $file -t $testName"
