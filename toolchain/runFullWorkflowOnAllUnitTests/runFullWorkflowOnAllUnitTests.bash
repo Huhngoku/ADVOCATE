@@ -49,7 +49,7 @@ for file in $test_files; do
     echo "Progress: $current_file/$total_files"
     echo "Processing file: $file"
     package_path=$(dirname "$file")
-    test_functions=$(grep -oE "[a-zA-Z0-9_]+ *Test[a-zA-Z0-9_]*" $file | sed 's/ *\(t *\*testing\.T\)//' | sed 's/func //')
+    test_functions=$(grep -oE ".*Test.*\(.*testing\.T\)" $file | sed 's/(.*\*testing\.T.*)//' | sed 's/func //')
     for test_func in $test_functions; do
         attempted_tests=$((attempted_tests+1))
         packageName=$(basename "$package_path")
