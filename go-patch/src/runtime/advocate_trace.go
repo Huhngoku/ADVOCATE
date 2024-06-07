@@ -420,6 +420,10 @@ func AdvocateIgnore(operation Operation, file string, line int) bool {
 		return true
 	}
 
+	// if hasSuffix(file, "testing/testing.go") {
+	// 	return true
+	// }
+
 	if hasSuffix(file, "syscall/env_unix.go") {
 		return true
 	}
@@ -442,8 +446,7 @@ func AdvocateIgnore(operation Operation, file string, line int) bool {
 			return true
 		}
 		// pools
-		if hasSuffix(file, "sync/pool.go") && (line == 226 || line == 227 ||
-			line == 224 || line == 234) {
+		if hasSuffix(file, "sync/pool.go") && (line == 226 || line == 243) {
 			return true
 		}
 		// mutex in rwmutex
@@ -457,6 +460,14 @@ func AdvocateIgnore(operation Operation, file string, line int) bool {
 		}
 	}
 	return false
+}
+
+func AdvocateIgnoreReplay(operation Operation, file string, line int) bool {
+	if hasSuffix(file, "time/sleep.go") {
+		return true
+	}
+
+	return AdvocateIgnore(operation, file, line)
 }
 
 // ADVOCATE-FILE-END

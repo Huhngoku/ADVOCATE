@@ -8,8 +8,9 @@ package runtime
  * 	index of the operation in the trace
  */
 func AdvocateOncePre(id uint64) int {
-	_, file, line, _ := Caller(2)
 	timer := GetNextTimeStep()
+
+	_, file, line, _ := Caller(2)
 
 	elem := "O," + uint64ToString(timer) + ",0," + uint64ToString(id) + ",f," +
 		file + ":" + intToString(line)
@@ -24,10 +25,11 @@ func AdvocateOncePre(id uint64) int {
  * 	suc: true if the do on the once was called for the first time, false otherwise
  */
 func AdvocateOncePost(index int, suc bool) {
+	timer := GetNextTimeStep()
+
 	if index == -1 {
 		return
 	}
-	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index)
 
 	split := splitStringAtCommas(elem, []int{2, 3, 4, 5})

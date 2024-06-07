@@ -223,8 +223,8 @@ func (p *Pool) pinSlow() (*poolLocal, int) {
 	// Can not lock the mutex while pinned.
 	runtime_procUnpin()
 	// ADVOCATE-CHANGE-START, only comment
-	allPoolsMu.Lock()         // MUST BE LINE 226, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
-	defer allPoolsMu.Unlock() // MUST BE LINE 227, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	allPoolsMu.Lock() // MUST BE LINE 226, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
+	defer allPoolsMu.Unlock()
 	pid := runtime_procPin()
 	// poolCleanup won't be called while we are pinned.
 	s := p.localSize
@@ -240,7 +240,7 @@ func (p *Pool) pinSlow() (*poolLocal, int) {
 	local := make([]poolLocal, size)
 	atomic.StorePointer(&p.local, unsafe.Pointer(&local[0])) // store-release
 	runtime_StoreReluintptr(&p.localSize, uintptr(size))     // store-release
-	return &local[pid], pid
+	return &local[pid], pid                                  // MUST BE LINE 243, OTHERWISE CHANGE IN advocate_trace.go:AdvocateIgnore
 }
 
 func poolCleanup() {

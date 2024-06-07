@@ -11,6 +11,8 @@ package runtime
  * 	index of the operation in the trace
  */
 func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
+	timer := GetNextTimeStep()
+
 	var file string
 	var line int
 	if delta > 0 {
@@ -18,7 +20,6 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
 	} else {
 		_, file, line, _ = Caller(3)
 	}
-	timer := GetNextTimeStep()
 
 	elem := "W," + uint64ToString(timer) + "," + uint64ToString(timer) + "," +
 		uint64ToString(id) + ",A," +
@@ -38,8 +39,9 @@ func AdvocateWaitGroupAdd(id uint64, delta int, val int32) int {
  * 	index of the operation in the trace
  */
 func AdvocateWaitGroupWaitPre(id uint64) int {
-	_, file, line, _ := Caller(2)
 	timer := GetNextTimeStep()
+
+	_, file, line, _ := Caller(2)
 
 	elem := "W," + uint64ToString(timer) + ",0," + uint64ToString(id) +
 		",W,0,0," + file + ":" + intToString(line)
@@ -54,6 +56,8 @@ func AdvocateWaitGroupWaitPre(id uint64) int {
  * 	index: index of the operation in the trace
  */
 func AdvocateWaitGroupPost(index int) {
+	timer := GetNextTimeStep()
+
 	// internal elements are not in the trace
 	if index == -1 {
 		return
@@ -64,8 +68,6 @@ func AdvocateWaitGroupPost(index int) {
 	if currentGoRoutine() == nil {
 		return
 	}
-
-	timer := GetNextTimeStep()
 
 	elem := currentGoRoutine().getElement(index)
 	split := splitStringAtCommas(elem, []int{2, 3})

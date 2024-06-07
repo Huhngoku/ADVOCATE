@@ -10,8 +10,8 @@ package runtime
  * 	index of the operation in the trace
  */
 func AdvocateCondPre(id uint64, op int) int {
-	_, file, line, _ := Caller(2)
 	timer := GetNextTimeStep()
+	_, file, line, _ := Caller(2)
 	var opC string
 	switch op {
 	case 0:
@@ -36,10 +36,10 @@ func AdvocateCondPre(id uint64, op int) int {
  * 	index: index of the operation in the trace
  */
 func AdvocateCondPost(index int) {
+	timer := GetNextTimeStep()
 	if index == -1 {
 		return
 	}
-	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index)
 
 	split := splitStringAtCommas(elem, []int{2, 3})

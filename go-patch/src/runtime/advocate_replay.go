@@ -256,7 +256,7 @@ func WaitForReplayFinish() {
 			warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
 			warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
 			warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
-			warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+			warningMessage += "If the problem persist, this message will be repeated.\n\n"
 			println(warningMessage)
 			if timeOutCancel {
 				panic("ReplayError: Replay stuck")
@@ -328,6 +328,8 @@ func WaitForReplay(op Operation, skip int) (bool, bool, ReplayElement) {
 // 	}
 // }
 
+var lastNextTime int = 0
+
 /*
  * Wait until the correct operation is about to be executed.
  * Arguments:
@@ -345,11 +347,11 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		return false, false, ReplayElement{}
 	}
 
-	if AdvocateIgnore(op, file, line) {
+	if AdvocateIgnoreReplay(op, file, line) {
 		return true, false, ReplayElement{}
 	}
 
-	// println("WaitForReplayPath", op.ToString(), file, line)
+	println("Wait: ", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		if !replayEnabled { // check again if disabled by command
@@ -357,6 +359,12 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		}
 
 		nextRoutine, next := getNextReplayElement()
+
+		if AdvocateIgnoreReplay(next.Op, next.File, next.Line) {
+			println("Igno: ", next.Op.ToString(), next.File, next.Line)
+			foundReplayElement(nextRoutine)
+			continue
+		}
 
 		// disable the replay, if the next operation is the disable replay operation
 		if next.Op == OperationReplayEnd {
@@ -368,6 +376,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			return false, false, ReplayElement{}
 		}
 
+		timeoutCounter++
 		// all elements in the trace have been executed
 		if nextRoutine == -1 {
 			println("The program tried to execute an operation, although all elements in the trace have already been executed.\nDisable Replay")
@@ -376,13 +385,14 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			return false, false, ReplayElement{}
 		}
 
-		// println("Try: ", next.Time, next.Op.ToString(), next.File, next.Line)
+		if lastNextTime != next.Time {
+			println("Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
+			lastNextTime = next.Time
+		}
 
 		if next.Time != 0 && replayEnabled {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
 				next.File != file || next.Line != line {
-
-				timeoutCounter++
 
 				checkForTimeout(timeoutCounter, file, line)
 				slowExecution()
@@ -390,7 +400,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			}
 		}
 
-		// println("Replay Run : ", next.Time, next.Op.ToString(), next.File, next.Line)
+		println("Run : ", next.Time, next.Op.ToString(), next.File, next.Line)
 		foundReplayElement(nextRoutine)
 
 		lock(&timeoutLock)
@@ -443,10 +453,8 @@ func checkForTimeout(timeoutCounter int, file string, line int) {
 		// 	panic(errorMessage)
 		// }
 		// } else
-		if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 10s
-			waitTime := intToString(int(10 * timeoutCounter / timeoutMessageCycle))
-			warningMessage := "\nReplayWarning: Long wait time of approx. "
-			warningMessage += waitTime + "s.\n"
+		if timeoutCounter%timeoutMessageCycle == 0 { // approx. every 20s
+			warningMessage := "\nReplayWarning: Long wait time\n"
 			warningMessage += "The following operation is taking a long time to execute:\n"
 			warningMessage += "    File: " + file + "\n"
 			warningMessage += "    Line: " + intToString(line) + "\n"
@@ -455,7 +463,7 @@ func checkForTimeout(timeoutCounter int, file string, line int) {
 			warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
 			warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
 			warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
-			warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+			warningMessage += "If the problem persist, this message will be repeated.\n\n"
 
 			println(warningMessage)
 
@@ -473,8 +481,8 @@ func checkForTimeoutNoOperation() {
 		return
 	}
 
-	waitTime := 1000 // approx. 20s
-	warningMessage := "No traced operation has been executed for approx. 20s.\n"
+	waitTime := 800 // approx. 20s
+	warningMessage := "No traced operation has been executed for a long time.\n"
 	warningMessage += "This can be caused by a stuck replay.\n"
 	warningMessage += "Possible causes are:\n"
 	warningMessage += "    - The program was altered between recording and replay\n"
@@ -484,7 +492,7 @@ func checkForTimeoutNoOperation() {
 	warningMessage += "If you believe, the program is still running, you can continue to wait.\n"
 	warningMessage += "If you believe, the program is stuck, you can cancel the program.\n"
 	warningMessage += "If you suspect, that one of these causes is the reason for the long wait time, you can try to change the program to avoid the problem.\n"
-	warningMessage += "If the problem persist, this message will be repeated every approx. 10s.\n\n"
+	warningMessage += "If the problem persist, this message will be repeated.\n\n"
 
 	for {
 		lock(&timeoutLock)
@@ -497,8 +505,7 @@ func checkForTimeoutNoOperation() {
 		}
 
 		if timeoutCounter%waitTime == 0 {
-			message := "\nReplayWarning: Long wait time of approx. "
-			message += intToString(int(10*timeoutCounter/waitTime)) + "s.\n"
+			message := "\nReplayWarning: Long wait time\n"
 			message += warningMessage
 
 			println(message)

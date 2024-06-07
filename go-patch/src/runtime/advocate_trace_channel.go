@@ -20,6 +20,8 @@ var unbufferedChannelComRecv = make(map[string]uint64) // id -> tpost
  * 	index of the operation in the trace, return -1 if it is a atomic operation
  */
 func AdvocateChanSendPre(id uint64, opID uint64, qSize uint, isNil bool) int {
+	timer := GetNextTimeStep()
+
 	_, file, line, _ := Caller(3)
 	// internal channels to record atomic operations
 	if isSuffix(file, "advocate_atomic.go") {
@@ -29,7 +31,6 @@ func AdvocateChanSendPre(id uint64, opID uint64, qSize uint, isNil bool) int {
 		// they are not recorded in the trace
 		return -1
 	}
-	timer := GetNextTimeStep()
 
 	elem := "C," + uint64ToString(timer) + ",0,"
 	if isNil {
@@ -69,13 +70,14 @@ func isSuffix(s, suffix string) bool {
  * 	index of the operation in the trace
  */
 func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint, isNil bool) int {
+	timer := GetNextTimeStep()
+
 	_, file, line, _ := Caller(3)
 	// do not record channel operation of internal channel to record atomic operations
 	if isSuffix(file, "advocate_trace.go") {
 		return -1
 	}
 
-	timer := GetNextTimeStep()
 	elem := "C," + uint64ToString(timer) + ",0,"
 	if isNil {
 		elem += "*,R,f,0,0," + file + ":" + intToString(line)
@@ -97,8 +99,9 @@ func AdvocateChanRecvPre(id uint64, opID uint64, qSize uint, isNil bool) int {
  * 	index of the operation in the trace
  */
 func AdvocateChanClose(id uint64, qSize uint) int {
-	_, file, line, _ := Caller(2)
 	timer := uint64ToString(GetNextTimeStep())
+
+	_, file, line, _ := Caller(2)
 	elem := "C," + timer + "," + timer + "," + uint64ToString(id) + ",C,f,0," +
 		uint32ToString(uint32(qSize)) + "," + file + ":" + intToString(line)
 
@@ -113,6 +116,8 @@ func AdvocateChanClose(id uint64, qSize uint) int {
  * 	index: index of the operation in the trace
  */
 func AdvocateChanPost(index int) {
+	time := GetNextTimeStep()
+
 	if index == -1 {
 		return
 	}
@@ -132,7 +137,6 @@ func AdvocateChanPost(index int) {
 				split[1] = uint64ToString(tpost - 1)
 				delete(unbufferedChannelComRecv, id)
 			} else {
-				time := GetNextTimeStep()
 				split[1] = uint64ToString(time)
 				unbufferedChannelComSend[id] = time
 			}
@@ -142,7 +146,6 @@ func AdvocateChanPost(index int) {
 				split[1] = uint64ToString(tpost + 1)
 				delete(unbufferedChannelComSend, id)
 			} else {
-				time := GetNextTimeStep()
 				split[1] = uint64ToString(time)
 				unbufferedChannelComRecv[id] = time
 			}
@@ -151,7 +154,7 @@ func AdvocateChanPost(index int) {
 	}
 
 	if !set {
-		split[1] = uint64ToString(GetNextTimeStep())
+		split[1] = uint64ToString(time)
 	}
 
 	elem = mergeString(split)
@@ -165,13 +168,15 @@ func AdvocateChanPost(index int) {
  * 	index: index of the operation in the trace
  */
 func AdvocateChanPostCausedByClose(index int) {
+	time := GetNextTimeStep()
+
 	if index == -1 {
 		return
 	}
 
 	elem := currentGoRoutine().getElement(index)
 	split := splitStringAtCommas(elem, []int{2, 3, 5, 6})
-	split[1] = uint64ToString(GetNextTimeStep())
+	split[1] = uint64ToString(time)
 	split[3] = "t"
 	elem = mergeString(split)
 

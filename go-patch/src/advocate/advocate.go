@@ -2,6 +2,7 @@ package advocate
 
 import (
 	"bufio"
+	"math"
 	"os"
 	"os/signal"
 	"runtime"
@@ -282,15 +283,19 @@ var tracePathRewritten = "rewritten_trace_"
  */
 func EnableReplay(index int, exitCode bool) {
 	// use first as default
-	if index < 1 {
-		index = 1
+	if index < 0 {
+		index = 0
 	}
 
 	runtime.SetExitCode(exitCode)
 
 	advocateStartTimer = time.Now()
 
-	tracePathRewritten = tracePathRewritten + strconv.Itoa(index)
+	if index == 0 {
+		tracePathRewritten = "advocateTrace"
+	} else {
+		tracePathRewritten = tracePathRewritten + strconv.Itoa(index)
+	}
 
 	// if trace folder does not exist, panic
 	if _, err := os.Stat(tracePathRewritten); os.IsNotExist(err) {
@@ -454,21 +459,21 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 							op = runtime.OperationRWMutexLock
 						} else {
 							op = runtime.OperationMutexLock
-							time = swapTimerRwMutex("L", time, file, line, &replayData)
+							// time = swapTimerRwMutex("L", time, file, line, &replayData)
 						}
 					case "U":
 						if rw {
 							op = runtime.OperationRWMutexUnlock
 						} else {
 							op = runtime.OperationMutexUnlock
-							time = swapTimerRwMutex("U", time, file, line, &replayData)
+							// time = swapTimerRwMutex("U", time, file, line, &replayData)
 						}
 					case "T":
 						if rw {
 							op = runtime.OperationRWMutexTryLock
 						} else {
 							op = runtime.OperationMutexTryLock
-							time = swapTimerRwMutex("T", time, file, line, &replayData)
+							// time = swapTimerRwMutex("T", time, file, line, &replayData)
 						}
 					case "R":
 						op = runtime.OperationRWMutexRLock
@@ -504,7 +509,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					default:
 						panic("Unknown waitgroup operation")
 					}
-					// time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}
@@ -518,7 +523,7 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 					} else {
 						op = runtime.OperationSelectCase
 					}
-					// time, _ = strconv.Atoi(fields[2])
+					time, _ = strconv.Atoi(fields[2])
 					if time == 0 {
 						blocked = true
 					}
@@ -548,6 +553,9 @@ func readTraceFile(fileName string) (int, runtime.AdvocateReplayTrace) {
 
 				default:
 					panic("Unknown operation " + fields[0] + " in line " + elem + " in file " + fileName + ".")
+				}
+				if time == 0 {
+					time = math.MaxInt
 				}
 				if op != runtime.OperationNone && !runtime.AdvocateIgnore(op, file, line) {
 					replayData = append(replayData, runtime.ReplayElement{

@@ -12,6 +12,7 @@ package runtime
  */
 func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint16) int {
 	timer := GetNextTimeStep()
+
 	if cases == nil {
 		return -1
 	}
@@ -72,12 +73,13 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
  * 	rClosed: true if the channel was closed at another routine
  */
 func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
+	timer := GetNextTimeStep()
+
 	if index == -1 {
 		return
 	}
 
 	elem := currentGoRoutine().getElement(index)
-	timer := GetNextTimeStep()
 
 	// split into S,[tpre] - [tPost] - [id] - [cases] - [chosenIndex] - [file:line]
 	split := splitStringAtCommas(elem, []int{2, 3, 4, 5, 6})
@@ -132,8 +134,9 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 * 	index of the operation in the trace
  */
 func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
-	id := GetAdvocateObjectID()
 	timer := GetNextTimeStep()
+
+	id := GetAdvocateObjectID()
 
 	opChan := "R"
 	if send {
@@ -165,11 +168,12 @@ func AdvocateSelectPreOneNonDef(c *hchan, send bool) int {
  * 	res: true for channel, false for default
  */
 func AdvocateSelectPostOneNonDef(index int, res bool, c *hchan) {
+	timer := GetNextTimeStep()
+
 	if index == -1 {
 		return
 	}
 
-	timer := GetNextTimeStep()
 	elem := currentGoRoutine().getElement(index)
 
 	// split into S,[tpre] - [tPost] - [id] - [cases] - [chosenIndex] - [file:line]

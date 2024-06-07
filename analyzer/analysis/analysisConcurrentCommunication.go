@@ -7,7 +7,6 @@ import (
 
 func checkForConcurrentRecv(routine int, id int, tID string, vc map[int]clock.VectorClock, tPost int) {
 	for r, elem := range lastRecvRoutine {
-		println(r, elem[id].Vc.ToString())
 		if r == routine {
 			continue
 		}

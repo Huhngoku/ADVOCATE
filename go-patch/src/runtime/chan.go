@@ -906,15 +906,10 @@ func chanparkcommit(gp *g, chanLock unsafe.Pointer) bool {
 //	}
 func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 	// ADVOCATE-CHANGE-START
-	// if c is nil, the select acts like as if there is only the default case.
-	// It therefor does not need to be recorded.
-	// It the return is nesseserry, because otherwise the following lock
-	// would try to lock a mutex which is a member of a nil element.
-	// This would lead to a SIGSEGV
+	var replayElem ReplayElement
+	var enabled bool
+	var valid bool
 	if c != nil && !c.advocateIgnore {
-		var replayElem ReplayElement
-		var enabled bool
-		var valid bool
 		if c != nil && !c.advocateIgnore {
 			enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
 			if enabled && valid {
@@ -925,6 +920,17 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 					_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz, false)
 					BlockForever()
 				}
+			}
+		}
+	} else {
+		enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
+		if enabled && valid {
+			if replayElem.Blocked {
+				lock(&c.numberSendMutex)
+				c.numberSend++
+				unlock(&c.numberSendMutex)
+				_ = AdvocateChanSendPre(c.id, c.numberSend, c.dataqsiz, false)
+				BlockForever()
 			}
 		}
 	}
@@ -960,10 +966,10 @@ func selectnbsend(c *hchan, elem unsafe.Pointer) (selected bool) {
 func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 	// ADVOCATE-CHANGE-START
 	// see selectnbsend
+	var replayElem ReplayElement
+	var enabled bool
+	var valid bool
 	if c != nil && !c.advocateIgnore {
-		var replayElem ReplayElement
-		var enabled bool
-		var valid bool
 		if !c.advocateIgnore {
 			enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
 			if enabled && valid {
@@ -974,6 +980,17 @@ func selectnbrecv(elem unsafe.Pointer, c *hchan) (selected, received bool) {
 					_ = AdvocateSelectPreOneNonDef(c, false)
 					BlockForever()
 				}
+			}
+		}
+	} else {
+		enabled, valid, replayElem = WaitForReplay(OperationSelect, 2)
+		if enabled && valid {
+			if replayElem.Blocked {
+				lock(&c.numberSendMutex)
+				c.numberSend++
+				unlock(&c.numberSendMutex)
+				_ = AdvocateSelectPreOneNonDef(c, false)
+				BlockForever()
 			}
 		}
 	}
