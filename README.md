@@ -1,283 +1,167 @@
-# AdvocateGo: Automated Detection and Verification Of Concurrency bugs through Analysis of Trace recordings of program Executions in Go."
+# AdvocateGo
+## What is AdvocateGo
+AdvocateGo is an analysis tool for Go programs.
+It detects concurrency bugs and gives  diagnostic insight.
+This is achieved through `happens-before-relation` and `vector-clocks`
 
-> [!WARNING]
-> This program is still under development and may return no or wrong results.
+Furthermore it is also able to produce traces which can be fed back into the program in order to experience the predicted bug.
 
-## What
-We want to analyze concurrent Go programs to automatically find potential concurrency bug. The different analysis scenarios can be found in `doc/Analysis.md`.
+A more in detail explanation of how it works can be found [here](./doc/Analysis.md).
+### AdvocateGo Step by Step
+Simplified flowchart of the AdvocateGo Process
+![Flowchart of AdvocateGoProcess](doc/img/flow2.png "Title")
 
-We also implement a trace replay mechanism, to replay a trace as recorded.
-
-## StepByStep
-To get a short step by step overview on how to use the program, please refer to the `doc/StepByStep.md` file.
-
-## Recording
-To analyze the program, we first need
-to record it. To do this, we modify the go runtime
-to automatically record a program while it runs. The modified runtime can 
-be found in the `go-patch` directory. Running a program with this modified 
-go runtime will create a trace of the program.
-
-The following is a short explanation about how to build and run the 
-new runtime and create the trace. A full explanation of the created trace can be found in the 
-`doc` directory. 
-
-> [!WARNING]
-> The recording of atomic operations is only tested with `amd64`. For `arm64` an untested implementation exists. 
-
-### How
-The go-patch folder contains a modified version of the go runtime.
-With this modified version it is possible to save a trace of the program.
-
-To build the new runtime, run the `make.bash` or `make.bat` file in the `src`
-directory. This will create a `bin` directory containing a `go` executable.
-This executable can be used as your new go environment e.g. with
-`./go run main.go` or `./go build`. Please make sure, that the program expects 
-go version 1.21 or earlier.
-
-<!-- WARNING: It can currently happen, that `make.bash` command result in a `fatal error: runtime: releaseSudog with non-nil gp.param`. It can normally be fixed by just running `make.bash` again. I'm working on fixing it. -->
-
-It is necessary to set the GOROOT environment variable to the path of `go-patch`, e.g. with 
+For more detail see this [in depth diagram](./doc/img/architecture_without_time.png)
+## Running your first analysis
+These steps can also be done automatically with scripts. If you want to know more about using them you can skip straight to the [Tooling](#tooling) section. Doing these steps manually at least once is still encouraged to get a feel for how advocateGo works.
+### Step 1: Add Overhead
+You need to adjust the main method or unit test you want to analyze slightly in order to analyze them.
+The code snippet you need is
+```go
+import "advocate"
+...
+// ======= Preamble Start =======
+    advocate.InitTracing(0)
+    defer advocate.Finish()
+// ======= Preamble End =======
+...
 ```
+Eg. like this 
+```go
+import "advocate"
+func main(){
+    // ======= Preamble Start =======
+    advocate.InitTracing(0)
+    defer advocate.Finish()
+    // ======= Preamble End =======
+...
+}
+```
+or like this for a unit test
+```go
+import "advocate"
+...
+func TestImportantThings(t *testing.T){
+    // ======= Preamble Start =======
+    advocate.InitTracing(0)
+    defer advocate.Finish()
+    // ======= Preamble End =======
+...
+}
+```
+### Step 2: Build AdvocateGo-Runtime
+Before your newly updated main method or test you will need to build the AdvocateGo-Runtime.
+This can be done easily by running
+#### Unix
+```shell
+./src/make.bash
+```
+#### Windows
+```shell
+./src/make.bat
+```
+### Step 2.2: Set Goroot Environment Variable
+Lastly you need to set the goroot-environment-variable like so
+```shell
 export GOROOT=$HOME/ADVOCATE/go-patch/
 ```
+### Step 3: Run your go program!
+Now you can finally run your go program with the binary that you build in `Step 1`.
+It is located under `./go-patch/bin/go`
+Eg. like so
+```shell
+./go-patch/bin/go run main.go
+```
+or like this for your tests
+```shell
+./go-patch/bin/go test
+```
+## Analyzing Traces
+After you run your program you will find that it generated the folder `advocateTrace`.
+If you are curious about the structure of said trace, you can find an in depth explanation [here](./doc/Trace.md)
+It contains a record of what operation ran in what thread during the execution of your program.
 
-To create a trace, add
+This acts as input for the analyzer located under `./analyzer/analyzer`.
+It can be run like so
+```shell
+./analyzer/analyzer -t advocateTrace
+```
+### Output
+Running the analyzer will generate 3 files for you
+- machine_readable.log (good for parsing and further analysis)
+- human readable.log (more readable representation of bug predictions)
+- rewritten_Trace (a trace in which the bug it was rewritten for would occur)
+
+A more detailed explanation of the file contents can be found under [AnalysisResult.md](./doc/AnalysisResult.md)
+
+### What bugs can be found
+AdvocateGo currently supports following bugs
+
+- A1: Send on closed channel
+- A2: Receive on closed channel
+- A3: Close on closed channel
+- A4: Concurrent recv
+- A5: Select case without partner
+- P1: Possible send on closed channel
+- P2: Possible receive on closed channel
+- P3: Possible negative waitgroup counter
+- L1: Leak on unbuffered channel with possible partner
+- L2: Leak on unbuffered channel without possible partner
+- L3: Leak on buffered channel with possible partner
+- L4: Leak on buffered channel without possible partner
+- L5: Leak on nil channel
+- L6: Leak on select with possible partner
+- L7: Leak on select without possible partner
+- L8: Leak on mutex 
+- L9: Leak on waitgroup 
+- L0: Leak on cond 
+
+## Replay
+### How to replay the program and cause the predicted bug
+This process is similar to when we first ran the program. Only the Overhead changes slightly.
+
+Instead want to use this overhead
 
 ```go
-advocate.InitTracing(0)
-defer advocate.Finish()
-```
-
-at the beginning of the main function.
-Also include the following imports 
-```go
-advocate
-```
-
-
-In some cases, we can get a `fatal error: schedule: holding lock`. In this case increase the argument in `runtime.InitAtomics(0)` until the problem disappears.
-
-In some cases, the trace files can get very big. If you want to simplify the 
-traces, you can set the value in `runtime.InitAtomics` to $-1$. In this case, 
-atomic variable operations are not recorded. 
-
-After that run the program with `./go run main.go` or `./go build && ./main`,
-using the new runtime.
-
-
-### Example
-Let's create the trace for the following program:
-
-```go
-package main
-
-import (
-	"time"
-)
-
-func main() {
-	c := make(chan int, 0)
-
-	go func() {
-		c <- 1
-	}()
-
-	go func() {
-		<-c
-	}()
-
-	time.Sleep(10 * time.Millisecond)
-	close(c)
-}
-```
-
-After adding the preamble, we get 
-
-```go
-package main
-
-import (
-	"advocate"
-	"time"
-)
-
-func main() {
-	// ======= Preamble Start =======
-		advocate.InitTracing(0)
-		defer advocate.Finish()
-	// ======= Preamble End =======
-
-	c := make(chan int, 0)
-
-	go func() {
-		c <- 1  // line 17
-	}()
-
-	go func() {
-		<-c  // line 21
-	}()
-
-	time.Sleep(10 * time.Millisecond)
-	close(c)  // line 25
-}
-```
-
-Running this create a `trace` folder containing one trace file for each routine.
-The non-empty trace files contain the following trace:
-
-```txt
-G,20,16,/home/.../main.go:16;G,21,17,/home/.../main.go:20;C,26,26,4,C,f,0,0,/home/.../main.go:25
-
-C,23,24,4,S,f,1,0,/home/.../main.go:17
-
-C,22,25,4,R,f,1,0,/home/.../main.go:21
-```
-In this example the file paths are shortened for readability. In the real trace, the full path is given.
-
-The trace includes both the concurrent operations of the program it self, as well
-as internal operations used by the go runtime. An explanation of the trace 
-file including the explanations for all elements can be found in the `doc`
-directory.
-
-## Analysis and Reorder
-
-We can now analyze the created file using the program in the `analyzer`
-folder. For now we only support the search for potential send on a closed channel, but we plan to expand the use cases in the future.
-The analyzer can also create a new reordered trace, in which a detected possible bug actually occurs. This new trace can then used in the replay, to confirm and simplify the removal of the bug.
-
-> [!WARNING]
-> The Reorder is still in development and may result in incorrect traces
-
-We can detect the following situations:
-- s: Send on closed channel
-- Receive on closed channel
-- Done before add on waitGroup
-- Close of closed channel
-- Concurrent receive on channel
-- Leaking routine
-- Select case without partner
-- Cyclic deadlock
-
-The analyzer can take the following command line arguments:
-```
--a	Ignore atomic operations (default false). Use to reduce memory overhead for large traces.
--c	Ignore happens before relations of critical sections (default false)
--d int
-		Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1) (default 1)
--f	Assume a FIFO ordering for buffered channels (default false)
--p	Do not print the results to the terminal (default false). Automatically set -x to true
--r string
-		Path to where the result file should be saved.
--s string
-		Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:
-			s: Send on closed channel
-			r: Receive on closed channel
-			w: Done before add on waitGroup
-			n: Close of closed channel
-			b: Concurrent receive on channel
-			l: Leaking routine
-			u: Select case without partner
--t string
-		Path to the trace folder to analyze or rewrite
--w	Do not print warnings (default false)
--x	Do not rewrite the trace file (default false)
-```
-If we assume the trace from our example is saved in file `trace.go` and run the analyzer with
-```
-./analyzer -t /trace
-```
-it will create the following result, show it in the terminal and print it into an `result_readable.log` file: 
-```txt
-==================== Summary ====================
-
--------------------- Critical -------------------
-1 Possible send on closed channel:
-	close: /home/.../main.go:25@26
-	send : /home/.../main.go:17@23
--------------------- Warning --------------------
-2 Possible receive on closed channel:
-	close: /home/.../main.go:25@26
-	recv : /home/.../main.go:21@22
-```
-The send can cause a panic of the program, if it occurs. It is therefor an error message (in terminal red).
-
-A receive on a closed channel does not cause a panic, but returns a default value. It can therefor be a desired behavior. For this reason it is only considered a warning (in terminal orange, can be silenced with -w).
-
-If `-x` is not set, the analyzer will also write a rewritten trace 
-for all bugs, where a replay is possible/implemented. The rewritten trace
-can be found in the `/rewritten_trace_1`, `/rewritten_trace_2`, ...  foldes.
-
-## Trace Replay
-The trace replay reruns a given program as given in the recorded trace. Please be aware, 
-that only the recorded elements are considered for the trace replay. This means, that 
-the order of non-recorded operations between two or more routines can still very.
-
-<!-- The implementation of the trace replay is not finished yet. The following is a short overview over the current state.
-- order enforcement for most elements.
-	- The operations are started in same global order as in the recorded trace. 
-	- This is not yet implemented for the spawn of new routines and atomic operations
-- correct channel partner
-	- Communication partner of (most) channel operations are identical to the partners in the trace. For selects this cannot be guarantied yet. -->
-
-### How
-To start the replay, add the following header at the beginning of the 
-main function:
-
-```go
-advocate.EnableReplay(1, true)
+// ======= Preamble Start =======
+advocate.EnableReplay(n)
 defer advocate.WaitForReplayFinish()
-```
-where `1` must be replaced with the index of the bug that should be replayed.
-If a rewritten trace should not return exit codes, but e.g. panic if a 
-negative waitGroup counter is detected, of send on a closed channel occurs,
-the second argument can be set to `false`.
-
-Also include the following import:
-```go
-"advocate"
-```
-Now the program can be run with the modified go routine, identical to the recording of the trace (remember to export the new gopath). 
-
-The trace files must be in the `/rewritten_trace_1`.
-
-It is important that the program is not changed between recording and replay.
-This is especially true for the positions of operations on the code. For this 
-reason it can be beneficial to add the following header, instead the two separate 
-ones for recording and replay:
-
-```go
-if true {
-	// init tracing
-	advocate.InitTracing(0)
-	defer advocate.Finish()
-} else {
-	// init replay
-	advocate.EnableReplay(1)
-	defer advocate.WaitForReplayFinish()
-}
+// ======= Preamble End =======
 ```
 
-With changing `true` to `false` one can switch between recording and replay.
-
-### Exit Codes:
-The replay can end with the following exit codes:
-- 0: The replay will ended completely without finding a ReplayStopElement
-- 10: Replay Stuck: Long wait time for finishing replay
-- 11: Replay Stuck: Long wait time for running element
-- 12: Replay Stuck: No traced operation has been executed for approx. 20s
-- 13: The program tried to execute an operation, although all elements in the trace have already been executed.
-- 20: Leak: Leaking unbuffered channel or select was unstuck
-- 21: Leak: Leaking buffered channel or select was unstuck
-- 22: Leak: Leaking Mutex was unstuck
-- 23: Leak: Leaking Cond was unstuck
-- 24: Leak: Leaking WaitGroup was unstuck
-- 30: Send on close
-- 31: Receive on close
-- 32: Negative WaitGroup counter
+where the variable `n` is the rewritten trace you want to use.
+Note that the method looks for the `rewritten_trace` folder in the same directory as the file is located
+### Which bugs are supported for replay
+A more detailed description of how replays work and a list of what bugs are currently supported for replay can be found under [TraceReplay.md](./doc/TraceReplay.md) and [TraceReconstruciton.md](./doc/TraceReconstruction.md).
 
 
-### Warning:
+
+## Tooling
+There are certain scripts that will come in handy when working with AdvocateGo 
+### Preamble and Import Management
+There are scripts that automatically add and remove the overhead described in [Step 1](#step-1-add-overhead)
+#### For Main Methods
+[Main overhead inserter](./toolchain/overHeadInserter/inserter.go) takes a single file as an argument.
+It will insert the overhead right at the start of main and manage the imports.
+
+It throws an error if no main method is present.
+
+Likewise [main overhead remover](./toolchain/overHeadRemover/remover.go) will remove the overhead 
+#### For Unit Tests
+[Unit test overhead inserter]() additionally requires the test name you want to apply the overhead to. Apart from that it works just like with [main method overhead inserter](#for-main-methods)
+
+Likewise [overhead remover](./toolchain/overHeadRemover/remover.go) will remove the overhead if is present.
+### Analyzing an existing local project
+#### Main Method
+[runFullWorkflowOnMain.bash](./toolchain/runFullWorkflowMainMethod/runFullWorkflowMain.bash) accepts a single go file containing a main method automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
+
+Its result and additional information (rewritten traces, logs, etc) will be written to. `advocateResult`
+
+#### Unit Tests
+[runFullWorkflowOnAllUnitTests.bash](./toolchain/runFullWorkflowOnAllUnitTests/runFullWorkflowOnAllUnitTests.bash) takes an entire project and automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
+
+Its result and additional information (rewritten traces, logs, etc) will be written to. `advocateResult`
+## Warning
 It is the users responsibility of the user to make sure, that the input to 
 the program, including e.g. API calls are equal for the recording and the 
 tracing. Otherwise the replay is likely to get stuck.
