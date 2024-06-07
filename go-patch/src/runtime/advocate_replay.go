@@ -328,7 +328,7 @@ func WaitForReplay(op Operation, skip int) (bool, bool, ReplayElement) {
 // 	}
 // }
 
-var lastNextTime int = 0
+// var lastNextTime int = 0
 
 /*
  * Wait until the correct operation is about to be executed.
@@ -351,7 +351,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		return true, false, ReplayElement{}
 	}
 
-	println("Wait: ", op.ToString(), file, line)
+	// println("Wait: ", op.ToString(), file, line)
 	timeoutCounter := 0
 	for {
 		if !replayEnabled { // check again if disabled by command
@@ -361,7 +361,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 		nextRoutine, next := getNextReplayElement()
 
 		if AdvocateIgnoreReplay(next.Op, next.File, next.Line) {
-			println("Igno: ", next.Op.ToString(), next.File, next.Line)
+			// println("Igno: ", next.Op.ToString(), next.File, next.Line)
 			foundReplayElement(nextRoutine)
 			continue
 		}
@@ -385,10 +385,10 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			return false, false, ReplayElement{}
 		}
 
-		if lastNextTime != next.Time {
-			println("Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
-			lastNextTime = next.Time
-		}
+		// if lastNextTime != next.Time {
+		// 	println("Next: ", next.Time, next.Op.ToString(), next.File, next.Line)
+		// 	lastNextTime = next.Time
+		// }
 
 		if next.Time != 0 && replayEnabled {
 			if (next.Op != op && !correctSelect(next.Op, op)) ||
@@ -400,7 +400,7 @@ func WaitForReplayPath(op Operation, file string, line int) (bool, bool, ReplayE
 			}
 		}
 
-		println("Run : ", next.Time, next.Op.ToString(), next.File, next.Line)
+		// println("Run : ", next.Time, next.Op.ToString(), next.File, next.Line)
 		foundReplayElement(nextRoutine)
 
 		lock(&timeoutLock)
