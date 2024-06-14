@@ -161,6 +161,11 @@ Its result and additional information (rewritten traces, logs, etc) will be writ
 [runFullWorkflowOnAllUnitTests.bash](./toolchain/runFullWorkflowOnAllUnitTests/runFullWorkflowOnAllUnitTests.bash) takes an entire project and automatically runs the analysis + replay on all unit tests. After running you will additionally get a csv file that lists all predicted and confirmed bugs. (ongoing)
 
 Its result and additional information (rewritten traces, logs, etc) will be written to. `advocateResult`
+### Generate Statistics
+After analyzing you can evaluate your `advocateResult` folder with [generateStatistics.go](./toolchain/generateStatisticsFromAdvocateResult/generateStatistics.go). It will provide following information.
+- Overview of predicted bugs
+- Overview of expected exit codes (after rewrite)
+- Overview of actual exit codes that appeared after running the reordered programs
 ## Warning
 It is the users responsibility of the user to make sure, that the input to 
 the program, including e.g. API calls are equal for the recording and the 

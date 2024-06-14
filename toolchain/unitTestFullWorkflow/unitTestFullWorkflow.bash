@@ -32,10 +32,6 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-# previous command
-#./unitTestFullWorkflow.bash -p /home/mario/Desktop/thesis/ADVOCATE/go-patch/bin/go -g /home/mario/Desktop/thesis/ADVOCATE/go-patch -i /home/mario/Desktop/thesis/ADVOCATE/toolchain/unitTestOverheadInserter/unitTestOverheadInserter -r /home/mario/Desktop/thesis/ADVOCATE/toolchain/unitTestOverheadRemover/unitTestOverheadRemover -a /home/mario/Desktop/thesis/ADVOCATE/analyzer/analyzer -f ~/Desktop/fullMod -t TestSomething -package module/path -tf /home/mario/Desktop/fullMod/module/path/some_test.go
-
-#Initialize Variables
 pathToPatchedGoRuntime="$pathToAdvocate/go-patch/bin/go"
 pathToGoRoot="$pathToAdvocate/go-patch"
 pathToOverheadInserter="$pathToAdvocate/toolchain/unitTestOverheadInserter/unitTestOverheadInserter"
@@ -67,20 +63,15 @@ cd "$dir"
 echo "In directory: $dir"
 export GOROOT=$pathToGoRoot
 echo "Goroot exported"
-#Remove Overhead just in case
 echo "Remove Overhead just in case"
-#echo "$pathToOverheadRemover -f $file -t $testName"
 $pathToOverheadRemover -f $file -t $testName
-#Add Overhead
 echo "Add Overhead"
 echo "$pathToOverheadInserter -f $file -t $testName"
 $pathToOverheadInserter -f $file -t $testName
-# check if failed
 if [ $? -ne 0 ]; then
 	echo "Error in adding overhead"
 	exit 1
 fi
-##Run test
 echo "Run test"
 echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
 $pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
@@ -90,24 +81,18 @@ if [ $? -ne 0 ]; then
 	echo "Error in running test, therefor overhead removed and full workflow stopped."
 	exit 1
 fi
-##Remove Overhead
 echo "Remove Overhead"
 echo "$pathToOverheadRemover -f $file -t $testName"
 $pathToOverheadRemover -f $file -t $testName
-#Run Analyzer
 $pathToAnalyzer -t "$dir/$package/advocateTrace"
-#Loop through every rewritten traces
 rewritten_traces=$(find "./$package" -type d -name "rewritten_trace*")
 for trace in $rewritten_traces; do
 	rtracenum=$(echo $trace | grep -o '[0-9]*$')
-	## Apply reorder overhead
 	echo "Apply reorder overhead"
 	echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
 	$pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
-	## Run test
 	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
 	$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
-	## Remove reorder overhead
 	echo "Remove reorder overhead"
 	echo "$pathToOverheadRemover -f $file -t $testName"
 	$pathToOverheadRemover -f $file -t $testName

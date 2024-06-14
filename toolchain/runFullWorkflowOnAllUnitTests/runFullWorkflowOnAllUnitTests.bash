@@ -27,7 +27,6 @@ if [ -z "$dir" ]; then
   exit 1
 fi
 
-#Initialize Variables
 pathToPatchedGoRuntime="$pathToAdvocate/go-patch/bin/go"
 pathToGoRoot="$pathToAdvocate/go-patch"
 pathToOverheadInserter="$pathToAdvocate/toolchain/unitTestOverheadInserter/unitTestOverheadInserter"
@@ -44,7 +43,6 @@ total_files=$(echo "$test_files" | wc -l)
 current_file=1
 skipped_tests=0
 attempted_tests=0
-#echo "Test files: $test_files"
 for file in $test_files; do
     echo "Progress: $current_file/$total_files"
     echo "Processing file: $file"
@@ -59,7 +57,6 @@ for file in $test_files; do
         directoryName="advocateResult/file($current_file)-test($attempted_tests)-$fileName-$test_func"
         mkdir -p $directoryName
         $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> $directoryName/output.txt
-        # check if the test failed
         if [ $? -ne 0 ]; then
             echo "File $current_file with Test $attempted_tests failed, check output.txt for more information. Skipping..."
             skipped_tests=$((skipped_tests+1))
