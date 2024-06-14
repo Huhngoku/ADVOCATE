@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"analyzer/explanation"
 	"analyzer/io"
 	"analyzer/logging"
 	"analyzer/rewriter"
@@ -26,6 +27,7 @@ func main() {
 	noPrint := flag.Bool("p", false, "Do not print the results to the terminal (default false). Automatically set -x to true")
 	resultFolder := flag.String("r", "", "Path to where the result file should be saved.")
 	ignoreAtomics := flag.Bool("a", false, "Ignore atomic operations (default false). Use to reduce memory overhead for large traces.")
+	explanationFlag := flag.Bool("e", false, "Create the explanation")
 
 	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
 		"\ts: Send on closed channel\n"+
@@ -44,6 +46,11 @@ func main() {
 	go memorySupervisor()
 
 	flag.Parse()
+
+	if *explanationFlag {
+		explanation.Run()
+		return
+	}
 
 	printHeader()
 
