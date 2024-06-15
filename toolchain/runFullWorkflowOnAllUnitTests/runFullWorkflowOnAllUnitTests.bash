@@ -12,6 +12,11 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    -m|--modulemode)
+      modulemode="$2"
+      shift
+      shift
+      ;;
     *)
       shift
       ;;
@@ -56,7 +61,11 @@ for file in $test_files; do
         adjustedPackagePath=$(echo "$package_path" | sed "s|$dir||g")
         directoryName="advocateResult/file($current_file)-test($attempted_tests)-$fileName-$test_func"
         mkdir -p $directoryName
-        $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> $directoryName/output.txt
+        if [ "$modulemode" == "true" ]; then
+            $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -m true -f $dir -tf $file -t $test_func &> $directoryName/output.txt
+        else
+            $pathToFullWorkflowExecutor -a $pathToAdvocate -p $adjustedPackagePath -f $dir -tf $file -t $test_func &> $directoryName/output.txt
+        fi
         if [ $? -ne 0 ]; then
             echo "File $current_file with Test $attempted_tests failed, check output.txt for more information. Skipping..."
             skipped_tests=$((skipped_tests+1))

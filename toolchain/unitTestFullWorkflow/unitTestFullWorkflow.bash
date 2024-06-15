@@ -11,6 +11,11 @@ while [[ $# -gt 0 ]]; do
 		shift
 		shift
 		;;
+	-m | --modulemode)
+		modulemode="$2"
+		shift
+		shift
+		;;
 	-t | --test-name)
 		testName="$2"
 		shift
@@ -73,8 +78,13 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 echo "Run test"
-echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
-$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
+if [ "$modulemode" == "true" ]; then
+	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package"
+	$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod "./$package"
+else
+	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
+	$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
+fi
 if [ $? -ne 0 ]; then
 	echo "Remove Overhead"
 	$pathToOverheadRemover -f $file -t $testName
@@ -91,8 +101,13 @@ for trace in $rewritten_traces; do
 	echo "Apply reorder overhead"
 	echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
 	$pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
-	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
-	$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
+	if [ "$modulemode" == "true" ]; then
+		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package"
+		$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
+	else
+		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
+		$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
+	fi
 	echo "Remove reorder overhead"
 	echo "$pathToOverheadRemover -f $file -t $testName"
 	$pathToOverheadRemover -f $file -t $testName
