@@ -1,55 +1,53 @@
 package explanation
 
-import "fmt"
-
 // type (bug / diagnostics)
 var bugCrit = map[string]string{
-	"ASendOnClosed":          "bug",
-	"AReceiveOnClosed":       "diagnostics",
-	"ACloseOnClosed":         "bug",
-	"AConcurrentRecv":        "diagnostics",
-	"ASelCaseWithoutPartner": "diagnostics",
+	"A1": "Bug",
+	"A2": "Diagnostics",
+	"A3": "Bug",
+	"A4": "Diagnostics",
+	"A5": "Diagnostics",
+}
+
+var bugNames = map[string]string{
+	"A1": "Actual Send on Closed Channel",
+	"A2": "Actual Receive on Closed Channel",
+	"A3": "Actual Close on Closed Channel",
+	"A4": "Concurrent Receive",
+	"A5": "Select Case without Partner",
 }
 
 // explanations
 var bugExplanations = map[string]string{
-	"ASendOnClosed": "Actual send on closed channel.\n" +
-		"During the execution of the program, a send on a closed channel occurred.\n" +
+	"A1": "During the execution of the program, a send on a closed channel occurred.\n" +
 		"The occurrence of a send on closed leads to a panic.",
-	"ARecvOnClosed": "Actual receive on closed channel.\n" +
-		"During the execution of the program, a receive on a closed channel occurred.\n",
-	"ACloseOnClosed": "Actual close on closed channel.\n" +
-		"During the execution of the program, a close on a close channel occurred.\n" +
+	"A2": "During the execution of the program, a receive on a closed channel occurred.\n",
+	"A3": "During the execution of the program, a close on a close channel occurred.\n" +
 		"The occurrence of a close on a closed channel leads to a panic.",
-	"AConcurrentRecv": "Concurrent Receive\n" +
-		"During the execution of the program, a channel waited for receive at multiple positions at the same time.\n" +
+	"A4": "During the execution of the program, a channel waited to receive at multiple positions at the same time.\n" +
 		"In this case, the actual receiver of a send message is chosen randomly.\n" +
 		"This can lead to nondeterministic behavior.",
-	"ASelCaseWithoutPartner": "Select Case without Partner\n" +
-		"During the execution of the program, a select was executed, where, based " +
+	"A5": "During the execution of the program, a select was executed, where, based " +
 		"on the happens-before relation, at least one case could never be triggered.\n" +
 		"This can be a desired behavior, especially considering, that only executed " +
 		"operations are considered, but it can also be an hint of an unnecessary select case.",
 }
 
-const expASendOnClosed string = "Actual send on closed channel.\n" +
-	"During the execution of the program, a send on a closed channel occurred."
-
 // examples
 var bugExamples map[string]string = map[string]string{
-	"ASendOnClosed": "func main() {\n" +
+	"A1": "func main() {\n" +
 		"\tc := make(chan int)\n" +
 		"\tclose(c)\n" +
 		"\tc <- 1",
-	"ARecvOnClosed": "func main() {\n" +
+	"A2": "func main() {\n" +
 		"\tc := make(chan int)\n" +
 		"\tclose(c)\n" +
 		"\t<-c",
-	"ACloseOnClosed": "func main() {\n" +
+	"A3": "func main() {\n" +
 		"\tc := make(chan int)\n" +
 		"\tclose(c)\n" +
 		"\tclose(c)",
-	"AConcurrentRecv": "func main() {\n" +
+	"A4": "func main() {\n" +
 		"\tc := make(chan int, 1)\n\n" +
 		"\tgo func() {\n" +
 		"\t\t<-c\n" +
@@ -59,7 +57,7 @@ var bugExamples map[string]string = map[string]string{
 		"\t}()\n\n" +
 		"\tc <- 1\n" +
 		"}",
-	"ASelCaseWithoutPartner": "func main() {\n" +
+	"A5": "func main() {\n" +
 		"\tc := make(chan int)\n" +
 		"\td := make(chan int)\n" +
 		"\tgo func() {\n" +
@@ -74,19 +72,40 @@ var bugExamples map[string]string = map[string]string{
 		"}",
 }
 
-func printExplanation(bugType string) {
-	fmt.Printf("Type: %s\n\n", bugCrit[bugType])
-	fmt.Println(bugExplanations[bugType] + "\n")
-	fmt.Println("A minimal example of this type of bug would be the following:\n")
-	printCode(bugExamples[bugType])
+var objectTypes = map[string]string{
+	"CS": "Channel: Send",
+	"CR": "Channel: Receive",
+	"CC": "Channel: Close",
+	"ML": "Mutex: Lock",
+	"MR": "Mutex: RLock",
+	"MT": "Mutex: TryLock",
+	"MY": "Mutex: TryRLock",
+	"MU": "Mutex: Unlock",
+	"MN": "Mutex: RUnlock",
+	"WA": "Waitgroup: Add",
+	"WD": "Waitgroup: Done",
+	"WW": "Waitgroup: Wait",
+	"SS": "Select:",
+	"NW": "Conditional Variable: Wait",
+	"NB": "Conditional Variable: Broadcast",
+	"NS": "Conditional Variable: Signal",
+	"OE": "Once: Done Executed",
+	"ON": "Once: Done Not Executed (because the once was already executed)",
+	"GF": "Routine: Fork",
 }
 
-func printCode(code string) {
-	fmt.Println("```go")
-	fmt.Println(code)
-	fmt.Println("```")
+func getBugTypeDescription(bugType string) map[string]string {
+	return map[string]string{
+		"crit":        bugCrit[bugType],
+		"name":        bugNames[bugType],
+		"explanation": bugExplanations[bugType],
+		"example":     bugExamples[bugType],
+	}
 }
 
-func Run() {
-	printExplanation("ASelCaseWithoutPartner")
+func getBugElementType(elemType string) string {
+	if _, ok := objectTypes[elemType]; !ok {
+		return "Unknown element type"
+	}
+	return objectTypes[elemType]
 }

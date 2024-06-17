@@ -28,6 +28,7 @@ func main() {
 	resultFolder := flag.String("r", "", "Path to where the result file should be saved.")
 	ignoreAtomics := flag.Bool("a", false, "Ignore atomic operations (default false). Use to reduce memory overhead for large traces.")
 	explanationFlag := flag.Bool("e", false, "Create the explanation")
+	explanationIndex := flag.Int("i", -1, "Index of the explanation to create")
 
 	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
 		"\ts: Send on closed channel\n"+
@@ -47,22 +48,6 @@ func main() {
 
 	flag.Parse()
 
-	if *explanationFlag {
-		explanation.Run()
-		return
-	}
-
-	printHeader()
-
-	if *pathTrace == "" {
-		fmt.Println("Please provide a path to the trace file. Set with -t [file]")
-		return
-	}
-
-	if *noPrint {
-		*noRewrite = true
-	}
-
 	folderTrace, err := filepath.Abs(*pathTrace)
 	if err != nil {
 		panic(err)
@@ -78,14 +63,38 @@ func main() {
 		}
 	}
 
+	outMachine := folderTrace + "results_machine.log"
+	outReadable := folderTrace + "results_readable.log"
+	newTrace := folderTrace + "rewritten_trace"
+
+	// instead of the normal program, an explanation for an analyzer program can be created
+	if *explanationFlag {
+		if *pathTrace == "" || *explanationIndex == -1 {
+			fmt.Println("Please provide a path to the trace file and an index for the explanation. Set with -t [file] -i [index]")
+			return
+		}
+		err := explanation.CreateOverview(folderTrace, *explanationIndex)
+		if err != nil {
+			fmt.Println("Error creating explanation: ", err.Error())
+		}
+		return
+	}
+
+	printHeader()
+
+	if *pathTrace == "" {
+		fmt.Println("Please provide a path to the trace file. Set with -t [file]")
+		return
+	}
+
+	if *noPrint {
+		*noRewrite = true
+	}
+
 	analysisCases, err := parseAnalysisCases(*scenarios)
 	if err != nil {
 		panic(err)
 	}
-
-	outMachine := folderTrace + "results_machine.log"
-	outReadable := folderTrace + "results_readable.log"
-	newTrace := folderTrace + "rewritten_trace"
 
 	// run the analysis and, if requested, create a reordered trace file
 	// based on the analysis results
