@@ -68,10 +68,14 @@ cd "$dir"
 echo "In directory: $dir"
 export GOROOT=$pathToGoRoot
 echo "Goroot exported"
-echo "Remove Overhead just in case"
-$pathToOverheadRemover -f $file -t $testName
+touch advocateCommand.log
+echo $file >>advocateCommand.log
+echo $testName >>advocateCommand.log
+echo "Remove Overhead just in case" 
+echo "$pathToOverheadRemover -f $file -t $testName" >>advocateCommand.log
+$pathToOverheadRemover -f $file -t $testName 
 echo "Add Overhead"
-echo "$pathToOverheadInserter -f $file -t $testName"
+echo "$pathToOverheadInserter -f $file -t $testName" >>advocateCommand.log
 $pathToOverheadInserter -f $file -t $testName
 if [ $? -ne 0 ]; then
 	echo "Error in adding overhead"
@@ -79,10 +83,10 @@ if [ $? -ne 0 ]; then
 fi
 echo "Run test"
 if [ "$modulemode" == "true" ]; then
-	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package"
+	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package" >>advocateCommand.log
 	$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod "./$package"
 else
-	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
+	echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package" >>advocateCommand.log
 	$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package"
 fi
 if [ $? -ne 0 ]; then
@@ -92,24 +96,25 @@ if [ $? -ne 0 ]; then
 	exit 1
 fi
 echo "Remove Overhead"
-echo "$pathToOverheadRemover -f $file -t $testName"
+echo "$pathToOverheadRemover -f $file -t $testName" >>advocateCommand.log
 $pathToOverheadRemover -f $file -t $testName
+echo "$pathToAnalyzer -t $dir/$package/advocateTrace" >>advocateCommand.log
 $pathToAnalyzer -t "$dir/$package/advocateTrace"
 rewritten_traces=$(find "./$package" -type d -name "rewritten_trace*")
 for trace in $rewritten_traces; do
 	rtracenum=$(echo $trace | grep -o '[0-9]*$')
 	echo "Apply reorder overhead"
-	echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
+	echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum" >>advocateCommand.log
 	$pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
 	if [ "$modulemode" == "true" ]; then
-		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package"
+		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package" >>advocateCommand.log
 		$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
 	else
-		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package"
+		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName ./$package" >>advocateCommand.log
 		$pathToPatchedGoRuntime test -count=1 -run=$testName "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
 	fi
 	echo "Remove reorder overhead"
-	echo "$pathToOverheadRemover -f $file -t $testName"
+	echo "$pathToOverheadRemover -f $file -t $testName" >>advocateCommand.log
 	$pathToOverheadRemover -f $file -t $testName
 done
 unset GOROOT

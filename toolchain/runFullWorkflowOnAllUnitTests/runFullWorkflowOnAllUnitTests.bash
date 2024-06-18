@@ -76,6 +76,7 @@ for file in $test_files; do
         mv $package_path/results_readable.log $directoryName
         mv $package_path/times.log $directoryName
         mv $package_path/rewritten_trace* $directoryName 2>/dev/null
+        mv ./advocateCommand.log $directoryName
     done
     current_file=$((current_file+1))
 done
