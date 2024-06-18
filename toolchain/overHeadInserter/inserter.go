@@ -11,6 +11,12 @@ import (
 
 func main() {
 	fileName := flag.String("f", "", "path to the file")
+	replayOverheadString := flag.String("r", "false", "replay overhead")
+	replayNum := flag.String("n", "1", "replay number")
+	replayOverhead := false
+	if *replayOverheadString == "true" {
+		replayOverhead = true
+	}
 	flag.Parse()
 	if *fileName == "" {
 		fmt.Fprintln(os.Stderr, "Please provide a file name")
@@ -33,7 +39,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	addOverhead(*fileName)
+	addOverhead(*fileName, replayOverhead, *replayNum)
 }
 func mainMethodExists(fileName string) (bool, error) {
 	file, err := os.Open(fileName)
@@ -59,7 +65,7 @@ func mainMethodExists(fileName string) (bool, error) {
 
 	return false, nil
 }
-func addOverhead(fileName string) {
+func addOverhead(fileName string, replayOverhead bool, replayNumber string) {
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error:", err)
@@ -80,10 +86,17 @@ func addOverhead(fileName string) {
 		}
 
 		if strings.Contains(line, "func main() {") {
-			lines = append(lines, `	// ======= Preamble Start =======
+			if replayOverhead {
+				lines = append(lines, fmt.Sprintf(`	// ======= Preamble Start =======
+	advocate.EnableReplay(%s, true)
+	defer advocate.WaitForReplayFinish()
+	// ======= Preamble End =======`, replayNumber))
+			} else {
+				lines = append(lines, `	// ======= Preamble Start =======
 	advocate.InitTracing(0)
 	defer advocate.Finish()
 	// ======= Preamble End =======`)
+			}
 		}
 	}
 
