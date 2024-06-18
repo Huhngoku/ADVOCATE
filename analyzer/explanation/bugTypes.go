@@ -1,6 +1,7 @@
 package explanation
 
 // type (bug / diagnostics)
+// TODO: add missing bug types
 var bugCrit = map[string]string{
 	"A1": "Bug",
 	"A2": "Diagnostics",
@@ -9,6 +10,7 @@ var bugCrit = map[string]string{
 	"A5": "Diagnostics",
 }
 
+// TODO: add missing bug names
 var bugNames = map[string]string{
 	"A1": "Actual Send on Closed Channel",
 	"A2": "Actual Receive on Closed Channel",
@@ -18,6 +20,7 @@ var bugNames = map[string]string{
 }
 
 // explanations
+// TODO: add missing bug explainations
 var bugExplanations = map[string]string{
 	"A1": "During the execution of the program, a send on a closed channel occurred.\n" +
 		"The occurrence of a send on closed leads to a panic.",
@@ -34,26 +37,27 @@ var bugExplanations = map[string]string{
 }
 
 // examples
+// TODO: add missing bug examples
 var bugExamples map[string]string = map[string]string{
 	"A1": "func main() {\n" +
 		"\tc := make(chan int)\n" +
-		"\tclose(c)\n" +
-		"\tc <- 1",
+		"\tclose(c)          // <-------\n" +
+		"\tc <- 1            // <-------\n}",
 	"A2": "func main() {\n" +
 		"\tc := make(chan int)\n" +
-		"\tclose(c)\n" +
-		"\t<-c",
+		"\tclose(c)          // <-------\n" +
+		"\t<-c               // <-------\n}",
 	"A3": "func main() {\n" +
 		"\tc := make(chan int)\n" +
-		"\tclose(c)\n" +
-		"\tclose(c)",
+		"\tclose(c)          // <-------\n" +
+		"\tclose(c)          // <-------\n}",
 	"A4": "func main() {\n" +
 		"\tc := make(chan int, 1)\n\n" +
 		"\tgo func() {\n" +
-		"\t\t<-c\n" +
+		"\t\t<-c             // <-------\n" +
 		"\t}()\n\n" +
 		"\tgo func() {\n" +
-		"\t\t<-c\n" +
+		"\t\t<-c             // <-------\n" +
 		"\t}()\n\n" +
 		"\tc <- 1\n" +
 		"}",
@@ -66,10 +70,48 @@ var bugExamples map[string]string = map[string]string{
 		"\tselect{\n" +
 		"\tcase c1 := <- c:\n" +
 		"\t\tprint(c1)\n" +
-		"\tcase d <- 1:\n" +
+		"\tcase d <- 1:      // <-------\n" +
 		"\t\tprint(\"d\")\n" +
-		"\t}\n" +
-		"}",
+		"\t}\n",
+}
+
+var rewriteType = map[string]string{
+	"A1": "Actual",
+	"A2": "Actual",
+	"A3": "Actual",
+	"A4": "Actual",
+	"A5": "Actual",
+	"P1": "Possible",
+	"P2": "Possible",
+	"P3": "Possible",
+	"L1": "LeakPos",
+	"L2": "Leak",
+	"L3": "LeakPos",
+	"L4": "Leak",
+	"L5": "Leak",
+	"L6": "LeakPos",
+	"L7": "Leak",
+	"L8": "LeakPos",
+	"L9": "LeakPos",
+	"L0": "LeakPos",
+}
+
+// TODO: describe exit codes
+var exitCodeExplanation = map[string]string{
+	"0":  "exites without",
+	"10": "stuck finish",
+	"11": "stuck wait elem",
+	"12": "stuck no elem",
+	"13": "stuck empty trace",
+	"20": "leak unbuf",
+	"21": "leak buf",
+	"22": "leak mutex",
+	"23": "leak cond",
+	"24": "leak wg",
+	"30": "send close",
+	"31": "recv close",
+	"32": "negative wg",
+	// "41": "cyclic",
 }
 
 var objectTypes = map[string]string{

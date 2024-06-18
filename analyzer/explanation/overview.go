@@ -28,12 +28,29 @@ func CreateOverview(path string, index int) error {
 		return err
 	}
 
+	// get the code info (main file, test name, commands)
+	progInfo, commands, err := readCommandInfo(path)
+	if err != nil {
+		fmt.Println("Error reading command info: ", err)
+	}
+
 	// get the bug type description
 	bugTypeDescription := getBugTypeDescription(bugType)
 
+	// get the code of the bug elements
 	code, err := getBugPositions(bugPos)
+	if err != nil {
+		fmt.Println("Error getting bug positions: ", err)
+	}
 
-	err = writeFile(path, index, bugTypeDescription, bugPos, bugElemType, code)
+	// get the replay info
+	replay := getRewriteInfo(bugType, path, index)
+
+	err = writeFile(path, index, bugTypeDescription, bugPos, bugElemType, code,
+		replay, progInfo, commands)
+
+	copyTrace(path, index)
+	copyRewrite(path, index)
 
 	return err
 
@@ -46,6 +63,8 @@ func ReadAnalysisResults(path string, index int) (string, map[int][]string, map[
 	}
 
 	lines := strings.Split(string(file), "\n")
+
+	index-- // the index is 1-based
 
 	if index >= len(lines) {
 		return "", nil, nil, errors.New("index out of range")
@@ -89,7 +108,8 @@ func ReadAnalysisResults(path string, index int) (string, map[int][]string, map[
 }
 
 func writeFile(path string, index int, description map[string]string,
-	positions map[int][]string, bugElemType map[int]string, code map[int][]string) error {
+	positions map[int][]string, bugElemType map[int]string, code map[int][]string,
+	replay map[string]string, progInfo map[string]string, commands []string) error {
 	// if in path, the folder "bugs" does not exist, create it
 	if _, err := os.Stat(path + "bugs"); os.IsNotExist(err) {
 		err := os.Mkdir(path+"bugs", 0755)
@@ -98,8 +118,16 @@ func writeFile(path string, index int, description map[string]string,
 		}
 	}
 
+	folderName := path + "bugs/bug_" + fmt.Sprint(index)
+	if _, err := os.Stat(folderName); os.IsNotExist(err) {
+		err := os.Mkdir(folderName, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
 	// create the file
-	file, err := os.Create(path + "bugs/bug_" + fmt.Sprint(index) + ".md")
+	file, err := os.Create(folderName + "/README.md")
 	if err != nil {
 		return err
 	}
@@ -116,10 +144,23 @@ func writeFile(path string, index int, description map[string]string,
 	// write the positions of the bug
 	res += "## Test/Program\n"
 	res += "The bug was found in the following test/program:\n\n"
-	// TODO: get the test/program name
+	res += "File: " + progInfo["FileName"] + "\n"
+	res += "Test: " + progInfo["TestName"] + "\n\n"
+
+	res += "## Commands\n"
+	res += "The following commands were used to run/replay the program:\n\n"
+
+	if len(commands) == 0 {
+		res += "Failed to read commands\n"
+	}
+
+	for _, command := range commands {
+		res += command + "\n"
+	}
 
 	// write the code of the bug elements
 	res += "## Bug Elements\n"
+	res += "The full trace of the recording can be found in the `advocateTrace` folder.\n\n"
 	res += "The bug elements are located at the following positions:\n\n"
 
 	for key, _ := range positions {
@@ -133,16 +174,24 @@ func writeFile(path string, index int, description map[string]string,
 		}
 	}
 
-	// write the command to run the program
-	res += "## Run the program\n"
-	res += "To run the program, use the following command:\n\n"
-	// TODO: get the command to run the program
-
 	// write the info about the replay, if possible including the command to read the bug
 	res += "## Replay the bug\n"
-	// TODO: get the info / command about replay the bug
+	res += replay["description"] + "\n\n"
+
+	replayPossible := replay["replaySuc"] != "was not possible"
+
+	if replayPossible {
+		res += "The rewritten trace can be found in the `rewritten_trace` folder.\n\n"
+	}
+
+	res += "Replaying " + replay["replaySuc"] + ".\n"
+	if replayPossible {
+		res += "It exited with the following code: "
+		res += replay["exitCode"] + "\n"
+		res += replay["exitCodeExplanation"] + "\n\n"
+	}
 
 	_, err = file.WriteString(res)
-
 	return err
+
 }
