@@ -68,8 +68,7 @@ func testExists(testName string, fileName string) (bool, error) {
 }
 
 func addOverhead(fileName string, testName string, replayOverhead bool, replayNumber string) {
-	// print replay num for debugging
-	fmt.Println("Replay number: ", replayNumber)
+	importAdded := false
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -83,10 +82,12 @@ func addOverhead(fileName string, testName string, replayOverhead bool, replayNu
 		line := scanner.Text()
 		lines = append(lines, line)
 
-		if strings.Contains(line, "import \"") {
+		if strings.Contains(line, "import \"") && !importAdded {
 			lines = append(lines, "import \"advocate\"")
-		} else if strings.Contains(line, "import (") {
+			importAdded = true
+		} else if strings.Contains(line, "import (") && !importAdded {
 			lines = append(lines, "\t\"advocate\"")
+			importAdded = true
 		}
 		//check for test method
 		if strings.Contains(line, "func "+testName) {

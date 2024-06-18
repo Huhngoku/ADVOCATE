@@ -27,3 +27,10 @@ An `advocateResult` folder will be created in the Root, that will store the stat
 The statistics contain:
 - A list of bugs and diagnostics, the analyzer found
 - A csv containing bugs we were actually able to reproduce & resolve
+## Common Problems
+This tool requires a go.mod at the project root otherwise the tests won't run.
+This is the case for some repositories (eg Moby).
+In this case you need to manually add a go.mod via `go mod init` in the project root and call the program with the flag `-m true` like so
+```sh
+./runFullWorkflowOnAllUnitTests -a <path-to-advocate> -f <path-to-folder> -m true
+```

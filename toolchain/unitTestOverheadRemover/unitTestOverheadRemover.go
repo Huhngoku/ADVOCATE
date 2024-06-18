@@ -90,6 +90,9 @@ func removeOverhead(fileName string, testName string) {
 		if inPreamble {
 			continue
 		}
+		if strings.Contains(line, "import \"advocate\"") {
+			continue
+		}
 		if strings.Contains(line, "import (") {
 			inImports = true
 		}
