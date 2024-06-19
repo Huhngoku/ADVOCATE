@@ -21,7 +21,7 @@ func getRewriteInfo(bugType string, path string, index int) map[string]string {
 	var err error
 
 	if rewPos == "Actual" {
-		res["description"] += "The bug is an actual bug. Therefore to rewrite is possibel."
+		res["description"] += "The bug is an actual bug. Therefore no rewrite is possibel."
 	} else if rewPos == "Possible" {
 		res["description"] += "The bug is a potential bug.\n"
 		res["description"] += "The analyzer has tries to rewrite the trace in such a way, "
