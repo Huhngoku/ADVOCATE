@@ -40,7 +40,6 @@ func main() {
 	}
 	caseReports := make([]caseReport, 0)
 	for _, code := range codes {
-		fmt.Printf("Processing code %s\n", code)
 		report := getCaseReportForCode(code, *folderName)
 		caseReports = append(caseReports, report)
 	}

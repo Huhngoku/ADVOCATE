@@ -1,27 +1,32 @@
-# Overhead Remover
-This tool removes overhead from a a given file.
-The preamble and import will be removed
-### Usage
+# Explanation
+This tool removes the advocate overhead from a a given file. 
+Similar to the inserter it checks every line and if it finds the inserted lines they will be removed.
+
+# Input
+The program takes 1 parameter as input
+- -f: path to the file that you want to remove the overhead from
+
+# Output
+The output is the adjusted file with the same name the original
+# Usage
 If a go file contains a main method the cool can be used like so
 ```sh
 go run remover.go -f filename.go
 ```
-### Output
-Has not output itself, but file will be modified
-### Example
+# Example
 Given a file `file.go`
 ```go
 package main
 
 import (
 	"time"
-    "advocate"
+	"advocate"
 )
 
 func main() {
 	// ======= Preamble Start =======
-		advocate.InitTracing(0)
-		defer advocate.Finish()
+	advocate.InitTracing(0)
+	defer advocate.Finish()
 	// ======= Preamble End =======
 	c := make(chan int, 0)
 

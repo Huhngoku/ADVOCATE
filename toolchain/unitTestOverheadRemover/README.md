@@ -1,21 +1,22 @@
-# Unit Test Preamble Import Inserter
-This tool automates adding the Advocate overhead for a given file.
-Applying this tool to a given file and testname will handle the preamble inertion.
-Also Additional flags can be provided to also handle the replay overhead insertion
-### Usage
-If a go file contains a main method the cool can be used like so
-```sh
-go run inserter.go -f filename.go
-go run unitTestOverheadInserter.go -f <file> -t <test-name> 
+# Example
+This tool removes the advocate overhead for a testfile.
+It does so by looking through every line and if it finds the advocate import or preamble somwhere skips them.
+
+# Input
+This script takes 2 arguments.
+
+- -f: Filepath to the testfile
+- -t: Testname
+
+# Output
+The output is the adjusted file with the same name the original
+
+# Usage
+Given a file `some_test.go` you can use the script like so
+```bash
+go run unitTestOverheadRemover.go -f <path-to-some_test.go> -t <test-name>
 ```
-or like so if you want the replay overhead
-```sh
-go run unitTestOverheadInserter.go -f <file> -t <test-name> -r true -n <trace-number>
-```
-### Output
-Has not output itself, but file will be modified
 ### Example
-#### Trace recording
 Given a file `file.go`
 ```go
 package main
@@ -32,7 +33,6 @@ func TestSomething(t *testing.T) {
 		advocate.InitTracing(0)
 		defer advocate.Finish()
 	// ======= Preamble End =======
-	fmt.Println("Hello from TestSomething")
 	c := make(chan int, 0)
 
 	go func() {
@@ -58,7 +58,6 @@ import (
 )
 
 func TestSomething(t *testing.T) {
-	fmt.Println("Hello from TestSomething")
 	c := make(chan int, 0)
 
 	go func() {
