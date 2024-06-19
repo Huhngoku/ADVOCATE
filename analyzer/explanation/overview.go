@@ -22,16 +22,26 @@ import (
 // - code of the bug elements in the trace (+- 10 lines)
 // - info about replay (was it possible or not)
 
+/*
+ * The function CreateOverview creates an overview over a bug found by the analyzer.
+ * It reads the results of the analysis, the code of the bug elements and the replay info.
+ * It then writes all this information into a file.
+ * Args:
+ *    path: the path to the folder, where the results of the analysis and the trace are stored
+ *    index: the index of the bug in the results
+ * Returns:
+ *    error: if an error occurred
+ */
 func CreateOverview(path string, index int) error {
-	bugType, bugPos, bugElemType, err := ReadAnalysisResults(path, index)
+	bugType, bugPos, bugElemType, err := readAnalysisResults(path, index)
 	if err != nil {
 		return err
 	}
 
 	// get the code info (main file, test name, commands)
-	progInfo, commands, err := readCommandInfo(path)
+	progInfo, err := readProgInfo(path, index)
 	if err != nil {
-		fmt.Println("Error reading command info: ", err)
+		fmt.Println("Error reading prog info: ", err)
 	}
 
 	// get the bug type description
@@ -47,7 +57,7 @@ func CreateOverview(path string, index int) error {
 	replay := getRewriteInfo(bugType, path, index)
 
 	err = writeFile(path, index, bugTypeDescription, bugPos, bugElemType, code,
-		replay, progInfo, commands)
+		replay, progInfo)
 
 	copyTrace(path, index)
 	copyRewrite(path, index)
@@ -56,7 +66,7 @@ func CreateOverview(path string, index int) error {
 
 }
 
-func ReadAnalysisResults(path string, index int) (string, map[int][]string, map[int]string, error) {
+func readAnalysisResults(path string, index int) (string, map[int][]string, map[int]string, error) {
 	file, err := os.ReadFile(path + "results_machine.log")
 	if err != nil {
 		return "", nil, nil, err
@@ -109,7 +119,7 @@ func ReadAnalysisResults(path string, index int) (string, map[int][]string, map[
 
 func writeFile(path string, index int, description map[string]string,
 	positions map[int][]string, bugElemType map[int]string, code map[int][]string,
-	replay map[string]string, progInfo map[string]string, commands []string) error {
+	replay map[string]string, progInfo map[string]string) error {
 	// if in path, the folder "bugs" does not exist, create it
 	if _, err := os.Stat(path + "bugs"); os.IsNotExist(err) {
 		err := os.Mkdir(path+"bugs", 0755)
@@ -144,19 +154,27 @@ func writeFile(path string, index int, description map[string]string,
 	// write the positions of the bug
 	res += "## Test/Program\n"
 	res += "The bug was found in the following test/program:\n\n"
-	res += "File: " + progInfo["FileName"] + "\n"
-	res += "Test: " + progInfo["TestName"] + "\n\n"
+	res += "Test: " + progInfo["name"] + "\n\n"
+	res += "File: " + progInfo["file"] + "\n\n"
 
 	res += "## Commands\n"
-	res += "The following commands were used to run/replay the program:\n\n"
+	res += "The following commands can be used to run and record the program:\n\n"
 
-	if len(commands) == 0 {
-		res += "Failed to read commands\n"
-	}
+	res += "```bash\n"
+	res += getProgInfo(progInfo, "inserterRecord") + "\n"
+	res += getProgInfo(progInfo, "run") + "\n"
+	res += getProgInfo(progInfo, "remover") + "\n"
+	res += "```\n\n"
 
-	for _, command := range commands {
-		res += command + "\n"
-	}
+	res += "The following command can be used to replay the bug:\n\n"
+	res += "Be aware, that the folder rewritten_trace_" + fmt.Sprint(index) + " must exist "
+	res += "and contain the rewritten trace. It must be in the same folder as the recorded trace.\n\n"
+
+	res += "```bash\n"
+	res += getProgInfo(progInfo, "inserterReplay") + "\n"
+	res += getProgInfo(progInfo, "run") + "\n"
+	res += getProgInfo(progInfo, "remover") + "\n"
+	res += "```\n\n"
 
 	// write the code of the bug elements
 	res += "## Bug Elements\n"
