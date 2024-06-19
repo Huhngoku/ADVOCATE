@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -33,15 +34,15 @@ import (
  *    error: if an error occurred
  */
 func CreateOverview(path string, index int) error {
-	bugType, bugPos, bugElemType, err := readAnalysisResults(path, index)
-	if err != nil {
-		return err
-	}
-
 	// get the code info (main file, test name, commands)
 	progInfo, err := readProgInfo(path, index)
 	if err != nil {
 		fmt.Println("Error reading prog info: ", err)
+	}
+
+	bugType, bugPos, bugElemType, err := readAnalysisResults(path, index, progInfo["file"])
+	if err != nil {
+		return err
 	}
 
 	// get the bug type description
@@ -66,7 +67,7 @@ func CreateOverview(path string, index int) error {
 
 }
 
-func readAnalysisResults(path string, index int) (string, map[int][]string, map[int]string, error) {
+func readAnalysisResults(path string, index int, mainFile string) (string, map[int][]string, map[int]string, error) {
 	file, err := os.ReadFile(path + "results_machine.log")
 	if err != nil {
 		return "", nil, nil, err
@@ -108,6 +109,14 @@ func readAnalysisResults(path string, index int) (string, map[int][]string, map[
 
 			file := fields[5]
 			line := fields[6]
+
+			// correct the line number, if the file is the main file of the program
+			// because of the inserted preamble
+			if file == mainFile { // TODO: only if preamble is after line, otherwise only -1
+				lineInt, _ := strconv.Atoi(line)
+				line = fmt.Sprint(lineInt - 5)
+			}
+
 			pos := file + ":" + line
 			bugPos[i] = append(bugPos[i], pos)
 		}
@@ -148,14 +157,23 @@ func writeFile(path string, index int, description map[string]string,
 	res += "# " + description["crit"] + ": " + description["name"] + "\n\n"
 	res += description["explanation"] + "\n\n"
 	res += "## Minimal Example\n"
-	res += "The following code is a minimal example for the bug type. It is not the code where the bug was found.\n\n```go\n"
+	res += "The following code is a minimal example to visualize the bug type. It is not the code where the bug was found.\n\n```go\n"
 	res += description["example"] + "\n```\n\n"
 
 	// write the positions of the bug
 	res += "## Test/Program\n"
 	res += "The bug was found in the following test/program:\n\n"
-	res += "Test: " + progInfo["name"] + "\n\n"
-	res += "File: " + progInfo["file"] + "\n\n"
+	if progInfo["name"] != "" {
+		res += "- Test/Prog: " + progInfo["name"] + "\n"
+	} else {
+		res += "- Test: unknown" + "\n"
+	}
+
+	if progInfo["file"] != "" {
+		res += "- File: " + progInfo["file"] + "\n\n"
+	} else {
+		res += "- File: unknown" + "\n\n"
+	}
 
 	res += "## Commands\n"
 	res += "The following commands can be used to run and record the program:\n\n"
@@ -168,7 +186,7 @@ func writeFile(path string, index int, description map[string]string,
 
 	res += "The following command can be used to replay the bug:\n\n"
 	res += "Be aware, that the folder rewritten_trace_" + fmt.Sprint(index) + " must exist "
-	res += "and contain the rewritten trace. It must be in the same folder as the recorded trace.\n\n"
+	res += "and contain the rewritten trace. It must be in the same folder as the recorded trace. The rewritten trace in this bug can be found in the `rewritten_trace` folder.\n\n"
 
 	res += "```bash\n"
 	res += getProgInfo(progInfo, "inserterReplay") + "\n"
@@ -179,7 +197,9 @@ func writeFile(path string, index int, description map[string]string,
 	// write the code of the bug elements
 	res += "## Bug Elements\n"
 	res += "The full trace of the recording can be found in the `advocateTrace` folder.\n\n"
-	res += "The bug elements are located at the following positions:\n\n"
+	res += "The elements involved in the found "
+	res += strings.ToLower(description["crit"])
+	res += " are located at the following positions:\n\n"
 
 	for key, _ := range positions {
 		res += "###  "
@@ -187,13 +207,13 @@ func writeFile(path string, index int, description map[string]string,
 
 		for j, pos := range positions[key] {
 			code := code[key][j]
-			res += pos + "\n\n"
+			res += "- " + pos + "\n"
 			res += code + "\n\n"
 		}
 	}
 
 	// write the info about the replay, if possible including the command to read the bug
-	res += "## Replay the bug\n"
+	res += "## Replay\n"
 	res += replay["description"] + "\n\n"
 
 	replayPossible := replay["replaySuc"] != "was not possible"
@@ -202,11 +222,16 @@ func writeFile(path string, index int, description map[string]string,
 		res += "The rewritten trace can be found in the `rewritten_trace` folder.\n\n"
 	}
 
-	res += "Replaying " + replay["replaySuc"] + ".\n"
+	res += "**Replaying " + replay["replaySuc"] + "**.\n\n"
 	if replayPossible {
-		res += "It exited with the following code: "
-		res += replay["exitCode"] + "\n"
-		res += replay["exitCodeExplanation"] + "\n\n"
+		if replay["replaySuc"] != "panicked" {
+			res += "It exited with the following code: "
+			res += "`" + replay["exitCode"] + "`\n\n"
+			res += replay["exitCodeExplanation"] + "\n\n"
+		} else {
+			res += "It panicked with the following message:\n\n"
+			res += "`" + replay["exitCode"] + "`\n\n"
+		}
 	}
 
 	_, err = file.WriteString(res)

@@ -20,8 +20,9 @@ func getBugPositions(traceElems map[int][]string) (map[int][]string, error) {
 	for i, elem := range traceElems {
 		for _, e := range elem {
 			pos := strings.Split(e, ":")
+			file := pos[0]
 			line, _ := strconv.Atoi(pos[1])
-			code, err := getProgramCode(pos[0], line, true)
+			code, err := getProgramCode(file, line, true)
 			if err != nil {
 				res[i] = append(res[i], "")
 			} else {
