@@ -119,7 +119,7 @@ func getReplayInfo(path string, index int) (string, string, string, error) {
 			res := "Invalid format in output.txt. Could not convert exit code to int"
 			return "", res, "failed", errors.New(res)
 		}
-		if exitCodeInt >= 30 || exitCodeInt == 0 {
+		if exitCodeInt >= 20 || exitCodeInt == 0 {
 			replaySuc = "was successful"
 		}
 	} else {

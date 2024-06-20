@@ -40,6 +40,9 @@ func CreateOverview(path string, index int) error {
 		fmt.Println("Error reading prog info: ", err)
 	}
 
+	// fmt.Println(progInfo["importLine"])
+	// fmt.Println(progInfo["overheadLine"])
+
 	bugType, bugPos, bugElemType, err := readAnalysisResults(path, index, progInfo["file"])
 	if err != nil {
 		return err

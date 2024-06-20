@@ -40,6 +40,10 @@ func readProgInfo(path string, index int) (map[string]string, error) {
 			res["remover"] = lines[i]
 		} else if strings.Contains(lines[i], "-run") {
 			res["run"] = lines[i]
+		} else if strings.Contains(lines[i], "Import added at line: ") {
+			res["importLine"] = strings.TrimPrefix(lines[i], "Import added at line: ")
+		} else if strings.Contains(lines[i], "Overhead added at line: ") {
+			res["overheadLine"] = strings.TrimPrefix(lines[i], "Overhead added at line: ")
 		}
 	}
 
