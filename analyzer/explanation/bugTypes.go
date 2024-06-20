@@ -281,19 +281,53 @@ var rewriteType = map[string]string{
 
 // TODO: describe exit codes
 var exitCodeExplanation = map[string]string{
-	"0":  "exites without",
-	"10": "stuck finish",
-	"11": "stuck wait elem",
-	"12": "stuck no elem",
-	"13": "stuck empty trace",
-	"20": "leak unbuf",
-	"21": "leak buf",
-	"22": "leak mutex",
-	"23": "leak cond",
-	"24": "leak wg",
-	"30": "send close",
-	"31": "recv close",
-	"32": "negative wg",
+	"0": "The replay finished without ever encountering a replay finished element " +
+		"in the trace. If the given trace was a directly recorded trace, this is the " +
+		"expected behavior. If it was rewritten by the analyzer, this could be an indication " +
+		"that something went wrong during rewrite.",
+	"10": "The replay got stuck during the execution.\n" +
+		"The main routine has already finished, but the trace still contains not executed operations.\n" +
+		"This can be caused by a stuck replay.\n" +
+		"Possible causes are:\n" +
+		"    - The program was altered between recording and replay\n" +
+		"    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n" +
+		"    - The program execution path depends on the order of not tracked operations\n" +
+		"    - The program execution depends on outside input, that was not exactly reproduced",
+	"11": "The replay got stuck during the execution.\n" +
+		"A waiting trace element was not executed for a long time.\n" +
+		"This can be caused by a stuck replay.\n" +
+		"Possible causes are:\n" +
+		"    - The program was altered between recording and replay\n" +
+		"    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n" +
+		"    - The program execution path depends on the order of not tracked operations\n" +
+		"    - The program execution depends on outside input, that was not exactly reproduced",
+	"12": "The replay got stuck during the execution.\n" +
+		"No trace element was executed for a long tim.\n" +
+		"This can be caused by a stuck replay.\n" +
+		"Possible causes are:\n" +
+		"    - The program was altered between recording and replay\n" +
+		"    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n" +
+		"    - The program execution path depends on the order of not tracked operations\n" +
+		"    - The program execution depends on outside input, that was not exactly reproduced",
+	"13": "The replay got stuck during the execution.\n" +
+		"The program tried to execute an operation, even though all elements in the trace have already been executed.\n" +
+		"This can be caused by a stuck replay.\n" +
+		"Possible causes are:\n" +
+		"    - The program was altered between recording and replay\n" +
+		"    - The program execution path is not deterministic, e.g. its execution path is determined by a random number\n" +
+		"    - The program execution path depends on the order of not tracked operations\n" +
+		"    - The program execution depends on outside input, that was not exactly reproduced",
+	"20": "The replay was able to get the leaking unbuffered channel or select unstuck.",
+	"21": "The replay was able to get the leaking buffered channel unstuck.",
+	"22": "The replay was able to get the leaking mutex unstuck.",
+	"23": "The replay was able to get the leaking conditional variable unstuck.",
+	"24": "The replay was able to get the leaking wait-group unstuck.",
+	"30": "The replay resulted in an expected send on close triggering a panic. The bug was triggered. " +
+		"The replay was therefore able to confirm, that the send on closed can actually occur.",
+	"31": "The replay resulted in an expected receive on close. The bug was triggered." +
+		"The replay was therefore able to confirm, that the receive on closed can actually occur.",
+	"32": "The replay resulted in an expected negative wait group triggering a panic. The bug was triggered. " +
+		"The replay was therefore able to confirm, that the negative wait group can actually occur.",
 	// "41": "cyclic",
 }
 
