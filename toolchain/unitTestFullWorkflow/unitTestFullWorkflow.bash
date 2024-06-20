@@ -76,7 +76,7 @@ echo "$pathToOverheadRemover -f $file -t $testName" >>advocateCommand.log
 $pathToOverheadRemover -f $file -t $testName 
 echo "Add Overhead"
 echo "$pathToOverheadInserter -f $file -t $testName" >>advocateCommand.log
-$pathToOverheadInserter -f $file -t $testName
+$pathToOverheadInserter -f $file -t $testName >>advocateCommand.log
 if [ $? -ne 0 ]; then
 	echo "Error in adding overhead"
 	exit 1
@@ -105,7 +105,7 @@ for trace in $rewritten_traces; do
 	rtracenum=$(echo $trace | grep -o '[0-9]*$')
 	echo "Apply reorder overhead"
 	echo $pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum" >>advocateCommand.log
-	$pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"
+	$pathToOverheadInserter -f $file -t $testName -r true -n "$rtracenum"  >>advocateCommand.log
 	if [ "$modulemode" == "true" ]; then
 		echo "$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod ./$package" >>advocateCommand.log
 		$pathToPatchedGoRuntime test -count=1 -run=$testName -mod=mod "./$package" 2>&1 | tee -a "$trace/reorder_output.txt"
