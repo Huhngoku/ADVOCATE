@@ -551,14 +551,12 @@ The one arg of this case is:
 
 An example for a leak on a nil channel is:
 ```golang
-1 func main() {          // routine = 1
-2   c := make(chan int)  // objId = 2
-3   c = nil
-4
-5   go func() {          // routine = 2
-6     c <- 1            // tPre = 10
-7   }()
-8 }
+func main() {
+	var c chan int
+	go func() {
+		c <- 1
+	}()
+}
 ```
 
 The machine readable format of the leak on a nil channel has the following form:
@@ -585,7 +583,7 @@ The two arg of this case is:
 An example for a leak on an select with a possible partner is:
 ```golang
  1 func main() {             // routine = 1
- 2   c := make(chan int, 1)  // objId = 2
+ 2   c := make(chan int)     // objId = 2
  3
  4   go func() {             // routine = 2
  5     c <- 1                // tPre = 10
@@ -625,7 +623,7 @@ The one arg of this case is:
 
 ```golang
 1 func main() {             // routine = 1
-2   c := make(chan int, 1)  // objId = 2
+2   c := make(chan int)     // objId = 2
 3
 4   go func() {             // routine = 2
 5     select {              // objId = 3, tPre = 10
