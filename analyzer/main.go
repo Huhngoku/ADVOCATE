@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"analyzer/complete"
 	"analyzer/explanation"
 	"analyzer/io"
 	"analyzer/logging"
@@ -18,6 +19,7 @@ import (
 )
 
 func main() {
+	help := flag.Bool("h", false, "Print this help")
 	pathTrace := flag.String("t", "", "Path to the trace folder to analyze or rewrite")
 	level := flag.Int("d", 1, "Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1)")
 	fifo := flag.Bool("f", false, "Assume a FIFO ordering for buffered channels (default false)")
@@ -29,6 +31,9 @@ func main() {
 	ignoreAtomics := flag.Bool("a", false, "Ignore atomic operations (default false). Use to reduce memory overhead for large traces.")
 	explanationFlag := flag.Bool("e", false, "Create the explanation")
 	explanationIndex := flag.Int("i", 0, "Index of the explanation to create")
+	checkAllElem := flag.Bool("o", false, "Check if all elements concurrency elements in the program have been executed al least once")
+	resultFolderTool := flag.String("R", "", "Path where the advocateResult folder created by the pipeline is located")
+	programPath := flag.String("P", "", "Path to the program folder")
 
 	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
 		"\ts: Send on closed channel\n"+
@@ -48,6 +53,16 @@ func main() {
 
 	flag.Parse()
 
+	if *help {
+		printHelp()
+		return
+	}
+
+	if *explanationFlag && *checkAllElem {
+		fmt.Println("Please provide only one of the flags -e or -o")
+		return
+	}
+
 	folderTrace, err := filepath.Abs(*pathTrace)
 	if err != nil {
 		panic(err)
@@ -56,16 +71,18 @@ func main() {
 	// remove last folder from path
 	folderTrace = folderTrace[:strings.LastIndex(folderTrace, string(os.PathSeparator))+1]
 
-	if *resultFolder != "" {
-		folderTrace = *resultFolder
-		if folderTrace[len(folderTrace)-1] != os.PathSeparator {
-			folderTrace += string(os.PathSeparator)
+	if *resultFolder == "" {
+		*resultFolder = folderTrace
+		if (*resultFolder)[len(*resultFolder)-1] != os.PathSeparator {
+			*resultFolder += string(os.PathSeparator)
 		}
 	}
 
-	outMachine := folderTrace + "results_machine.log"
-	outReadable := folderTrace + "results_readable.log"
-	newTrace := folderTrace + "rewritten_trace"
+	outMachine := *resultFolder + "/results_machine.log"
+	outReadable := *resultFolder + "/results_readable.log"
+	newTrace := *resultFolder + "/rewritten_trace"
+
+	// ===================== Special cases =====================
 
 	// instead of the normal program, an explanation for an analyzer program can be created
 	if *explanationFlag {
@@ -79,6 +96,24 @@ func main() {
 		}
 		return
 	}
+
+	// instead of the normal program, check if all elements have been executed at least once
+	if *checkAllElem {
+		if *resultFolderTool == "" {
+			fmt.Println("Please provide the path to the advocateResult folder created by the pipeline. Set with -R [folder]")
+			return
+		}
+
+		if *programPath == "" {
+			fmt.Println("Please provide the path to the program folder. Set with -P [folder]")
+			return
+		}
+
+		complete.Check(*resultFolderTool, *programPath)
+		return
+	}
+
+	// ============== Start the normal program ==============
 
 	printHeader()
 
@@ -389,4 +424,49 @@ func printHeader() {
 		"\n\n\n"
 
 	fmt.Print(headerInfo)
+}
+
+func printHelp() {
+	println("Usage: ./analyzer [options\n")
+	println("There are three modes of operation:")
+	println("1. Analyze a trace file and create a reordered trace file based on the analysis results (Default)")
+	println("2. Create an explanation for a found bug")
+	println("3. Check if all concurrency elements of the program have been executed at least once\n\n")
+	println("1. Analyze a trace file and create a reordered trace file based on the analysis results (Default)")
+	println("This mode is the default mode and analyzes a trace file and creates a reordered trace file based on the analysis results.")
+	println("It has the following options:")
+	println("  -t [file]   Path to the trace folder to analyze or rewrite (required)")
+	println("  -d [level]  Debug Level, 0 = silent, 1 = errors, 2 = info, 3 = debug (default 1)")
+	println("  -f          Assume a FIFO ordering for buffered channels (default false)")
+	println("  -c          Ignore happens before relations of critical sections (default false)")
+	println("  -x          Do not rewrite the trace file (default false)")
+	println("  -w          Do not print warnings (default false)")
+	println("  -p          Do not print the results to the terminal (default false). Automatically set -x to true")
+	println("  -r [folder] Path to where the result file should be saved. (default parallel to -t)")
+	println("  -a          Ignore atomic operations (default false). Use to reduce memory overhead for large traces.")
+	println("  -s [cases]  Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:")
+	println("              s: Send on closed channel")
+	println("              r: Receive on closed channel")
+	println("              w: Done before add on waitGroup")
+	println("              n: Close of closed channel")
+	println("              b: Concurrent receive on channel")
+	println("              l: Leaking routine")
+	println("              u: Select case without partner")
+	// println("              c: Cyclic deadlock")
+	// println("              m: Mixed deadlock")
+	println("\n\n")
+	println("2. Create an explanation for a found bug")
+	println("This mode creates an explanation for a found bug in the trace file.")
+	println("It has the following options:")
+	println("  -e          Create the explanation")
+	println("  -t [file]   Path to the trace file to create the explanation for (required)")
+	println("  -i [index]  Index of the explanation to create (1 based) (required)")
+	println("\n\n")
+	println("3. Check if all concurrency elements of the program have been executed at least once")
+	println("This mode checks if all concurrency elements of the program have been executed at least once.")
+	println("It has the following options:")
+	println("  -o          Check if all elements concurrency elements in the program have been executed al least once")
+	println("  -R [folder] Path where the advocateResult folder created by the pipeline is located (required)")
+	println("  -P [folder] Path to the program folder (required)")
+	println("\n\n")
 }
