@@ -49,7 +49,7 @@ func main() {
 
 	startTime := time.Now()
 
-	go memorySupervisor()
+	// go memorySupervisor() // BUG: does not work properly
 
 	flag.Parse()
 
@@ -109,7 +109,11 @@ func main() {
 			return
 		}
 
-		complete.Check(*resultFolderTool, *programPath)
+		err := complete.Check(*resultFolderTool, *programPath)
+
+		if err != nil {
+			panic(err.Error())
+		}
 		return
 	}
 
@@ -226,6 +230,7 @@ func memorySupervisor() {
 		freeRAM := stat.Freeram * uint64(stat.Unit)
 
 		if freeRAM < 3000000000 {
+			println("Not enough free RAM available. Exiting...")
 			os.Exit(1)
 		}
 	}

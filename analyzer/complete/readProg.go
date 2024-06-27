@@ -7,6 +7,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,18 +16,29 @@ import (
 func getProgramElements(progPath string) (map[string][]int, error) {
 	progElems := make(map[string][]int)
 
-	file, err := collectGoFiles(progPath)
-	pkg, err := analyzeFiles(file)
+	files, err := collectGoFiles(progPath)
+	if err != nil {
+		println("Error in collecting files")
+		return nil, err
+	}
+
+	pkg, err := analyzeFiles(files)
+	if err != nil {
+		println("Error in analyzing files")
+		return nil, err
+	}
 
 	// traverse all .go files in the directory recursively
 	err = filepath.Walk(progPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			println("Error in walking")
 			return err
 		}
 
 		if strings.HasSuffix(path, ".go") {
 			content, err := os.ReadFile(path)
 			if err != nil {
+				println("Error in reading file")
 				return err
 			}
 
@@ -50,14 +62,26 @@ func collectGoFiles(dir string) ([]string, error) {
 	var files []string
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			log.Printf("Error when collecting %q: %v\n", path, err)
 			return err
 		}
+		if info == nil {
+			return nil
+		}
+
+		if info.IsDir() && info.Name() == "advocateResult" {
+			return filepath.SkipDir
+		}
+
 		if !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
 			files = append(files, path)
 		}
 		return nil
 	})
-	return files, err
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
 }
 
 func analyzeFiles(files []string) (*types.Package, error) {
@@ -65,19 +89,25 @@ func analyzeFiles(files []string) (*types.Package, error) {
 	var astFiles []*ast.File
 
 	for _, file := range files {
+		// BUG: parser.ParseFile sometimes crashes the program without any error message
 		parsedFile, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 		if err != nil {
+			println("Error in parsing file")
 			return nil, err
 		}
 		astFiles = append(astFiles, parsedFile)
 	}
 
 	conf := types.Config{Importer: importer.Default()}
-	pkg, err := conf.Check("mypackage", fset, astFiles, &types.Info{
+	pkg, _ := conf.Check("mypackage", fset, astFiles, &types.Info{
 		Uses: make(map[*ast.Ident]types.Object),
 	})
+	// if err != nil {
+	// 	println("Error in checking")
+	// 	return nil, err
+	// }
 
-	return pkg, err
+	return pkg, nil
 }
 
 func getElemsFromContent(path string, content string, pkg *types.Package) []int {
