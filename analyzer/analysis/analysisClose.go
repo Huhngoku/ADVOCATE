@@ -16,6 +16,7 @@ Args:
 */
 func checkForCommunicationOnClosedChannel(id int, pos string) {
 	// check if there is an earlier send, that could happen concurrently to close
+	println("Check for possible send on closed channel ", analysisCases["sendOnClosed"], hasSend[id])
 	if analysisCases["sendOnClosed"] && hasSend[id] {
 		for routine, mrs := range mostRecentSend {
 			logging.Debug("Check for possible send on closed channel "+
