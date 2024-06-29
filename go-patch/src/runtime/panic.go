@@ -718,6 +718,11 @@ var panicnil = &godebugInc{name: "panicnil"}
 
 // The implementation of the predeclared function panic.
 func gopanic(e any) {
+	// ADVOCATE-CHANGE-START
+	if replayExitCode {
+		println("Exit Replay with code ", ExitCodePanic, ExitCodeNames[ExitCodePanic])
+	}
+	// ADVOCATE-CHANGE-END
 	if e == nil {
 		if debug.panicnil.Load() != 1 {
 			e = new(PanicNilError)

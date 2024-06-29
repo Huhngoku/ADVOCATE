@@ -25,7 +25,7 @@ Changed files (marked with ADVOCATE-CHANGE, außer in .s):
 - src/runtime/runtime2.go
 - src/runtime/chan.go
 - src/runtime/select.go
-- src/runtime/internal/atomic/doc.go
+- src/runtime/panic.go
 - src/runtime/internal/atomic/atomic_amd64.go
 - src/runtime/internal/atomic/atomic_amd64.s
 - src/runtime/internal/atomic/atomic_arm64.go
@@ -36,7 +36,7 @@ Changed files (marked with ADVOCATE-CHANGE, außer in .s):
 - src/sync/once.go
 - src/sync/cond.go
 - src/sync/pool.go
-- src/internal/poll/fs_poll_runtime.go
+- src/internal/poll/fd_poll_runtime.go
 - cmd/compile/internal/ssagen/ssa.go
 
 
