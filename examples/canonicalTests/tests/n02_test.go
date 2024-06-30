@@ -1,14 +1,14 @@
 package main
 
 import (
-	"testing"
 	"sync"
+	"testing"
+	"time"
 )
 
 func Test02(t *testing.T) {
 	n02()
 }
-
 
 // Wait group
 // TN
@@ -25,5 +25,7 @@ func n02() {
 
 	g.Wait()
 	close(ch)
+
+	time.Sleep(100 * time.Millisecond)
 
 }
