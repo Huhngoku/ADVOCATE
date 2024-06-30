@@ -84,6 +84,10 @@ func getTraceElements(resultFolderPath string) (map[string][]int, error) {
 					resLocal[file] = make([]int, 0)
 				}
 				resLocal[file] = append(resLocal[file], line)
+
+				if field[0] == "S" {
+					foundSelect(file, line, field[4])
+				}
 			}
 
 			return nil

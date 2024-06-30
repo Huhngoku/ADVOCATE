@@ -1,6 +1,9 @@
 package complete
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 /*
  * Check if all program elements are in trace
@@ -11,8 +14,6 @@ import "fmt"
  * 	error: error if any
  */
 func Check(resultFolderPath string, progPath string) error {
-
-	println(resultFolderPath, progPath)
 	progElems, err := getProgramElements(progPath)
 	if err != nil {
 		println("Error in getProgramElements")
@@ -25,24 +26,10 @@ func Check(resultFolderPath string, progPath string) error {
 		return err
 	}
 
-	// for elem := range progElems {
-	// 	fmt.Println(elem)
-	// }
-	// print("\n\n\n\n")
-	for elem, lines := range traceElems {
-		fmt.Println(elem, lines)
-	}
-	print("\n\n\n\n")
+	notInTrace := areAllProgElemInTrace(progElems, traceElems)
+	notSelectedSelectCase := getNotSelectedSelectCases()
 
-	println("Program elements: ", len(progElems))
-	println("Trace elements: ", len(traceElems))
-	res := areAllProgElemInTrace(progElems, traceElems)
-
-	for file, lines := range res {
-		if len(lines) != 0 {
-			fmt.Printf("File %s: lines %v not in trace\n", file, lines)
-		}
-	}
+	err = printResultsToFile(notInTrace, notSelectedSelectCase, resultFolderPath)
 
 	return err
 }
@@ -73,6 +60,79 @@ func areAllProgElemInTrace(progElems map[string][]int, traceElems map[string][]i
 	}
 
 	return res
+}
+
+/*
+ * GetNotSelectedSelectCases prints the elements and select cases that were not executed
+ * into a file.
+ * Args:
+ * 	elements: the elements that were not executed
+ * 	selects: the select cases that were not selected
+ */
+func printResultsToFile(elements map[string][]int, selects map[string]map[int][]int,
+	path string) error {
+	// create file to write results for elements
+
+	path = fmt.Sprintf("%s/AdvocateNotExecuted.txt", path)
+	notExecutedFile, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer notExecutedFile.Close()
+
+	if len(elements) == 0 && len(selects) == 0 {
+		notExecutedFile.WriteString("All program elements were executed\n")
+		return nil
+	}
+
+	// write elements that were not executed
+	if len(elements) > 0 {
+		notExecutedFile.WriteString("Program elements that were not executed:\n")
+		for file, lines := range elements {
+			notExecutedFile.WriteString(fmt.Sprintf("%s:[", file))
+			for i, line := range lines {
+				if line == -1 {
+					notExecutedFile.WriteString("No element in file was executed")
+					break
+				} else {
+					notExecutedFile.WriteString(fmt.Sprintf("%d", line))
+					if i != len(lines)-1 {
+						notExecutedFile.WriteString(",")
+					}
+				}
+			}
+			notExecutedFile.WriteString("]\n")
+		}
+	}
+
+	if len(elements) > 0 && len(selects) > 0 {
+		notExecutedFile.WriteString("\n")
+	}
+
+	// write select cases that were not selected
+	if len(selects) > 0 {
+
+		notExecutedFile.WriteString("Select cases that were not selected:\n")
+		for file, lines := range selects {
+			for line, cases := range lines {
+				notExecutedFile.WriteString(fmt.Sprintf("%s:%d:[", file, line))
+				for i, c := range cases {
+					if c == -1 {
+						notExecutedFile.WriteString("D")
+					} else {
+						notExecutedFile.WriteString(fmt.Sprintf("%d", c))
+					}
+
+					if i != len(cases)-1 {
+						notExecutedFile.WriteString(",")
+					}
+				}
+				notExecutedFile.WriteString("]\n")
+			}
+		}
+	}
+
+	return nil
 }
 
 func contains(arr []int, elem int) bool {
