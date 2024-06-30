@@ -48,19 +48,17 @@ func getElemFromFiles(filePath string, objectID int, start, end int, disableAtom
 }
 
 func getRoutineFromFileName(fileName string) (int, error) {
-	// the file name is "trace_routineID.log"
-	// remove the .log at the end
-	fileName1 := strings.TrimSuffix(fileName, ".log")
-	if fileName1 == fileName {
+	if !strings.HasSuffix(fileName, ".log") {
 		return 0, errors.New("File name does not end with .log")
 	}
 
-	fileName2 := strings.TrimPrefix(fileName1, "trace_")
-	if fileName2 == fileName1 {
+	if !strings.HasPrefix(fileName, "trace_") {
 		return 0, errors.New("File name does not start with trace_")
 	}
 
-	routine, err := strconv.Atoi(fileName2)
+	routineStr := strings.TrimSuffix(strings.TrimPrefix(fileName, "trace_"), ".log")
+
+	routine, err := strconv.Atoi(routineStr)
 	if err != nil {
 		return 0, err
 	}
@@ -159,8 +157,11 @@ func processElement(element string, objectID string, startTime int, endTime int,
 
 		cases := strings.Split(fields[4], "~")
 		for _, c := range cases {
-			if c == "" || c == "d" || c == "D" {
+			if c == "" || c == "d" {
 				continue
+			}
+			if c == "D" {
+				return true, time
 			}
 			cFields := strings.Split(c, ".")
 			if cFields[3] == objectID {
@@ -170,7 +171,7 @@ func processElement(element string, objectID string, startTime int, endTime int,
 				}
 			}
 		}
-		return false, 0
+		return false, time
 	case "X":
 		time, _ := strconv.Atoi(fields[1])
 		if objectID == "-1" || !isValidTime(time, startTime, endTime) {

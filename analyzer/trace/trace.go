@@ -4,7 +4,9 @@ import (
 	"analyzer/analysis"
 	"analyzer/clock"
 	"analyzer/logging"
+	"analyzer/utils"
 	"errors"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -478,6 +480,7 @@ func getNextElement() TraceElement {
 	// return the element and increase the index
 	element := traces[minRoutine][currentIndex[minRoutine]]
 	increaseIndex(minRoutine)
+
 	return element
 }
 
@@ -779,4 +782,43 @@ func copyTraceRoutine(trace []TraceElement) []TraceElement {
  */
 func SetTrace(trace map[int][]TraceElement) {
 	traces = CopyTrace(trace)
+}
+
+/*
+* Print the trace sorted by tPre
+* Args:
+*   types: types of the elements to print. If empty, all elements will be printed
+*   clocks: if true, the clocks will be printed
+ */
+func PrintTrace(types []string, clocks bool) {
+	elements := make([]struct {
+		string
+		int
+		clock.VectorClock
+	}, 0)
+	for _, tra := range traces {
+		for _, elem := range tra {
+			elemStr := elem.ToString()
+			if len(types) == 0 || utils.Contains(types, elemStr[0:1]) {
+				elements = append(elements, struct {
+					string
+					int
+					clock.VectorClock
+				}{elemStr, elem.GetTSort(), elem.GetVC()})
+			}
+		}
+	}
+
+	// sort elements by timestamp
+	sort.Slice(elements, func(i, j int) bool {
+		return elements[i].int < elements[j].int
+	})
+
+	for _, elem := range elements {
+		if clocks {
+			fmt.Println(elem.string, elem.VectorClock.ToString())
+		} else {
+			fmt.Println(elem.string)
+		}
+	}
 }

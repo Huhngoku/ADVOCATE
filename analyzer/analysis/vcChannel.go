@@ -362,3 +362,38 @@ func newBufferedVCs(id int, size int, numRout int) {
 		}
 	}
 }
+
+/*
+ * Set the channel as the last send operation.
+ * Used for not executed select send
+ * Args:
+ * 	id (int): the id of the channel
+ * 	rout (int): the route of the operation
+ *  vc (VectorClock): the vector clock of the operation
+ *  tID (string): the position of the send in the program
+ */
+func SetChannelAsLastSend(id int, rout int, vc clock.VectorClock, tID string) {
+	println("SetChannelAsLastSend")
+	if mostRecentSend[rout] == nil {
+		mostRecentSend[rout] = make(map[int]VectorClockTID3)
+	}
+	mostRecentSend[rout][id] = VectorClockTID3{rout, tID, vc, id}
+	hasSend[id] = true
+}
+
+/*
+ * Set the channel as the last recv operation.
+ * Used for not executed select recv
+ * Args:
+ * 	id (int): the id of the channel
+ * 	rout (int): the route of the operation
+ *  vc (VectorClock): the vector clock of the operation
+ *  tID (string): the position of the recv in the program
+ */
+func SetChannelAsLastReceive(id int, rout int, vc clock.VectorClock, tID string) {
+	if mostRecentReceive[rout] == nil {
+		mostRecentReceive[rout] = make(map[int]VectorClockTID3)
+	}
+	mostRecentReceive[rout][id] = VectorClockTID3{rout, tID, vc, id}
+	hasReceived[id] = true
+}

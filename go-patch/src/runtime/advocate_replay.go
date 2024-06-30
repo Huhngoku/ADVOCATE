@@ -2,6 +2,7 @@ package runtime
 
 const (
 	ExitCodeDefault        = 0
+	ExitCodePanic          = 3
 	ExitCodeStuckFinish    = 10
 	ExitCodeStuckWaitElem  = 11
 	ExitCodeStuckNoElem    = 12
@@ -19,6 +20,7 @@ const (
 
 var ExitCodeNames = map[int]string{
 	0:  "The replay terminated without finding a Replay element",
+	3:  "The program panicked unexpectedly",
 	10: "Replay Stuck: Long wait time for finishing replay",
 	11: "Replay Stuck: Long wait time for running element",
 	12: "Replay Stuck: No traced operation has been executed for approx. 20s",

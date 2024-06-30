@@ -3,12 +3,8 @@ package rewriter
 
 import (
 	"analyzer/bugs"
-	"analyzer/clock"
 	"analyzer/trace"
-	"analyzer/utils"
 	"errors"
-	"fmt"
-	"sort"
 )
 
 const (
@@ -122,44 +118,4 @@ func RewriteTrace(bug bugs.Bug) (rewriteNeeded bool, code int, err error) {
 		println("Error rewriting trace")
 	}
 	return rewriteNeeded, code, err
-}
-
-/*
-* Print the trace sorted by tPre
-* Args:
-*   types: types of the elements to print. If empty, all elements will be printed
-*   clocks: if true, the clocks will be printed
-* TODO: remove
- */
-func PrintTrace(types []string, clocks bool) {
-	elements := make([]struct {
-		string
-		int
-		clock.VectorClock
-	}, 0)
-	for _, tra := range *trace.GetTraces() {
-		for _, elem := range tra {
-			elemStr := elem.ToString()
-			if len(types) == 0 || utils.Contains(types, elemStr[0:1]) {
-				elements = append(elements, struct {
-					string
-					int
-					clock.VectorClock
-				}{elemStr, elem.GetTPre(), elem.GetVC()})
-			}
-		}
-	}
-
-	// sort elements by timestamp
-	sort.Slice(elements, func(i, j int) bool {
-		return elements[i].int < elements[j].int
-	})
-
-	for _, elem := range elements {
-		if clocks {
-			fmt.Println(elem.string, elem.VectorClock.ToString())
-		} else {
-			fmt.Println(elem.string)
-		}
-	}
 }
