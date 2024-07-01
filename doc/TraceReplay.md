@@ -517,6 +517,7 @@ If a end element is found in the trace and the replay is enabled or the replay i
 program will exit with one of the following exit codes:
 
 - 0: The replay was ended completely without finding a Replay element
+- 3: Replay panicked unexpectedly
 - 10: Replay Stuck: Long wait time for finishing replay
 - 11: Replay Stuck: Long wait time for running element
 - 12: Replay Stuck: No traced operation has been executed for approx. 20s

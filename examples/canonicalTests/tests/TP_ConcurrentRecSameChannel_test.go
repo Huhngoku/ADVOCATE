@@ -9,6 +9,7 @@ func Test21(t *testing.T) {
 	n21()
 }
 
+// ============== Concurrent recv on same channel ==============
 // TP
 func n21() {
 	x := make(chan int)

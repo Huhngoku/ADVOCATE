@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestSomething(t *testing.T) {
+func Test49(t *testing.T) {
 	n49()
 }
 func n49() {
