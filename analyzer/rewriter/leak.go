@@ -342,6 +342,8 @@ func rewriteBufChanLeak(bug bugs.Bug) error {
 			return errors.New("The actual partner of the potential partner is HB " +
 				"before to the stuck element. Cannot rewrite trace.")
 		}
+	} else {
+		return errors.New("Could not find partner. Cannot rewrite trace.")
 	}
 
 	// T = T1 ++ [g] ++ T2 ++ [e]
