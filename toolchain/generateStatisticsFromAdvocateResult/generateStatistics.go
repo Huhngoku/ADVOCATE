@@ -205,41 +205,6 @@ func getPredictedBugCounts(folderPath string) (map[string]int, error) {
 	return predictedCodes, nil
 }
 
-func getPredictedExitCodesCounts(folderPath string) (map[string]int, error) {
-	files, err := getFiles(folderPath, "rewrite_info.log")
-	predictedCodes := make(map[string]int)
-	exitCodes := []string{
-		"0",
-		"10",
-		"11",
-		"12",
-		"13",
-		"20",
-		"21",
-		"22",
-		"23",
-		"24",
-		"30",
-		"31",
-		"32",
-	}
-	for _, code := range exitCodes {
-		predictedCodes[code] = 0
-	}
-	if err != nil {
-		fmt.Println(err)
-	}
-	for _, file := range files {
-		_, _, expectedExitCode, err := parseRewriteInfoFile(file)
-		if err != nil {
-			fmt.Println(err)
-			return nil, err
-		}
-		predictedCodes[expectedExitCode]++
-	}
-	return predictedCodes, nil
-}
-
 func parseRewriteInfoFile(filePath string) (string, string, string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {

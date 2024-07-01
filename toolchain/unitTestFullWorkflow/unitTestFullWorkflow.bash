@@ -117,4 +117,5 @@ for trace in $rewritten_traces; do
 	echo "$pathToOverheadRemover -f $file -t $testName" >>advocateCommand.log
 	$pathToOverheadRemover -f $file -t $testName
 done
+
 unset GOROOT
