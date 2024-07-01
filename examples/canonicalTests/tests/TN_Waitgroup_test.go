@@ -7,12 +7,12 @@ import (
 )
 
 func Test02(t *testing.T) {
-	n02()
+	TN_WaitGroup()
 }
 
 // Wait group
 // TN
-func n02() {
+func TN_WaitGroup() {
 	ch := make(chan int, 1)
 	var g sync.WaitGroup
 

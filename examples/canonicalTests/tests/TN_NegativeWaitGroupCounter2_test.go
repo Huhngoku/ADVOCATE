@@ -3,14 +3,14 @@ package main
 import (
 	"sync"
 	"testing"
-	"time"
 )
 
 func Test26(t *testing.T) {
 	n26()
 }
 
-// no possible negative wait counter
+// possible negative wait counter
+// TN
 func n26() {
 	var wg sync.WaitGroup
 	c := make(chan int, 0)
@@ -36,9 +36,7 @@ func n26() {
 
 	<-c
 
-	time.Sleep(100 * time.Millisecond) // prevent negative wait counter
 	wg.Done()
 	wg.Done()
 
-	time.Sleep(200 * time.Millisecond)
 }

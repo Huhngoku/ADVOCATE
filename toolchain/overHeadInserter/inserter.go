@@ -13,11 +13,11 @@ func main() {
 	fileName := flag.String("f", "", "path to the file")
 	replayOverheadString := flag.String("r", "false", "replay overhead")
 	replayNum := flag.String("n", "1", "replay number")
+	flag.Parse()
 	replayOverhead := false
 	if *replayOverheadString == "true" {
 		replayOverhead = true
 	}
-	flag.Parse()
 	if *fileName == "" {
 		fmt.Fprintln(os.Stderr, "Please provide a file name")
 		fmt.Fprintln(os.Stderr, "Usage: preambleInserter -f <file>")

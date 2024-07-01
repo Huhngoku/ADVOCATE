@@ -5,10 +5,12 @@ import (
 )
 
 func Test01(t *testing.T) {
-	n01()
+	TN_SynchronousChannel()
 }
 
-func n01() {
+// Synchronous channel.
+// TN.
+func TN_SynchronousChannel() {
 	x := make(chan int)
 	ch := make(chan int, 1)
 
