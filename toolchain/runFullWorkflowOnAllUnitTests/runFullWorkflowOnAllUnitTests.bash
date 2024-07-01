@@ -83,6 +83,9 @@ done
 echo "Generate Bug Reports"
 echo "$pathToAdvocate/toolchain/generateBugReportsFromAdvocateResult/generateBugReports -a $pathToAdvocate -f $dir/advocateResult"
 $pathToAdvocate/toolchain/generateBugReportsFromAdvocateResult/generateBugReports -a $pathToAdvocate -f $dir/advocateResult
+echo "Check for untriggered selects"
+# usage./analyzer -o -R [path to advocateResult] -P [path to program root]
+$pathToAnalyzer -o -R $dir/advocateResult -P $dir
 echo "Finished fullworkflow for all tests"
 echo "Attempted tests: $attempted_tests"
 echo "Skipped tests: $skipped_tests"
