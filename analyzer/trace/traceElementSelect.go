@@ -481,7 +481,6 @@ func (se *TraceElementSelect) updateVectorClock() {
 	for _, c := range se.cases {
 		c.vc = se.vc.Copy()
 		if c.opC == Send {
-			println("Set channel as last send")
 			analysis.SetChannelAsLastSend(c.id, se.routine, c.vc, c.tID)
 		} else if c.opC == Recv {
 			analysis.SetChannelAsLastReceive(c.id, se.routine, c.vc, c.tID)

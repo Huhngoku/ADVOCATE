@@ -373,7 +373,6 @@ func newBufferedVCs(id int, size int, numRout int) {
  *  tID (string): the position of the send in the program
  */
 func SetChannelAsLastSend(id int, rout int, vc clock.VectorClock, tID string) {
-	println("SetChannelAsLastSend")
 	if mostRecentSend[rout] == nil {
 		mostRecentSend[rout] = make(map[int]VectorClockTID3)
 	}
