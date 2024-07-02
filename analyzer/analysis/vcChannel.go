@@ -42,10 +42,10 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 			mostRecentSend[routSend] = make(map[int]VectorClockTID3)
 		}
 
-		vc[routSend] = vc[routSend].Inc(routSend)
-		vc[routRecv] = vc[routRecv].Inc(routRecv)
 		vc[routRecv] = vc[routRecv].Sync(vc[routSend])
 		vc[routSend] = vc[routRecv].Copy()
+		vc[routSend] = vc[routSend].Inc(routSend)
+		vc[routRecv] = vc[routRecv].Inc(routRecv)
 
 		// for detection of send on closed
 		hasSend[id] = true
