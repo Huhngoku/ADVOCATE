@@ -3,6 +3,7 @@ package complete
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 /*
@@ -29,7 +30,7 @@ func Check(resultFolderPath string, progPath string) error {
 	notInTrace := areAllProgElemInTrace(progElems, traceElems)
 	notSelectedSelectCase := getNotSelectedSelectCases()
 
-	err = printResultsToFile(notInTrace, notSelectedSelectCase, resultFolderPath)
+	err = printResultsToFiles(notInTrace, notSelectedSelectCase, resultFolderPath)
 
 	return err
 }
@@ -69,67 +70,109 @@ func areAllProgElemInTrace(progElems map[string][]int, traceElems map[string][]i
  * 	elements: the elements that were not executed
  * 	selects: the select cases that were not selected
  */
-func printResultsToFile(elements map[string][]int, selects map[string]map[int][]int,
+func printResultsToFiles(elements map[string][]int, selects map[string]map[int][]int,
 	path string) error {
-	// create file to write results for elements
 
-	path = fmt.Sprintf("%s/AdvocateNotExecuted.txt", path)
-	notExecutedFile, err := os.Create(path)
+	path = fmt.Sprintf("%s/AdvocateNotExecuted", path)
+
+	// create a folder to store results
+	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		return err
 	}
-	defer notExecutedFile.Close()
 
-	if len(elements) == 0 && len(selects) == 0 {
-		notExecutedFile.WriteString("All program elements were executed\n")
-		return nil
+	pathOperations := fmt.Sprintf("%s/AdvocateNotExecutedOperations.txt", path)
+	pathSelects := fmt.Sprintf("%s/AdvocateNotExecutedSelectCases.txt", path)
+
+	notExecutedOperationsFile, err := os.Create(pathOperations)
+	if err != nil {
+		return err
+	}
+	defer notExecutedOperationsFile.Close()
+
+	notExecutedSelectFile, err := os.Create(pathSelects)
+	if err != nil {
+		return err
+	}
+	defer notExecutedSelectFile.Close()
+
+	pathOperationsFolder := fmt.Sprintf("%s/Operations", path)
+	err = os.MkdirAll(pathOperationsFolder, os.ModePerm)
+	if err != nil {
+		return err
 	}
 
 	// write elements that were not executed
 	if len(elements) > 0 {
-		notExecutedFile.WriteString("Program elements that were not executed:\n")
+		notExecutedOperationsFile.WriteString("Program elements that were not executed:\n")
 		for file, lines := range elements {
-			notExecutedFile.WriteString(fmt.Sprintf("%s:[", file))
+			fileName := strings.ReplaceAll(file, "/", "_")
+			fileName = strings.TrimPrefix(fileName, "_")
+			pathFile := fmt.Sprintf("%s/%s.md", pathOperationsFolder, fileName)
+			fileFile, err := os.Create(pathFile)
+			fileFile.WriteString(fmt.Sprintf("# %s\n", file))
+			fileFile.WriteString("## Not executed operations\n")
+			if err != nil {
+				return err
+			}
+
+			notExecutedOperationsFile.WriteString(fmt.Sprintf("%s:[", file))
 			for i, line := range lines {
 				if line == -1 {
-					notExecutedFile.WriteString("No element in file was executed")
+					notExecutedOperationsFile.WriteString("No element in file was executed")
+					fileFile.Write([]byte("No element in file was executed"))
 					break
 				} else {
-					notExecutedFile.WriteString(fmt.Sprintf("%d", line))
+					notExecutedOperationsFile.WriteString(fmt.Sprintf("%d", line))
 					if i != len(lines)-1 {
-						notExecutedFile.WriteString(",")
+						notExecutedOperationsFile.WriteString(",")
 					}
+					fileFile.WriteString(fmt.Sprintf("### Line: %d\n", line))
 				}
 			}
-			notExecutedFile.WriteString("]\n")
+			notExecutedOperationsFile.WriteString("]\n")
+			fileFile.Close()
 		}
-	}
-
-	if len(elements) > 0 && len(selects) > 0 {
-		notExecutedFile.WriteString("\n")
+	} else {
+		notExecutedOperationsFile.WriteString("All program elements were executed\n")
 	}
 
 	// write select cases that were not selected
 	if len(selects) > 0 {
-
-		notExecutedFile.WriteString("Select cases that were not selected:\n")
+		notExecutedSelectFile.WriteString("Select cases that were not selected:\n")
 		for file, lines := range selects {
+			fileName := strings.ReplaceAll(file, "/", "_")
+			fileName = strings.TrimPrefix(fileName, "_")
+			pathFile := fmt.Sprintf("%s/%s.md", pathOperationsFolder, fileName)
+			// if file does not exist, create it otherwise append to it
+			fileFile, err := os.OpenFile(pathFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				return err
+			}
+			fileFile.WriteString(fmt.Sprintf("## Not selected select cases\n"))
+
 			for line, cases := range lines {
-				notExecutedFile.WriteString(fmt.Sprintf("%s:%d:[", file, line))
+				notExecutedSelectFile.WriteString(fmt.Sprintf("%s:%d:[", file, line))
+				fileFile.WriteString(fmt.Sprintf("### Line: %d\n", line))
 				for i, c := range cases {
 					if c == -1 {
-						notExecutedFile.WriteString("D")
+						notExecutedSelectFile.WriteString("D")
+						fileFile.WriteString("Default case was never selected\n")
 					} else {
-						notExecutedFile.WriteString(fmt.Sprintf("%d", c))
+						notExecutedSelectFile.WriteString(fmt.Sprintf("%d", c))
+						fileFile.WriteString(fmt.Sprintf("Case: %d was never selected\n", c))
 					}
 
 					if i != len(cases)-1 {
-						notExecutedFile.WriteString(",")
+						notExecutedSelectFile.WriteString(",")
 					}
 				}
-				notExecutedFile.WriteString("]\n")
+				notExecutedSelectFile.WriteString("]\n")
 			}
+			fileFile.Close()
 		}
+	} else {
+		notExecutedSelectFile.WriteString("All select cases were executed\n")
 	}
 
 	return nil
