@@ -1,6 +1,7 @@
 package complete
 
 import (
+	"analyzer/explanation"
 	"fmt"
 	"os"
 	"strings"
@@ -128,6 +129,12 @@ func printResultsToFiles(elements map[string][]int, selects map[string]map[int][
 						notExecutedOperationsFile.WriteString(",")
 					}
 					fileFile.WriteString(fmt.Sprintf("### Line: %d\n", line))
+					code, err := explanation.GetProgramCode(file, line, true)
+					if err != nil {
+						fileFile.WriteString("Error reading file: " + err.Error() + "\n")
+						continue
+					}
+					fileFile.WriteString(code)
 				}
 			}
 			notExecutedOperationsFile.WriteString("]\n")
@@ -166,6 +173,13 @@ func printResultsToFiles(elements map[string][]int, selects map[string]map[int][
 					if i != len(cases)-1 {
 						notExecutedSelectFile.WriteString(",")
 					}
+
+					code, err := explanation.GetProgramCode(file, line, true)
+					if err != nil {
+						fileFile.WriteString("Error reading file: " + err.Error() + "\n")
+						continue
+					}
+					fileFile.WriteString(code)
 				}
 				notExecutedSelectFile.WriteString("]\n")
 			}

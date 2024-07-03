@@ -22,7 +22,7 @@ func getBugPositions(traceElems map[int][]string) (map[int][]string, error) {
 			pos := strings.Split(e, ":")
 			file := pos[0]
 			line, _ := strconv.Atoi(pos[1])
-			code, err := getProgramCode(file, line, true)
+			code, err := GetProgramCode(file, line, true)
 			if err != nil {
 				res[i] = append(res[i], "")
 			} else {
@@ -34,7 +34,17 @@ func getBugPositions(traceElems map[int][]string) (map[int][]string, error) {
 	return res, nil
 }
 
-func getProgramCode(file string, line int, numbers bool) (string, error) {
+/*
+ * Get the code snippet of a program file at a specific line
+ * Args:
+ *   file (string): The path to the file
+ *   line (int): The line number
+ *   numbers (bool): If line numbers should be included
+ * Returns:
+ *   string: The code snippet
+ *   error: An error if the file could not be read
+ */
+func GetProgramCode(file string, line int, numbers bool) (string, error) {
 	content, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
