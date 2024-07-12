@@ -75,14 +75,20 @@ func addOverhead(fileName string, replayOverhead bool, replayNumber string) {
 
 	var lines []string
 	scanner := bufio.NewScanner(file)
+	importAdded := false
 	for scanner.Scan() {
 		line := scanner.Text()
 		lines = append(lines, line)
 
-		if strings.Contains(line, "import \"") {
+		if strings.Contains(line, "package main") {
 			lines = append(lines, "import \"advocate\"")
-		} else if strings.Contains(line, "import (") {
+			importAdded = true
+		} else if strings.Contains(line, "import \"") && !importAdded {
+			lines = append(lines, "import \"advocate\"")
+			importAdded = true
+		} else if strings.Contains(line, "import (") && !importAdded {
 			lines = append(lines, "\t\"advocate\"")
+			importAdded = true
 		}
 
 		if strings.Contains(line, "func main() {") {
