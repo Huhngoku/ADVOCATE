@@ -46,6 +46,8 @@ func main() {
 			lines = append(lines, line)
 		} else if inImportBlock && strings.Contains(line, "\"advocate\"") {
 			continue
+		} else if strings.Contains(line, "import \"advocate\"") {
+			continue
 		} else {
 			lines = append(lines, line)
 		}
