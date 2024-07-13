@@ -15,6 +15,7 @@ import (
 	"analyzer/io"
 	"analyzer/logging"
 	"analyzer/rewriter"
+	"analyzer/stats"
 	"analyzer/trace"
 )
 
@@ -34,6 +35,7 @@ func main() {
 	checkAllElem := flag.Bool("o", false, "Check if all elements concurrency elements in the program have been executed al least once")
 	resultFolderTool := flag.String("R", "", "Path where the advocateResult folder created by the pipeline is located")
 	programPath := flag.String("P", "", "Path to the program folder")
+	createStats := flag.Bool("S", false, "Create statistics for the trace")
 
 	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
 		"\ts: Send on closed channel\n"+
@@ -83,6 +85,12 @@ func main() {
 	newTrace := *resultFolder + "/rewritten_trace"
 
 	// ===================== Special cases =====================
+
+	// instead of the normal program, create statistics for the trace
+	if *createStats {
+		stats.Create(programPath, pathTrace)
+		return
+	}
 
 	// instead of the normal program, an explanation for an analyzer program can be created
 	if *explanationFlag {
