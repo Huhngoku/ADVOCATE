@@ -1095,7 +1095,14 @@ func nTest() {
 	c := make(chan int, 0)
 
 	go func() {
-		c = nil
+		<-c
+	}()
+
+	go func() {
+		c <- 1
+	}()
+
+	go func() {
 		c <- 1
 	}()
 
@@ -1190,7 +1197,7 @@ func main() {
 		defer advocate.Finish()
 	} else {
 		// init replay
-		advocate.EnableReplayWithTimeout(1, true)
+		advocate.EnableReplayWithTimeout(0, true)
 		defer advocate.WaitForReplayFinish()
 	}
 
