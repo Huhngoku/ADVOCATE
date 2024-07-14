@@ -10,7 +10,7 @@ package runtime
  * Return:
  * 	index of the operation in the trace
  */
-func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint16) int {
+func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockorder []uint16) int {
 	timer := GetNextTimeStep()
 
 	if cases == nil {
@@ -28,25 +28,29 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
 	_, file, line, _ := Caller(2)
 
 	i := 0
-	for _, ca := range *cases {
+	for _, casei := range lockorder {
+		casi := int(casei)
+		cas := (*cases)[casi]
+		c := cas.c
+
 		if len(caseElements) > 0 {
 			caseElements += "~"
 		}
 
 		chanOp := "R"
-		if i < len(lockOrder) && lockOrder[i] < uint16(nsends) {
+		if casi < nsends {
 			chanOp = "S"
 		}
 
-		if ca.c == nil { // ignore nil cases
+		if c == nil { // ignore nil cases
 			caseElements += "C." + uint64ToString(timer) + ".0.*." + chanOp + ".f.0.0"
 		} else {
 
 			i++
 
 			caseElements += "C." + uint64ToString(timer) + ".0." +
-				uint64ToString(ca.c.id) + "." + chanOp + ".f.0." +
-				uint32ToString(uint32(ca.c.dataqsiz))
+				uint64ToString(c.id) + "." + chanOp + ".f.0." +
+				uint32ToString(uint32(c.dataqsiz))
 		}
 	}
 
@@ -72,7 +76,7 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockOrder []uint1
  * 	lockOrder: order of the locks
  * 	rClosed: true if the channel was closed at another routine
  */
-func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
+func AdvocateSelectPost(index int, c *hchan, chosenIndex int, lockOrder []uint16, rClosed bool) {
 	timer := GetNextTimeStep()
 
 	if index == -1 {
@@ -96,8 +100,21 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 	} else {
 		// set tpost and cl of chosen case
 
+		// get the correct case from the lockOrder
+		chosenIndexLO := -2
+		for i, lock := range lockOrder {
+			if int(lock) == chosenIndex {
+				chosenIndexLO = i
+				break
+			}
+		}
+
+		if chosenIndexLO == -2 {
+			panic("Chosen index not found in lock order")
+		}
+
 		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
-		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndex], '.', []int{2, 3, 4, 5, 6, 7})
+		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndexLO], '.', []int{2, 3, 4, 5, 6, 7})
 		chosenCaseSplit[1] = uint64ToString(timer)
 		if rClosed {
 			chosenCaseSplit[4] = "t"
@@ -112,7 +129,7 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, rClosed bool) {
 			chosenCaseSplit[5] = uint64ToString(c.numberRecv)
 		}
 
-		cases[chosenIndex] = mergeStringSep(chosenCaseSplit, ".")
+		cases[chosenIndexLO] = mergeStringSep(chosenCaseSplit, ".")
 	}
 
 	split[3] = mergeStringSep(cases, "~")
