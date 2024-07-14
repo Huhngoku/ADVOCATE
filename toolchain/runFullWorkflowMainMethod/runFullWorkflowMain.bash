@@ -31,7 +31,6 @@ if [ -z "$file" ]; then
     echo "Main file is empty"
     exit 1
 fi
-]
 
 dir=$(dirname "$file")
 cd $dir
