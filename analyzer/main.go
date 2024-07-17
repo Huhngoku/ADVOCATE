@@ -36,6 +36,7 @@ func main() {
 	resultFolderTool := flag.String("R", "", "Path where the advocateResult folder created by the pipeline is located")
 	programPath := flag.String("P", "", "Path to the program folder")
 	createStats := flag.Bool("S", false, "Create statistics for the trace")
+	preventCopyRewrittenTrace := flag.Bool("n", false, "Do not copy the rewritten trace in the explanation")
 
 	scenarios := flag.String("s", "", "Select which analysis scenario to run, e.g. -s srd for the option s, r and d. Options:\n"+
 		"\ts: Send on closed channel\n"+
@@ -98,7 +99,7 @@ func main() {
 			fmt.Println("Please provide a path to the trace file and an index (1 based) for the explanation. Set with -t [file] -i [index]")
 			return
 		}
-		err := explanation.CreateOverview(folderTrace, *explanationIndex)
+		err := explanation.CreateOverview(folderTrace, *explanationIndex, *preventCopyRewrittenTrace)
 		if err != nil {
 			fmt.Println("Error creating explanation: ", err.Error())
 		}

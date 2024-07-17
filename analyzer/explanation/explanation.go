@@ -30,10 +30,11 @@ import (
  * Args:
  *    path: the path to the folder, where the results of the analysis and the trace are stored
  *    index: the index of the bug in the results
+ *    preventCopyRewrittenTrace: if the rewritten trace should not be copied
  * Returns:
  *    error: if an error occurred
  */
-func CreateOverview(path string, index int) error {
+func CreateOverview(path string, index int, preventCopyRewrittenTrace bool) error {
 	// get the code info (main file, test name, commands)
 	progInfo, err := readProgInfo(path, index)
 	if err != nil {
@@ -63,8 +64,10 @@ func CreateOverview(path string, index int) error {
 	err = writeFile(path, index, bugTypeDescription, bugPos, bugElemType, code,
 		replay, progInfo)
 
-	copyTrace(path, index)
-	copyRewrite(path, index)
+	// copyTrace(path, index)
+	if !preventCopyRewrittenTrace {
+		copyRewrite(path, index)
+	}
 
 	return err
 
