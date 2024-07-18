@@ -60,7 +60,10 @@ func Unbuffered(routSend int, routRecv int, id int, tIDSend string,
 
 	} else {
 		vc[routSend] = vc[routSend].Inc(routSend)
-		if analysisCases["sendOnClosed"] {
+	}
+
+	if analysisCases["sendOnClosed"] {
+		if _, ok := closeData[id]; ok {
 			foundSendOnClosedChannel(routSend, id, tIDSend)
 		}
 	}
@@ -114,9 +117,6 @@ func Send(rout int, id int, oID int, size int, tID string,
 
 	if tPost == 0 {
 		vc[rout] = vc[rout].Inc(rout)
-		if analysisCases["sendOnClosed"] {
-			foundSendOnClosedChannel(rout, id, tID)
-		}
 		return
 	}
 
@@ -154,6 +154,12 @@ func Send(rout int, id int, oID int, size int, tID string,
 	mostRecentSend[rout][id] = VectorClockTID3{rout, tID, mostRecentSend[rout][id].Vc.Sync(vc[rout]), id}
 
 	vc[rout] = vc[rout].Inc(rout)
+
+	if analysisCases["sendOnClosed"] {
+		if _, ok := closeData[id]; ok {
+			foundSendOnClosedChannel(rout, id, tID)
+		}
+	}
 
 	if analysisCases["selectWithoutPartner"] {
 		CheckForSelectCaseWithoutPartnerChannel(id, vc[rout], tID, true, true)
@@ -307,6 +313,12 @@ func Close(rout int, id int, tID string, vc map[int]clock.VectorClock, tPost int
 
 	if analysisCases["leak"] {
 		CheckForLeakChannelRun(rout, id, VectorClockTID{vc[rout].Copy(), tID, rout}, 2, true)
+	}
+}
+
+func SendC(rout int, id int, tID string) {
+	if analysisCases["sendOnClosed"] {
+		foundSendOnClosedChannel(rout, id, tID)
 	}
 }
 

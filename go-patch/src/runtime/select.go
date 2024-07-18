@@ -601,6 +601,11 @@ sclose:
 	if IsReplayEnabled() {
 		IsNextElementReplayEnd(ExitCodeSendClose, true, false)
 	}
+
+	// ADVOCATE-CHANGE-START
+	AdvocateSelectPost(advocateIndex, c, casi, lockorder, advocateRClose)
+	// ADVOCATE-CHANGE-END
+
 	panic(plainError("send on closed channel"))
 }
 

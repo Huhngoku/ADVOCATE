@@ -486,8 +486,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
 				if ch.cl { // recv on closed channel
 					logging.Debug("Update vector clock of channel operation: "+
 						ch.ToString(), logging.DEBUG)
-					analysis.RecvC(ch.routine, ch.id, ch.tID,
-						currentVCHb, ch.tPost, false)
+					analysis.SendC(ch.routine, ch.id, ch.tID)
 				} else {
 					logging.Debug("Could not find partner for "+ch.tID, logging.INFO)
 					analysis.StuckChan(ch.routine, currentVCHb)
@@ -559,7 +558,7 @@ func (ch *TraceElementChannel) updateVectorClock() {
  * Find the partner of the channel operation
  * MARK: Partner
  * Returns:
- *   int: The routine id of the partner
+ *   int: The routine id of the partner, -1 if no partner was found
  */
 func (ch *TraceElementChannel) findPartner() int {
 	// return -1 if closed by channel

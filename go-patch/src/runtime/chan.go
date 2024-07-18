@@ -288,6 +288,12 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 			IsNextElementReplayEnd(ExitCodeSendClose, true, false)
 		}
 
+		// ADVOCATE-CHANGE-START
+		if !ignored && !c.advocateIgnore {
+			AdvocateChanPostCausedByClose(advocateIndex)
+		}
+		// ADVOCATE-CHANGE-END
+
 		panic(plainError("send on closed channel"))
 	}
 
@@ -405,6 +411,13 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr, ignored
 		if enabled {
 			IsNextElementReplayEnd(ExitCodeSendClose, true, false)
 		}
+
+		// ADVOCATE-CHANGE-START
+		if !ignored && !c.advocateIgnore {
+			AdvocateChanPostCausedByClose(advocateIndex)
+		}
+		// ADVOCATE-CHANGE-END
+
 		panic(plainError("send on closed channel"))
 	}
 	return true

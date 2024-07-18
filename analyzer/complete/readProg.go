@@ -89,7 +89,6 @@ func analyzeFiles(files []string) (*types.Package, error) {
 	var astFiles []*ast.File
 
 	for _, file := range files {
-		// BUG: parser.ParseFile sometimes crashes the program without any error message
 		parsedFile, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 		if err != nil {
 			println("Error in parsing file")
