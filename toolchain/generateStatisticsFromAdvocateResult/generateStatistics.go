@@ -75,7 +75,14 @@ func getCaseReportForCode(code string, folder string) caseReport {
 		occurenceCount:  0,
 		actualExitCodes: make([]string, 0),
 	}
-	files, err := getFiles(folder, "rewrite_info.log")
+	unfilteredFiles, err := getFiles(folder, "rewrite_info.log")
+	files := make([]string, 0)
+	for _, file := range unfilteredFiles {
+		if strings.Contains(file, "/bugs/") {
+			continue
+		}
+		files = append(files, file)
+	}
 	if err != nil {
 		fmt.Println(err)
 	}
