@@ -362,7 +362,6 @@ func (mu *TraceElementMutex) updateVectorClock() {
 }
 
 func (mu *TraceElementMutex) updateVectorClockAlt() {
-	println("UpdateVectorClockAlt")
 	currentVCHb[mu.routine] = currentVCHb[mu.routine].Inc(mu.routine)
 	mu.vc = currentVCHb[mu.routine].Copy()
 }

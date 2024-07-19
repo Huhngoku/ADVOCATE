@@ -321,12 +321,15 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 	currentVCWmhb[1] = currentVCWmhb[1].Inc(1)
 
 	for elem := getNextElement(); elem != nil; elem = getNextElement() {
-
 		switch e := elem.(type) {
 		case *TraceElementAtomic:
 			logging.Debug("Update vector clock for atomic operation "+e.ToString()+
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
-			e.updateVectorClock()
+			if ignoreCriticalSections {
+				e.updateVectorClockAlt()
+			} else {
+				e.updateVectorClock()
+			}
 		case *TraceElementChannel:
 			logging.Debug("Update vector clock for channel operation "+e.ToString()+
 				" for routine "+strconv.Itoa(e.GetRoutine()), logging.DEBUG)
@@ -410,8 +413,6 @@ func RunAnalysis(assumeFifo bool, ignoreCriticalSections bool, analysisCasesMap 
 				analysis.CheckForLeakCond(elem.GetRoutine(), elem.GetID(), elem.GetTID())
 			}
 		}
-
-		// println(elem.ToString(), elem.GetVC().ToString())
 
 	}
 

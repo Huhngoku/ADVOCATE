@@ -39,10 +39,13 @@ func Write(routine int, id int, vc map[int]clock.VectorClock) {
  *   id (int): The id of the atomic variable
  *   numberOfRoutines (int): The number of routines in the trace
  *   vc (map[int]VectorClock): The vector clocks
+ *   sync bool: sync reader with last writer
  */
-func Read(routine int, id int, vc map[int]clock.VectorClock) {
+func Read(routine int, id int, vc map[int]clock.VectorClock, sync bool) {
 	newLw(id, vc[id].GetSize())
-	vc[routine] = vc[routine].Sync(lw[id])
+	if sync {
+		vc[routine] = vc[routine].Sync(lw[id])
+	}
 	vc[routine] = vc[routine].Inc(routine)
 }
 
@@ -54,8 +57,9 @@ func Read(routine int, id int, vc map[int]clock.VectorClock) {
  *   id (int): The id of the atomic variable
  *   numberOfRoutines (int): The number of routines in the trace
  *   cv (map[int]VectorClock): The vector clocks
+ *   sync bool: sync reader with last writer
  */
-func Swap(routine int, id int, cv map[int]clock.VectorClock) {
-	Read(routine, id, cv)
+func Swap(routine int, id int, cv map[int]clock.VectorClock, sync bool) {
+	Read(routine, id, cv, sync)
 	Write(routine, id, cv)
 }
