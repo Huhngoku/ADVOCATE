@@ -35,6 +35,7 @@ fi
 dir=$(dirname "$file")
 cd $dir
 echo "In directory: $dir"
+echo "export GOROOT=$pathToGoRoot"
 export GOROOT=$pathToGoRoot
 echo "Goroot exported"
 echo "Remove Overhead just in case"
@@ -58,6 +59,8 @@ fi
 echo "Remove Overhead"
 echo "$pathToOverheadRemover -f $file"
 $pathToOverheadRemover -f $file
+echo "Apply analyzer"
+echo "$pathToAnalyzer -t $dir/advocateTrace"
 $pathToAnalyzer -t "$dir/advocateTrace"
 rewritten_traces=$(find "$dir" -type d -name "rewritten_trace*")
 for trace in $rewritten_traces; do
