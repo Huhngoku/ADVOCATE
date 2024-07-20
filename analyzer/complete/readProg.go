@@ -35,6 +35,10 @@ func getProgramElements(progPath string) (map[string][]int, error) {
 			return err
 		}
 
+		if info.IsDir() {
+			return nil
+		}
+
 		if strings.HasSuffix(path, ".go") {
 			content, err := os.ReadFile(path)
 			if err != nil {
