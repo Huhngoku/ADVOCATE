@@ -42,8 +42,9 @@ func getProgramElements(progPath string) (map[string][]int, error) {
 				return err
 			}
 
-			elems := getElemsFromContent(path, string(content), pkg)
-			if len(elems) > 0 {
+			elems, err := getElemsFromContent(path, string(content), pkg)
+
+			if err == nil && len(elems) > 0 {
 				if _, ok := progElems[path]; !ok {
 					progElems[path] = make([]int, 0)
 				}
@@ -91,8 +92,9 @@ func analyzeFiles(files []string) (*types.Package, error) {
 	for _, file := range files {
 		parsedFile, err := parser.ParseFile(fset, file, nil, parser.ParseComments)
 		if err != nil {
-			println("Error in parsing file")
-			return nil, err
+			// println("Error in parsing file")
+			// return nil, err
+			continue
 		}
 		astFiles = append(astFiles, parsedFile)
 	}
@@ -109,11 +111,11 @@ func analyzeFiles(files []string) (*types.Package, error) {
 	return pkg, nil
 }
 
-func getElemsFromContent(path string, content string, pkg *types.Package) []int {
+func getElemsFromContent(path string, content string, pkg *types.Package) ([]int, error) {
 	fset := token.NewFileSet()
 	node, err := parser.ParseFile(fset, path, content, parser.ParseComments)
 	if err != nil {
-		panic(err)
+		return []int{}, err
 	}
 
 	info := &types.Info{
@@ -138,7 +140,7 @@ func getElemsFromContent(path string, content string, pkg *types.Package) []int 
 		selectCases: make(map[string]struct{}), elements: make([]int, 0)}
 	ast.Walk(v, node)
 
-	return v.elements
+	return v.elements, nil
 }
 
 // visitor ist eine Struktur, die das ast.Visitor Interface implementiert.
