@@ -1,15 +1,15 @@
-
 package main
 
 import (
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
 
 func Test19(t *testing.T) {
 	n19()
 }
+
 // FN
 func n19() {
 	ch := make(chan int, 1)
