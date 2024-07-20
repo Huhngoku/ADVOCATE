@@ -12,3 +12,5 @@ func main() {
 	}()
 	time.Sleep(1 * time.Second)
 }
+
+// Example Send on closed

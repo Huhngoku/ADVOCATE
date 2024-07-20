@@ -10,3 +10,5 @@ func main() {
 	wg.Done()
 	wg.Done()
 }
+
+// Example Negative WaitGroup Count
