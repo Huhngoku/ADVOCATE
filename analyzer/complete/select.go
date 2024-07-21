@@ -50,6 +50,11 @@ func foundSelect(file string, line int, cases string) {
  * 	selected: the index of the selected case
  */
 func addSelect(file string, line int, numberCases int, selected int) {
+	// ignore definition of select in src/runtime/select.go
+	if strings.HasSuffix(file, "src/runtime/select.go") {
+		return
+	}
+
 	if _, ok := selects[file]; !ok {
 		selects[file] = make(map[int][]bool)
 	}
