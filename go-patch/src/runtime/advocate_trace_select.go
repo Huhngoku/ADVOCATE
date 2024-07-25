@@ -10,7 +10,7 @@ package runtime
  * Return:
  * 	index of the operation in the trace
  */
-func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockorder []uint16) int {
+func AdvocateSelectPre(cases *[]scase, nsends int, ncases int, block bool, lockorder []uint16) int {
 	timer := GetNextTimeStep()
 
 	if cases == nil {
@@ -28,6 +28,9 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockorder []uint1
 	_, file, line, _ := Caller(2)
 
 	i := 0
+
+	maxCasi := 0
+	caseElementMap := make(map[int]string)
 	for _, casei := range lockorder {
 		casi := int(casei)
 		cas := (*cases)[casi]
@@ -43,15 +46,41 @@ func AdvocateSelectPre(cases *[]scase, nsends int, block bool, lockorder []uint1
 		}
 
 		if c == nil { // ignore nil cases
-			caseElements += "C." + uint64ToString(timer) + ".0.*." + chanOp + ".f.0.0"
+			caseElementMap[casi] = "C." + uint64ToString(timer) + ".0.*." + chanOp + ".f.0.0"
 		} else {
-
 			i++
 
-			caseElements += "C." + uint64ToString(timer) + ".0." +
+			caseElementMap[casi] = "C." + uint64ToString(timer) + ".0." +
 				uint64ToString(c.id) + "." + chanOp + ".f.0." +
 				uint32ToString(uint32(c.dataqsiz))
 		}
+		maxCasi = max(maxCasi, casi)
+	}
+
+	for i := 0; i <= maxCasi; i++ {
+		if i != 0 {
+			caseElements += "~"
+		}
+		if _, ok := caseElementMap[i]; ok {
+			caseElements += caseElementMap[i]
+		} else {
+			chanOp := "R"
+			if i < nsends {
+				chanOp = "S"
+			}
+			caseElements += "C." + uint64ToString(timer) + ".0.*." + chanOp + ".f.0.0"
+		}
+	}
+
+	for i := maxCasi + 1; i < ncases; i++ {
+		if i > 0 {
+			caseElements += "~"
+		}
+		chanOp := "R"
+		if i < nsends {
+			chanOp = "S"
+		}
+		caseElements += "C." + uint64ToString(timer) + ".0.*." + chanOp + ".f.0.0"
 	}
 
 	if !block {
@@ -100,21 +129,8 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, lockOrder []uint16
 	} else {
 		// set tpost and cl of chosen case
 
-		// get the correct case from the lockOrder
-		chosenIndexLO := -2
-		for i, lock := range lockOrder {
-			if int(lock) == chosenIndex {
-				chosenIndexLO = i
-				break
-			}
-		}
-
-		if chosenIndexLO == -2 {
-			panic("Chosen index not found in lock order")
-		}
-
 		// split into C,[tpre] - [tPost] - [id] - [opC] - [cl] - [opID] - [qSize]
-		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndexLO], '.', []int{2, 3, 4, 5, 6, 7})
+		chosenCaseSplit := splitStringAtSeparator(cases[chosenIndex], '.', []int{2, 3, 4, 5, 6, 7})
 		chosenCaseSplit[1] = uint64ToString(timer)
 		if rClosed {
 			chosenCaseSplit[4] = "t"
@@ -129,7 +145,7 @@ func AdvocateSelectPost(index int, c *hchan, chosenIndex int, lockOrder []uint16
 			chosenCaseSplit[5] = uint64ToString(c.numberRecv)
 		}
 
-		cases[chosenIndexLO] = mergeStringSep(chosenCaseSplit, ".")
+		cases[chosenIndex] = mergeStringSep(chosenCaseSplit, ".")
 	}
 
 	split[3] = mergeStringSep(cases, "~")

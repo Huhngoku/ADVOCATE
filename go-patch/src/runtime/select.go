@@ -239,7 +239,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 
 			ncases := nsends + nrecvs
 			scases := cas1[:ncases:ncases]
-			_ = AdvocateSelectPre(&scases, nsends, block, pollorder)
+			_ = AdvocateSelectPre(&scases, nsends, ncases, block, pollorder)
 			BlockForever()
 		}
 	}
@@ -249,7 +249,7 @@ func selectgo(cas0 *scase, order0 *uint16, pc0 *uintptr, nsends, nrecvs int, blo
 	// cases exists (channel / direction) and weather a default statement is present.
 	// Here the first lock order is set. This is only needed if the select
 	// is never executed.
-	advocateIndex := AdvocateSelectPre(&scases, nsends, block, lockorder)
+	advocateIndex := AdvocateSelectPre(&scases, nsends, ncases, block, lockorder)
 	advocateRClose := false // case was chosen, because channel was closed
 	// ADVOCATE-CHANGE-END
 

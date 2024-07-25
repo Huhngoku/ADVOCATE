@@ -105,7 +105,6 @@ func printResultsToFiles(elements map[string][]int, selects map[string]map[int][
 
 	// write elements that were not executed
 	if len(elements) > 0 {
-		notExecutedOperationsFile.WriteString("Program elements that were not executed:\n")
 		for file, lines := range elements {
 			fileName := strings.ReplaceAll(file, "/", "_")
 			fileName = strings.TrimPrefix(fileName, "_")
@@ -146,7 +145,6 @@ func printResultsToFiles(elements map[string][]int, selects map[string]map[int][
 
 	// write select cases that were not selected
 	if len(selects) > 0 {
-		notExecutedSelectFile.WriteString("Select cases that were not selected:\n")
 		for file, lines := range selects {
 			fileName := strings.ReplaceAll(file, "/", "_")
 			fileName = strings.TrimPrefix(fileName, "_")
