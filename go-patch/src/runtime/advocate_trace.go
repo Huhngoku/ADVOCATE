@@ -258,7 +258,20 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 		}
 
 		// if atomic recording is disabled
-		for i, elem := range routine.Trace {
+		// for i, elem := range routine.Trace {
+		// 	if i != 0 {
+		// 		res += ";"
+		// 	}
+		// 	res += elem
+
+		// 	if i%1000 == 0 {
+		// 		c <- res
+		// 		res = ""
+		// 	}
+		// }
+
+		//MY_CHANGES
+		for i, elem := range routine.newEvents {
 			if i != 0 {
 				res += ";"
 			}
@@ -269,6 +282,7 @@ func TraceToStringByIDChannel(id int, c chan<- string) {
 				res = ""
 			}
 		}
+		// MY_CHANGES
 		c <- res
 	} else {
 		unlock(&AdvocateRoutinesLock)

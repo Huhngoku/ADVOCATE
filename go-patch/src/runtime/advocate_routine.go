@@ -2,6 +2,10 @@
 
 package runtime
 
+import (
+	"fmt"
+)
+
 var AdvocateRoutines map[uint64]*AdvocateRoutine
 var AdvocateRoutinesLock = mutex{}
 
@@ -21,6 +25,7 @@ type AdvocateRoutine struct {
 	Trace   []string
 	Atomics []string
 	// lock    *mutex
+	newEvents []string
 }
 
 /*
@@ -32,8 +37,9 @@ type AdvocateRoutine struct {
  */
 func newAdvocateRoutine(g *g) *AdvocateRoutine {
 	routine := &AdvocateRoutine{id: GetAdvocateRoutineID(), G: g,
-		Trace:   make([]string, 0),
-		Atomics: make([]string, 0)}
+		Trace:     make([]string, 0),
+		Atomics:   make([]string, 0),
+		newEvents: make([]string, 0)}
 
 	lock(&AdvocateRoutinesLock)
 	defer unlock(&AdvocateRoutinesLock)
@@ -75,6 +81,52 @@ func (gi *AdvocateRoutine) addToTrace(elem string) int {
 	gi.Trace = append(gi.Trace, elem)
 	return len(gi.Trace) - 1
 }
+
+// MY_CHANGES
+
+func (gi *AdvocateRoutine) addToTrace_newEvents(elem string) int {
+	// do nothing if tracer disabled
+	if advocateDisabled {
+		return -1
+	}
+
+	// do nothing while trace writing disabled
+	// this is used to avoid writing to the trace, while the trace is written
+	// to the file in case of a too high memory usage
+	// for advocateTraceWritingDisabled {
+	// 	slowExecution()
+	// }
+
+	// never needed in actual code, without it the compiler tests fail
+	if gi == nil {
+		return -1
+	}
+
+	gi.Trace = append(gi.newEvents, elem)
+	return len(gi.newEvents) - 1
+}
+
+func (gi *AdvocateRoutine) writeLockEvent(l *mutex) string {
+	event := ""
+	if l.lastUnlock > 0 {
+		event = fmt.Sprintf("lock, key: %d, lastRelease: %d", &l.key, &l.lastUnlock)
+	} else {
+		event = fmt.Sprintf("lock, key: %d, lastRelease: None")
+	}
+	return event
+}
+
+func (gi *AdvocateRoutine) writeUnLockEvent(l *mutex) string {
+	event := ""
+	if l.lastUnlock > 0 {
+		event = fmt.Sprintf("Unlock, key: %d, lastRelease: %d", &l.key, &l.lastUnlock)
+	} else {
+		throw("Unlocked with no release time")
+	}
+	return event
+}
+
+//MY_CHANGES
 
 /*
  * Ignore the atomic operations. Use if not enough memory is available.

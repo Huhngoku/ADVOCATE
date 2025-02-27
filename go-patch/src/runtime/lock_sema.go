@@ -8,6 +8,7 @@ package runtime
 
 import (
 	"runtime/internal/atomic"
+	"time"
 	"unsafe"
 )
 
@@ -48,6 +49,9 @@ func lock2(l *mutex) {
 
 	// Speculative grab for lock.
 	if atomic.Casuintptr(&l.key, 0, locked) {
+		// MY_CHANGES
+		gp.goInfo.addToTrace_newEvents(gp.goInfo.writeLockEvent(l))
+		// MY_CHANGES
 		return
 	}
 	semacreate(gp.m)
@@ -67,6 +71,9 @@ Loop:
 			// Unlocked. Try to lock.
 			if atomic.Casuintptr(&l.key, v, v|locked) {
 				timer.end()
+				// MY_CHANGES
+				gp.goInfo.addToTrace_newEvents(gp.goInfo.writeLockEvent(l))
+				// MY_CHANGES
 				return
 			}
 			i = 0
@@ -134,6 +141,10 @@ func unlock2(l *mutex) {
 	if gp.m.locks == 0 && gp.preempt { // restore the preemption request in case we've cleared it in newstack
 		gp.stackguard0 = stackPreempt
 	}
+	// MY_CHANGES
+	l.lastUnlock = time.Now().UnixNano()
+	gp.goInfo.addToTrace_newEvents(gp.goInfo.writeUnLockEvent(l))
+	// MY_CHANGES
 }
 
 // One-time notifications.

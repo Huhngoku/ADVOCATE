@@ -168,6 +168,9 @@ type mutex struct {
 	// while sema-based impl as M* waitm.
 	// Used to be a union, but unions break precise GC.
 	key uintptr
+	// MY_CHANGES
+	lastUnlock int64
+	// MY_CHANGES
 }
 
 // sleep and wakeup on one-time events.
